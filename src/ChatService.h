@@ -1,13 +1,13 @@
 #pragma once
 
 #include "ChatModel.h"
+#include "LlmClient.h"
 
 #include <QObject>
 #include <QPointer>
 #include <QString>
+#include <QVector>
 
-class LlmClient;
-class LlmReply;
 class PaperController;
 class Settings;
 class TocService;
@@ -47,6 +47,14 @@ private:
     QString systemPrompt() const;
     void setLastError(const QString &err);
 
+    void runTurn();
+    void onTurnFinished();
+    QVector<ToolDef> toolDefinitions() const;
+    QString runTool(const ToolCall &call) const;
+    QString runListSections() const;
+    QString runReadPage(int page) const;
+    void cleanupAfterFinal();
+
     QPointer<Settings> m_settings;
     QPointer<PaperController> m_paper;
     QPointer<TocService> m_toc;
@@ -55,4 +63,10 @@ private:
 
     ChatModel m_messages;
     QString m_lastError;
+
+    // Conversation state sent to the API (includes tool_use / tool_result
+    // round-trips that aren't surfaced in m_messages).
+    QVector<LlmClient::Message> m_apiMessages;
+    int m_iterations = 0;
+    static constexpr int kMaxIterations = 10;
 };

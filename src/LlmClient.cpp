@@ -23,6 +23,11 @@ void LlmReply::appendChunk(const QString &chunk)
     emit chunkReceived(chunk);
 }
 
+void LlmReply::appendToolCall(const ToolCall &call)
+{
+    m_toolCalls.append(call);
+}
+
 void LlmReply::markFinished()
 {
     if (m_finished)
