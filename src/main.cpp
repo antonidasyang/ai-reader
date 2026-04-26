@@ -1,3 +1,4 @@
+#include "ChatService.h"
 #include "PaperController.h"
 #include "Settings.h"
 #include "SummaryService.h"
@@ -55,6 +56,9 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<VisionService>(
         "AiReader", 1, 0, "VisionService",
         QStringLiteral("Use the vision context property"));
+    qmlRegisterUncreatableType<ChatService>(
+        "AiReader", 1, 0, "ChatService",
+        QStringLiteral("Use the chat context property"));
 
     Settings settings;
     PaperController paperController;
@@ -62,6 +66,7 @@ int main(int argc, char *argv[])
     SummaryService summary(&settings, paperController.blocks());
     TocService toc(&settings, paperController.blocks());
     VisionService vision(&settings, &paperController);
+    ChatService chat(&settings, &paperController, &toc);
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
@@ -73,6 +78,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("summary", &summary);
     engine.rootContext()->setContextProperty("toc", &toc);
     engine.rootContext()->setContextProperty("vision", &vision);
+    engine.rootContext()->setContextProperty("chat", &chat);
 
     QObject::connect(
         &engine,

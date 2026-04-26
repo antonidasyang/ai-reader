@@ -162,6 +162,12 @@ ApplicationWindow {
                     vision.readPage(pdfView.currentPage)
                 }
             }
+            ToolButton {
+                text: qsTr("Chat")
+                checkable: true
+                checked: chatPane.visible
+                onClicked: chatPane.visible = !chatPane.visible
+            }
             Label {
                 text: pdfDoc.status === PdfDocument.Ready
                       ? qsTr("%1 pages · %2 blocks")
@@ -278,6 +284,14 @@ ApplicationWindow {
                 SplitView.minimumWidth: 240
                 model: paperController.blocks
                 paperStatus: paperController.status
+            }
+
+            // ── Far right: chat pane (toggleable) ──────────────────────
+            ChatPane {
+                id: chatPane
+                visible: false
+                SplitView.preferredWidth: 360
+                SplitView.minimumWidth: 240
             }
 
             handle: Rectangle {

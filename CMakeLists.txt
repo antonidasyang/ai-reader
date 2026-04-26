@@ -46,6 +46,10 @@ qt_add_executable(ai-reader
     src/TocService.cpp
     src/VisionService.h
     src/VisionService.cpp
+    src/ChatModel.h
+    src/ChatModel.cpp
+    src/ChatService.h
+    src/ChatService.cpp
 )
 
 qt_add_qml_module(ai-reader
@@ -60,6 +64,7 @@ qt_add_qml_module(ai-reader
         qml/TocSidebar.qml
         qml/VisionDialog.qml
         qml/PromptsDialog.qml
+        qml/ChatPane.qml
 )
 
 qt_add_resources(ai-reader "icons"
