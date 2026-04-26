@@ -17,6 +17,10 @@ public:
         PageRole,
         OrdRole,
         BlockIdRole,
+        TranslationRole,
+        TranslationStatusRole,
+        TranslationStatusNameRole,
+        TranslationErrorRole,
     };
 
     explicit BlockListModel(QObject *parent = nullptr);
@@ -30,7 +34,15 @@ public:
 
     int blockCount() const { return m_blocks.size(); }
 
-    // Lookup helpers exposed to QML for sync-scroll wiring.
+    // Read-only access for in-process consumers (TranslationService).
+    const Block *blockAt(int row) const;
+
+    // Mutators used by the translation pipeline.
+    void setTranslationStatus(int row, Block::TranslationStatus status,
+                              const QString &error = {});
+    void appendTranslationChunk(int row, const QString &chunk);
+    void setTranslation(int row, const QString &text);
+
     Q_INVOKABLE int firstRowOnPage(int page) const;
     Q_INVOKABLE int pageOfRow(int row) const;
 

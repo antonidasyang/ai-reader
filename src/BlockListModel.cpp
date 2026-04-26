@@ -1,5 +1,22 @@
 #include "BlockListModel.h"
 
+namespace {
+
+QString translationStatusName(Block::TranslationStatus s)
+{
+    switch (s) {
+    case Block::Queued:        return QStringLiteral("queued");
+    case Block::Translating:   return QStringLiteral("translating");
+    case Block::Translated:    return QStringLiteral("translated");
+    case Block::Failed:        return QStringLiteral("failed");
+    case Block::Skipped:       return QStringLiteral("skipped");
+    case Block::NotTranslated:
+    default:                   return QStringLiteral("idle");
+    }
+}
+
+} // namespace
+
 BlockListModel::BlockListModel(QObject *parent)
     : QAbstractListModel(parent)
 {
@@ -36,6 +53,14 @@ QVariant BlockListModel::data(const QModelIndex &index, int role) const
         return b.ord;
     case BlockIdRole:
         return b.id;
+    case TranslationRole:
+        return b.translation;
+    case TranslationStatusRole:
+        return int(b.translationStatus);
+    case TranslationStatusNameRole:
+        return translationStatusName(b.translationStatus);
+    case TranslationErrorRole:
+        return b.translationError;
     default:
         return {};
     }
@@ -44,12 +69,16 @@ QVariant BlockListModel::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> BlockListModel::roleNames() const
 {
     return {
-        {TextRole,     "text"},
-        {KindRole,     "kind"},
-        {KindNameRole, "kindName"},
-        {PageRole,     "page"},
-        {OrdRole,      "ord"},
-        {BlockIdRole,  "blockId"},
+        {TextRole,                     "text"},
+        {KindRole,                     "kind"},
+        {KindNameRole,                 "kindName"},
+        {PageRole,                     "page"},
+        {OrdRole,                      "ord"},
+        {BlockIdRole,                  "blockId"},
+        {TranslationRole,              "translation"},
+        {TranslationStatusRole,        "translationStatus"},
+        {TranslationStatusNameRole,    "translationStatusName"},
+        {TranslationErrorRole,         "translationError"},
     };
 }
 
@@ -69,12 +98,55 @@ void BlockListModel::clear()
     endResetModel();
 }
 
+const Block *BlockListModel::blockAt(int row) const
+{
+    if (row < 0 || row >= m_blocks.size())
+        return nullptr;
+    return &m_blocks.at(row);
+}
+
+void BlockListModel::setTranslationStatus(int row,
+                                          Block::TranslationStatus status,
+                                          const QString &error)
+{
+    if (row < 0 || row >= m_blocks.size())
+        return;
+    Block &b = m_blocks[row];
+    if (b.translationStatus == status && b.translationError == error)
+        return;
+    b.translationStatus = status;
+    b.translationError = error;
+    const QModelIndex idx = index(row);
+    emit dataChanged(idx, idx,
+                     {TranslationStatusRole,
+                      TranslationStatusNameRole,
+                      TranslationErrorRole});
+}
+
+void BlockListModel::appendTranslationChunk(int row, const QString &chunk)
+{
+    if (row < 0 || row >= m_blocks.size() || chunk.isEmpty())
+        return;
+    m_blocks[row].translation += chunk;
+    const QModelIndex idx = index(row);
+    emit dataChanged(idx, idx, {TranslationRole});
+}
+
+void BlockListModel::setTranslation(int row, const QString &text)
+{
+    if (row < 0 || row >= m_blocks.size())
+        return;
+    if (m_blocks[row].translation == text)
+        return;
+    m_blocks[row].translation = text;
+    const QModelIndex idx = index(row);
+    emit dataChanged(idx, idx, {TranslationRole});
+}
+
 int BlockListModel::firstRowOnPage(int page) const
 {
     if (m_blocks.isEmpty() || page < 0)
         return -1;
-    // Blocks are stored in document order with non-decreasing page numbers,
-    // so a linear scan returning the first row on (or after) `page` is fine.
     for (int i = 0; i < m_blocks.size(); ++i) {
         if (m_blocks.at(i).page >= page)
             return i;

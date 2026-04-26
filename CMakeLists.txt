@@ -35,6 +35,8 @@ qt_add_executable(ai-reader
     src/OpenAiClient.cpp
     src/Settings.h
     src/Settings.cpp
+    src/TranslationService.h
+    src/TranslationService.cpp
 )
 
 qt_add_qml_module(ai-reader

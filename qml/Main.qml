@@ -54,6 +54,16 @@ ApplicationWindow {
         }
     }
 
+    Connections {
+        target: translation
+        function onLastErrorChanged() {
+            if (translation.lastError && translation.lastError.length > 0) {
+                errorBanner.text = qsTr("Translation: %1").arg(translation.lastError)
+                errorBanner.visible = true
+            }
+        }
+    }
+
     // ── Bidirectional scroll sync ─────────────────────────────────────
     // Two re-entrancy guards prevent a feedback loop:
     //   • blockList.syncEnabled is dropped when we drive the list from PDF.
@@ -101,6 +111,19 @@ ApplicationWindow {
                 text: qsTr("Close")
                 enabled: paperController.status !== PaperController.Empty
                 onClicked: paperController.clear()
+            }
+            ToolSeparator {}
+            ToolButton {
+                text: translation.busy ? qsTr("Cancel") : qsTr("Translate")
+                enabled: paperController.status === PaperController.Ready
+                         && (translation.busy || settings.isConfigured)
+                onClicked: translation.busy ? translation.cancel()
+                                            : translation.translateAll()
+            }
+            ToolButton {
+                text: qsTr("Retry failed")
+                visible: !translation.busy && translation.failedCount > 0
+                onClicked: translation.retryFailed()
             }
             Label {
                 text: pdfDoc.status === PdfDocument.Ready
@@ -180,7 +203,7 @@ ApplicationWindow {
                             Layout.alignment: Qt.AlignHCenter
                         }
                         Label {
-                            text: qsTr("AI Reader — milestone 2.3 (LLM client + settings)")
+                            text: qsTr("AI Reader — milestone 2.4 (translation pipeline)")
                             color: "#666666"
                             font.pixelSize: 12
                             Layout.alignment: Qt.AlignHCenter

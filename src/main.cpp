@@ -1,5 +1,6 @@
 #include "PaperController.h"
 #include "Settings.h"
+#include "TranslationService.h"
 
 #include <QGuiApplication>
 #include <QIcon>
@@ -39,13 +40,18 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<Settings>(
         "AiReader", 1, 0, "Settings",
         QStringLiteral("Use the settings context property"));
+    qmlRegisterUncreatableType<TranslationService>(
+        "AiReader", 1, 0, "TranslationService",
+        QStringLiteral("Use the translation context property"));
 
     Settings settings;
     PaperController paperController;
+    TranslationService translation(&settings, paperController.blocks());
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("paperController", &paperController);
     engine.rootContext()->setContextProperty("settings", &settings);
+    engine.rootContext()->setContextProperty("translation", &translation);
 
     QObject::connect(
         &engine,

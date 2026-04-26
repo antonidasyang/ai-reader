@@ -9,9 +9,6 @@ Rectangle {
 
     property var model: null
     property int paperStatus: PaperController.Empty
-
-    // Suppresses pageRequested while the list is being scrolled
-    // programmatically (e.g. in response to PDF navigation).
     property bool syncEnabled: true
 
     signal pageRequested(int page)
@@ -24,9 +21,18 @@ Rectangle {
             return
         root.syncEnabled = false
         list.positionViewAtIndex(idx, ListView.Beginning)
-        // Re-enable on the next event-loop pass, after the resulting
-        // contentY changes have already fired.
         Qt.callLater(function() { root.syncEnabled = true })
+    }
+
+    function statusColor(name) {
+        switch (name) {
+        case "translated":  return "#2e7d32"
+        case "translating": return "#1565c0"
+        case "queued":      return "#6a1b9a"
+        case "failed":      return "#c62828"
+        case "skipped":     return "#888888"
+        default:            return "#bdbdbd"
+        }
     }
 
     ColumnLayout {
@@ -44,15 +50,23 @@ Rectangle {
                 anchors.rightMargin: 12
                 Label {
                     text: list.count > 0
-                          ? qsTr("Extracted blocks (%1)").arg(list.count)
-                          : qsTr("Extracted blocks")
+                          ? qsTr("Blocks (%1)").arg(list.count)
+                          : qsTr("Blocks")
                     font.bold: true
                 }
                 Item { Layout.fillWidth: true }
                 Label {
-                    visible: root.paperStatus === PaperController.Loading
-                    text: qsTr("extracting…")
-                    color: "#888"
+                    visible: translation.busy
+                    text: qsTr("translating %1/%2…")
+                          .arg(translation.doneCount)
+                          .arg(translation.totalCount)
+                    color: "#1565c0"
+                    font.pixelSize: 11
+                }
+                Label {
+                    visible: !translation.busy && translation.failedCount > 0
+                    text: qsTr("%1 failed").arg(translation.failedCount)
+                    color: "#c62828"
                     font.pixelSize: 11
                 }
             }
@@ -67,7 +81,7 @@ Rectangle {
                 anchors.fill: parent
                 clip: true
                 model: root.model
-                spacing: 6
+                spacing: 8
                 visible: count > 0
 
                 property int lastReportedPage: -1
@@ -91,7 +105,7 @@ Rectangle {
                 delegate: Rectangle {
                     width: ListView.view ? ListView.view.width : 0
                     color: "transparent"
-                    implicitHeight: cell.implicitHeight + 14
+                    implicitHeight: cell.implicitHeight + 16
 
                     ColumnLayout {
                         id: cell
@@ -100,22 +114,69 @@ Rectangle {
                         anchors.rightMargin: 12
                         anchors.topMargin: 6
                         anchors.bottomMargin: 8
-                        spacing: 2
+                        spacing: 4
 
-                        Label {
-                            text: qsTr("p.%1 · %2").arg(model.page + 1).arg(model.kindName)
-                            font.pixelSize: 10
-                            color: "#999"
+                        // Header strip: page · kind · status
+                        RowLayout {
+                            spacing: 6
+                            Layout.fillWidth: true
+
+                            Label {
+                                text: qsTr("p.%1 · %2").arg(model.page + 1).arg(model.kindName)
+                                font.pixelSize: 10
+                                color: "#999"
+                            }
+                            Item { Layout.fillWidth: true }
+                            Rectangle {
+                                visible: model.translationStatusName !== "idle"
+                                radius: 6
+                                color: root.statusColor(model.translationStatusName)
+                                opacity: 0.18
+                                implicitWidth: statusLabel.implicitWidth + 12
+                                implicitHeight: statusLabel.implicitHeight + 4
+                                Label {
+                                    id: statusLabel
+                                    anchors.centerIn: parent
+                                    text: model.translationStatusName
+                                    font.pixelSize: 10
+                                    color: root.statusColor(model.translationStatusName)
+                                }
+                            }
                         }
+
+                        // Source text (English) — secondary styling
                         Text {
                             Layout.fillWidth: true
                             text: model.text
                             wrapMode: Text.Wrap
                             textFormat: Text.PlainText
+                            color: "#5f6368"
+                            font.pixelSize: model.kindName === "heading" ? 14 : 12
+                            font.italic: model.kindName === "caption"
+                        }
+
+                        // Translation — primary styling
+                        Text {
+                            visible: model.translation && model.translation.length > 0
+                            Layout.fillWidth: true
+                            text: model.translation || ""
+                            wrapMode: Text.Wrap
+                            textFormat: Text.PlainText
                             color: "#1d1d1d"
-                            font.pixelSize: model.kindName === "heading" ? 16 : 13
-                            font.bold:    model.kindName === "heading"
-                            font.italic:  model.kindName === "caption"
+                            font.pixelSize: model.kindName === "heading" ? 16 : 14
+                            font.bold: model.kindName === "heading"
+                        }
+
+                        // Failure detail
+                        Text {
+                            visible: model.translationStatusName === "failed"
+                                     && model.translationError
+                                     && model.translationError.length > 0
+                            Layout.fillWidth: true
+                            text: model.translationError || ""
+                            wrapMode: Text.Wrap
+                            color: "#c62828"
+                            font.pixelSize: 11
                         }
                     }
 
