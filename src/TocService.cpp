@@ -103,7 +103,7 @@ void TocService::generate()
     req.system = systemPrompt();
     req.messages.append({QStringLiteral("user"), userPrompt()});
     req.temperature = 0.0;
-    req.maxTokens = 4096;
+    req.maxTokens = 8192;
     req.stream = true;
 
     m_reply = m_client->send(req);
@@ -129,16 +129,18 @@ void TocService::generate()
 QString TocService::systemPrompt() const
 {
     return QStringLiteral(
-        "You build a hierarchical table of contents from a paper's text "
-        "blocks.\n"
+        "You build a hierarchical table of contents from the full text of a "
+        "paper.\n"
         "\n"
-        "Input is a JSON list of `candidates`, one per block, each with "
-        "`block_id`, `page`, and `text`. Some blocks have a `hint` field:\n"
-        "  - `paragraph_start` = only the first ~80 chars of a longer block. "
-        "If the prefix begins with a section heading like \"1 Introduction\" "
-        "or \"3.2 Method\", treat that block as a heading.\n"
-        "  - (no hint)         = the full block text (often short — could be "
-        "a heading, caption, or running header).\n"
+        "Input is a JSON object: `{\"blocks\": [{\"block_id\": N, "
+        "\"page\": P, \"text\": \"…\"}, …]}`. Each block is the full text "
+        "of one extracted region (often a whole page or a long paragraph). "
+        "Section headings appear INSIDE the text — possibly mid-block — "
+        "since our extractor does not split them out.\n"
+        "\n"
+        "Your job: scan every block's text and emit a hierarchical TOC. For "
+        "each heading you find, set `start_block` to the `block_id` of the "
+        "block where the heading appears.\n"
         "\n"
         "Output JSON ONLY in this exact shape:\n"
         "\n"
@@ -153,16 +155,21 @@ QString TocService::systemPrompt() const
         "}\n"
         "\n"
         "Rules:\n"
-        "- Pick out real section headings. Look for: numbered headings "
-        "(\"1 Introduction\", \"3.2 Method\", \"IV. Results\"), and named "
-        "ones (\"Abstract\", \"Related Work\", \"References\", \"Appendix\").\n"
+        "- Find real section headings in the block text. Look for:\n"
+        "  • numbered headings: \"1 Introduction\", \"3.2 Method\", "
+        "\"IV. Results\"\n"
+        "  • named headings: \"Abstract\", \"Introduction\", \"Related "
+        "Work\", \"Method\", \"Experiments\", \"Results\", \"Discussion\", "
+        "\"Conclusion\", \"Limitations\", \"References\", "
+        "\"Acknowledgments\", \"Appendix\", \"Supplementary\"\n"
+        "  • appendix subsections: \"A.1 Dataset\", \"B Implementation\"\n"
         "- Include every plausible section heading. When in doubt, include "
-        "it. Be especially generous with appendix subsections.\n"
-        "- IGNORE running headers/footers: page numbers alone, author names "
+        "it. List headings in the order they appear in the paper.\n"
+        "- IGNORE running headers/footers: lone page numbers, author names "
         "(\"K. You et al.\"), the paper title repeated on every page, "
-        "venue/journal banners.\n"
-        "- Use the candidate's exact `block_id` from the input as "
-        "`start_block`.\n"
+        "conference/journal banners, figure/table captions.\n"
+        "- `start_block` MUST be a real `block_id` from the input — the one "
+        "where that heading's text appears.\n"
         "- Title may be cleaned (strip leading numbering like \"1\" or "
         "\"1.1\").\n"
         "- Infer level from numbering (\"1.1\" → level 2; bare title → "
@@ -176,29 +183,23 @@ QString TocService::systemPrompt() const
 
 QString TocService::userPrompt() const
 {
-    // Send every block. Short blocks and classifier-flagged headings go in
-    // verbatim; long paragraphs go in as their first ~80 chars (with a
-    // `paragraph_start` hint), so the model can spot section headings that
-    // PDFium merged into a paragraph (e.g. "1 Introduction Ferret-UI is …").
-    QJsonArray candidates;
+    // Send the full text of every block. PDFium often merges a whole page
+    // (or a heading + its body) into one block, so only the full text
+    // contains the section headings the model needs to extract. Use compact
+    // JSON to save tokens.
+    QJsonArray blocks;
     for (int row = 0; row < m_blocks->blockCount(); ++row) {
         const Block *b = m_blocks->blockAt(row);
         if (!b) continue;
         QJsonObject o;
         o[QStringLiteral("block_id")] = b->id;
         o[QStringLiteral("page")] = b->page + 1;
-        if (b->text.size() <= 140 || b->kind == Block::Heading) {
-            o[QStringLiteral("text")] = b->text;
-        } else {
-            o[QStringLiteral("text")] = b->text.left(80);
-            o[QStringLiteral("hint")] = QStringLiteral("paragraph_start");
-        }
-        candidates.append(o);
+        o[QStringLiteral("text")] = b->text;
+        blocks.append(o);
     }
-
     return QString::fromUtf8(
-        QJsonDocument(QJsonObject{{"candidates", candidates}})
-            .toJson(QJsonDocument::Indented));
+        QJsonDocument(QJsonObject{{"blocks", blocks}})
+            .toJson(QJsonDocument::Compact));
 }
 
 void TocService::parseResponse(const QString &text)
