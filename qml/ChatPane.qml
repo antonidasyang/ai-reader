@@ -89,16 +89,23 @@ Rectangle {
                             font.pixelSize: 10
                             color: "#888"
                         }
-                        Label {
+                        TextEdit {
                             Layout.fillWidth: true
+                            readOnly: true
+                            selectByMouse: true
+                            wrapMode: TextEdit.Wrap
+                            color: "#1d1d1d"
+                            // Render assistant replies as Markdown so headings,
+                            // lists, code, and emphasis are formatted. User
+                            // messages stay verbatim.
+                            textFormat: model.role === "assistant"
+                                        ? TextEdit.MarkdownText
+                                        : TextEdit.PlainText
                             text: model.content.length > 0
                                   ? model.content
                                   : (model.status === 1 /*Streaming*/
                                      ? qsTr("…")
                                      : "")
-                            wrapMode: Text.Wrap
-                            color: "#1d1d1d"
-                            textFormat: Text.PlainText
                         }
                         Label {
                             visible: model.status === 2 /*Failed*/
