@@ -186,7 +186,7 @@ void TranslationService::translateRow(int row)
     req.messages.append({QStringLiteral("user"), b->text});
     req.temperature = m_settings ? m_settings->temperature() : 0.2;
     req.stream = true;
-    req.maxTokens = 4096;
+    req.maxTokens = m_settings ? m_settings->maxTokens() : 4096;
 
     LlmReply *reply = m_client->send(req);
     m_replyToRow.insert(reply, row);

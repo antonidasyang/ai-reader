@@ -108,7 +108,7 @@ void SummaryService::generate()
     req.system = systemPrompt();
     req.messages.append({QStringLiteral("user"), userPrompt()});
     req.temperature = qBound(0.0, m_settings->temperature(), 1.0);
-    req.maxTokens = 4096;
+    req.maxTokens = m_settings->maxTokens();
     req.stream = true;
 
     m_reply = m_client->send(req);

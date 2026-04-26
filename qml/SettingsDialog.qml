@@ -17,20 +17,24 @@ Dialog {
         const idx = providerOptions.indexOf(settings.provider)
         providerBox.currentIndex = idx >= 0 ? idx : 0
         modelBox.assign(settings.model)
-        baseUrlField.text     = settings.baseUrl
-        apiKeyField.text      = settings.apiKey
-        tempSlider.value      = settings.temperature
-        targetLangField.text  = settings.targetLang
+        baseUrlField.text       = settings.baseUrl
+        apiKeyField.text        = settings.apiKey
+        tempSlider.value        = settings.temperature
+        maxTokensField.value    = settings.maxTokens
+        contextWindowField.value = settings.contextWindow
+        targetLangField.text    = settings.targetLang
         apiKeyField.forceActiveFocus()
     }
 
     onAccepted: {
-        settings.provider    = providerOptions[providerBox.currentIndex]
-        settings.model       = modelBox.editText.trim()
-        settings.baseUrl     = baseUrlField.text.trim()
-        settings.apiKey      = apiKeyField.text
-        settings.temperature = tempSlider.value
-        settings.targetLang  = targetLangField.text.trim()
+        settings.provider      = providerOptions[providerBox.currentIndex]
+        settings.model         = modelBox.editText.trim()
+        settings.baseUrl       = baseUrlField.text.trim()
+        settings.apiKey        = apiKeyField.text
+        settings.temperature   = tempSlider.value
+        settings.maxTokens     = maxTokensField.value
+        settings.contextWindow = contextWindowField.value
+        settings.targetLang    = targetLangField.text.trim()
     }
 
     contentItem: ColumnLayout {
@@ -112,6 +116,20 @@ Dialog {
                     text: tempSlider.value.toFixed(2)
                     Layout.preferredWidth: 36
                 }
+            }
+
+            Label { text: qsTr("Max output tokens") }
+            SpinBox {
+                id: maxTokensField
+                Layout.fillWidth: true
+                from: 256; to: 131072; stepSize: 256; editable: true
+            }
+
+            Label { text: qsTr("Context window") }
+            SpinBox {
+                id: contextWindowField
+                Layout.fillWidth: true
+                from: 0; to: 2000000; stepSize: 1024; editable: true
             }
 
             Label { text: qsTr("Translate into") }

@@ -103,7 +103,7 @@ void TocService::generate()
     req.system = systemPrompt();
     req.messages.append({QStringLiteral("user"), userPrompt()});
     req.temperature = 0.0;
-    req.maxTokens = 8192;
+    req.maxTokens = m_settings->maxTokens();
     req.stream = true;
 
     m_reply = m_client->send(req);

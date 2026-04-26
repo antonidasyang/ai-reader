@@ -15,8 +15,10 @@ constexpr auto kKeyProvider    = "llm/provider";
 constexpr auto kKeyModel       = "llm/model";
 constexpr auto kKeyBaseUrl     = "llm/baseUrl";
 constexpr auto kKeyApiKey      = "llm/apiKey";
-constexpr auto kKeyTemperature = "llm/temperature";
-constexpr auto kKeyTargetLang  = "translation/targetLang";
+constexpr auto kKeyTemperature   = "llm/temperature";
+constexpr auto kKeyMaxTokens     = "llm/maxTokens";
+constexpr auto kKeyContextWindow = "llm/contextWindow";
+constexpr auto kKeyTargetLang    = "translation/targetLang";
 
 QUrl defaultBaseUrlFor(const QString &providerLower)
 {
@@ -83,6 +85,24 @@ void Settings::setTemperature(double v)
     m_temperature = v;
     save();
     emit temperatureChanged();
+}
+
+void Settings::setMaxTokens(int v)
+{
+    if (v < 1) v = 1;
+    if (v == m_maxTokens) return;
+    m_maxTokens = v;
+    save();
+    emit maxTokensChanged();
+}
+
+void Settings::setContextWindow(int v)
+{
+    if (v < 0) v = 0;
+    if (v == m_contextWindow) return;
+    m_contextWindow = v;
+    save();
+    emit contextWindowChanged();
 }
 
 void Settings::setTargetLang(const QString &v)
@@ -224,21 +244,25 @@ void Settings::setAvailableModels(QStringList list)
 
 void Settings::load()
 {
-    m_provider    = m_qs.value(kKeyProvider,    QStringLiteral("anthropic")).toString();
-    m_model       = m_qs.value(kKeyModel,       QStringLiteral("claude-opus-4-7")).toString();
-    m_baseUrl     = m_qs.value(kKeyBaseUrl,     QString{}).toString();
-    m_apiKey      = m_qs.value(kKeyApiKey,      QString{}).toString();
-    m_temperature = m_qs.value(kKeyTemperature, 0.2).toDouble();
-    m_targetLang  = m_qs.value(kKeyTargetLang,  QStringLiteral("zh-CN")).toString();
+    m_provider      = m_qs.value(kKeyProvider,      QStringLiteral("anthropic")).toString();
+    m_model         = m_qs.value(kKeyModel,         QStringLiteral("claude-opus-4-7")).toString();
+    m_baseUrl       = m_qs.value(kKeyBaseUrl,       QString{}).toString();
+    m_apiKey        = m_qs.value(kKeyApiKey,        QString{}).toString();
+    m_temperature   = m_qs.value(kKeyTemperature,   0.2).toDouble();
+    m_maxTokens     = m_qs.value(kKeyMaxTokens,     8192).toInt();
+    m_contextWindow = m_qs.value(kKeyContextWindow, 128000).toInt();
+    m_targetLang    = m_qs.value(kKeyTargetLang,    QStringLiteral("zh-CN")).toString();
 }
 
 void Settings::save()
 {
-    m_qs.setValue(kKeyProvider,    m_provider);
-    m_qs.setValue(kKeyModel,       m_model);
-    m_qs.setValue(kKeyBaseUrl,     m_baseUrl);
-    m_qs.setValue(kKeyApiKey,      m_apiKey);
-    m_qs.setValue(kKeyTemperature, m_temperature);
-    m_qs.setValue(kKeyTargetLang,  m_targetLang);
+    m_qs.setValue(kKeyProvider,      m_provider);
+    m_qs.setValue(kKeyModel,         m_model);
+    m_qs.setValue(kKeyBaseUrl,       m_baseUrl);
+    m_qs.setValue(kKeyApiKey,        m_apiKey);
+    m_qs.setValue(kKeyTemperature,   m_temperature);
+    m_qs.setValue(kKeyMaxTokens,     m_maxTokens);
+    m_qs.setValue(kKeyContextWindow, m_contextWindow);
+    m_qs.setValue(kKeyTargetLang,    m_targetLang);
     m_qs.sync();
 }
