@@ -129,10 +129,18 @@ void TocService::generate()
 QString TocService::systemPrompt() const
 {
     return QStringLiteral(
-        "You organize paper headings into a hierarchical table of contents.\n"
+        "You build a hierarchical table of contents from a paper's text "
+        "blocks.\n"
         "\n"
-        "Input is a JSON list of headings, each with `block_id`, `page`, and "
-        "`text`. Output JSON ONLY in this exact shape:\n"
+        "Input is a JSON list of `candidates`, one per block, each with "
+        "`block_id`, `page`, and `text`. Some blocks have a `hint` field:\n"
+        "  - `paragraph_start` = only the first ~80 chars of a longer block. "
+        "If the prefix begins with a section heading like \"1 Introduction\" "
+        "or \"3.2 Method\", treat that block as a heading.\n"
+        "  - (no hint)         = the full block text (often short — could be "
+        "a heading, caption, or running header).\n"
+        "\n"
+        "Output JSON ONLY in this exact shape:\n"
         "\n"
         "{\n"
         "  \"sections\": [\n"
@@ -145,13 +153,22 @@ QString TocService::systemPrompt() const
         "}\n"
         "\n"
         "Rules:\n"
-        "- INCLUDE every plausible section heading from the input. When in "
-        "doubt, include it.\n"
-        "- Use the heading's exact `block_id` from the input as `start_block`.\n"
-        "- Title may be cleaned (strip leading numbering like \"1\" or \"1.1\").\n"
-        "- Infer level from numbering (\"1.1\" → level 2; bare title → level 1).\n"
-        "- You may skip obvious page headers/footers / running titles, but "
-        "DO NOT return an empty sections array if any real headings exist.\n"
+        "- Pick out real section headings. Look for: numbered headings "
+        "(\"1 Introduction\", \"3.2 Method\", \"IV. Results\"), and named "
+        "ones (\"Abstract\", \"Related Work\", \"References\", \"Appendix\").\n"
+        "- Include every plausible section heading. When in doubt, include "
+        "it. Be especially generous with appendix subsections.\n"
+        "- IGNORE running headers/footers: page numbers alone, author names "
+        "(\"K. You et al.\"), the paper title repeated on every page, "
+        "venue/journal banners.\n"
+        "- Use the candidate's exact `block_id` from the input as "
+        "`start_block`.\n"
+        "- Title may be cleaned (strip leading numbering like \"1\" or "
+        "\"1.1\").\n"
+        "- Infer level from numbering (\"1.1\" → level 2; bare title → "
+        "level 1).\n"
+        "- DO NOT return an empty sections array unless the input truly "
+        "contains no real headings.\n"
         "- Use the EXACT key names: `sections`, `id`, `level`, `title`, "
         "`start_block`, `children`.\n"
         "- Output JSON ONLY. No prose. No Markdown fences. No explanation.");
@@ -159,36 +176,28 @@ QString TocService::systemPrompt() const
 
 QString TocService::userPrompt() const
 {
-    QJsonArray headings;
+    // Send every block. Short blocks and classifier-flagged headings go in
+    // verbatim; long paragraphs go in as their first ~80 chars (with a
+    // `paragraph_start` hint), so the model can spot section headings that
+    // PDFium merged into a paragraph (e.g. "1 Introduction Ferret-UI is …").
+    QJsonArray candidates;
     for (int row = 0; row < m_blocks->blockCount(); ++row) {
         const Block *b = m_blocks->blockAt(row);
         if (!b) continue;
-        if (b->kind != Block::Heading) continue;
         QJsonObject o;
         o[QStringLiteral("block_id")] = b->id;
         o[QStringLiteral("page")] = b->page + 1;
-        o[QStringLiteral("text")] = b->text;
-        headings.append(o);
-    }
-
-    // If we found very few headings, fall back to including short blocks too.
-    if (headings.size() < 3) {
-        for (int row = 0; row < m_blocks->blockCount(); ++row) {
-            const Block *b = m_blocks->blockAt(row);
-            if (!b || b->kind == Block::Heading) continue;
-            if (b->text.size() <= 90) {
-                QJsonObject o;
-                o[QStringLiteral("block_id")] = b->id;
-                o[QStringLiteral("page")] = b->page + 1;
-                o[QStringLiteral("text")] = b->text;
-                o[QStringLiteral("hint")] = QStringLiteral("short_block");
-                headings.append(o);
-            }
+        if (b->text.size() <= 140 || b->kind == Block::Heading) {
+            o[QStringLiteral("text")] = b->text;
+        } else {
+            o[QStringLiteral("text")] = b->text.left(80);
+            o[QStringLiteral("hint")] = QStringLiteral("paragraph_start");
         }
+        candidates.append(o);
     }
 
     return QString::fromUtf8(
-        QJsonDocument(QJsonObject{{"headings", headings}})
+        QJsonDocument(QJsonObject{{"candidates", candidates}})
             .toJson(QJsonDocument::Indented));
 }
 
