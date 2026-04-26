@@ -8,7 +8,7 @@ Dialog {
     modal: true
     standardButtons: Dialog.Ok | Dialog.Cancel
     closePolicy: Popup.CloseOnEscape
-    width: 540
+    width: 580
 
     readonly property var providerOptions:
         ["anthropic", "openai", "deepseek", "openai-compatible"]
@@ -16,7 +16,7 @@ Dialog {
     onOpened: {
         const idx = providerOptions.indexOf(settings.provider)
         providerBox.currentIndex = idx >= 0 ? idx : 0
-        modelField.text       = settings.model
+        modelBox.assign(settings.model)
         baseUrlField.text     = settings.baseUrl
         apiKeyField.text      = settings.apiKey
         tempSlider.value      = settings.temperature
@@ -26,7 +26,7 @@ Dialog {
 
     onAccepted: {
         settings.provider    = providerOptions[providerBox.currentIndex]
-        settings.model       = modelField.text.trim()
+        settings.model       = modelBox.editText.trim()
         settings.baseUrl     = baseUrlField.text.trim()
         settings.apiKey      = apiKeyField.text
         settings.temperature = tempSlider.value
@@ -50,14 +50,33 @@ Dialog {
             }
 
             Label { text: qsTr("Model") }
-            TextField {
-                id: modelField
+            RowLayout {
                 Layout.fillWidth: true
-                placeholderText: providerBox.currentText === "anthropic"
-                                 ? "claude-opus-4-7"
-                                 : providerBox.currentText === "deepseek"
-                                   ? "deepseek-chat"
-                                   : "gpt-4o"
+                spacing: 6
+
+                ComboBox {
+                    id: modelBox
+                    Layout.fillWidth: true
+                    editable: true
+                    model: settings.availableModels
+                    // The model list might not contain the saved value
+                    // (free-typed, or fetched after save). assign() syncs
+                    // both editText and currentIndex.
+                    function assign(value) {
+                        editText = value || ""
+                        const idx = settings.availableModels.indexOf(value)
+                        currentIndex = idx
+                    }
+                }
+                Button {
+                    id: fetchBtn
+                    text: settings.fetchingModels ? qsTr("Fetching…") : qsTr("Fetch")
+                    enabled: !settings.fetchingModels && apiKeyField.text.length > 0
+                    onClicked: settings.fetchModels(
+                        dialog.providerOptions[providerBox.currentIndex],
+                        baseUrlField.text,
+                        apiKeyField.text)
+                }
             }
 
             Label { text: qsTr("Base URL") }
@@ -101,6 +120,20 @@ Dialog {
                 Layout.fillWidth: true
                 placeholderText: "zh-CN"
             }
+        }
+
+        // Status line for the model fetch.
+        Label {
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+            visible: text.length > 0
+            font.pixelSize: 11
+            color: settings.modelsError.length > 0 ? "#c62828" : "#2e7d32"
+            text: settings.modelsError.length > 0
+                  ? settings.modelsError
+                  : (settings.availableModels.length > 0
+                     ? qsTr("Loaded %1 models.").arg(settings.availableModels.length)
+                     : "")
         }
 
         Label {

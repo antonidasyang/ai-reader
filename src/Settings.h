@@ -1,10 +1,14 @@
 #pragma once
 
 #include <QObject>
+#include <QPointer>
 #include <QSettings>
 #include <QString>
+#include <QStringList>
 
 class LlmClient;
+class QNetworkAccessManager;
+class QNetworkReply;
 
 class Settings : public QObject
 {
@@ -18,8 +22,13 @@ class Settings : public QObject
     Q_PROPERTY(QString targetLang   READ targetLang   WRITE setTargetLang   NOTIFY targetLangChanged)
     Q_PROPERTY(bool    isConfigured READ isConfigured                       NOTIFY configurationChanged)
 
+    Q_PROPERTY(QStringList availableModels READ availableModels NOTIFY availableModelsChanged)
+    Q_PROPERTY(bool    fetchingModels READ fetchingModels       NOTIFY fetchingModelsChanged)
+    Q_PROPERTY(QString modelsError    READ modelsError          NOTIFY modelsErrorChanged)
+
 public:
     explicit Settings(QObject *parent = nullptr);
+    ~Settings() override;
 
     QString provider()    const { return m_provider; }
     QString model()       const { return m_model; }
@@ -29,6 +38,10 @@ public:
     QString targetLang()  const { return m_targetLang; }
     bool    isConfigured() const;
 
+    QStringList availableModels() const { return m_availableModels; }
+    bool        fetchingModels()  const { return m_fetchingModels; }
+    QString     modelsError()     const { return m_modelsError; }
+
     void setProvider(const QString &v);
     void setModel(const QString &v);
     void setBaseUrl(const QString &v);
@@ -36,8 +49,13 @@ public:
     void setTemperature(double v);
     void setTargetLang(const QString &v);
 
-    // Build a fully-configured client for the active profile. Caller owns it.
     LlmClient *createClient(QObject *parent = nullptr) const;
+
+    // Probe the provider's /v1/models endpoint with the *given* values
+    // (so the dialog can preview using unsaved input).
+    Q_INVOKABLE void fetchModels(const QString &provider,
+                                 const QString &baseUrl,
+                                 const QString &apiKey);
 
 signals:
     void providerChanged();
@@ -48,9 +66,16 @@ signals:
     void targetLangChanged();
     void configurationChanged();
 
+    void availableModelsChanged();
+    void fetchingModelsChanged();
+    void modelsErrorChanged();
+
 private:
     void load();
     void save();
+    void setFetchingModels(bool v);
+    void setModelsError(const QString &err);
+    void setAvailableModels(QStringList list);
 
     QSettings m_qs;
     QString m_provider;
@@ -59,4 +84,10 @@ private:
     QString m_apiKey;
     double  m_temperature = 0.2;
     QString m_targetLang;
+
+    QNetworkAccessManager *m_nam = nullptr;
+    QPointer<QNetworkReply> m_modelsReply;
+    QStringList m_availableModels;
+    bool m_fetchingModels = false;
+    QString m_modelsError;
 };
