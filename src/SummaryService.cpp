@@ -136,6 +136,11 @@ QString SummaryService::systemPrompt() const
 {
     const QString lang = resolveLanguageName(m_settings ? m_settings->targetLang()
                                                        : QString());
+    if (m_settings) {
+        const QString custom = m_settings->summaryPrompt();
+        if (!custom.isEmpty())
+            return QString(custom).replace(QStringLiteral("{{lang}}"), lang);
+    }
     return QStringLiteral(
         "You are reading an academic paper. Produce a structured interpretation in %1.\n"
         "\n"

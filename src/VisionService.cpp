@@ -135,6 +135,10 @@ void VisionService::readPage(int pageIdx)
 
 QString VisionService::systemPrompt() const
 {
+    if (m_settings) {
+        const QString custom = m_settings->visionPrompt();
+        if (!custom.isEmpty()) return custom;
+    }
     return QStringLiteral(
         "You are reading one rendered page of an academic paper.\n"
         "\n"

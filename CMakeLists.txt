@@ -59,6 +59,7 @@ qt_add_qml_module(ai-reader
         qml/SummaryDialog.qml
         qml/TocSidebar.qml
         qml/VisionDialog.qml
+        qml/PromptsDialog.qml
 )
 
 qt_add_resources(ai-reader "icons"

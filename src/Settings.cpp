@@ -19,6 +19,10 @@ constexpr auto kKeyTemperature   = "llm/temperature";
 constexpr auto kKeyMaxTokens     = "llm/maxTokens";
 constexpr auto kKeyContextWindow = "llm/contextWindow";
 constexpr auto kKeyTargetLang    = "translation/targetLang";
+constexpr auto kKeySummaryPrompt     = "prompts/summary";
+constexpr auto kKeyTranslationPrompt = "prompts/translation";
+constexpr auto kKeyTocPrompt         = "prompts/toc";
+constexpr auto kKeyVisionPrompt      = "prompts/vision";
 
 QUrl defaultBaseUrlFor(const QString &providerLower)
 {
@@ -111,6 +115,38 @@ void Settings::setTargetLang(const QString &v)
     m_targetLang = v;
     save();
     emit targetLangChanged();
+}
+
+void Settings::setSummaryPrompt(const QString &v)
+{
+    if (v == m_summaryPrompt) return;
+    m_summaryPrompt = v;
+    save();
+    emit summaryPromptChanged();
+}
+
+void Settings::setTranslationPrompt(const QString &v)
+{
+    if (v == m_translationPrompt) return;
+    m_translationPrompt = v;
+    save();
+    emit translationPromptChanged();
+}
+
+void Settings::setTocPrompt(const QString &v)
+{
+    if (v == m_tocPrompt) return;
+    m_tocPrompt = v;
+    save();
+    emit tocPromptChanged();
+}
+
+void Settings::setVisionPrompt(const QString &v)
+{
+    if (v == m_visionPrompt) return;
+    m_visionPrompt = v;
+    save();
+    emit visionPromptChanged();
 }
 
 LlmClient *Settings::createClient(QObject *parent) const
@@ -252,6 +288,10 @@ void Settings::load()
     m_maxTokens     = m_qs.value(kKeyMaxTokens,     8192).toInt();
     m_contextWindow = m_qs.value(kKeyContextWindow, 128000).toInt();
     m_targetLang    = m_qs.value(kKeyTargetLang,    QStringLiteral("zh-CN")).toString();
+    m_summaryPrompt     = m_qs.value(kKeySummaryPrompt,     QString{}).toString();
+    m_translationPrompt = m_qs.value(kKeyTranslationPrompt, QString{}).toString();
+    m_tocPrompt         = m_qs.value(kKeyTocPrompt,         QString{}).toString();
+    m_visionPrompt      = m_qs.value(kKeyVisionPrompt,      QString{}).toString();
 }
 
 void Settings::save()
@@ -264,5 +304,9 @@ void Settings::save()
     m_qs.setValue(kKeyMaxTokens,     m_maxTokens);
     m_qs.setValue(kKeyContextWindow, m_contextWindow);
     m_qs.setValue(kKeyTargetLang,    m_targetLang);
+    m_qs.setValue(kKeySummaryPrompt,     m_summaryPrompt);
+    m_qs.setValue(kKeyTranslationPrompt, m_translationPrompt);
+    m_qs.setValue(kKeyTocPrompt,         m_tocPrompt);
+    m_qs.setValue(kKeyVisionPrompt,      m_visionPrompt);
     m_qs.sync();
 }

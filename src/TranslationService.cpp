@@ -163,6 +163,11 @@ QString TranslationService::systemPrompt() const
 {
     const QString lang = resolveLanguageName(m_settings ? m_settings->targetLang()
                                                        : QString());
+    if (m_settings) {
+        const QString custom = m_settings->translationPrompt();
+        if (!custom.isEmpty())
+            return QString(custom).replace(QStringLiteral("{{lang}}"), lang);
+    }
     return QStringLiteral(
         "You are a precise academic translator. Translate the user's text into %1.\n"
         "\n"

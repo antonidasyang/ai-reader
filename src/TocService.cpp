@@ -128,6 +128,10 @@ void TocService::generate()
 
 QString TocService::systemPrompt() const
 {
+    if (m_settings) {
+        const QString custom = m_settings->tocPrompt();
+        if (!custom.isEmpty()) return custom;
+    }
     return QStringLiteral(
         "You build a hierarchical table of contents from the full text of a "
         "paper.\n"

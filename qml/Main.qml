@@ -51,6 +51,11 @@ ApplicationWindow {
         anchors.centerIn: Overlay.overlay
     }
 
+    PromptsDialog {
+        id: promptsDialog
+        anchors.centerIn: Overlay.overlay
+    }
+
     Connections {
         target: paperController
         function onPasswordRequired() { passwordDialog.open() }
@@ -174,6 +179,10 @@ ApplicationWindow {
                 color: settings.isConfigured ? "#3949AB" : "#c62828"
                 font.pixelSize: 11
                 Layout.rightMargin: 8
+            }
+            ToolButton {
+                text: qsTr("Prompts…")
+                onClicked: promptsDialog.open()
             }
             ToolButton {
                 text: qsTr("Settings…")

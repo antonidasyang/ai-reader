@@ -24,6 +24,14 @@ class Settings : public QObject
     Q_PROPERTY(QString targetLang   READ targetLang   WRITE setTargetLang   NOTIFY targetLangChanged)
     Q_PROPERTY(bool    isConfigured READ isConfigured                       NOTIFY configurationChanged)
 
+    // Custom system prompts. Empty string ⇒ service uses its built-in
+    // default. Where templates support variables, the supported tokens
+    // are listed in the docstring above each setter.
+    Q_PROPERTY(QString summaryPrompt     READ summaryPrompt     WRITE setSummaryPrompt     NOTIFY summaryPromptChanged)
+    Q_PROPERTY(QString translationPrompt READ translationPrompt WRITE setTranslationPrompt NOTIFY translationPromptChanged)
+    Q_PROPERTY(QString tocPrompt         READ tocPrompt         WRITE setTocPrompt         NOTIFY tocPromptChanged)
+    Q_PROPERTY(QString visionPrompt      READ visionPrompt      WRITE setVisionPrompt      NOTIFY visionPromptChanged)
+
     Q_PROPERTY(QStringList availableModels READ availableModels NOTIFY availableModelsChanged)
     Q_PROPERTY(bool    fetchingModels READ fetchingModels       NOTIFY fetchingModelsChanged)
     Q_PROPERTY(QString modelsError    READ modelsError          NOTIFY modelsErrorChanged)
@@ -42,6 +50,11 @@ public:
     QString targetLang()    const { return m_targetLang; }
     bool    isConfigured()  const;
 
+    QString summaryPrompt()     const { return m_summaryPrompt; }
+    QString translationPrompt() const { return m_translationPrompt; }
+    QString tocPrompt()         const { return m_tocPrompt; }
+    QString visionPrompt()      const { return m_visionPrompt; }
+
     QStringList availableModels() const { return m_availableModels; }
     bool        fetchingModels()  const { return m_fetchingModels; }
     QString     modelsError()     const { return m_modelsError; }
@@ -54,6 +67,15 @@ public:
     void setMaxTokens(int v);
     void setContextWindow(int v);
     void setTargetLang(const QString &v);
+
+    // Supports variable {{lang}}. Empty ⇒ built-in default.
+    void setSummaryPrompt(const QString &v);
+    // Supports variable {{lang}}. Empty ⇒ built-in default.
+    void setTranslationPrompt(const QString &v);
+    // No variables. Empty ⇒ built-in default.
+    void setTocPrompt(const QString &v);
+    // No variables. Empty ⇒ built-in default.
+    void setVisionPrompt(const QString &v);
 
     LlmClient *createClient(QObject *parent = nullptr) const;
 
@@ -73,6 +95,11 @@ signals:
     void contextWindowChanged();
     void targetLangChanged();
     void configurationChanged();
+
+    void summaryPromptChanged();
+    void translationPromptChanged();
+    void tocPromptChanged();
+    void visionPromptChanged();
 
     void availableModelsChanged();
     void fetchingModelsChanged();
@@ -94,6 +121,10 @@ private:
     int     m_maxTokens = 8192;
     int     m_contextWindow = 128000;
     QString m_targetLang;
+    QString m_summaryPrompt;
+    QString m_translationPrompt;
+    QString m_tocPrompt;
+    QString m_visionPrompt;
 
     QNetworkAccessManager *m_nam = nullptr;
     QPointer<QNetworkReply> m_modelsReply;
