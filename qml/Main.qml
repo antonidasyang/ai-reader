@@ -36,6 +36,11 @@ ApplicationWindow {
         onAccepted: paperController.openPdf(selectedFile)
     }
 
+    SettingsDialog {
+        id: settingsDialog
+        anchors.centerIn: Overlay.overlay
+    }
+
     Connections {
         target: paperController
         function onPasswordRequired() { passwordDialog.open() }
@@ -97,7 +102,6 @@ ApplicationWindow {
                 enabled: paperController.status !== PaperController.Empty
                 onClicked: paperController.clear()
             }
-            Item { Layout.fillWidth: true }
             Label {
                 text: pdfDoc.status === PdfDocument.Ready
                       ? qsTr("%1 pages · %2 blocks")
@@ -105,6 +109,20 @@ ApplicationWindow {
                             .arg(paperController.blockCount)
                       : ""
                 color: "#555"
+                Layout.leftMargin: 8
+            }
+            Item { Layout.fillWidth: true }
+            Label {
+                text: settings.isConfigured
+                      ? qsTr("%1 · %2").arg(settings.provider).arg(settings.model)
+                      : qsTr("LLM not configured")
+                color: settings.isConfigured ? "#3949AB" : "#c62828"
+                font.pixelSize: 11
+                Layout.rightMargin: 8
+            }
+            ToolButton {
+                text: qsTr("Settings…")
+                onClicked: settingsDialog.open()
             }
         }
     }
@@ -162,7 +180,7 @@ ApplicationWindow {
                             Layout.alignment: Qt.AlignHCenter
                         }
                         Label {
-                            text: qsTr("AI Reader — milestone 2.2 (block extraction + sync scroll)")
+                            text: qsTr("AI Reader — milestone 2.3 (LLM client + settings)")
                             color: "#666666"
                             font.pixelSize: 12
                             Layout.alignment: Qt.AlignHCenter

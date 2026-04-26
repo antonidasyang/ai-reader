@@ -8,6 +8,7 @@ set(CMAKE_AUTOMOC ON)
 find_package(Qt6 6.4 REQUIRED COMPONENTS
     Core
     Gui
+    Network
     Qml
     Quick
     QuickControls2
@@ -26,6 +27,14 @@ qt_add_executable(ai-reader
     src/BlockListModel.cpp
     src/PaperController.h
     src/PaperController.cpp
+    src/LlmClient.h
+    src/LlmClient.cpp
+    src/AnthropicClient.h
+    src/AnthropicClient.cpp
+    src/OpenAiClient.h
+    src/OpenAiClient.cpp
+    src/Settings.h
+    src/Settings.cpp
 )
 
 qt_add_qml_module(ai-reader
@@ -35,6 +44,7 @@ qt_add_qml_module(ai-reader
         qml/Main.qml
         qml/PasswordDialog.qml
         qml/BlockList.qml
+        qml/SettingsDialog.qml
 )
 
 qt_add_resources(ai-reader "icons"
@@ -59,6 +69,7 @@ endif()
 target_link_libraries(ai-reader PRIVATE
     Qt6::Core
     Qt6::Gui
+    Qt6::Network
     Qt6::Qml
     Qt6::Quick
     Qt6::QuickControls2

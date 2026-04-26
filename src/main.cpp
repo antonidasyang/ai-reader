@@ -1,4 +1,5 @@
 #include "PaperController.h"
+#include "Settings.h"
 
 #include <QGuiApplication>
 #include <QIcon>
@@ -35,11 +36,16 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<PaperController>(
         "AiReader", 1, 0, "PaperController",
         QStringLiteral("Use the paperController context property"));
+    qmlRegisterUncreatableType<Settings>(
+        "AiReader", 1, 0, "Settings",
+        QStringLiteral("Use the settings context property"));
 
+    Settings settings;
     PaperController paperController;
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("paperController", &paperController);
+    engine.rootContext()->setContextProperty("settings", &settings);
 
     QObject::connect(
         &engine,
