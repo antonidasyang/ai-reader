@@ -132,13 +132,20 @@ Rectangle {
             color: "#f0f0f0"
 
             RowLayout {
+                id: inputRow
                 anchors.fill: parent
                 anchors.margins: 6
                 spacing: 6
 
+                // One source of truth for the input row height — both the
+                // text area and the send button bind to it so the button
+                // is always exactly as tall as the input, and stays square.
+                property int rowHeight:
+                    Math.min(120, Math.max(36, input.implicitHeight + 8))
+
                 ScrollView {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: Math.min(120, Math.max(36, input.implicitHeight + 8))
+                    Layout.preferredHeight: inputRow.rowHeight
                     clip: true
                     TextArea {
                         id: input
@@ -161,8 +168,8 @@ Rectangle {
                     // Glyphs instead of words: ➤ for send, ■ for stop.
                     text: chat.busy ? "■" : "➤"
                     font.pixelSize: 16
-                    Layout.preferredWidth: 36
-                    Layout.alignment: Qt.AlignBottom
+                    Layout.preferredWidth: inputRow.rowHeight
+                    Layout.preferredHeight: inputRow.rowHeight
                     enabled: paperController.status === PaperController.Ready
                              && settings.isConfigured
                              && (chat.busy || input.text.trim().length > 0)
