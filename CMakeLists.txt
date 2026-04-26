@@ -37,6 +37,8 @@ qt_add_executable(ai-reader
     src/Settings.cpp
     src/TranslationService.h
     src/TranslationService.cpp
+    src/SummaryService.h
+    src/SummaryService.cpp
 )
 
 qt_add_qml_module(ai-reader
@@ -47,6 +49,7 @@ qt_add_qml_module(ai-reader
         qml/PasswordDialog.qml
         qml/BlockList.qml
         qml/SettingsDialog.qml
+        qml/SummaryDialog.qml
 )
 
 qt_add_resources(ai-reader "icons"

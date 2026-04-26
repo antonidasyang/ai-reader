@@ -41,6 +41,11 @@ ApplicationWindow {
         anchors.centerIn: Overlay.overlay
     }
 
+    SummaryDialog {
+        id: summaryDialog
+        anchors.centerIn: Overlay.overlay
+    }
+
     Connections {
         target: paperController
         function onPasswordRequired() { passwordDialog.open() }
@@ -125,6 +130,17 @@ ApplicationWindow {
                 visible: !translation.busy && translation.failedCount > 0
                 onClicked: translation.retryFailed()
             }
+            ToolButton {
+                text: qsTr("Interpret")
+                enabled: paperController.status === PaperController.Ready
+                         && settings.isConfigured
+                onClicked: {
+                    summaryDialog.open()
+                    if (summary.text.length === 0
+                        && summary.status !== SummaryService.Generating)
+                        summary.generate()
+                }
+            }
             Label {
                 text: pdfDoc.status === PdfDocument.Ready
                       ? qsTr("%1 pages · %2 blocks")
@@ -203,7 +219,7 @@ ApplicationWindow {
                             Layout.alignment: Qt.AlignHCenter
                         }
                         Label {
-                            text: qsTr("AI Reader — milestone 2.4 (translation pipeline)")
+                            text: qsTr("AI Reader — milestone 3.1 (summary)")
                             color: "#666666"
                             font.pixelSize: 12
                             Layout.alignment: Qt.AlignHCenter
