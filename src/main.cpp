@@ -3,6 +3,7 @@
 #include "SummaryService.h"
 #include "TocService.h"
 #include "TranslationService.h"
+#include "VisionService.h"
 
 #include <QGuiApplication>
 #include <QIcon>
@@ -51,12 +52,16 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<TocService>(
         "AiReader", 1, 0, "TocService",
         QStringLiteral("Use the toc context property"));
+    qmlRegisterUncreatableType<VisionService>(
+        "AiReader", 1, 0, "VisionService",
+        QStringLiteral("Use the vision context property"));
 
     Settings settings;
     PaperController paperController;
     TranslationService translation(&settings, paperController.blocks());
     SummaryService summary(&settings, paperController.blocks());
     TocService toc(&settings, paperController.blocks());
+    VisionService vision(&settings, &paperController);
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
@@ -67,6 +72,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("translation", &translation);
     engine.rootContext()->setContextProperty("summary", &summary);
     engine.rootContext()->setContextProperty("toc", &toc);
+    engine.rootContext()->setContextProperty("vision", &vision);
 
     QObject::connect(
         &engine,

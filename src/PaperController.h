@@ -2,6 +2,7 @@
 
 #include "BlockListModel.h"
 
+#include <QImage>
 #include <QObject>
 #include <QPdfDocument>
 #include <QString>
@@ -32,6 +33,11 @@ public:
     int blockCount() const { return m_model.blockCount(); }
     Status status() const { return m_status; }
     QString errorString() const { return m_errorString; }
+    int pageCount() const { return m_doc.pageCount(); }
+
+    // Rasterize a page at approximately `targetWidthPx` wide. Returns a null
+    // image when the page is out of range or the document isn't loaded.
+    QImage renderPage(int page, int targetWidthPx = 1280) const;
 
 public slots:
     void openPdf(const QUrl &url);

@@ -46,6 +46,11 @@ ApplicationWindow {
         anchors.centerIn: Overlay.overlay
     }
 
+    VisionDialog {
+        id: visionDialog
+        anchors.centerIn: Overlay.overlay
+    }
+
     Connections {
         target: paperController
         function onPasswordRequired() { passwordDialog.open() }
@@ -139,6 +144,17 @@ ApplicationWindow {
                     if (summary.text.length === 0
                         && summary.status !== SummaryService.Generating)
                         summary.generate()
+                }
+            }
+            ToolButton {
+                text: qsTr("Read page (vision)")
+                enabled: paperController.status === PaperController.Ready
+                         && settings.isConfigured
+                         && vision.status !== VisionService.Generating
+                         && vision.status !== VisionService.Rendering
+                onClicked: {
+                    visionDialog.open()
+                    vision.readPage(pdfView.currentPage)
                 }
             }
             Label {

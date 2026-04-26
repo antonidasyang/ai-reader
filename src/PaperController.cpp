@@ -2,6 +2,8 @@
 #include "BlockClusterer.h"
 
 #include <QFileInfo>
+#include <QSize>
+#include <QSizeF>
 
 PaperController::PaperController(QObject *parent)
     : QObject(parent)
@@ -95,6 +97,20 @@ void PaperController::reload()
         setStatus(Error, tr("Failed to load PDF."));
         break;
     }
+}
+
+QImage PaperController::renderPage(int page, int targetWidthPx) const
+{
+    if (m_status != Ready) return {};
+    if (page < 0 || page >= m_doc.pageCount()) return {};
+
+    const QSizeF pt = m_doc.pagePointSize(page);
+    if (pt.width() <= 0 || pt.height() <= 0) return {};
+
+    const qreal scale = targetWidthPx / pt.width();
+    const QSize px(qRound(pt.width()  * scale),
+                   qRound(pt.height() * scale));
+    return const_cast<QPdfDocument &>(m_doc).render(page, px);
 }
 
 void PaperController::setStatus(Status s, const QString &err)

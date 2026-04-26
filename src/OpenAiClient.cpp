@@ -83,7 +83,29 @@ LlmReply *OpenAiClient::send(const Request &req)
     for (const Message &m : req.messages) {
         QJsonObject mo;
         mo[QStringLiteral("role")] = m.role;
-        mo[QStringLiteral("content")] = m.content;
+        if (m.images.isEmpty()) {
+            mo[QStringLiteral("content")] = m.content;
+        } else {
+            // Multimodal: image_url blocks first, then a text block.
+            QJsonArray content;
+            for (const QByteArray &png : m.images) {
+                const QString dataUri = QStringLiteral("data:image/png;base64,")
+                                      + QString::fromUtf8(png.toBase64());
+                QJsonObject url;
+                url[QStringLiteral("url")] = dataUri;
+                QJsonObject block;
+                block[QStringLiteral("type")] = QStringLiteral("image_url");
+                block[QStringLiteral("image_url")] = url;
+                content.append(block);
+            }
+            if (!m.content.isEmpty()) {
+                QJsonObject text;
+                text[QStringLiteral("type")] = QStringLiteral("text");
+                text[QStringLiteral("text")] = m.content;
+                content.append(text);
+            }
+            mo[QStringLiteral("content")] = content;
+        }
         messages.append(mo);
     }
 

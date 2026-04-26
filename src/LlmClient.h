@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QByteArray>
+#include <QList>
 #include <QNetworkAccessManager>
 #include <QObject>
 #include <QPointer>
@@ -48,6 +50,9 @@ public:
     struct Message {
         QString role;     // "user" / "assistant"
         QString content;
+        // Optional inline image attachments (raw PNG bytes). Sent before
+        // the text content in providers that support multimodal input.
+        QList<QByteArray> images;
     };
 
     struct Request {

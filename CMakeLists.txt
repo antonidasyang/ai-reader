@@ -44,6 +44,8 @@ qt_add_executable(ai-reader
     src/TocModel.cpp
     src/TocService.h
     src/TocService.cpp
+    src/VisionService.h
+    src/VisionService.cpp
 )
 
 qt_add_qml_module(ai-reader
@@ -56,6 +58,7 @@ qt_add_qml_module(ai-reader
         qml/SettingsDialog.qml
         qml/SummaryDialog.qml
         qml/TocSidebar.qml
+        qml/VisionDialog.qml
 )
 
 qt_add_resources(ai-reader "icons"

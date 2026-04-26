@@ -82,7 +82,30 @@ LlmReply *AnthropicClient::send(const Request &req)
     for (const Message &m : req.messages) {
         QJsonObject mo;
         mo[QStringLiteral("role")] = m.role;
-        mo[QStringLiteral("content")] = m.content;
+        if (m.images.isEmpty()) {
+            mo[QStringLiteral("content")] = m.content;
+        } else {
+            // Multimodal: image blocks first, then a text block.
+            QJsonArray content;
+            for (const QByteArray &png : m.images) {
+                QJsonObject src;
+                src[QStringLiteral("type")] = QStringLiteral("base64");
+                src[QStringLiteral("media_type")] = QStringLiteral("image/png");
+                src[QStringLiteral("data")] =
+                    QString::fromUtf8(png.toBase64());
+                QJsonObject block;
+                block[QStringLiteral("type")] = QStringLiteral("image");
+                block[QStringLiteral("source")] = src;
+                content.append(block);
+            }
+            if (!m.content.isEmpty()) {
+                QJsonObject text;
+                text[QStringLiteral("type")] = QStringLiteral("text");
+                text[QStringLiteral("text")] = m.content;
+                content.append(text);
+            }
+            mo[QStringLiteral("content")] = content;
+        }
         messages.append(mo);
     }
     body[QStringLiteral("messages")] = messages;
