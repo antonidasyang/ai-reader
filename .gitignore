@@ -1,0 +1,10 @@
+build/
+build-*/
+*.user
+*.user.*
+.vscode/
+.idea/
+.cache/
+CMakeUserPresets.json
+*.autosave
+.DS_Store
