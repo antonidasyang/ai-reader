@@ -37,6 +37,25 @@ qt_add_qml_module(ai-reader
         qml/BlockList.qml
 )
 
+qt_add_resources(ai-reader "icons"
+    PREFIX "/icons"
+    BASE "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons"
+    FILES
+        resources/icons/app-16.png
+        resources/icons/app-32.png
+        resources/icons/app-48.png
+        resources/icons/app-64.png
+        resources/icons/app-128.png
+        resources/icons/app-256.png
+)
+
+# Windows: embed multi-resolution .ico into the .exe and ship as a GUI
+# subsystem binary (no console window).
+if(WIN32)
+    target_sources(ai-reader PRIVATE resources/icons/app.rc)
+    set_target_properties(ai-reader PROPERTIES WIN32_EXECUTABLE TRUE)
+endif()
+
 target_link_libraries(ai-reader PRIVATE
     Qt6::Core
     Qt6::Gui

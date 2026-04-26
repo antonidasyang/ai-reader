@@ -1,11 +1,26 @@
 #include "PaperController.h"
 
 #include <QGuiApplication>
+#include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickStyle>
 #include <QtQml>
+
+namespace {
+
+QIcon loadAppIcon()
+{
+    QIcon icon;
+    for (int s : {16, 32, 48, 64, 128, 256}) {
+        icon.addFile(QStringLiteral(":/icons/app-%1.png").arg(s),
+                     QSize(s, s));
+    }
+    return icon;
+}
+
+} // namespace
 
 int main(int argc, char *argv[])
 {
@@ -13,6 +28,7 @@ int main(int argc, char *argv[])
     app.setOrganizationName("ai-reader");
     app.setOrganizationDomain("ai-reader.local");
     app.setApplicationName("AI Reader");
+    app.setWindowIcon(loadAppIcon());
 
     QQuickStyle::setStyle(QStringLiteral("Fusion"));
 
