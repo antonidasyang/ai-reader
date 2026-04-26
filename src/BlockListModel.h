@@ -30,6 +30,10 @@ public:
 
     int blockCount() const { return m_blocks.size(); }
 
+    // Lookup helpers exposed to QML for sync-scroll wiring.
+    Q_INVOKABLE int firstRowOnPage(int page) const;
+    Q_INVOKABLE int pageOfRow(int row) const;
+
 private:
     QVector<Block> m_blocks;
 };

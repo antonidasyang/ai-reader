@@ -10,6 +10,25 @@ Rectangle {
     property var model: null
     property int paperStatus: PaperController.Empty
 
+    // Suppresses pageRequested while the list is being scrolled
+    // programmatically (e.g. in response to PDF navigation).
+    property bool syncEnabled: true
+
+    signal pageRequested(int page)
+
+    function showPage(page) {
+        if (!root.model)
+            return
+        const idx = root.model.firstRowOnPage(page)
+        if (idx < 0)
+            return
+        root.syncEnabled = false
+        list.positionViewAtIndex(idx, ListView.Beginning)
+        // Re-enable on the next event-loop pass, after the resulting
+        // contentY changes have already fired.
+        Qt.callLater(function() { root.syncEnabled = true })
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -50,6 +69,22 @@ Rectangle {
                 model: root.model
                 spacing: 6
                 visible: count > 0
+
+                property int lastReportedPage: -1
+
+                onContentYChanged: maybeReportPage()
+                onModelChanged: lastReportedPage = -1
+
+                function maybeReportPage() {
+                    if (!root.syncEnabled) return
+                    if (count === 0) return
+                    const idx = list.indexAt(list.width / 2, list.contentY + 1)
+                    if (idx < 0) return
+                    const page = root.model.pageOfRow(idx)
+                    if (page < 0 || page === lastReportedPage) return
+                    lastReportedPage = page
+                    root.pageRequested(page)
+                }
 
                 ScrollBar.vertical: ScrollBar { active: true }
 

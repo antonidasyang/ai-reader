@@ -68,3 +68,23 @@ void BlockListModel::clear()
     m_blocks.clear();
     endResetModel();
 }
+
+int BlockListModel::firstRowOnPage(int page) const
+{
+    if (m_blocks.isEmpty() || page < 0)
+        return -1;
+    // Blocks are stored in document order with non-decreasing page numbers,
+    // so a linear scan returning the first row on (or after) `page` is fine.
+    for (int i = 0; i < m_blocks.size(); ++i) {
+        if (m_blocks.at(i).page >= page)
+            return i;
+    }
+    return -1;
+}
+
+int BlockListModel::pageOfRow(int row) const
+{
+    if (row < 0 || row >= m_blocks.size())
+        return -1;
+    return m_blocks.at(row).page;
+}

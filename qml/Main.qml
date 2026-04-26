@@ -49,6 +49,40 @@ ApplicationWindow {
         }
     }
 
+    // ── Bidirectional scroll sync ─────────────────────────────────────
+    // Two re-entrancy guards prevent a feedback loop:
+    //   • blockList.syncEnabled is dropped when we drive the list from PDF.
+    //   • _suppressPdfSync is set when we drive the PDF from the list.
+    QtObject {
+        id: scrollSync
+        property bool suppressPdfSync: false
+        property int  lastShownPage: -1
+    }
+
+    // PDF → block list. Watch pdfView.currentPage via a side-effect binding.
+    Item {
+        property int observedPage: pdfView.currentPage
+        onObservedPageChanged: {
+            if (scrollSync.suppressPdfSync) return
+            if (observedPage === scrollSync.lastShownPage) return
+            scrollSync.lastShownPage = observedPage
+            blockList.showPage(observedPage)
+        }
+    }
+
+    // Block list → PDF.
+    Connections {
+        target: blockList
+        function onPageRequested(page) {
+            if (page < 0) return
+            if (page === pdfView.currentPage) return
+            scrollSync.suppressPdfSync = true
+            scrollSync.lastShownPage = page
+            pdfView.goToPage(page)
+            Qt.callLater(function() { scrollSync.suppressPdfSync = false })
+        }
+    }
+
     header: ToolBar {
         RowLayout {
             anchors.fill: parent
@@ -128,7 +162,7 @@ ApplicationWindow {
                             Layout.alignment: Qt.AlignHCenter
                         }
                         Label {
-                            text: qsTr("AI Reader — milestone 2.1 (block extraction)")
+                            text: qsTr("AI Reader — milestone 2.2 (block extraction + sync scroll)")
                             color: "#666666"
                             font.pixelSize: 12
                             Layout.alignment: Qt.AlignHCenter
@@ -146,6 +180,7 @@ ApplicationWindow {
 
             // ── Right: extracted blocks ────────────────────────────────
             BlockList {
+                id: blockList
                 SplitView.fillWidth: true
                 SplitView.minimumWidth: 240
                 model: paperController.blocks
