@@ -1,6 +1,7 @@
 #include "PaperController.h"
 #include "Settings.h"
 #include "SummaryService.h"
+#include "TocService.h"
 #include "TranslationService.h"
 
 #include <QGuiApplication>
@@ -47,13 +48,16 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<SummaryService>(
         "AiReader", 1, 0, "SummaryService",
         QStringLiteral("Use the summary context property"));
+    qmlRegisterUncreatableType<TocService>(
+        "AiReader", 1, 0, "TocService",
+        QStringLiteral("Use the toc context property"));
 
     Settings settings;
     PaperController paperController;
     TranslationService translation(&settings, paperController.blocks());
     SummaryService summary(&settings, paperController.blocks());
+    TocService toc(&settings, paperController.blocks());
 
-    // Keep the summary's "paper title" in sync with the open file.
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
 
@@ -62,6 +66,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("settings", &settings);
     engine.rootContext()->setContextProperty("translation", &translation);
     engine.rootContext()->setContextProperty("summary", &summary);
+    engine.rootContext()->setContextProperty("toc", &toc);
 
     QObject::connect(
         &engine,

@@ -191,9 +191,20 @@ ApplicationWindow {
             anchors.fill: parent
             orientation: Qt.Horizontal
 
-            // ── Left: PDF reader ───────────────────────────────────────
+            // ── Far left: TOC sidebar ──────────────────────────────────
+            TocSidebar {
+                id: tocSidebar
+                SplitView.preferredWidth: 220
+                SplitView.minimumWidth: 0
+                onSectionClicked: function(blockId, page) {
+                    blockList.showPage(page)
+                    pdfView.goToPage(page)
+                }
+            }
+
+            // ── Middle: PDF reader ─────────────────────────────────────
             Item {
-                SplitView.preferredWidth: split.width * 0.55
+                SplitView.preferredWidth: split.width * 0.45
                 SplitView.minimumWidth: 280
 
                 PdfMultiPageView {
@@ -219,7 +230,7 @@ ApplicationWindow {
                             Layout.alignment: Qt.AlignHCenter
                         }
                         Label {
-                            text: qsTr("AI Reader — milestone 3.1 (summary)")
+                            text: qsTr("AI Reader — milestone 3.2 (TOC sidebar)")
                             color: "#666666"
                             font.pixelSize: 12
                             Layout.alignment: Qt.AlignHCenter
@@ -235,13 +246,19 @@ ApplicationWindow {
                 }
             }
 
-            // ── Right: extracted blocks ────────────────────────────────
+            // ── Right: extracted blocks / translations ─────────────────
             BlockList {
                 id: blockList
                 SplitView.fillWidth: true
                 SplitView.minimumWidth: 240
                 model: paperController.blocks
                 paperStatus: paperController.status
+            }
+
+            handle: Rectangle {
+                implicitWidth: 4
+                color: SplitHandle.pressed ? "#5b8def"
+                       : SplitHandle.hovered ? "#bbbbbb" : "#dddddd"
             }
         }
 
