@@ -158,10 +158,17 @@ Rectangle {
                     }
                 }
                 Button {
-                    text: chat.busy ? qsTr("Stop") : qsTr("Send")
+                    // Glyphs instead of words: ➤ for send, ■ for stop.
+                    text: chat.busy ? "■" : "➤"
+                    font.pixelSize: 16
+                    Layout.preferredWidth: 36
+                    Layout.alignment: Qt.AlignBottom
                     enabled: paperController.status === PaperController.Ready
                              && settings.isConfigured
                              && (chat.busy || input.text.trim().length > 0)
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 400
+                    ToolTip.text: chat.busy ? qsTr("Stop") : qsTr("Send")
                     onClicked: {
                         if (chat.busy) chat.cancel()
                         else sendCurrent()
