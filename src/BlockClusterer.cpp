@@ -58,39 +58,6 @@ Block::Kind classify(const QString &text)
     return Block::Paragraph;
 }
 
-// Strip invisible / control characters that PDFium sometimes emits and
-// that QML `Text` renders as missing-glyph boxes. Keeps newline, tab,
-// CR; collapses non-breaking space to a normal space.
-QString sanitize(const QString &s)
-{
-    QString out;
-    out.reserve(s.size());
-    for (QChar c : s) {
-        const ushort u = c.unicode();
-
-        // Soft hyphen + zero-width chars + BOM: drop entirely.
-        if (u == 0x00AD || u == 0x200B || u == 0x200C
-            || u == 0x200D || u == 0xFEFF) {
-            continue;
-        }
-
-        // Non-breaking space → normal space.
-        if (u == 0x00A0) {
-            out.append(QChar(' '));
-            continue;
-        }
-
-        // C0/C1 control characters except \t \n \r.
-        if ((u < 0x20 && u != 0x09 && u != 0x0A && u != 0x0D)
-            || (u >= 0x7F && u <= 0x9F)) {
-            continue;
-        }
-
-        out.append(c);
-    }
-    return out;
-}
-
 bool isHyphenLike(QChar c)
 {
     const ushort u = c.unicode();
@@ -99,27 +66,57 @@ bool isHyphenLike(QChar c)
         || u == 0x2011;   // NON-BREAKING HYPHEN
 }
 
-QString joinLines(const QStringList &lines)
+// QChar::isPrint() is false for Cc (control), Cf (format — incl. soft hyphen,
+// zero-width joiners, BOM), Cs (surrogate), Co (private use), Cn (unassigned).
+// Drop those entirely; normalize any whitespace to a plain space.
+QString sanitize(const QString &s)
 {
     QString out;
-    out.reserve(64 * lines.size());
-    for (const QString &line : lines) {
-        if (line.isEmpty())
+    out.reserve(s.size());
+    for (QChar c : s) {
+        if (c.isSpace()) {
+            out.append(QChar(' '));
             continue;
-        if (!out.isEmpty()) {
-            const QChar last = out.at(out.size() - 1);
-            const bool prevPrev = out.size() >= 2 && isHyphenLike(out.at(out.size() - 2));
-            if (isHyphenLike(last) && !prevPrev) {
-                // "neur-\nons" → "neurons"
-                out.chop(1);
-                out += line;
-                continue;
-            }
-            out += QChar(' ');
         }
-        out += line;
+        if (!c.isPrint())
+            continue;
+        out.append(c);
     }
     return out;
+}
+
+struct ProcessedLine {
+    QString text;
+    bool hyphenated = false;
+    bool blank = false;
+};
+
+// PDFium often emits a private-use codepoint at end-of-line where a word is
+// hyphenated across lines (the PDF's embedded font defined a hyphen glyph
+// there; no system font can render it). Treat ANY non-printable trailing
+// char the same as a real hyphen: chop it and mark the line as hyphenated.
+ProcessedLine preprocessLine(QString raw)
+{
+    ProcessedLine pl;
+    raw = raw.trimmed();
+    if (raw.isEmpty()) {
+        pl.blank = true;
+        return pl;
+    }
+
+    QChar last = raw.at(raw.size() - 1);
+    if (isHyphenLike(last)) {
+        raw.chop(1);
+        pl.hyphenated = true;
+    } else if (!last.isPrint() && !last.isSpace()) {
+        raw.chop(1);
+        pl.hyphenated = true;
+    }
+
+    pl.text = sanitize(raw).trimmed();
+    if (pl.text.isEmpty())
+        pl.blank = true;
+    return pl;
 }
 
 } // namespace
@@ -131,36 +128,47 @@ QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
 
     for (int p = 0; p < doc.pageCount(); ++p) {
         QPdfSelection sel = doc.getAllText(p);
-        const QString pageText = sanitize(sel.text());
+        const QString pageText = sel.text();
         if (pageText.trimmed().isEmpty())
             continue;
 
+        QVector<ProcessedLine> lines;
         const QStringList rawLines = pageText.split(QChar('\n'), Qt::KeepEmptyParts);
+        lines.reserve(rawLines.size());
+        for (const QString &raw : rawLines)
+            lines.append(preprocessLine(raw));
 
-        QStringList currentPara;
+        QString currentPara;
+        bool prevHyphenated = false;
         auto flush = [&]() {
             if (currentPara.isEmpty())
-                return;
-            const QString text = joinLines(currentPara).trimmed();
-            currentPara.clear();
-            if (text.isEmpty())
                 return;
             Block b;
             b.id = nextId;
             b.ord = nextId;
             b.page = p;
-            b.text = text;
-            b.kind = classify(text);
+            b.text = currentPara.trimmed();
+            b.kind = classify(b.text);
             blocks.append(b);
             ++nextId;
+            currentPara.clear();
         };
 
-        for (const QString &raw : rawLines) {
-            const QString line = raw.trimmed();
-            if (line.isEmpty())
+        for (const ProcessedLine &line : lines) {
+            if (line.blank) {
                 flush();
-            else
-                currentPara.append(line);
+                prevHyphenated = false;
+                continue;
+            }
+            if (currentPara.isEmpty()) {
+                currentPara = line.text;
+            } else if (prevHyphenated) {
+                currentPara += line.text;
+            } else {
+                currentPara += QChar(' ');
+                currentPara += line.text;
+            }
+            prevHyphenated = line.hyphenated;
         }
         flush();
     }
