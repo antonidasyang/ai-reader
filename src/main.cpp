@@ -3,7 +3,9 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QQmlEngine>
 #include <QQuickStyle>
+#include <QtQml>
 
 int main(int argc, char *argv[])
 {
@@ -13,6 +15,10 @@ int main(int argc, char *argv[])
     app.setApplicationName("AI Reader");
 
     QQuickStyle::setStyle(QStringLiteral("Fusion"));
+
+    qmlRegisterUncreatableType<PaperController>(
+        "AiReader", 1, 0, "PaperController",
+        QStringLiteral("Use the paperController context property"));
 
     PaperController paperController;
 

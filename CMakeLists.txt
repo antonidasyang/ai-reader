@@ -19,6 +19,13 @@ qt_standard_project_setup()
 
 qt_add_executable(ai-reader
     src/main.cpp
+    src/Block.h
+    src/BlockClusterer.h
+    src/BlockClusterer.cpp
+    src/BlockListModel.h
+    src/BlockListModel.cpp
+    src/PaperController.h
+    src/PaperController.cpp
 )
 
 qt_add_qml_module(ai-reader
@@ -28,14 +35,6 @@ qt_add_qml_module(ai-reader
         qml/Main.qml
         qml/PasswordDialog.qml
         qml/BlockList.qml
-    SOURCES
-        src/Block.h
-        src/BlockClusterer.h
-        src/BlockClusterer.cpp
-        src/BlockListModel.h
-        src/BlockListModel.cpp
-        src/PaperController.h
-        src/PaperController.cpp
 )
 
 target_link_libraries(ai-reader PRIVATE

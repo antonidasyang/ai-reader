@@ -6,13 +6,10 @@
 #include <QPdfDocument>
 #include <QString>
 #include <QUrl>
-#include <QtQml/qqmlregistration.h>
 
 class PaperController : public QObject
 {
     Q_OBJECT
-    QML_ELEMENT
-    QML_UNCREATABLE("Use the paperController context property")
 
     Q_PROPERTY(QUrl pdfSource READ pdfSource NOTIFY pdfSourceChanged)
     Q_PROPERTY(QString pdfPassword READ pdfPassword NOTIFY pdfPasswordChanged)

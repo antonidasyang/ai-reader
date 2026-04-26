@@ -4,12 +4,10 @@
 
 #include <QAbstractListModel>
 #include <QVector>
-#include <QtQml/qqmlregistration.h>
 
 class BlockListModel : public QAbstractListModel
 {
     Q_OBJECT
-    QML_ANONYMOUS
 
 public:
     enum Role {
