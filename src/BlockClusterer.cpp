@@ -2,10 +2,15 @@
 
 #include <QPdfDocument>
 #include <QPdfSelection>
+#include <QPolygonF>
+#include <QRectF>
 #include <QRegularExpression>
 #include <QSet>
+#include <algorithm>
 
 namespace {
+
+// ─── Heading vocabulary / classifier ──────────────────────────────────────
 
 const QSet<QString> &commonHeadings()
 {
@@ -34,7 +39,9 @@ const QSet<QString> &commonHeadings()
     return set;
 }
 
-Block::Kind classify(const QString &text)
+Block::Kind classify(const QString &text,
+                     qreal lineHeight,
+                     qreal medianHeight)
 {
     static const QRegularExpression captionRx(
         QStringLiteral("^(Figure|Fig\\.|Table|Tab\\.)\\s*\\d"));
@@ -46,17 +53,25 @@ Block::Kind classify(const QString &text)
     if (captionRx.match(text).hasMatch())
         return Block::Caption;
 
-    if (text.length() < 140) {
+    if (text.length() < 200) {
         if (numberedHeading.match(text).hasMatch())
             return Block::Heading;
         if (romanHeading.match(text).hasMatch())
             return Block::Heading;
         if (commonHeadings().contains(text.trimmed()))
             return Block::Heading;
+        // Geometric hint: short text in a noticeably larger font.
+        if (medianHeight > 0
+            && lineHeight > medianHeight * 1.18
+            && text.length() < 120) {
+            return Block::Heading;
+        }
     }
 
     return Block::Paragraph;
 }
+
+// ─── Line-level text/character normalization ──────────────────────────────
 
 bool isHyphenLike(QChar c)
 {
@@ -85,38 +100,82 @@ QString sanitize(const QString &s)
     return out;
 }
 
-struct ProcessedLine {
+struct Line {
     QString text;
-    bool hyphenated = false;
-    bool blank = false;
+    QRectF  bbox;
+    bool    hyphenated = false;
 };
 
 // PDFium often emits a private-use codepoint at end-of-line where a word is
 // hyphenated across lines (the PDF's embedded font defined a hyphen glyph
 // there; no system font can render it). Treat ANY non-printable trailing
 // char the same as a real hyphen: chop it and mark the line as hyphenated.
-ProcessedLine preprocessLine(QString raw)
+Line preprocessLine(QString raw, const QRectF &bbox)
 {
-    ProcessedLine pl;
+    Line ln;
+    ln.bbox = bbox;
     raw = raw.trimmed();
-    if (raw.isEmpty()) {
-        pl.blank = true;
-        return pl;
-    }
+    if (raw.isEmpty())
+        return ln;
 
     QChar last = raw.at(raw.size() - 1);
     if (isHyphenLike(last)) {
         raw.chop(1);
-        pl.hyphenated = true;
+        ln.hyphenated = true;
     } else if (!last.isPrint() && !last.isSpace()) {
         raw.chop(1);
-        pl.hyphenated = true;
+        ln.hyphenated = true;
     }
+    ln.text = sanitize(raw).trimmed();
+    return ln;
+}
 
-    pl.text = sanitize(raw).trimmed();
-    if (pl.text.isEmpty())
-        pl.blank = true;
-    return pl;
+// ─── Page → lines ─────────────────────────────────────────────────────────
+
+QVector<Line> extractPageLines(const QPdfSelection &sel)
+{
+    QVector<Line> out;
+    const QString text = sel.text();
+    if (text.isEmpty())
+        return out;
+
+    const QStringList rawLines =
+        text.split(QChar('\n'), Qt::KeepEmptyParts);
+    const QList<QPolygonF> polys = sel.bounds();
+
+    // QPdfSelection::bounds() typically returns one polygon per visible line.
+    // When the count matches the \n-split lines, we get bboxes for free; if
+    // it doesn't (some layouts split a line across multiple polys, etc.) we
+    // degrade to text-only lines and the caller falls back to blank-line
+    // splitting.
+    if (rawLines.size() == polys.size() && !polys.isEmpty()) {
+        out.reserve(polys.size());
+        for (int i = 0; i < polys.size(); ++i)
+            out.append(preprocessLine(rawLines[i], polys[i].boundingRect()));
+    } else {
+        out.reserve(rawLines.size());
+        for (const QString &raw : rawLines)
+            out.append(preprocessLine(raw, QRectF()));
+    }
+    return out;
+}
+
+// ─── Statistics ───────────────────────────────────────────────────────────
+
+double medianOf(QVector<double> v)
+{
+    if (v.isEmpty()) return 0.0;
+    std::sort(v.begin(), v.end());
+    return v[v.size() / 2];
+}
+
+bool sameColumn(const QRectF &a, const QRectF &b)
+{
+    if (a.isEmpty() || b.isEmpty()) return true;
+    const qreal overlap = qMin(a.right(), b.right())
+                        - qMax(a.left(), b.left());
+    const qreal minWidth = qMin(a.width(), b.width());
+    return minWidth > 0 && overlap > 0.5 * minWidth;
 }
 
 } // namespace
@@ -128,49 +187,121 @@ QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
 
     for (int p = 0; p < doc.pageCount(); ++p) {
         QPdfSelection sel = doc.getAllText(p);
-        const QString pageText = sel.text();
-        if (pageText.trimmed().isEmpty())
+        const QVector<Line> lines = extractPageLines(sel);
+        if (lines.isEmpty())
             continue;
 
-        QVector<ProcessedLine> lines;
-        const QStringList rawLines = pageText.split(QChar('\n'), Qt::KeepEmptyParts);
-        lines.reserve(rawLines.size());
-        for (const QString &raw : rawLines)
-            lines.append(preprocessLine(raw));
+        // If no bbox info is available for this page, fall back to the old
+        // text-only behavior: paragraphs are separated by blank lines.
+        const bool haveBboxes = std::any_of(
+            lines.begin(), lines.end(),
+            [](const Line &l) { return !l.bbox.isEmpty(); });
 
-        QString currentPara;
-        bool prevHyphenated = false;
-        auto flush = [&]() {
-            if (currentPara.isEmpty())
-                return;
+        QString currentText;
+        QRectF  currentBox;
+        double  currentMaxHeight = 0;
+        bool    prevHyphen = false;
+
+        auto flush = [&](double medianHeight) {
+            if (currentText.isEmpty()) return;
             Block b;
             b.id = nextId;
             b.ord = nextId;
             b.page = p;
-            b.text = currentPara.trimmed();
-            b.kind = classify(b.text);
+            b.text = currentText.trimmed();
+            b.bbox = currentBox;
+            b.kind = classify(b.text, currentMaxHeight, medianHeight);
             blocks.append(b);
             ++nextId;
-            currentPara.clear();
+            currentText.clear();
+            currentBox = QRectF();
+            currentMaxHeight = 0;
         };
 
-        for (const ProcessedLine &line : lines) {
-            if (line.blank) {
-                flush();
-                prevHyphenated = false;
+        if (!haveBboxes) {
+            for (const Line &ln : lines) {
+                if (ln.text.isEmpty()) {
+                    flush(0);
+                    prevHyphen = false;
+                    continue;
+                }
+                if (currentText.isEmpty()) {
+                    currentText = ln.text;
+                } else if (prevHyphen) {
+                    currentText += ln.text;
+                } else {
+                    currentText += QChar(' ');
+                    currentText += ln.text;
+                }
+                prevHyphen = ln.hyphenated;
+            }
+            flush(0);
+            continue;
+        }
+
+        // Geometric path: compute typical line height, width, and intra-
+        // paragraph gap, then split whenever consecutive lines suggest a
+        // new paragraph (large vertical gap, column change, font jump).
+        QVector<double> heights, widths, gaps;
+        heights.reserve(lines.size());
+        widths.reserve(lines.size());
+        gaps.reserve(lines.size());
+        for (const Line &ln : lines) {
+            if (ln.bbox.isEmpty() || ln.text.isEmpty()) continue;
+            heights.append(ln.bbox.height());
+            widths.append(ln.bbox.width());
+        }
+        for (int i = 1; i < lines.size(); ++i) {
+            const Line &a = lines[i - 1];
+            const Line &b = lines[i];
+            if (a.bbox.isEmpty() || b.bbox.isEmpty()) continue;
+            if (!sameColumn(a.bbox, b.bbox)) continue;
+            const qreal gap = b.bbox.top() - a.bbox.bottom();
+            if (gap >= 0) gaps.append(gap);
+        }
+        const double medianHeight = medianOf(heights);
+        const double medianGap    = medianOf(gaps);
+
+        const Line *prev = nullptr;
+        for (int i = 0; i < lines.size(); ++i) {
+            const Line &ln = lines[i];
+            if (ln.text.isEmpty()) {
+                flush(medianHeight);
+                prevHyphen = false;
+                prev = nullptr;
                 continue;
             }
-            if (currentPara.isEmpty()) {
-                currentPara = line.text;
-            } else if (prevHyphenated) {
-                currentPara += line.text;
-            } else {
-                currentPara += QChar(' ');
-                currentPara += line.text;
+
+            bool startNew = currentText.isEmpty();
+            if (!startNew && prev) {
+                const bool sameCol = sameColumn(prev->bbox, ln.bbox);
+                const qreal vgap   = ln.bbox.top() - prev->bbox.bottom();
+                const qreal gapThreshold = qMax(medianGap * 1.7,
+                                                medianHeight * 0.55);
+                const bool fontJump = medianHeight > 0
+                    && qAbs(ln.bbox.height() - prev->bbox.height())
+                       > medianHeight * 0.35;
+                if (!sameCol || vgap > gapThreshold || fontJump)
+                    startNew = true;
             }
-            prevHyphenated = line.hyphenated;
+
+            if (startNew) {
+                flush(medianHeight);
+                currentText = ln.text;
+                currentBox = ln.bbox;
+            } else if (prevHyphen) {
+                currentText += ln.text;
+                currentBox = currentBox.united(ln.bbox);
+            } else {
+                currentText += QChar(' ');
+                currentText += ln.text;
+                currentBox = currentBox.united(ln.bbox);
+            }
+            currentMaxHeight = qMax(currentMaxHeight, ln.bbox.height());
+            prevHyphen = ln.hyphenated;
+            prev = &ln;
         }
-        flush();
+        flush(medianHeight);
     }
 
     return blocks;
