@@ -59,7 +59,7 @@ Rectangle {
 
             delegate: Item {
                 width: ListView.view ? ListView.view.width : 0
-                implicitHeight: bubble.implicitHeight + 12
+                implicitHeight: bubble.height + 12
 
                 Rectangle {
                     id: bubble
@@ -71,15 +71,22 @@ Rectangle {
                         top: parent.top
                     }
                     width: Math.min(parent.width - 20,
-                                    Math.max(content.implicitWidth + 16, 80))
+                                    Math.max(bubbleContent.implicitWidth + 16, 120))
+                    // Drive height from the inner column's implicit size —
+                    // Rectangle does not auto-size to children, so without
+                    // this binding the bubble collapses to ~0 px and the
+                    // TextEdit's caret/I-beam shows through as a stray cross.
+                    height: bubbleContent.implicitHeight + 16
                     color: model.role === "user" ? "#dee5ff" : "#ffffff"
                     border.color: model.status === 2 /*Failed*/ ? "#c62828" : "#dddddd"
                     border.width: 1
                     radius: 6
 
                     ColumnLayout {
-                        id: content
-                        anchors.fill: parent
+                        id: bubbleContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
                         anchors.margins: 8
                         spacing: 4
 
@@ -90,6 +97,7 @@ Rectangle {
                             color: "#888"
                         }
                         TextEdit {
+                            id: bodyText
                             Layout.fillWidth: true
                             readOnly: true
                             selectByMouse: true
@@ -104,8 +112,19 @@ Rectangle {
                             text: model.content.length > 0
                                   ? model.content
                                   : (model.status === 1 /*Streaming*/
-                                     ? qsTr("…")
-                                     : "")
+                                     ? "..."
+                                     : " ")
+                            // Hide the blinking text caret — this is a
+                            // read-only view, not an editable field.
+                            cursorVisible: false
+                            activeFocusOnPress: false
+                            // Pointer stays as the default arrow except when
+                            // the user is dragging to select text.
+                            MouseArea {
+                                anchors.fill: parent
+                                acceptedButtons: Qt.NoButton
+                                cursorShape: Qt.IBeamCursor
+                            }
                         }
                         Label {
                             visible: model.status === 2 /*Failed*/
