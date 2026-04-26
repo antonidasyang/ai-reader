@@ -1,0 +1,61 @@
+#pragma once
+
+#include "BlockListModel.h"
+
+#include <QObject>
+#include <QPdfDocument>
+#include <QString>
+#include <QUrl>
+#include <QtQml/qqmlregistration.h>
+
+class PaperController : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT
+    QML_UNCREATABLE("Use the paperController context property")
+
+    Q_PROPERTY(QUrl pdfSource READ pdfSource NOTIFY pdfSourceChanged)
+    Q_PROPERTY(QString pdfPassword READ pdfPassword NOTIFY pdfPasswordChanged)
+    Q_PROPERTY(QString fileName READ fileName NOTIFY pdfSourceChanged)
+    Q_PROPERTY(BlockListModel *blocks READ blocks CONSTANT)
+    Q_PROPERTY(int blockCount READ blockCount NOTIFY blocksChanged)
+    Q_PROPERTY(Status status READ status NOTIFY statusChanged)
+    Q_PROPERTY(QString errorString READ errorString NOTIFY statusChanged)
+
+public:
+    enum Status { Empty, Loading, Ready, Error };
+    Q_ENUM(Status)
+
+    explicit PaperController(QObject *parent = nullptr);
+
+    QUrl pdfSource() const { return m_source; }
+    QString pdfPassword() const { return m_password; }
+    QString fileName() const;
+    BlockListModel *blocks() { return &m_model; }
+    int blockCount() const { return m_model.blockCount(); }
+    Status status() const { return m_status; }
+    QString errorString() const { return m_errorString; }
+
+public slots:
+    void openPdf(const QUrl &url);
+    void setPassword(const QString &password);
+    void clear();
+
+signals:
+    void pdfSourceChanged();
+    void pdfPasswordChanged();
+    void blocksChanged();
+    void statusChanged();
+    void passwordRequired();
+
+private:
+    void reload();
+    void setStatus(Status s, const QString &err = {});
+
+    QPdfDocument m_doc;
+    BlockListModel m_model;
+    QUrl m_source;
+    QString m_password;
+    Status m_status = Empty;
+    QString m_errorString;
+};

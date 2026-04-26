@@ -1,5 +1,8 @@
+#include "PaperController.h"
+
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QQmlContext>
 #include <QQuickStyle>
 
 int main(int argc, char *argv[])
@@ -11,7 +14,11 @@ int main(int argc, char *argv[])
 
     QQuickStyle::setStyle(QStringLiteral("Fusion"));
 
+    PaperController paperController;
+
     QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty("paperController", &paperController);
+
     QObject::connect(
         &engine,
         &QQmlApplicationEngine::objectCreationFailed,

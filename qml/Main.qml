@@ -3,74 +3,50 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtQuick.Pdf
+import AiReader
 
 ApplicationWindow {
     id: window
-    width: 1200
-    height: 800
+    width: 1400
+    height: 900
     visible: true
-    title: pdfDoc.status === PdfDocument.Ready && currentFileName.length > 0
-           ? "AI Reader — " + currentFileName
+    title: paperController.fileName.length > 0
+           ? "AI Reader — " + paperController.fileName
            : "AI Reader"
-
-    property string currentFileName: ""
-
-    function fileNameFromUrl(url) {
-        const s = url.toString()
-        const slash = s.lastIndexOf("/")
-        return slash >= 0 ? decodeURIComponent(s.substring(slash + 1)) : s
-    }
-
-    function errorText(err) {
-        switch (err) {
-        case PdfDocument.NoError: return ""
-        case PdfDocument.DataNotYetAvailable: return qsTr("PDF data is not yet available.")
-        case PdfDocument.FileNotFound: return qsTr("File not found.")
-        case PdfDocument.InvalidFileFormat: return qsTr("Invalid PDF file.")
-        case PdfDocument.IncorrectPassword: return qsTr("Incorrect password.")
-        case PdfDocument.UnsupportedSecurityScheme: return qsTr("Unsupported PDF security scheme.")
-        default: return qsTr("Failed to open PDF.")
-        }
-    }
-
-    function openPdf(url) {
-        window.currentFileName = fileNameFromUrl(url)
-        errorBanner.visible = false
-        pdfDoc.password = ""
-        pdfDoc.source = url
-    }
 
     PdfDocument {
         id: pdfDoc
-        onPasswordRequired: passwordDialog.open()
-        onStatusChanged: {
-            if (status === PdfDocument.Error && error !== PdfDocument.IncorrectPassword) {
-                errorBanner.text = window.errorText(error)
-                errorBanner.visible = true
-            } else if (status === PdfDocument.Ready) {
-                errorBanner.visible = false
-            }
-        }
+        source: paperController.pdfSource
+        password: paperController.pdfPassword
+        // Password handling lives on PaperController; suppress duplicate dialogs.
     }
 
     PasswordDialog {
         id: passwordDialog
         anchors.centerIn: Overlay.overlay
-        promptText: qsTr("\"%1\" is encrypted. Enter the password:").arg(window.currentFileName)
-        onAccepted: pdfDoc.password = password
-        onRejected: {
-            errorBanner.text = qsTr("Cancelled — password not provided.")
-            errorBanner.visible = true
-            pdfDoc.source = ""
-            window.currentFileName = ""
-        }
+        promptText: qsTr("\"%1\" is encrypted. Enter the password:").arg(paperController.fileName)
+        onAccepted: paperController.setPassword(password)
+        onRejected: paperController.clear()
     }
 
     FileDialog {
         id: fileDialog
         title: qsTr("Open PDF")
         nameFilters: ["PDF files (*.pdf)", "All files (*)"]
-        onAccepted: window.openPdf(selectedFile)
+        onAccepted: paperController.openPdf(selectedFile)
+    }
+
+    Connections {
+        target: paperController
+        function onPasswordRequired() { passwordDialog.open() }
+        function onStatusChanged() {
+            if (paperController.status === PaperController.Error) {
+                errorBanner.text = paperController.errorString
+                errorBanner.visible = true
+            } else if (paperController.status === PaperController.Ready) {
+                errorBanner.visible = false
+            }
+        }
     }
 
     header: ToolBar {
@@ -82,12 +58,19 @@ ApplicationWindow {
                 text: qsTr("Open…")
                 onClicked: fileDialog.open()
             }
+            ToolButton {
+                text: qsTr("Close")
+                enabled: paperController.status !== PaperController.Empty
+                onClicked: paperController.clear()
+            }
             Item { Layout.fillWidth: true }
             Label {
                 text: pdfDoc.status === PdfDocument.Ready
-                      ? qsTr("%1 pages").arg(pdfDoc.pageCount)
+                      ? qsTr("%1 pages · %2 blocks")
+                            .arg(pdfDoc.pageCount)
+                            .arg(paperController.blockCount)
                       : ""
-                Layout.rightMargin: 4
+                color: "#555"
             }
         }
     }
@@ -102,7 +85,7 @@ ApplicationWindow {
                 for (let i = 0; i < drop.urls.length; ++i) {
                     const u = drop.urls[i].toString()
                     if (u.toLowerCase().endsWith(".pdf")) {
-                        window.openPdf(drop.urls[i])
+                        paperController.openPdf(drop.urls[i])
                         drop.accepted = true
                         return
                     }
@@ -112,40 +95,64 @@ ApplicationWindow {
             }
         }
 
-        // Reader pane
-        PdfMultiPageView {
-            id: pdfView
+        SplitView {
+            id: split
             anchors.fill: parent
-            document: pdfDoc
-            visible: pdfDoc.status === PdfDocument.Ready
-        }
+            orientation: Qt.Horizontal
 
-        // Empty state
-        Rectangle {
-            anchors.fill: parent
-            visible: pdfDoc.status === PdfDocument.Null
-                     || (pdfDoc.status === PdfDocument.Error && pdfDoc.source.toString().length === 0)
-            color: "#1e1f22"
-            ColumnLayout {
-                anchors.centerIn: parent
-                spacing: 12
-                Label {
-                    text: qsTr("Drag a PDF here, or click Open…")
-                    color: "#bbbbbb"
-                    font.pixelSize: 18
-                    horizontalAlignment: Text.AlignHCenter
-                    Layout.alignment: Qt.AlignHCenter
+            // ── Left: PDF reader ───────────────────────────────────────
+            Item {
+                SplitView.preferredWidth: split.width * 0.55
+                SplitView.minimumWidth: 280
+
+                PdfMultiPageView {
+                    id: pdfView
+                    anchors.fill: parent
+                    document: pdfDoc
+                    visible: pdfDoc.status === PdfDocument.Ready
                 }
-                Label {
-                    text: qsTr("AI Reader — milestone 1")
-                    color: "#666666"
-                    font.pixelSize: 12
-                    Layout.alignment: Qt.AlignHCenter
+
+                Rectangle {
+                    anchors.fill: parent
+                    visible: paperController.status === PaperController.Empty
+                             || (paperController.status === PaperController.Error
+                                 && paperController.pdfSource.toString().length === 0)
+                    color: "#1e1f22"
+                    ColumnLayout {
+                        anchors.centerIn: parent
+                        spacing: 12
+                        Label {
+                            text: qsTr("Drag a PDF here, or click Open…")
+                            color: "#bbbbbb"
+                            font.pixelSize: 18
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+                        Label {
+                            text: qsTr("AI Reader — milestone 2.1 (block extraction)")
+                            color: "#666666"
+                            font.pixelSize: 12
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+                    }
                 }
+
+                BusyIndicator {
+                    anchors.centerIn: parent
+                    running: paperController.status === PaperController.Loading
+                             || pdfDoc.status === PdfDocument.Loading
+                    visible: running
+                }
+            }
+
+            // ── Right: extracted blocks ────────────────────────────────
+            BlockList {
+                SplitView.fillWidth: true
+                SplitView.minimumWidth: 240
+                model: paperController.blocks
+                paperStatus: paperController.status
             }
         }
 
-        // Drop hover overlay
         Rectangle {
             anchors.fill: parent
             visible: dropArea.containsDrag
@@ -158,12 +165,6 @@ ApplicationWindow {
                 color: "white"
                 font.pixelSize: 20
             }
-        }
-
-        BusyIndicator {
-            anchors.centerIn: parent
-            running: pdfDoc.status === PdfDocument.Loading
-            visible: running
         }
     }
 
