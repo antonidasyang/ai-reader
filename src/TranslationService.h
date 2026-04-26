@@ -19,6 +19,7 @@ class TranslationService : public QObject
     Q_PROPERTY(int  totalCount       READ totalCount       NOTIFY progressChanged)
     Q_PROPERTY(int  failedCount      READ failedCount      NOTIFY progressChanged)
     Q_PROPERTY(QString lastError     READ lastError        NOTIFY lastErrorChanged)
+    Q_PROPERTY(QString defaultSystemPrompt READ defaultSystemPrompt CONSTANT)
 
 public:
     explicit TranslationService(Settings *settings,
@@ -31,6 +32,7 @@ public:
     int totalCount()  const { return m_total; }
     int failedCount() const { return m_failed; }
     QString lastError() const { return m_lastError; }
+    QString defaultSystemPrompt() const;
 
 public slots:
     void translateAll();

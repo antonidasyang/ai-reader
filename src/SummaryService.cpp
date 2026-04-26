@@ -132,17 +132,10 @@ void SummaryService::generate()
     });
 }
 
-QString SummaryService::systemPrompt() const
+QString SummaryService::defaultSystemPrompt() const
 {
-    const QString lang = resolveLanguageName(m_settings ? m_settings->targetLang()
-                                                       : QString());
-    if (m_settings) {
-        const QString custom = m_settings->summaryPrompt();
-        if (!custom.isEmpty())
-            return QString(custom).replace(QStringLiteral("{{lang}}"), lang);
-    }
     return QStringLiteral(
-        "You are reading an academic paper. Produce a structured interpretation in %1.\n"
+        "You are reading an academic paper. Produce a structured interpretation in {{lang}}.\n"
         "\n"
         "Output sections, in this order, using Markdown headings (`##`):\n"
         "1. **Abstract** — a ≈150-word standalone summary.\n"
@@ -155,8 +148,19 @@ QString SummaryService::systemPrompt() const
         "\n"
         "Be precise. Cite figure/table/section numbers when relevant. "
         "Prefer plain prose and short bullet lists; do not invent details that "
-        "aren't in the source text."
-    ).arg(lang);
+        "aren't in the source text.");
+}
+
+QString SummaryService::systemPrompt() const
+{
+    const QString lang = resolveLanguageName(m_settings ? m_settings->targetLang()
+                                                       : QString());
+    QString tmpl;
+    if (m_settings && !m_settings->summaryPrompt().isEmpty())
+        tmpl = m_settings->summaryPrompt();
+    else
+        tmpl = defaultSystemPrompt();
+    return tmpl.replace(QStringLiteral("{{lang}}"), lang);
 }
 
 QString SummaryService::userPrompt() const

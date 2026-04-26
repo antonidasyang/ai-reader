@@ -159,25 +159,29 @@ bool TranslationService::shouldSkip(const QString &text) const
     return letters * 5 < text.size();
 }
 
-QString TranslationService::systemPrompt() const
+QString TranslationService::defaultSystemPrompt() const
 {
-    const QString lang = resolveLanguageName(m_settings ? m_settings->targetLang()
-                                                       : QString());
-    if (m_settings) {
-        const QString custom = m_settings->translationPrompt();
-        if (!custom.isEmpty())
-            return QString(custom).replace(QStringLiteral("{{lang}}"), lang);
-    }
     return QStringLiteral(
-        "You are a precise academic translator. Translate the user's text into %1.\n"
+        "You are a precise academic translator. Translate the user's text into {{lang}}.\n"
         "\n"
         "Rules:\n"
         "- Preserve all citations like [12], [13, 14], (Smith et al., 2020) unchanged.\n"
         "- Preserve inline math notation ($x$, $$y$$, \\begin{...}) unchanged.\n"
         "- Preserve code, URLs, file paths, and proper nouns unchanged.\n"
         "- Output ONLY the translation. No quotes around the result, no notes, "
-        "no source text, no \"Translation:\" prefix."
-    ).arg(lang);
+        "no source text, no \"Translation:\" prefix.");
+}
+
+QString TranslationService::systemPrompt() const
+{
+    const QString lang = resolveLanguageName(m_settings ? m_settings->targetLang()
+                                                       : QString());
+    QString tmpl;
+    if (m_settings && !m_settings->translationPrompt().isEmpty())
+        tmpl = m_settings->translationPrompt();
+    else
+        tmpl = defaultSystemPrompt();
+    return tmpl.replace(QStringLiteral("{{lang}}"), lang);
 }
 
 void TranslationService::translateRow(int row)

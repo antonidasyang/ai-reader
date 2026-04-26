@@ -139,6 +139,11 @@ QString VisionService::systemPrompt() const
         const QString custom = m_settings->visionPrompt();
         if (!custom.isEmpty()) return custom;
     }
+    return defaultSystemPrompt();
+}
+
+QString VisionService::defaultSystemPrompt() const
+{
     return QStringLiteral(
         "You are reading one rendered page of an academic paper.\n"
         "\n"

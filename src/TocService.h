@@ -20,6 +20,7 @@ class TocService : public QObject
     Q_PROPERTY(Status   status      READ status     NOTIFY statusChanged)
     Q_PROPERTY(QString  lastError   READ lastError  NOTIFY statusChanged)
     Q_PROPERTY(int      sectionCount READ sectionCount NOTIFY sectionsChanged)
+    Q_PROPERTY(QString  defaultSystemPrompt READ defaultSystemPrompt CONSTANT)
 
 public:
     enum Status { Idle, Generating, Done, Failed };
@@ -34,6 +35,7 @@ public:
     Status   status()       const { return m_status; }
     QString  lastError()    const { return m_lastError; }
     int      sectionCount() const { return m_model.sectionCount(); }
+    QString  defaultSystemPrompt() const;
 
 public slots:
     void generate();

@@ -11,28 +11,35 @@ Dialog {
     width: 760
     height: 620
 
+    // When the saved value is empty, pre-fill with the built-in default so
+    // the user can see and edit from it. On accept, if the text still
+    // matches the default we save empty — that way the service keeps
+    // tracking future default updates.
     onOpened: {
-        summaryArea.text     = settings.summaryPrompt
-        translationArea.text = settings.translationPrompt
-        tocArea.text         = settings.tocPrompt
-        visionArea.text      = settings.visionPrompt
+        summaryArea.text     = settings.summaryPrompt.length     > 0 ? settings.summaryPrompt
+                                                                     : summary.defaultSystemPrompt
+        translationArea.text = settings.translationPrompt.length > 0 ? settings.translationPrompt
+                                                                     : translation.defaultSystemPrompt
+        tocArea.text         = settings.tocPrompt.length         > 0 ? settings.tocPrompt
+                                                                     : toc.defaultSystemPrompt
+        visionArea.text      = settings.visionPrompt.length      > 0 ? settings.visionPrompt
+                                                                     : vision.defaultSystemPrompt
     }
 
     onAccepted: {
-        settings.summaryPrompt     = summaryArea.text
-        settings.translationPrompt = translationArea.text
-        settings.tocPrompt         = tocArea.text
-        settings.visionPrompt      = visionArea.text
+        settings.summaryPrompt     = summaryArea.text     === summary.defaultSystemPrompt     ? "" : summaryArea.text
+        settings.translationPrompt = translationArea.text === translation.defaultSystemPrompt ? "" : translationArea.text
+        settings.tocPrompt         = tocArea.text         === toc.defaultSystemPrompt         ? "" : tocArea.text
+        settings.visionPrompt      = visionArea.text      === vision.defaultSystemPrompt      ? "" : visionArea.text
     }
 
     onReset: {
-        // Clearing the field reverts the service to its built-in default
-        // on next request.
+        // Restore the active tab's editor to the built-in default text.
         switch (tabBar.currentIndex) {
-        case 0: summaryArea.text = ""; break
-        case 1: translationArea.text = ""; break
-        case 2: tocArea.text = ""; break
-        case 3: visionArea.text = ""; break
+        case 0: summaryArea.text     = summary.defaultSystemPrompt;     break
+        case 1: translationArea.text = translation.defaultSystemPrompt; break
+        case 2: tocArea.text         = toc.defaultSystemPrompt;         break
+        case 3: visionArea.text      = vision.defaultSystemPrompt;      break
         }
     }
 
@@ -73,7 +80,7 @@ Dialog {
                         TextArea {
                             id: summaryArea
                             wrapMode: TextEdit.Wrap
-                            placeholderText: qsTr("(uses built-in default)")
+                            placeholderText: qsTr("(empty ⇒ built-in default applies on next request)")
                             font.family: "monospace"
                         }
                     }
@@ -99,7 +106,7 @@ Dialog {
                         TextArea {
                             id: translationArea
                             wrapMode: TextEdit.Wrap
-                            placeholderText: qsTr("(uses built-in default)")
+                            placeholderText: qsTr("(empty ⇒ built-in default applies on next request)")
                             font.family: "monospace"
                         }
                     }
@@ -125,7 +132,7 @@ Dialog {
                         TextArea {
                             id: tocArea
                             wrapMode: TextEdit.Wrap
-                            placeholderText: qsTr("(uses built-in default)")
+                            placeholderText: qsTr("(empty ⇒ built-in default applies on next request)")
                             font.family: "monospace"
                         }
                     }
@@ -151,7 +158,7 @@ Dialog {
                         TextArea {
                             id: visionArea
                             wrapMode: TextEdit.Wrap
-                            placeholderText: qsTr("(uses built-in default)")
+                            placeholderText: qsTr("(empty ⇒ built-in default applies on next request)")
                             font.family: "monospace"
                         }
                     }

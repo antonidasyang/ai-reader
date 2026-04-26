@@ -17,6 +17,7 @@ class VisionService : public QObject
     Q_PROPERTY(QString text       READ text       NOTIFY textChanged)
     Q_PROPERTY(int     page       READ page       NOTIFY pageChanged)
     Q_PROPERTY(QString lastError  READ lastError  NOTIFY statusChanged)
+    Q_PROPERTY(QString defaultSystemPrompt READ defaultSystemPrompt CONSTANT)
 
 public:
     enum Status { Idle, Rendering, Generating, Done, Failed };
@@ -31,6 +32,7 @@ public:
     QString text()      const { return m_text; }
     int     page()      const { return m_page; }
     QString lastError() const { return m_lastError; }
+    QString defaultSystemPrompt() const;
 
 public slots:
     void readPage(int page);
