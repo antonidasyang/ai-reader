@@ -31,6 +31,8 @@ class Settings : public QObject
     Q_PROPERTY(QString translationPrompt READ translationPrompt WRITE setTranslationPrompt NOTIFY translationPromptChanged)
     Q_PROPERTY(QString tocPrompt         READ tocPrompt         WRITE setTocPrompt         NOTIFY tocPromptChanged)
     Q_PROPERTY(QString visionPrompt      READ visionPrompt      WRITE setVisionPrompt      NOTIFY visionPromptChanged)
+    Q_PROPERTY(QString chatPrompt        READ chatPrompt        WRITE setChatPrompt        NOTIFY chatPromptChanged)
+    Q_PROPERTY(bool    chatIncludePaperText READ chatIncludePaperText WRITE setChatIncludePaperText NOTIFY chatIncludePaperTextChanged)
 
     Q_PROPERTY(QStringList availableModels READ availableModels NOTIFY availableModelsChanged)
     Q_PROPERTY(bool    fetchingModels READ fetchingModels       NOTIFY fetchingModelsChanged)
@@ -54,6 +56,8 @@ public:
     QString translationPrompt() const { return m_translationPrompt; }
     QString tocPrompt()         const { return m_tocPrompt; }
     QString visionPrompt()      const { return m_visionPrompt; }
+    QString chatPrompt()        const { return m_chatPrompt; }
+    bool    chatIncludePaperText() const { return m_chatIncludePaperText; }
 
     QStringList availableModels() const { return m_availableModels; }
     bool        fetchingModels()  const { return m_fetchingModels; }
@@ -76,6 +80,9 @@ public:
     void setTocPrompt(const QString &v);
     // No variables. Empty ⇒ built-in default.
     void setVisionPrompt(const QString &v);
+    // No variables. Empty ⇒ built-in default.
+    void setChatPrompt(const QString &v);
+    void setChatIncludePaperText(bool v);
 
     LlmClient *createClient(QObject *parent = nullptr) const;
 
@@ -100,6 +107,8 @@ signals:
     void translationPromptChanged();
     void tocPromptChanged();
     void visionPromptChanged();
+    void chatPromptChanged();
+    void chatIncludePaperTextChanged();
 
     void availableModelsChanged();
     void fetchingModelsChanged();
@@ -125,6 +134,8 @@ private:
     QString m_translationPrompt;
     QString m_tocPrompt;
     QString m_visionPrompt;
+    QString m_chatPrompt;
+    bool    m_chatIncludePaperText = false;
 
     QNetworkAccessManager *m_nam = nullptr;
     QPointer<QNetworkReply> m_modelsReply;

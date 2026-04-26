@@ -19,6 +19,7 @@ class ChatService : public QObject
     Q_PROPERTY(ChatModel *messages   READ messages   CONSTANT)
     Q_PROPERTY(bool       busy       READ busy       NOTIFY busyChanged)
     Q_PROPERTY(QString    lastError  READ lastError  NOTIFY lastErrorChanged)
+    Q_PROPERTY(QString    defaultSystemPrompt READ defaultSystemPrompt CONSTANT)
 
 public:
     ChatService(Settings *settings,
@@ -30,6 +31,7 @@ public:
     ChatModel *messages() { return &m_messages; }
     bool       busy()      const { return m_reply != nullptr; }
     QString    lastError() const { return m_lastError; }
+    QString    defaultSystemPrompt() const;
 
 public slots:
     void sendMessage(const QString &text);

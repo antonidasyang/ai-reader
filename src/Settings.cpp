@@ -23,6 +23,8 @@ constexpr auto kKeySummaryPrompt     = "prompts/summary";
 constexpr auto kKeyTranslationPrompt = "prompts/translation";
 constexpr auto kKeyTocPrompt         = "prompts/toc";
 constexpr auto kKeyVisionPrompt      = "prompts/vision";
+constexpr auto kKeyChatPrompt           = "prompts/chat";
+constexpr auto kKeyChatIncludePaperText = "chat/includePaperText";
 
 QUrl defaultBaseUrlFor(const QString &providerLower)
 {
@@ -147,6 +149,22 @@ void Settings::setVisionPrompt(const QString &v)
     m_visionPrompt = v;
     save();
     emit visionPromptChanged();
+}
+
+void Settings::setChatPrompt(const QString &v)
+{
+    if (v == m_chatPrompt) return;
+    m_chatPrompt = v;
+    save();
+    emit chatPromptChanged();
+}
+
+void Settings::setChatIncludePaperText(bool v)
+{
+    if (v == m_chatIncludePaperText) return;
+    m_chatIncludePaperText = v;
+    save();
+    emit chatIncludePaperTextChanged();
 }
 
 LlmClient *Settings::createClient(QObject *parent) const
@@ -292,6 +310,8 @@ void Settings::load()
     m_translationPrompt = m_qs.value(kKeyTranslationPrompt, QString{}).toString();
     m_tocPrompt         = m_qs.value(kKeyTocPrompt,         QString{}).toString();
     m_visionPrompt      = m_qs.value(kKeyVisionPrompt,      QString{}).toString();
+    m_chatPrompt           = m_qs.value(kKeyChatPrompt,           QString{}).toString();
+    m_chatIncludePaperText = m_qs.value(kKeyChatIncludePaperText, false).toBool();
 }
 
 void Settings::save()
@@ -308,5 +328,7 @@ void Settings::save()
     m_qs.setValue(kKeyTranslationPrompt, m_translationPrompt);
     m_qs.setValue(kKeyTocPrompt,         m_tocPrompt);
     m_qs.setValue(kKeyVisionPrompt,      m_visionPrompt);
+    m_qs.setValue(kKeyChatPrompt,           m_chatPrompt);
+    m_qs.setValue(kKeyChatIncludePaperText, m_chatIncludePaperText);
     m_qs.sync();
 }

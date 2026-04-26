@@ -24,6 +24,9 @@ Dialog {
                                                                      : toc.defaultSystemPrompt
         visionArea.text      = settings.visionPrompt.length      > 0 ? settings.visionPrompt
                                                                      : vision.defaultSystemPrompt
+        chatArea.text        = settings.chatPrompt.length        > 0 ? settings.chatPrompt
+                                                                     : chat.defaultSystemPrompt
+        chatIncludeCheck.checked = settings.chatIncludePaperText
     }
 
     onAccepted: {
@@ -31,6 +34,8 @@ Dialog {
         settings.translationPrompt = translationArea.text === translation.defaultSystemPrompt ? "" : translationArea.text
         settings.tocPrompt         = tocArea.text         === toc.defaultSystemPrompt         ? "" : tocArea.text
         settings.visionPrompt      = visionArea.text      === vision.defaultSystemPrompt      ? "" : visionArea.text
+        settings.chatPrompt        = chatArea.text        === chat.defaultSystemPrompt        ? "" : chatArea.text
+        settings.chatIncludePaperText = chatIncludeCheck.checked
     }
 
     onReset: {
@@ -40,6 +45,7 @@ Dialog {
         case 1: translationArea.text = translation.defaultSystemPrompt; break
         case 2: tocArea.text         = toc.defaultSystemPrompt;         break
         case 3: visionArea.text      = vision.defaultSystemPrompt;      break
+        case 4: chatArea.text        = chat.defaultSystemPrompt;        break
         }
     }
 
@@ -53,6 +59,7 @@ Dialog {
             TabButton { text: qsTr("Translation") }
             TabButton { text: qsTr("TOC") }
             TabButton { text: qsTr("Vision") }
+            TabButton { text: qsTr("Chat") }
         }
 
         StackLayout {
@@ -161,6 +168,39 @@ Dialog {
                             placeholderText: qsTr("(empty ⇒ built-in default applies on next request)")
                             font.family: "monospace"
                         }
+                    }
+                }
+            }
+
+            Item {  // Chat
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 4
+                    Label {
+                        Layout.fillWidth: true
+                        wrapMode: Text.Wrap
+                        font.pixelSize: 11
+                        color: "#666"
+                        text: qsTr("System prompt for the Chat pane. The paper file " +
+                                   "name, page count, and (when generated) the TOC " +
+                                   "are appended automatically. No variables. " +
+                                   "Leave empty to use the built-in default.")
+                    }
+                    ScrollView {
+                        Layout.fillWidth: true; Layout.fillHeight: true
+                        clip: true
+                        TextArea {
+                            id: chatArea
+                            wrapMode: TextEdit.Wrap
+                            placeholderText: qsTr("(empty ⇒ built-in default applies on next request)")
+                            font.family: "monospace"
+                        }
+                    }
+                    CheckBox {
+                        id: chatIncludeCheck
+                        Layout.fillWidth: true
+                        text: qsTr("Append full paper text to the chat system prompt " +
+                                   "(truncated to ≈70% of the configured context window)")
                     }
                 }
             }

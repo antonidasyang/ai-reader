@@ -1,10 +1,14 @@
 #include "ChatService.h"
 
+#include "Block.h"
+#include "BlockListModel.h"
 #include "LlmClient.h"
 #include "PaperController.h"
 #include "Settings.h"
 #include "TocModel.h"
 #include "TocService.h"
+
+#include <climits>
 
 ChatService::ChatService(Settings *settings,
                          PaperController *paper,
@@ -114,13 +118,23 @@ void ChatService::sendMessage(const QString &text)
     });
 }
 
-QString ChatService::systemPrompt() const
+QString ChatService::defaultSystemPrompt() const
 {
-    QString out = QStringLiteral(
+    return QStringLiteral(
         "You are a careful research assistant helping the user read a "
         "specific academic paper. Be precise, cite sections by name, and "
         "answer in the user's language. If the paper text is not enough to "
-        "answer, say so rather than guessing.\n");
+        "answer, say so rather than guessing.");
+}
+
+QString ChatService::systemPrompt() const
+{
+    QString out;
+    if (m_settings && !m_settings->chatPrompt().isEmpty())
+        out = m_settings->chatPrompt();
+    else
+        out = defaultSystemPrompt();
+    out += QChar('\n');
 
     if (m_paper) {
         const QString title = m_paper->fileName();
@@ -140,6 +154,58 @@ QString ChatService::systemPrompt() const
             const int page = tm->data(idx, TocModel::StartPageRole).toInt();
             out += QString(qMax(0, level - 1) * 2, QChar(' '));
             out += QStringLiteral("- p.%1 %2\n").arg(page + 1).arg(title);
+        }
+    }
+
+    if (m_settings && m_settings->chatIncludePaperText()
+        && m_paper && m_paper->blocks()
+        && m_paper->blocks()->blockCount() > 0) {
+        // Cap inlined text at ~70% of the configured context window
+        // (approx. chars/4 per token) so we don't overflow the model.
+        const int ctx = m_settings->contextWindow();
+        const int reserve = qMax(2000, m_settings->maxTokens() + 1000);
+        const int budgetTokens = ctx > 0 ? qMax(0, int(ctx * 0.7) - reserve) : INT_MAX;
+        const int budgetChars  = budgetTokens == INT_MAX
+                                 ? INT_MAX
+                                 : budgetTokens * 4;
+
+        out += QStringLiteral("\nFull paper text (block-by-block):\n\n");
+
+        BlockListModel *bm = m_paper->blocks();
+        int currentPage = -1;
+        int written = 0;
+        bool truncated = false;
+        for (int row = 0; row < bm->blockCount(); ++row) {
+            const Block *b = bm->blockAt(row);
+            if (!b) continue;
+            QString chunk;
+            if (b->page != currentPage) {
+                chunk += QStringLiteral("\n[page %1]\n").arg(b->page + 1);
+                currentPage = b->page;
+            }
+            switch (b->kind) {
+            case Block::Heading:
+                chunk += QStringLiteral("\n## %1\n").arg(b->text);
+                break;
+            case Block::Caption:
+                chunk += QStringLiteral("\n_(%1)_\n").arg(b->text);
+                break;
+            default:
+                chunk += b->text;
+                chunk += QChar('\n');
+                break;
+            }
+            if (budgetChars != INT_MAX && written + chunk.size() > budgetChars) {
+                truncated = true;
+                break;
+            }
+            out += chunk;
+            written += chunk.size();
+        }
+        if (truncated) {
+            out += QStringLiteral(
+                "\n[…paper text truncated to fit context window. Ask the user "
+                "to enable a model with a larger context window if needed.]\n");
         }
     }
 
