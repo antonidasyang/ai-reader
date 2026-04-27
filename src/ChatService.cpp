@@ -282,6 +282,30 @@ QVector<ToolDef> ChatService::toolDefinitions() const
 
     {
         ToolDef t;
+        t.name = QStringLiteral("get_figure_caption");
+        t.description = QStringLiteral(
+            "Look up a figure or table caption by its label (e.g. "
+            "\"Figure 3\", \"Fig. 3\", \"Table 2\"). Returns "
+            "{caption, page} of the best match, or empty caption if not "
+            "found. Use this to ground claims about a specific figure or "
+            "table.");
+        QJsonObject labelProp;
+        labelProp[QStringLiteral("type")] = QStringLiteral("string");
+        labelProp[QStringLiteral("description")] = QStringLiteral(
+            "Caption label such as \"Figure 3\" or \"Table 2\".");
+        QJsonObject props;
+        props[QStringLiteral("label")] = labelProp;
+        QJsonObject schema;
+        schema[QStringLiteral("type")] = QStringLiteral("object");
+        schema[QStringLiteral("properties")] = props;
+        schema[QStringLiteral("required")] =
+            QJsonArray{ QStringLiteral("label") };
+        t.inputSchema = schema;
+        defs.append(t);
+    }
+
+    {
+        ToolDef t;
         t.name = QStringLiteral("search_paper");
         t.description = QStringLiteral(
             "Case-insensitive substring search across the paper's blocks. "
@@ -372,7 +396,75 @@ QString ChatService::runTool(const ToolCall &call) const
             call.input.value(QStringLiteral("top_k")).toInt(10);
         return runSearchPaper(query, topK);
     }
+    if (call.name == QLatin1String("get_figure_caption")) {
+        const QString label =
+            call.input.value(QStringLiteral("label")).toString();
+        return runGetFigureCaption(label);
+    }
     return QStringLiteral("Error: unknown tool '%1'.").arg(call.name);
+}
+
+QString ChatService::runGetFigureCaption(const QString &label) const
+{
+    if (label.trimmed().isEmpty())
+        return QStringLiteral("Error: label is required.");
+    if (!m_paper || !m_paper->blocks())
+        return QStringLiteral("Error: no paper loaded.");
+
+    BlockListModel *bm = m_paper->blocks();
+    const QString needle = label.trimmed();
+    // "Figure 3" should also match "Fig. 3"; build a small set of variants.
+    QStringList variants{ needle };
+    if (needle.startsWith(QStringLiteral("Figure "), Qt::CaseInsensitive))
+        variants << QStringLiteral("Fig. ") + needle.mid(7)
+                 << QStringLiteral("Fig ")  + needle.mid(7);
+    else if (needle.startsWith(QStringLiteral("Fig. "), Qt::CaseInsensitive))
+        variants << QStringLiteral("Figure ") + needle.mid(5)
+                 << QStringLiteral("Fig ")    + needle.mid(5);
+    else if (needle.startsWith(QStringLiteral("Fig "), Qt::CaseInsensitive))
+        variants << QStringLiteral("Figure ") + needle.mid(4)
+                 << QStringLiteral("Fig. ")   + needle.mid(4);
+
+    auto matches = [&](const QString &text) {
+        for (const QString &v : variants) {
+            if (text.startsWith(v, Qt::CaseInsensitive)) return true;
+            if (text.startsWith(v + QStringLiteral(":"), Qt::CaseInsensitive)) return true;
+            if (text.startsWith(v + QStringLiteral("."), Qt::CaseInsensitive)) return true;
+        }
+        return false;
+    };
+
+    // Pass 1: prefer Caption-kind blocks.
+    for (int row = 0; row < bm->blockCount(); ++row) {
+        const Block *b = bm->blockAt(row);
+        if (!b || b->kind != Block::Caption) continue;
+        if (matches(b->text)) {
+            QJsonObject o;
+            o[QStringLiteral("caption")] = b->text;
+            o[QStringLiteral("page")] = b->page + 1;
+            return QString::fromUtf8(
+                QJsonDocument(o).toJson(QJsonDocument::Compact));
+        }
+    }
+
+    // Pass 2: any block that begins with the label (handles missed-caption
+    // classifications by the clusterer).
+    for (int row = 0; row < bm->blockCount(); ++row) {
+        const Block *b = bm->blockAt(row);
+        if (!b) continue;
+        if (matches(b->text)) {
+            QJsonObject o;
+            o[QStringLiteral("caption")] = b->text;
+            o[QStringLiteral("page")] = b->page + 1;
+            return QString::fromUtf8(
+                QJsonDocument(o).toJson(QJsonDocument::Compact));
+        }
+    }
+
+    QJsonObject o;
+    o[QStringLiteral("caption")] = QString();
+    o[QStringLiteral("page")] = 0;
+    return QString::fromUtf8(QJsonDocument(o).toJson(QJsonDocument::Compact));
 }
 
 QString ChatService::runSearchPaper(const QString &query, int topK) const

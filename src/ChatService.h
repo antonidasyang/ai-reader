@@ -59,6 +59,7 @@ private:
     QString runReadSection(const QString &sectionId) const;
     QString runGetUserSelection() const;
     QString runSearchPaper(const QString &query, int topK) const;
+    QString runGetFigureCaption(const QString &label) const;
     void cleanupAfterFinal();
 
     QPointer<Settings> m_settings;
