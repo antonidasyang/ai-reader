@@ -1,4 +1,5 @@
 #include "ChatService.h"
+#include "MarkdownRenderer.h"
 #include "PaperController.h"
 #include "Settings.h"
 #include "SummaryService.h"
@@ -67,6 +68,7 @@ int main(int argc, char *argv[])
     TocService toc(&settings, &paperController);
     VisionService vision(&settings, &paperController);
     ChatService chat(&settings, &paperController, &toc);
+    MarkdownRenderer markdown;
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
@@ -79,6 +81,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("toc", &toc);
     engine.rootContext()->setContextProperty("vision", &vision);
     engine.rootContext()->setContextProperty("chat", &chat);
+    engine.rootContext()->setContextProperty("markdown", &markdown);
 
     QObject::connect(
         &engine,

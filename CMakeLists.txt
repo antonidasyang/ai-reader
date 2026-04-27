@@ -18,6 +18,9 @@ find_package(Qt6 6.4 REQUIRED COMPONENTS
 
 find_package(Qt6Keychain REQUIRED)
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(CMARK_GFM REQUIRED IMPORTED_TARGET libcmark-gfm)
+
 qt_standard_project_setup()
 
 qt_add_executable(ai-reader
@@ -60,6 +63,8 @@ qt_add_executable(ai-reader
     src/ChatService.cpp
     src/ChatHistoryCache.h
     src/ChatHistoryCache.cpp
+    src/MarkdownRenderer.h
+    src/MarkdownRenderer.cpp
 )
 
 qt_add_qml_module(ai-reader
@@ -106,4 +111,5 @@ target_link_libraries(ai-reader PRIVATE
     Qt6::Pdf
     Qt6::PdfQuick
     Qt6Keychain::Qt6Keychain
+    PkgConfig::CMARK_GFM
 )

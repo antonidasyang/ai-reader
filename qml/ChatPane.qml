@@ -103,17 +103,25 @@ Rectangle {
                             selectByMouse: true
                             wrapMode: TextEdit.Wrap
                             color: "#1d1d1d"
-                            // Render assistant replies as Markdown so headings,
-                            // lists, code, and emphasis are formatted. User
-                            // messages stay verbatim.
-                            textFormat: model.role === "assistant"
-                                        ? TextEdit.MarkdownText
-                                        : TextEdit.PlainText
-                            text: model.content.length > 0
-                                  ? model.content
-                                  : (model.status === 1 /*Streaming*/
-                                     ? "..."
-                                     : " ")
+                            // Assistant replies route through cmark-gfm for
+                            // GFM tables / strikethrough / footnotes /
+                            // task lists. During streaming we use Qt's
+                            // built-in MarkdownText to skip re-parsing the
+                            // doc on every chunk; once the turn is Done we
+                            // swap to RichText with the cmark-rendered
+                            // HTML for the richer output. User messages
+                            // stay verbatim.
+                            textFormat: model.role !== "assistant"
+                                        ? TextEdit.PlainText
+                                        : (model.status === 1 /*Streaming*/
+                                           ? TextEdit.MarkdownText
+                                           : TextEdit.RichText)
+                            text: model.content.length === 0
+                                  ? (model.status === 1 ? "..." : " ")
+                                  : (model.role === "assistant"
+                                     && model.status !== 1
+                                     ? markdown.toHtml(model.content)
+                                     : model.content)
                             // Hide the blinking text caret — this is a
                             // read-only view, not an editable field.
                             cursorVisible: false
