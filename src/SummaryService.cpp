@@ -3,6 +3,7 @@
 #include "Block.h"
 #include "BlockListModel.h"
 #include "LlmClient.h"
+#include "PaperController.h"
 #include "Settings.h"
 
 #include <QAbstractItemModel>
@@ -26,15 +27,16 @@ QString resolveLanguageName(const QString &code)
 } // namespace
 
 SummaryService::SummaryService(Settings *settings,
-                               BlockListModel *blocks,
+                               PaperController *paper,
                                QObject *parent)
     : QObject(parent)
     , m_settings(settings)
-    , m_blocks(blocks)
+    , m_paper(paper)
+    , m_blocks(paper ? paper->blocks() : nullptr)
 {
-    if (m_blocks) {
-        connect(m_blocks, &QAbstractItemModel::modelReset,
-                this, &SummaryService::onModelReset);
+    if (m_paper) {
+        connect(m_paper, &PaperController::blocksChanged,
+                this, &SummaryService::onPaperChanged);
     }
 }
 
@@ -47,10 +49,26 @@ void SummaryService::setPaperTitle(const QString &title)
     emit paperTitleChanged();
 }
 
-void SummaryService::onModelReset()
+void SummaryService::onPaperChanged()
 {
     cancel();
     clear();
+    m_cache.setPaperId(m_paper ? m_paper->paperId() : QString());
+    rehydrateFromCache();
+}
+
+void SummaryService::rehydrateFromCache()
+{
+    if (!m_settings) return;
+    if (m_cache.paperId().isEmpty()) return;
+    const QString cached = m_cache.lookup(
+        m_settings->model(),
+        SummaryCache::sha(systemPrompt()),
+        m_settings->targetLang());
+    if (cached.isEmpty()) return;
+    m_text = cached;
+    emit textChanged();
+    setStatus(Done);
 }
 
 void SummaryService::clear()
@@ -121,8 +139,16 @@ void SummaryService::generate()
     connect(m_reply, &LlmReply::finished, this, [this]() {
         if (m_reply) m_reply->deleteLater();
         m_reply.clear();
-        if (m_status == Generating)
+        if (m_status == Generating) {
             setStatus(Done);
+            if (m_settings && !m_cache.paperId().isEmpty()
+                && !m_text.isEmpty()) {
+                m_cache.store(m_settings->model(),
+                              SummaryCache::sha(systemPrompt()),
+                              m_settings->targetLang(),
+                              m_text);
+            }
+        }
     });
     connect(m_reply, &LlmReply::errorOccurred, this,
             [this](const QString &message) {
