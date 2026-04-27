@@ -22,6 +22,7 @@ Dialog {
         tempSlider.value        = settings.temperature
         maxTokensField.value    = settings.maxTokens
         contextWindowField.value = settings.contextWindow
+        toolBudgetField.value   = settings.toolBudget
         targetLangField.text    = settings.targetLang
         apiKeyField.forceActiveFocus()
     }
@@ -34,6 +35,7 @@ Dialog {
         settings.temperature   = tempSlider.value
         settings.maxTokens     = maxTokensField.value
         settings.contextWindow = contextWindowField.value
+        settings.toolBudget    = toolBudgetField.value
         settings.targetLang    = targetLangField.text.trim()
     }
 
@@ -130,6 +132,13 @@ Dialog {
                 id: contextWindowField
                 Layout.fillWidth: true
                 from: 0; to: 2000000; stepSize: 1024; editable: true
+            }
+
+            Label { text: qsTr("Max tool calls per chat turn") }
+            SpinBox {
+                id: toolBudgetField
+                Layout.fillWidth: true
+                from: 1; to: 100; stepSize: 1; editable: true
             }
 
             Label { text: qsTr("Translate into") }

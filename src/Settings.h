@@ -21,6 +21,7 @@ class Settings : public QObject
     Q_PROPERTY(double  temperature  READ temperature  WRITE setTemperature  NOTIFY temperatureChanged)
     Q_PROPERTY(int     maxTokens    READ maxTokens    WRITE setMaxTokens    NOTIFY maxTokensChanged)
     Q_PROPERTY(int     contextWindow READ contextWindow WRITE setContextWindow NOTIFY contextWindowChanged)
+    Q_PROPERTY(int     toolBudget   READ toolBudget   WRITE setToolBudget   NOTIFY toolBudgetChanged)
     Q_PROPERTY(QString targetLang   READ targetLang   WRITE setTargetLang   NOTIFY targetLangChanged)
     Q_PROPERTY(bool    isConfigured READ isConfigured                       NOTIFY configurationChanged)
 
@@ -49,6 +50,7 @@ public:
     double  temperature()   const { return m_temperature; }
     int     maxTokens()     const { return m_maxTokens; }
     int     contextWindow() const { return m_contextWindow; }
+    int     toolBudget()    const { return m_toolBudget; }
     QString targetLang()    const { return m_targetLang; }
     bool    isConfigured()  const;
 
@@ -70,6 +72,7 @@ public:
     void setTemperature(double v);
     void setMaxTokens(int v);
     void setContextWindow(int v);
+    void setToolBudget(int v);
     void setTargetLang(const QString &v);
 
     // Supports variable {{lang}}. Empty ⇒ built-in default.
@@ -100,6 +103,7 @@ signals:
     void temperatureChanged();
     void maxTokensChanged();
     void contextWindowChanged();
+    void toolBudgetChanged();
     void targetLangChanged();
     void configurationChanged();
 
@@ -129,6 +133,7 @@ private:
     double  m_temperature = 0.2;
     int     m_maxTokens = 8192;
     int     m_contextWindow = 128000;
+    int     m_toolBudget = 30;
     QString m_targetLang;
     QString m_summaryPrompt;
     QString m_translationPrompt;

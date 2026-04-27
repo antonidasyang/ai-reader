@@ -73,5 +73,4 @@ private:
     // round-trips that aren't surfaced in m_messages).
     QVector<LlmClient::Message> m_apiMessages;
     int m_iterations = 0;
-    static constexpr int kMaxIterations = 10;
 };

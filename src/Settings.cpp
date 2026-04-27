@@ -18,6 +18,7 @@ constexpr auto kKeyApiKey      = "llm/apiKey";
 constexpr auto kKeyTemperature   = "llm/temperature";
 constexpr auto kKeyMaxTokens     = "llm/maxTokens";
 constexpr auto kKeyContextWindow = "llm/contextWindow";
+constexpr auto kKeyToolBudget    = "chat/toolBudget";
 constexpr auto kKeyTargetLang    = "translation/targetLang";
 constexpr auto kKeySummaryPrompt     = "prompts/summary";
 constexpr auto kKeyTranslationPrompt = "prompts/translation";
@@ -109,6 +110,16 @@ void Settings::setContextWindow(int v)
     m_contextWindow = v;
     save();
     emit contextWindowChanged();
+}
+
+void Settings::setToolBudget(int v)
+{
+    if (v < 1) v = 1;
+    if (v > 100) v = 100;
+    if (v == m_toolBudget) return;
+    m_toolBudget = v;
+    save();
+    emit toolBudgetChanged();
 }
 
 void Settings::setTargetLang(const QString &v)
@@ -305,6 +316,7 @@ void Settings::load()
     m_temperature   = m_qs.value(kKeyTemperature,   0.2).toDouble();
     m_maxTokens     = m_qs.value(kKeyMaxTokens,     8192).toInt();
     m_contextWindow = m_qs.value(kKeyContextWindow, 128000).toInt();
+    m_toolBudget    = qBound(1, m_qs.value(kKeyToolBudget, 30).toInt(), 100);
     m_targetLang    = m_qs.value(kKeyTargetLang,    QStringLiteral("zh-CN")).toString();
     m_summaryPrompt     = m_qs.value(kKeySummaryPrompt,     QString{}).toString();
     m_translationPrompt = m_qs.value(kKeyTranslationPrompt, QString{}).toString();
@@ -323,6 +335,7 @@ void Settings::save()
     m_qs.setValue(kKeyTemperature,   m_temperature);
     m_qs.setValue(kKeyMaxTokens,     m_maxTokens);
     m_qs.setValue(kKeyContextWindow, m_contextWindow);
+    m_qs.setValue(kKeyToolBudget,    m_toolBudget);
     m_qs.setValue(kKeyTargetLang,    m_targetLang);
     m_qs.setValue(kKeySummaryPrompt,     m_summaryPrompt);
     m_qs.setValue(kKeyTranslationPrompt, m_translationPrompt);
