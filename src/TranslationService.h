@@ -1,5 +1,7 @@
 #pragma once
 
+#include "TranslationCache.h"
+
 #include <QHash>
 #include <QObject>
 #include <QPointer>
@@ -8,6 +10,7 @@
 class BlockListModel;
 class LlmClient;
 class LlmReply;
+class PaperController;
 class Settings;
 
 class TranslationService : public QObject
@@ -22,9 +25,9 @@ class TranslationService : public QObject
     Q_PROPERTY(QString defaultSystemPrompt READ defaultSystemPrompt CONSTANT)
 
 public:
-    explicit TranslationService(Settings *settings,
-                                BlockListModel *model,
-                                QObject *parent = nullptr);
+    TranslationService(Settings *settings,
+                       PaperController *paper,
+                       QObject *parent = nullptr);
     ~TranslationService() override;
 
     bool busy() const { return m_inflight > 0 || !m_pending.isEmpty(); }
@@ -45,7 +48,8 @@ signals:
     void lastErrorChanged();
 
 private:
-    void onModelReset();
+    void onPaperChanged();
+    void rehydrateFromCache();
     void scheduleNext();
     void translateRow(int row);
     bool shouldSkip(const QString &text) const;
@@ -53,8 +57,10 @@ private:
     void setLastError(const QString &err);
 
     QPointer<Settings> m_settings;
+    QPointer<PaperController> m_paper;
     QPointer<BlockListModel> m_model;
     QPointer<LlmClient> m_client;
+    TranslationCache m_cache;
 
     QQueue<int> m_pending;
     QHash<LlmReply *, int> m_replyToRow;

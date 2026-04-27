@@ -3,6 +3,7 @@
 #include "Block.h"
 #include "BlockListModel.h"
 #include "LlmClient.h"
+#include "PaperController.h"
 #include "Settings.h"
 
 namespace {
@@ -24,27 +25,61 @@ QString resolveLanguageName(const QString &code)
 } // namespace
 
 TranslationService::TranslationService(Settings *settings,
-                                       BlockListModel *model,
+                                       PaperController *paper,
                                        QObject *parent)
     : QObject(parent)
     , m_settings(settings)
-    , m_model(model)
+    , m_paper(paper)
+    , m_model(paper ? paper->blocks() : nullptr)
 {
-    if (m_model) {
-        connect(m_model, &QAbstractItemModel::modelReset,
-                this, &TranslationService::onModelReset);
+    if (m_paper) {
+        connect(m_paper, &PaperController::blocksChanged,
+                this, &TranslationService::onPaperChanged);
     }
 }
 
 TranslationService::~TranslationService() = default;
 
-void TranslationService::onModelReset()
+void TranslationService::onPaperChanged()
 {
     cancel();
     m_done = 0;
     m_failed = 0;
     m_total = 0;
     emit progressChanged();
+
+    // Switch the cache to the new paper and rehydrate any matching rows
+    // straight into the BlockListModel — translations the user already
+    // paid for show up instantly without another API call.
+    m_cache.setPaperId(m_paper ? m_paper->paperId() : QString());
+    rehydrateFromCache();
+}
+
+void TranslationService::rehydrateFromCache()
+{
+    if (!m_settings || !m_model) return;
+    if (m_cache.paperId().isEmpty()) return;
+
+    const QString model      = m_settings->model();
+    const QString promptHash = TranslationCache::sha(systemPrompt());
+    const QString lang       = m_settings->targetLang();
+
+    int hits = 0;
+    for (int row = 0; row < m_model->blockCount(); ++row) {
+        const Block *b = m_model->blockAt(row);
+        if (!b) continue;
+        const QString cached =
+            m_cache.lookup(b->id, b->text, model, promptHash, lang);
+        if (cached.isEmpty()) continue;
+        m_model->setTranslation(row, cached);
+        m_model->setTranslationStatus(row, Block::Translated);
+        ++hits;
+    }
+    if (hits > 0) {
+        m_done = hits;
+        m_total = hits;
+        emit progressChanged();
+    }
 }
 
 void TranslationService::cancel()
@@ -217,6 +252,17 @@ void TranslationService::translateRow(int row)
             && m_model->blockAt(r)->translationStatus == Block::Translating) {
             m_model->setTranslationStatus(r, Block::Translated);
             ++m_done;
+
+            // Persist to disk so reopening this paper restores the
+            // translation without another API round-trip.
+            const Block *b = m_model->blockAt(r);
+            if (b && m_settings && !m_cache.paperId().isEmpty()) {
+                m_cache.store(b->id, b->text,
+                              m_settings->model(),
+                              TranslationCache::sha(systemPrompt()),
+                              m_settings->targetLang(),
+                              b->translation);
+            }
         }
         emit progressChanged();
         reply->deleteLater();

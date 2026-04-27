@@ -1,9 +1,26 @@
 #include "PaperController.h"
 #include "BlockClusterer.h"
 
+#include <QCryptographicHash>
+#include <QFile>
 #include <QFileInfo>
 #include <QSize>
 #include <QSizeF>
+
+namespace {
+// Hash the first 4 MB of the PDF (and the file size) so we get a stable
+// id even when the file is moved or renamed, but we don't pay for full
+// SHA-256 over a 200 MB book. Cheap and good enough as a cache key.
+QString computePaperId(const QString &filePath)
+{
+    QFile f(filePath);
+    if (!f.open(QIODevice::ReadOnly)) return {};
+    QCryptographicHash hash(QCryptographicHash::Sha256);
+    hash.addData(QByteArray::number(qint64(f.size())));
+    hash.addData(f.read(4 * 1024 * 1024));
+    return QString::fromUtf8(hash.result().toHex());
+}
+} // namespace
 
 PaperController::PaperController(QObject *parent)
     : QObject(parent)
@@ -46,6 +63,7 @@ void PaperController::clear()
     m_model.clear();
     m_source = {};
     m_password.clear();
+    m_paperId.clear();
     setStatus(Empty);
     emit pdfSourceChanged();
     emit pdfPasswordChanged();
@@ -70,6 +88,10 @@ void PaperController::reload()
 
     switch (err) {
     case QPdfDocument::Error::None: {
+        if (m_source.isLocalFile())
+            m_paperId = computePaperId(m_source.toLocalFile());
+        else
+            m_paperId.clear();
         QVector<Block> blocks = BlockClusterer::extract(m_doc);
         m_model.setBlocks(std::move(blocks));
         emit blocksChanged();

@@ -37,6 +37,8 @@ qt_add_executable(ai-reader
     src/Settings.cpp
     src/TranslationService.h
     src/TranslationService.cpp
+    src/TranslationCache.h
+    src/TranslationCache.cpp
     src/SummaryService.h
     src/SummaryService.cpp
     src/Section.h
