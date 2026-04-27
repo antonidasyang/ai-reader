@@ -152,7 +152,13 @@ void TocCache::saveNow()
     root[QStringLiteral("entries")] = entries;
 
     QSaveFile f(path);
-    if (!f.open(QIODevice::WriteOnly)) return;
+    if (!f.open(QIODevice::WriteOnly)) {
+        qWarning("TocCache: cannot open %s: %s",
+                 qUtf8Printable(path), qUtf8Printable(f.errorString()));
+        return;
+    }
     f.write(QJsonDocument(root).toJson(QJsonDocument::Compact));
-    f.commit();
+    if (!f.commit())
+        qWarning("TocCache: commit failed for %s: %s",
+                 qUtf8Printable(path), qUtf8Printable(f.errorString()));
 }

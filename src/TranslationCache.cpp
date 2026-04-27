@@ -130,7 +130,13 @@ void TranslationCache::saveNow()
     root[QStringLiteral("entries")] = entries;
 
     QSaveFile f(path);
-    if (!f.open(QIODevice::WriteOnly)) return;
+    if (!f.open(QIODevice::WriteOnly)) {
+        qWarning("TranslationCache: cannot open %s: %s",
+                 qUtf8Printable(path), qUtf8Printable(f.errorString()));
+        return;
+    }
     f.write(QJsonDocument(root).toJson(QJsonDocument::Compact));
-    f.commit();
+    if (!f.commit())
+        qWarning("TranslationCache: commit failed for %s: %s",
+                 qUtf8Printable(path), qUtf8Printable(f.errorString()));
 }

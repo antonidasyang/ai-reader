@@ -56,27 +56,56 @@ ApplicationWindow {
         anchors.centerIn: Overlay.overlay
     }
 
+    function showError(prefix, message) {
+        if (!message || message.length === 0) return
+        errorBanner.text = prefix && prefix.length > 0
+                           ? qsTr("%1: %2").arg(prefix).arg(message)
+                           : message
+        errorBanner.visible = true
+        bannerHideTimer.restart()
+    }
+
     Connections {
         target: paperController
         function onPasswordRequired() { passwordDialog.open() }
         function onStatusChanged() {
             if (paperController.status === PaperController.Error) {
-                errorBanner.text = paperController.errorString
-                errorBanner.visible = true
+                showError(qsTr("PDF"), paperController.errorString)
             } else if (paperController.status === PaperController.Ready) {
                 errorBanner.visible = false
+                bannerHideTimer.stop()
             }
         }
     }
 
     Connections {
         target: translation
-        function onLastErrorChanged() {
-            if (translation.lastError && translation.lastError.length > 0) {
-                errorBanner.text = qsTr("Translation: %1").arg(translation.lastError)
-                errorBanner.visible = true
-            }
+        function onLastErrorChanged() { showError(qsTr("Translation"), translation.lastError) }
+    }
+    Connections {
+        target: summary
+        function onStatusChanged() {
+            if (summary.status === SummaryService.Failed)
+                showError(qsTr("Summary"), summary.lastError)
         }
+    }
+    Connections {
+        target: toc
+        function onStatusChanged() {
+            if (toc.status === TocService.Failed)
+                showError(qsTr("TOC"), toc.lastError)
+        }
+    }
+    Connections {
+        target: vision
+        function onStatusChanged() {
+            if (vision.status === VisionService.Failed)
+                showError(qsTr("Vision"), vision.lastError)
+        }
+    }
+    Connections {
+        target: chat
+        function onLastErrorChanged() { showError(qsTr("Chat"), chat.lastError) }
     }
 
     // ── Bidirectional scroll sync ─────────────────────────────────────
@@ -363,8 +392,19 @@ ApplicationWindow {
             }
             ToolButton {
                 text: "✕"
-                onClicked: errorBanner.visible = false
+                onClicked: {
+                    errorBanner.visible = false
+                    bannerHideTimer.stop()
+                }
             }
         }
+    }
+
+    // Auto-dismiss the banner so a transient failure doesn't sit there
+    // forever once the user has seen it. Restarted by showError().
+    Timer {
+        id: bannerHideTimer
+        interval: 10000
+        onTriggered: errorBanner.visible = false
     }
 }

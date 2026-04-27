@@ -123,7 +123,13 @@ void SummaryCache::saveNow()
     root[QStringLiteral("paperId")] = m_paperId;
     root[QStringLiteral("entries")] = entries;
     QSaveFile f(path);
-    if (!f.open(QIODevice::WriteOnly)) return;
+    if (!f.open(QIODevice::WriteOnly)) {
+        qWarning("SummaryCache: cannot open %s: %s",
+                 qUtf8Printable(path), qUtf8Printable(f.errorString()));
+        return;
+    }
     f.write(QJsonDocument(root).toJson(QJsonDocument::Compact));
-    f.commit();
+    if (!f.commit())
+        qWarning("SummaryCache: commit failed for %s: %s",
+                 qUtf8Printable(path), qUtf8Printable(f.errorString()));
 }

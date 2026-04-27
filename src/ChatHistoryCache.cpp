@@ -217,8 +217,14 @@ void ChatHistoryCache::saveNow()
     root[QStringLiteral("api")] = api;
 
     QSaveFile f(path);
-    if (!f.open(QIODevice::WriteOnly)) return;
+    if (!f.open(QIODevice::WriteOnly)) {
+        qWarning("ChatHistoryCache: cannot open %s: %s",
+                 qUtf8Printable(path), qUtf8Printable(f.errorString()));
+        return;
+    }
     f.write(QJsonDocument(root).toJson(QJsonDocument::Compact));
-    f.commit();
+    if (!f.commit())
+        qWarning("ChatHistoryCache: commit failed for %s: %s",
+                 qUtf8Printable(path), qUtf8Printable(f.errorString()));
     m_havePending = false;
 }
