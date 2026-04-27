@@ -30,7 +30,7 @@ public:
     ~ChatService() override;
 
     ChatModel *messages() { return &m_messages; }
-    bool       busy()      const { return m_reply != nullptr; }
+    bool       busy()      const { return m_reply != nullptr || !m_pendingTools.isEmpty(); }
     QString    lastError() const { return m_lastError; }
     QString    defaultSystemPrompt() const;
 
@@ -60,7 +60,18 @@ private:
     QString runGetUserSelection() const;
     QString runSearchPaper(const QString &query, int topK) const;
     QString runGetFigureCaption(const QString &label) const;
+    void dispatchTool(int slotIndex, const ToolCall &call);
+    void onToolResolved(int slotIndex, const QString &result);
+    void runReadPageVisualAsync(int slotIndex,
+                                int page,
+                                const QString &question);
     void cleanupAfterFinal();
+
+    struct PendingTool {
+        ToolCall call;
+        QString  result;
+        bool     resolved = false;
+    };
 
     QPointer<Settings> m_settings;
     QPointer<PaperController> m_paper;
@@ -75,5 +86,7 @@ private:
     // Conversation state sent to the API (includes tool_use / tool_result
     // round-trips that aren't surfaced in m_messages).
     QVector<LlmClient::Message> m_apiMessages;
+    QVector<PendingTool> m_pendingTools;
+    QList<QPointer<LlmReply>> m_toolReplies;
     int m_iterations = 0;
 };

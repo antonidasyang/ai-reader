@@ -7,7 +7,10 @@
 #include "TocModel.h"
 #include "TocService.h"
 
+#include <algorithm>
 #include <climits>
+#include <QBuffer>
+#include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -74,11 +77,23 @@ void ChatService::clear()
 
 void ChatService::cancel()
 {
+    const bool wasBusy = busy();
     if (m_reply) {
         m_reply->disconnect(this);
         m_reply->abort();
         m_reply->deleteLater();
         m_reply.clear();
+    }
+    for (const QPointer<LlmReply> &r : m_toolReplies) {
+        if (r) {
+            r->disconnect(this);
+            r->abort();
+            r->deleteLater();
+        }
+    }
+    m_toolReplies.clear();
+    m_pendingTools.clear();
+    if (wasBusy) {
         m_messages.setLastStatus(ChatMessage::Failed, tr("Cancelled."));
         m_iterations = 0;
         persistHistory();
@@ -206,14 +221,14 @@ void ChatService::onTurnFinished()
         return;
     }
 
-    // Run each tool, append all results in a single user message, and
-    // continue the loop.
-    LlmClient::Message resultMsg;
-    resultMsg.role = QStringLiteral("user");
+    // Allocate a result slot per call, surface each as an italic chip in
+    // the streaming bubble, then dispatch them. Sync tools resolve
+    // immediately; async tools (e.g. read_page_visual) call
+    // onToolResolved later. When every slot is filled, we bundle the
+    // results into one user message and continue the loop.
+    m_pendingTools.clear();
+    m_pendingTools.reserve(calls.size());
     for (const ToolCall &c : calls) {
-        const QString resultText = runTool(c);
-        // Surface the tool call to the user as a small italic chip in
-        // the streaming bubble so they know what the model is doing.
         QString chip = QStringLiteral("\n\n_[tool: %1").arg(c.name);
         if (!c.input.isEmpty()) {
             chip += QStringLiteral(" ");
@@ -222,15 +237,44 @@ void ChatService::onTurnFinished()
         }
         chip += QStringLiteral("]_\n\n");
         m_messages.appendChunkToLast(chip);
+        m_pendingTools.append({ c, QString(), false });
+    }
+    for (int i = 0; i < calls.size(); ++i)
+        dispatchTool(i, calls[i]);
+}
 
+void ChatService::dispatchTool(int slotIndex, const ToolCall &call)
+{
+    if (call.name == QLatin1String("read_page_visual")) {
+        const int page = call.input.value(QStringLiteral("page")).toInt(-1);
+        const QString question =
+            call.input.value(QStringLiteral("question")).toString();
+        runReadPageVisualAsync(slotIndex, page, question);
+        return;
+    }
+    onToolResolved(slotIndex, runTool(call));
+}
+
+void ChatService::onToolResolved(int slotIndex, const QString &result)
+{
+    if (slotIndex < 0 || slotIndex >= m_pendingTools.size()) return;
+    if (m_pendingTools[slotIndex].resolved) return;
+    m_pendingTools[slotIndex].resolved = true;
+    m_pendingTools[slotIndex].result = result;
+    for (const PendingTool &pt : m_pendingTools)
+        if (!pt.resolved) return;
+
+    LlmClient::Message resultMsg;
+    resultMsg.role = QStringLiteral("user");
+    for (const PendingTool &pt : m_pendingTools) {
         ContentPart p;
         p.type = ContentPart::ToolResult;
-        p.toolId = c.id;
-        p.text = resultText;
+        p.toolId = pt.call.id;
+        p.text = pt.result;
         resultMsg.parts.append(p);
     }
     m_apiMessages.append(resultMsg);
-
+    m_pendingTools.clear();
     runTurn();
 }
 
@@ -271,6 +315,35 @@ QVector<ToolDef> ChatService::toolDefinitions() const
             QStringLiteral("1-indexed page number.");
         QJsonObject props;
         props[QStringLiteral("page")] = pageProp;
+        QJsonObject schema;
+        schema[QStringLiteral("type")] = QStringLiteral("object");
+        schema[QStringLiteral("properties")] = props;
+        schema[QStringLiteral("required")] =
+            QJsonArray{ QStringLiteral("page") };
+        t.inputSchema = schema;
+        defs.append(t);
+    }
+
+    {
+        ToolDef t;
+        t.name = QStringLiteral("read_page_visual");
+        t.description = QStringLiteral(
+            "Send a rendered PDF page (1-indexed) to the vision-capable "
+            "model and return its description. Use this when text "
+            "extraction is insufficient — figures, diagrams, equations, "
+            "tables, scanned pages. Optional `question` focuses the model "
+            "on a specific aspect of the page.");
+        QJsonObject pageProp;
+        pageProp[QStringLiteral("type")] = QStringLiteral("integer");
+        pageProp[QStringLiteral("description")] =
+            QStringLiteral("1-indexed page number.");
+        QJsonObject questionProp;
+        questionProp[QStringLiteral("type")] = QStringLiteral("string");
+        questionProp[QStringLiteral("description")] = QStringLiteral(
+            "Optional focus question; defaults to a full description.");
+        QJsonObject props;
+        props[QStringLiteral("page")] = pageProp;
+        props[QStringLiteral("question")] = questionProp;
         QJsonObject schema;
         schema[QStringLiteral("type")] = QStringLiteral("object");
         schema[QStringLiteral("properties")] = props;
@@ -402,6 +475,91 @@ QString ChatService::runTool(const ToolCall &call) const
         return runGetFigureCaption(label);
     }
     return QStringLiteral("Error: unknown tool '%1'.").arg(call.name);
+}
+
+void ChatService::runReadPageVisualAsync(int slotIndex,
+                                         int page,
+                                         const QString &question)
+{
+    if (!m_settings || !m_paper) {
+        onToolResolved(slotIndex,
+            QStringLiteral("Error: paper or settings unavailable."));
+        return;
+    }
+    if (!m_settings->isConfigured()) {
+        onToolResolved(slotIndex,
+            QStringLiteral("Error: LLM is not configured."));
+        return;
+    }
+    if (page < 1 || page > m_paper->pageCount()) {
+        onToolResolved(slotIndex,
+            QStringLiteral("Error: page %1 out of range (paper has %2 pages).")
+                .arg(page).arg(m_paper->pageCount()));
+        return;
+    }
+
+    const int pageIdx = page - 1;
+    const QImage img = m_paper->renderPage(pageIdx, 1280);
+    if (img.isNull()) {
+        onToolResolved(slotIndex,
+            QStringLiteral("Error: failed to render page %1.").arg(page));
+        return;
+    }
+    QByteArray png;
+    {
+        QBuffer buf(&png);
+        buf.open(QIODevice::WriteOnly);
+        img.save(&buf, "PNG");
+    }
+    if (png.isEmpty()) {
+        onToolResolved(slotIndex,
+            QStringLiteral("Error: PNG encode failed."));
+        return;
+    }
+
+    // Fresh client for the side-channel vision call so it doesn't tangle
+    // with the main chat reply. Reuses the user's chat model — must be
+    // vision-capable.
+    LlmClient *client = m_settings->createClient(this);
+
+    LlmClient::Request req;
+    req.system = QStringLiteral(
+        "You are reading one rendered page of an academic paper. Describe "
+        "figures, diagrams, charts, and tables; transcribe equations as "
+        "LaTeX. Answer the user's focus question if provided, otherwise "
+        "give a complete page description. Output Markdown only.");
+    LlmClient::Message msg;
+    msg.role = QStringLiteral("user");
+    msg.images.append(png);
+    msg.content = question.trimmed().isEmpty()
+        ? QStringLiteral("Describe the content of this page.")
+        : question.trimmed();
+    req.messages.append(msg);
+    req.temperature = 0.0;
+    req.maxTokens = m_settings->maxTokens();
+    req.stream = false;
+
+    LlmReply *reply = client->send(req);
+    m_toolReplies.append(reply);
+
+    connect(reply, &LlmReply::finished, this,
+            [this, reply, client, slotIndex]() {
+        const QString text = reply->text();
+        m_toolReplies.removeAll(reply);
+        reply->deleteLater();
+        client->deleteLater();
+        onToolResolved(slotIndex, text.isEmpty()
+            ? QStringLiteral("(vision returned empty response)")
+            : text);
+    });
+    connect(reply, &LlmReply::errorOccurred, this,
+            [this, reply, client, slotIndex](const QString &err) {
+        m_toolReplies.removeAll(reply);
+        reply->deleteLater();
+        client->deleteLater();
+        onToolResolved(slotIndex,
+            QStringLiteral("Error from vision call: %1").arg(err));
+    });
 }
 
 QString ChatService::runGetFigureCaption(const QString &label) const
