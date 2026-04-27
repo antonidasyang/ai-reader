@@ -166,11 +166,11 @@ Rectangle {
                 anchors.margins: 6
                 spacing: 6
 
-                // One source of truth for the input row height — both the
-                // text area and the send button bind to it so the button
-                // is always exactly as tall as the input, and stays square.
-                property int rowHeight:
-                    Math.min(120, Math.max(36, input.implicitHeight + 8))
+                // Fixed input row height — both the text area and the
+                // square Send button bind to this. Long content (manually
+                // typed or prefilled via right-click → Ask AI) scrolls
+                // inside the ScrollView; the row itself never grows.
+                property int rowHeight: 36
 
                 ScrollView {
                     Layout.fillWidth: true
