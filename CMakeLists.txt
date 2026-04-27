@@ -56,6 +56,8 @@ qt_add_executable(ai-reader
     src/ChatModel.cpp
     src/ChatService.h
     src/ChatService.cpp
+    src/ChatHistoryCache.h
+    src/ChatHistoryCache.cpp
 )
 
 qt_add_qml_module(ai-reader

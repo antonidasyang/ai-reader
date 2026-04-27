@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ChatHistoryCache.h"
 #include "ChatModel.h"
 #include "LlmClient.h"
 
@@ -44,6 +45,8 @@ signals:
 
 private:
     void onPaperChanged();
+    void rehydrateFromCache();
+    void persistHistory();
     QString systemPrompt() const;
     void setLastError(const QString &err);
 
@@ -63,6 +66,7 @@ private:
     QPointer<LlmReply> m_reply;
 
     ChatModel m_messages;
+    ChatHistoryCache m_cache;
     QString m_lastError;
 
     // Conversation state sent to the API (includes tool_use / tool_result

@@ -65,6 +65,13 @@ void ChatModel::setLastStatus(ChatMessage::Status s, const QString &err)
     emit dataChanged(idx, idx, { StatusRole, ErrorRole });
 }
 
+void ChatModel::setMessages(QVector<ChatMessage> messages)
+{
+    beginResetModel();
+    m_messages = std::move(messages);
+    endResetModel();
+}
+
 void ChatModel::clear()
 {
     if (m_messages.isEmpty()) return;

@@ -37,6 +37,7 @@ public:
                        ChatMessage::Status status = ChatMessage::Done);
     void appendChunkToLast(const QString &chunk);
     void setLastStatus(ChatMessage::Status s, const QString &err = {});
+    void setMessages(QVector<ChatMessage> messages);
     void clear();
 
 private:

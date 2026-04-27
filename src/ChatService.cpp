@@ -22,7 +22,7 @@ ChatService::ChatService(Settings *settings,
     , m_toc(toc)
 {
     if (m_paper) {
-        connect(m_paper, &PaperController::pdfSourceChanged,
+        connect(m_paper, &PaperController::blocksChanged,
                 this, &ChatService::onPaperChanged);
     }
 }
@@ -32,7 +32,35 @@ ChatService::~ChatService() = default;
 void ChatService::onPaperChanged()
 {
     cancel();
-    clear();
+    m_messages.clear();
+    m_apiMessages.clear();
+    m_iterations = 0;
+    setLastError({});
+    m_cache.setPaperId(m_paper ? m_paper->paperId() : QString());
+    rehydrateFromCache();
+}
+
+void ChatService::rehydrateFromCache()
+{
+    if (m_cache.paperId().isEmpty()) return;
+    ChatHistoryCache::History h = m_cache.load();
+    if (h.messages.isEmpty() && h.apiMessages.isEmpty()) return;
+    // Any turn that was mid-stream when the app last quit is no longer
+    // recoverable — surface it as failed rather than a frozen Streaming.
+    for (ChatMessage &m : h.messages) {
+        if (m.status == ChatMessage::Streaming) {
+            m.status = ChatMessage::Failed;
+            if (m.error.isEmpty())
+                m.error = tr("Interrupted.");
+        }
+    }
+    m_messages.setMessages(std::move(h.messages));
+    m_apiMessages = std::move(h.apiMessages);
+}
+
+void ChatService::persistHistory()
+{
+    m_cache.save(m_messages.messages(), m_apiMessages);
 }
 
 void ChatService::clear()
@@ -41,6 +69,7 @@ void ChatService::clear()
     m_apiMessages.clear();
     m_iterations = 0;
     setLastError({});
+    m_cache.clear();
 }
 
 void ChatService::cancel()
@@ -52,6 +81,7 @@ void ChatService::cancel()
         m_reply.clear();
         m_messages.setLastStatus(ChatMessage::Failed, tr("Cancelled."));
         m_iterations = 0;
+        persistHistory();
         emit busyChanged();
     }
 }
@@ -133,6 +163,7 @@ void ChatService::runTurn()
         m_messages.setLastStatus(ChatMessage::Failed, message);
         setLastError(message);
         m_iterations = 0;
+        persistHistory();
         emit busyChanged();
     });
 }
@@ -204,6 +235,7 @@ void ChatService::onTurnFinished()
 void ChatService::cleanupAfterFinal()
 {
     m_iterations = 0;
+    persistHistory();
     emit busyChanged();
 }
 
