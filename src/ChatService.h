@@ -53,6 +53,7 @@ private:
     QString runTool(const ToolCall &call) const;
     QString runListSections() const;
     QString runReadPage(int page) const;
+    QString runReadSection(const QString &sectionId) const;
     void cleanupAfterFinal();
 
     QPointer<Settings> m_settings;

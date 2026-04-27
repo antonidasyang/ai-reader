@@ -246,6 +246,29 @@ QVector<ToolDef> ChatService::toolDefinitions() const
         defs.append(t);
     }
 
+    {
+        ToolDef t;
+        t.name = QStringLiteral("read_section");
+        t.description = QStringLiteral(
+            "Return the full text of a section identified by its TOC id "
+            "(use list_sections first to discover ids). The result includes "
+            "every nested subsection up to the next sibling-or-higher-level "
+            "heading.");
+        QJsonObject idProp;
+        idProp[QStringLiteral("type")] = QStringLiteral("string");
+        idProp[QStringLiteral("description")] = QStringLiteral(
+            "TOC `id` field, e.g. \"s2\" or \"s3.1\".");
+        QJsonObject props;
+        props[QStringLiteral("section_id")] = idProp;
+        QJsonObject schema;
+        schema[QStringLiteral("type")] = QStringLiteral("object");
+        schema[QStringLiteral("properties")] = props;
+        schema[QStringLiteral("required")] =
+            QJsonArray{ QStringLiteral("section_id") };
+        t.inputSchema = schema;
+        defs.append(t);
+    }
+
     return defs;
 }
 
@@ -256,6 +279,11 @@ QString ChatService::runTool(const ToolCall &call) const
     if (call.name == QLatin1String("read_page")) {
         const int page = call.input.value(QStringLiteral("page")).toInt(-1);
         return runReadPage(page);
+    }
+    if (call.name == QLatin1String("read_section")) {
+        const QString sid =
+            call.input.value(QStringLiteral("section_id")).toString();
+        return runReadSection(sid);
     }
     return QStringLiteral("Error: unknown tool '%1'.").arg(call.name);
 }
@@ -282,6 +310,81 @@ QString ChatService::runListSections() const
     }
     return QString::fromUtf8(
         QJsonDocument(arr).toJson(QJsonDocument::Compact));
+}
+
+QString ChatService::runReadSection(const QString &sectionId) const
+{
+    if (sectionId.isEmpty())
+        return QStringLiteral("Error: section_id is required.");
+    if (!m_toc || !m_paper || !m_paper->blocks())
+        return QStringLiteral("Error: paper or TOC unavailable.");
+    TocModel *tm = const_cast<TocService *>(m_toc.data())->sections();
+    if (tm->sectionCount() == 0)
+        return QStringLiteral(
+            "Error: TOC has not been generated. Ask the user to click "
+            "'Generate' in the TOC sidebar, or use read_page instead.");
+
+    // Locate this section.
+    int thisRow = -1;
+    int thisStartBlock = -1;
+    int thisLevel = -1;
+    QString title;
+    for (int row = 0; row < tm->sectionCount(); ++row) {
+        const QModelIndex idx = tm->index(row);
+        if (tm->data(idx, TocModel::IdRole).toString() == sectionId) {
+            thisStartBlock = tm->data(idx, TocModel::StartBlockRole).toInt();
+            thisLevel      = tm->data(idx, TocModel::LevelRole).toInt();
+            title          = tm->data(idx, TocModel::TitleRole).toString();
+            thisRow = row;
+            break;
+        }
+    }
+    if (thisRow < 0)
+        return QStringLiteral("Error: section '%1' not found in the TOC.")
+            .arg(sectionId);
+    if (thisStartBlock < 0)
+        return QStringLiteral("Error: section '%1' has no start block.")
+            .arg(sectionId);
+
+    // Find the next sibling-or-higher-level entry; its start_block bounds
+    // this section. Subsections (deeper levels) are part of THIS section.
+    int nextStartBlock = INT_MAX;
+    for (int row = thisRow + 1; row < tm->sectionCount(); ++row) {
+        const QModelIndex idx = tm->index(row);
+        const int level = tm->data(idx, TocModel::LevelRole).toInt();
+        if (level <= thisLevel) {
+            const int sb = tm->data(idx, TocModel::StartBlockRole).toInt();
+            if (sb >= 0) nextStartBlock = sb;
+            break;
+        }
+    }
+
+    BlockListModel *bm = m_paper->blocks();
+    QString out = QStringLiteral("# %1\n").arg(title);
+    int currentPage = -1;
+    for (int row = 0; row < bm->blockCount(); ++row) {
+        const Block *b = bm->blockAt(row);
+        if (!b) continue;
+        if (b->id < thisStartBlock) continue;
+        if (b->id >= nextStartBlock) break;
+        if (b->page != currentPage) {
+            out += QStringLiteral("\n[page %1]\n").arg(b->page + 1);
+            currentPage = b->page;
+        }
+        switch (b->kind) {
+        case Block::Heading:
+            out += QStringLiteral("\n## %1\n").arg(b->text);
+            break;
+        case Block::Caption:
+            out += QStringLiteral("\n_(%1)_\n").arg(b->text);
+            break;
+        default:
+            out += b->text;
+            out += QChar('\n');
+            break;
+        }
+    }
+    return out.trimmed();
 }
 
 QString ChatService::runReadPage(int page) const
