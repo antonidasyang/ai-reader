@@ -58,6 +58,7 @@ private:
     QString runReadPage(int page) const;
     QString runReadSection(const QString &sectionId) const;
     QString runGetUserSelection() const;
+    QString runSearchPaper(const QString &query, int topK) const;
     void cleanupAfterFinal();
 
     QPointer<Settings> m_settings;

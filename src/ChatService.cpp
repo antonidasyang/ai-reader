@@ -282,6 +282,35 @@ QVector<ToolDef> ChatService::toolDefinitions() const
 
     {
         ToolDef t;
+        t.name = QStringLiteral("search_paper");
+        t.description = QStringLiteral(
+            "Case-insensitive substring search across the paper's blocks. "
+            "Returns up to top_k matches as a JSON array of "
+            "{block_id, page, snippet, score} sorted by score. Use this when "
+            "the user asks where a term/phrase appears, or to locate a "
+            "definition before fetching its surrounding section.");
+        QJsonObject queryProp;
+        queryProp[QStringLiteral("type")] = QStringLiteral("string");
+        queryProp[QStringLiteral("description")] =
+            QStringLiteral("The substring or term to search for.");
+        QJsonObject topKProp;
+        topKProp[QStringLiteral("type")] = QStringLiteral("integer");
+        topKProp[QStringLiteral("description")] = QStringLiteral(
+            "Maximum number of matches to return. Defaults to 10.");
+        QJsonObject props;
+        props[QStringLiteral("query")] = queryProp;
+        props[QStringLiteral("top_k")] = topKProp;
+        QJsonObject schema;
+        schema[QStringLiteral("type")] = QStringLiteral("object");
+        schema[QStringLiteral("properties")] = props;
+        schema[QStringLiteral("required")] =
+            QJsonArray{ QStringLiteral("query") };
+        t.inputSchema = schema;
+        defs.append(t);
+    }
+
+    {
+        ToolDef t;
         t.name = QStringLiteral("get_user_selection");
         t.description = QStringLiteral(
             "Return the text the user currently has highlighted in the PDF, "
@@ -336,7 +365,77 @@ QString ChatService::runTool(const ToolCall &call) const
     }
     if (call.name == QLatin1String("get_user_selection"))
         return runGetUserSelection();
+    if (call.name == QLatin1String("search_paper")) {
+        const QString query =
+            call.input.value(QStringLiteral("query")).toString();
+        const int topK =
+            call.input.value(QStringLiteral("top_k")).toInt(10);
+        return runSearchPaper(query, topK);
+    }
     return QStringLiteral("Error: unknown tool '%1'.").arg(call.name);
+}
+
+QString ChatService::runSearchPaper(const QString &query, int topK) const
+{
+    if (query.trimmed().isEmpty())
+        return QStringLiteral("Error: query is required.");
+    if (!m_paper || !m_paper->blocks())
+        return QStringLiteral("Error: no paper loaded.");
+
+    if (topK <= 0) topK = 10;
+    if (topK > 50) topK = 50;
+
+    BlockListModel *bm = m_paper->blocks();
+    const QString needle = query.trimmed();
+
+    struct Hit { int row; int score; int firstAt; };
+    QVector<Hit> hits;
+    hits.reserve(bm->blockCount());
+
+    for (int row = 0; row < bm->blockCount(); ++row) {
+        const Block *b = bm->blockAt(row);
+        if (!b || b->text.isEmpty()) continue;
+        int score = 0;
+        int from = 0;
+        int firstAt = -1;
+        while (true) {
+            const int at = b->text.indexOf(needle, from, Qt::CaseInsensitive);
+            if (at < 0) break;
+            if (firstAt < 0) firstAt = at;
+            ++score;
+            from = at + needle.size();
+        }
+        if (score > 0)
+            hits.append({ row, score, firstAt });
+    }
+
+    if (hits.isEmpty())
+        return QStringLiteral("[]");
+
+    std::sort(hits.begin(), hits.end(),
+              [](const Hit &a, const Hit &b) { return a.score > b.score; });
+
+    constexpr int kSnippetRadius = 60;
+    QJsonArray arr;
+    for (int i = 0; i < hits.size() && i < topK; ++i) {
+        const Hit &h = hits[i];
+        const Block *b = bm->blockAt(h.row);
+        if (!b) continue;
+        const int start = qMax(0, h.firstAt - kSnippetRadius);
+        const int end = qMin(b->text.size(),
+                             h.firstAt + needle.size() + kSnippetRadius);
+        QString snippet = b->text.mid(start, end - start);
+        if (start > 0) snippet.prepend(QStringLiteral("..."));
+        if (end < b->text.size()) snippet.append(QStringLiteral("..."));
+
+        QJsonObject o;
+        o[QStringLiteral("block_id")] = b->id;
+        o[QStringLiteral("page")] = b->page + 1;
+        o[QStringLiteral("snippet")] = snippet;
+        o[QStringLiteral("score")] = h.score;
+        arr.append(o);
+    }
+    return QString::fromUtf8(QJsonDocument(arr).toJson(QJsonDocument::Compact));
 }
 
 QString ChatService::runGetUserSelection() const
