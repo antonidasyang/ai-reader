@@ -10,11 +10,19 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 
+#include <qt6keychain/keychain.h>
+
+using QKeychain::DeletePasswordJob;
+using QKeychain::Error;
+using QKeychain::Job;
+using QKeychain::ReadPasswordJob;
+using QKeychain::WritePasswordJob;
+
 namespace {
 constexpr auto kKeyProvider    = "llm/provider";
 constexpr auto kKeyModel       = "llm/model";
 constexpr auto kKeyBaseUrl     = "llm/baseUrl";
-constexpr auto kKeyApiKey      = "llm/apiKey";
+constexpr auto kKeyApiKey      = "llm/apiKey";  // legacy: for one-time migration
 constexpr auto kKeyTemperature   = "llm/temperature";
 constexpr auto kKeyMaxTokens     = "llm/maxTokens";
 constexpr auto kKeyContextWindow = "llm/contextWindow";
@@ -42,6 +50,13 @@ Settings::Settings(QObject *parent)
     , m_nam(new QNetworkAccessManager(this))
 {
     load();
+    // If a legacy plaintext key was migrated out of QSettings during load(),
+    // m_apiKey is already populated and we just need to push it into the
+    // keychain. Otherwise an async read brings the secret back in.
+    if (!m_apiKey.isEmpty())
+        writeApiKeyToKeychain(m_apiKey);
+    else
+        readApiKeyFromKeychain();
 }
 
 Settings::~Settings() = default;
@@ -81,9 +96,23 @@ void Settings::setApiKey(const QString &v)
 {
     if (v == m_apiKey) return;
     m_apiKey = v;
-    save();
     emit apiKeyChanged();
     emit configurationChanged();
+    if (m_apiKey.isEmpty()) {
+        auto *job = new DeletePasswordJob(QStringLiteral("ai-reader"), this);
+        job->setKey(QStringLiteral("llm/apiKey"));
+        job->setInsecureFallback(true);
+        connect(job, &Job::finished, this, [this](Job *j) {
+            if (j->error() != QKeychain::NoError
+                && j->error() != QKeychain::EntryNotFound)
+                setKeychainStatus(tr("Keychain delete failed: %1").arg(j->errorString()));
+            else
+                setKeychainStatus(tr("API key removed from keyring."));
+        });
+        job->start();
+    } else {
+        writeApiKeyToKeychain(m_apiKey);
+    }
 }
 
 void Settings::setTemperature(double v)
@@ -286,6 +315,53 @@ void Settings::fetchModels(const QString &provider,
     });
 }
 
+void Settings::readApiKeyFromKeychain()
+{
+    auto *job = new ReadPasswordJob(QStringLiteral("ai-reader"), this);
+    job->setKey(QStringLiteral("llm/apiKey"));
+    job->setInsecureFallback(true);
+    connect(job, &Job::finished, this, [this](Job *j) {
+        auto *r = static_cast<ReadPasswordJob *>(j);
+        const Error err = r->error();
+        if (err == QKeychain::NoError) {
+            const QString text = r->textData();
+            if (text != m_apiKey) {
+                m_apiKey = text;
+                emit apiKeyChanged();
+                emit configurationChanged();
+            }
+            setKeychainStatus(tr("API key loaded from keyring."));
+        } else if (err == QKeychain::EntryNotFound) {
+            setKeychainStatus(tr("No API key in keyring yet."));
+        } else {
+            setKeychainStatus(tr("Keychain read failed: %1").arg(r->errorString()));
+        }
+    });
+    job->start();
+}
+
+void Settings::writeApiKeyToKeychain(const QString &value)
+{
+    auto *job = new WritePasswordJob(QStringLiteral("ai-reader"), this);
+    job->setKey(QStringLiteral("llm/apiKey"));
+    job->setTextData(value);
+    job->setInsecureFallback(true);
+    connect(job, &Job::finished, this, [this](Job *j) {
+        if (j->error() == QKeychain::NoError)
+            setKeychainStatus(tr("API key saved to keyring."));
+        else
+            setKeychainStatus(tr("Keychain write failed: %1").arg(j->errorString()));
+    });
+    job->start();
+}
+
+void Settings::setKeychainStatus(const QString &s)
+{
+    if (s == m_keychainStatus) return;
+    m_keychainStatus = s;
+    emit keychainStatusChanged();
+}
+
 void Settings::setFetchingModels(bool v)
 {
     if (v == m_fetchingModels) return;
@@ -312,7 +388,12 @@ void Settings::load()
     m_provider      = m_qs.value(kKeyProvider,      QStringLiteral("anthropic")).toString();
     m_model         = m_qs.value(kKeyModel,         QStringLiteral("claude-opus-4-7")).toString();
     m_baseUrl       = m_qs.value(kKeyBaseUrl,       QString{}).toString();
+    // Legacy plaintext API key — picked up here only so the constructor
+    // can migrate it into the keychain. Erase from QSettings to avoid
+    // leaving a plaintext copy on disk.
     m_apiKey        = m_qs.value(kKeyApiKey,        QString{}).toString();
+    if (!m_apiKey.isEmpty())
+        m_qs.remove(kKeyApiKey);
     m_temperature   = m_qs.value(kKeyTemperature,   0.2).toDouble();
     m_maxTokens     = m_qs.value(kKeyMaxTokens,     8192).toInt();
     m_contextWindow = m_qs.value(kKeyContextWindow, 128000).toInt();
@@ -331,7 +412,7 @@ void Settings::save()
     m_qs.setValue(kKeyProvider,      m_provider);
     m_qs.setValue(kKeyModel,         m_model);
     m_qs.setValue(kKeyBaseUrl,       m_baseUrl);
-    m_qs.setValue(kKeyApiKey,        m_apiKey);
+    // apiKey lives in the OS keychain, not QSettings.
     m_qs.setValue(kKeyTemperature,   m_temperature);
     m_qs.setValue(kKeyMaxTokens,     m_maxTokens);
     m_qs.setValue(kKeyContextWindow, m_contextWindow);

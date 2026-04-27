@@ -38,6 +38,7 @@ class Settings : public QObject
     Q_PROPERTY(QStringList availableModels READ availableModels NOTIFY availableModelsChanged)
     Q_PROPERTY(bool    fetchingModels READ fetchingModels       NOTIFY fetchingModelsChanged)
     Q_PROPERTY(QString modelsError    READ modelsError          NOTIFY modelsErrorChanged)
+    Q_PROPERTY(QString keychainStatus READ keychainStatus       NOTIFY keychainStatusChanged)
 
 public:
     explicit Settings(QObject *parent = nullptr);
@@ -64,6 +65,7 @@ public:
     QStringList availableModels() const { return m_availableModels; }
     bool        fetchingModels()  const { return m_fetchingModels; }
     QString     modelsError()     const { return m_modelsError; }
+    QString     keychainStatus()  const { return m_keychainStatus; }
 
     void setProvider(const QString &v);
     void setModel(const QString &v);
@@ -117,6 +119,7 @@ signals:
     void availableModelsChanged();
     void fetchingModelsChanged();
     void modelsErrorChanged();
+    void keychainStatusChanged();
 
 private:
     void load();
@@ -124,6 +127,9 @@ private:
     void setFetchingModels(bool v);
     void setModelsError(const QString &err);
     void setAvailableModels(QStringList list);
+    void setKeychainStatus(const QString &s);
+    void readApiKeyFromKeychain();
+    void writeApiKeyToKeychain(const QString &value);
 
     QSettings m_qs;
     QString m_provider;
@@ -147,4 +153,5 @@ private:
     QStringList m_availableModels;
     bool m_fetchingModels = false;
     QString m_modelsError;
+    QString m_keychainStatus;
 };

@@ -166,11 +166,22 @@ Dialog {
         Label {
             Layout.fillWidth: true
             wrapMode: Text.Wrap
+            visible: text.length > 0
+            font.pixelSize: 11
+            color: "#555"
+            text: settings.keychainStatus
+        }
+
+        Label {
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
             color: "#888"
             font.pixelSize: 11
             text: qsTr("Settings are stored per-user in the OS-native QSettings " +
-                       "location. The API key is currently saved in plain text; " +
-                       "QtKeychain integration is planned.")
+                       "location. The API key lives in the OS keychain " +
+                       "(Keychain on macOS, Credential Manager on Windows, " +
+                       "libsecret on Linux); when no keychain backend is " +
+                       "available it falls back to plaintext QSettings.")
         }
     }
 }

@@ -16,6 +16,8 @@ find_package(Qt6 6.4 REQUIRED COMPONENTS
     PdfQuick
 )
 
+find_package(Qt6Keychain REQUIRED)
+
 qt_standard_project_setup()
 
 qt_add_executable(ai-reader
@@ -103,4 +105,5 @@ target_link_libraries(ai-reader PRIVATE
     Qt6::QuickControls2
     Qt6::Pdf
     Qt6::PdfQuick
+    Qt6Keychain::Qt6Keychain
 )
