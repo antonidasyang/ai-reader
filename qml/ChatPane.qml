@@ -55,7 +55,11 @@ Rectangle {
             ScrollBar.vertical: ScrollBar { active: true }
 
             // Auto-scroll to the bottom as new content streams in.
+            // onCountChanged covers new bubbles; onContentHeightChanged
+            // covers the active assistant bubble growing chunk-by-chunk
+            // (count stays the same, contentHeight grows).
             onCountChanged: positionViewAtEnd()
+            onContentHeightChanged: if (chat.busy) positionViewAtEnd()
 
             delegate: Item {
                 width: ListView.view ? ListView.view.width : 0

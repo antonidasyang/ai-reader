@@ -62,6 +62,7 @@ Dialog {
         }
 
         ScrollView {
+            id: visionScroll
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
@@ -75,6 +76,18 @@ Dialog {
                       ? vision.text
                       : qsTr("Click 'Read page (vision)' to send the current "
                              + "page image to the LLM.")
+
+                // Follow the bottom while the vision model streams so
+                // newly-arrived tokens stay visible.
+                onContentHeightChanged: {
+                    if (vision.status === VisionService.Generating)
+                        Qt.callLater(visionScroll.scrollToEnd)
+                }
+            }
+
+            function scrollToEnd() {
+                const f = visionScroll.contentItem
+                if (f) f.contentY = Math.max(0, f.contentHeight - f.height)
             }
         }
     }

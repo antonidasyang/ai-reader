@@ -63,6 +63,7 @@ Dialog {
             border.color: "#e0e0e0"
 
             ScrollView {
+                id: summaryScroll
                 anchors.fill: parent
                 anchors.margins: 1
                 clip: true
@@ -85,6 +86,18 @@ Dialog {
                     rightPadding: 16
                     topPadding: 12
                     bottomPadding: 12
+
+                    // Follow the bottom while the model is streaming so
+                    // the user sees fresh tokens without scrolling.
+                    onContentHeightChanged: {
+                        if (summary.status === SummaryService.Generating)
+                            Qt.callLater(scrollToEnd)
+                    }
+                }
+
+                function scrollToEnd() {
+                    const f = summaryScroll.contentItem
+                    if (f) f.contentY = Math.max(0, f.contentHeight - f.height)
                 }
             }
         }
