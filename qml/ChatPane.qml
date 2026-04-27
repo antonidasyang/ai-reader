@@ -154,7 +154,10 @@ Rectangle {
         // ── Input area ──────────────────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: input.implicitHeight + 20
+            // Track the (capped) row height — NOT input.implicitHeight,
+            // which is unbounded and would push the input/Send button
+            // off the visible pane when a long block is prefilled.
+            Layout.preferredHeight: inputRow.rowHeight + 12
             color: "#f0f0f0"
 
             RowLayout {
