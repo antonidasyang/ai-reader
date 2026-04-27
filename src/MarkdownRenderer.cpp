@@ -1,5 +1,7 @@
 #include "MarkdownRenderer.h"
 
+#include "LatexRenderer.h"
+
 #include <QRegularExpression>
 #include <QSet>
 #include <QString>
@@ -270,12 +272,13 @@ void highlightCodeBlocks(cmark_node *root)
     }
 }
 
-// ── Math styling pre-pass ───────────────────────────────────────────────
-// Real math rendering needs MicroTeX or KaTeX. As a placeholder, wrap
-// inline `$…$` and display `$$…$$` segments in HTML <code>/<pre> tags
-// with a distinct yellow background so they stand out from prose. Inner
-// content is emitted as HTML numeric character references so cmark's
-// inline-content parser doesn't mangle backslashes / asterisks / etc.
+// ── Math embedding pre-pass ─────────────────────────────────────────────
+// Replaces `$…$` (inline) and `$$…$$` (display) segments with rendered
+// PNG images embedded as data URLs. Renderer is MicroTeX (see
+// LatexRenderer); on render failure we fall back to a yellow-background
+// styled fragment so the source LaTeX is still readable. Code blocks
+// (fenced or inline backticks) are protected from substitution by
+// swapping them out for sentinel placeholders before scanning.
 
 QString entityEncodeForMath(const QString &s)
 {
@@ -300,29 +303,125 @@ QString entityEncodeForMath(const QString &s)
     return out;
 }
 
-QString styleMath(const QString &md)
+QString fallbackInline(const QString &latex)
 {
+    return QStringLiteral(
+        "<code style=\"background:#fff8d6;color:#5a3e00;"
+        "padding:0 3px;border-radius:3px;"
+        "font-family:monospace;\">$")
+        + entityEncodeForMath(latex)
+        + QStringLiteral("$</code>");
+}
+
+QString fallbackDisplay(const QString &latex)
+{
+    return QStringLiteral(
+        "<pre style=\"background:#fff8d6;color:#5a3e00;"
+        "padding:6px 8px;border-radius:4px;"
+        "font-family:monospace;white-space:pre-wrap;\">$$")
+        + entityEncodeForMath(latex)
+        + QStringLiteral("$$</pre>");
+}
+
+QString renderInlineMath(const QString &latex)
+{
+    LatexRenderer &lr = LatexRenderer::instance();
+    if (!lr.isAvailable()) return fallbackInline(latex);
+    const QString url = lr.renderDataUrl(latex, LatexRenderer::Inline, 16);
+    if (url.isEmpty()) return fallbackInline(latex);
+    // alt= preserves the LaTeX source for accessibility / copy-paste.
+    return QStringLiteral(
+        "<img src=\"%1\" alt=\"$%2$\" "
+        "style=\"vertical-align:middle\"/>")
+        .arg(url, htmlEscape(latex));
+}
+
+QString renderDisplayMath(const QString &latex)
+{
+    LatexRenderer &lr = LatexRenderer::instance();
+    if (!lr.isAvailable()) return fallbackDisplay(latex);
+    const QString url = lr.renderDataUrl(latex, LatexRenderer::Display, 18);
+    if (url.isEmpty()) return fallbackDisplay(latex);
+    return QStringLiteral(
+        "<div style=\"text-align:center;margin:8px 0;\">"
+        "<img src=\"%1\" alt=\"$$%2$$\"/>"
+        "</div>")
+        .arg(url, htmlEscape(latex));
+}
+
+// Sentinel chars (SOH / STX) carved out for placeholders. These are
+// control codes that won't appear in chat content and won't be touched
+// by the math regexes.
+constexpr QChar kPHStart(0x01);
+constexpr QChar kPHEnd(0x02);
+
+QString protectCode(const QString &md, QVector<QString> &saved)
+{
+    // Match fenced blocks (``` or ~~~) and inline backtick spans. The
+    // fenced-block patterns use the lazy `[\s\S]*?` to allow newlines.
+    static const QRegularExpression re(
+        QStringLiteral(R"(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]+`)"));
+
+    QString out;
+    out.reserve(md.size());
+    int last = 0;
+    QRegularExpressionMatchIterator it = re.globalMatch(md);
+    while (it.hasNext()) {
+        const QRegularExpressionMatch m = it.next();
+        out += md.mid(last, m.capturedStart() - last);
+        out += kPHStart;
+        out += QString::number(saved.size());
+        out += kPHEnd;
+        saved.append(m.captured(0));
+        last = m.capturedEnd();
+    }
+    out += md.mid(last);
+    return out;
+}
+
+QString restoreCode(const QString &s, const QVector<QString> &saved)
+{
+    QString out;
+    out.reserve(s.size());
+    int i = 0;
+    while (i < s.size()) {
+        if (s[i] == kPHStart) {
+            int end = s.indexOf(kPHEnd, i + 1);
+            if (end < 0) { out += s[i++]; continue; }
+            bool ok = false;
+            const int idx = s.mid(i + 1, end - i - 1).toInt(&ok);
+            if (ok && idx >= 0 && idx < saved.size()) {
+                out += saved[idx];
+                i = end + 1;
+                continue;
+            }
+            out += s[i++];
+        } else {
+            out += s[i++];
+        }
+    }
+    return out;
+}
+
+QString embedMath(const QString &md)
+{
+    QVector<QString> savedCode;
+    QString r = protectCode(md, savedCode);
+
     static const QRegularExpression dispRe(
         QStringLiteral(R"(\$\$([\s\S]+?)\$\$)"));
     static const QRegularExpression inlineRe(
         QStringLiteral(R"(\$([^\$\n]+?)\$)"));
 
-    QString r = md;
     {
         // Display math first so inline doesn't eat the inner $.
         QString out;
         int last = 0;
         QRegularExpressionMatchIterator it = dispRe.globalMatch(r);
         while (it.hasNext()) {
-            QRegularExpressionMatch m = it.next();
+            const QRegularExpressionMatch m = it.next();
             out += r.mid(last, m.capturedStart() - last);
-            const QString inner = entityEncodeForMath(m.captured(1));
-            out += QStringLiteral(
-                "<pre style=\"background:#fff8d6;color:#5a3e00;"
-                "padding:6px 8px;border-radius:4px;"
-                "font-family:monospace;white-space:pre-wrap;\">$$")
-                + inner
-                + QStringLiteral("$$</pre>");
+            out += renderDisplayMath(m.captured(1).trimmed());
             last = m.capturedEnd();
         }
         out += r.mid(last);
@@ -333,24 +432,18 @@ QString styleMath(const QString &md)
         int last = 0;
         QRegularExpressionMatchIterator it = inlineRe.globalMatch(r);
         while (it.hasNext()) {
-            QRegularExpressionMatch m = it.next();
-            // Skip if the captured content is empty / pure whitespace; that
-            // catches $$ pairs that survived the display pass and stray $.
+            const QRegularExpressionMatch m = it.next();
             const QString raw = m.captured(1);
             if (raw.trimmed().isEmpty()) continue;
             out += r.mid(last, m.capturedStart() - last);
-            out += QStringLiteral(
-                "<code style=\"background:#fff8d6;color:#5a3e00;"
-                "padding:0 3px;border-radius:3px;"
-                "font-family:monospace;\">$")
-                + entityEncodeForMath(raw)
-                + QStringLiteral("$</code>");
+            out += renderInlineMath(raw.trimmed());
             last = m.capturedEnd();
         }
         out += r.mid(last);
         r = out;
     }
-    return r;
+
+    return restoreCode(r, savedCode);
 }
 
 } // namespace
@@ -365,7 +458,7 @@ QString MarkdownRenderer::toHtml(const QString &markdown) const
 {
     if (markdown.isEmpty()) return {};
 
-    const QString prepared = styleMath(markdown);
+    const QString prepared = embedMath(markdown);
     const QByteArray utf8 = prepared.toUtf8();
     cmark_parser *parser = cmark_parser_new(CMARK_OPT_DEFAULT | CMARK_OPT_UNSAFE);
     if (!parser) return markdown;

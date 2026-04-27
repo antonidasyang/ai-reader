@@ -14,12 +14,35 @@ find_package(Qt6 6.4 REQUIRED COMPONENTS
     QuickControls2
     Pdf
     PdfQuick
+    Widgets       # MicroTeX's Qt backend pulls in QtWidgets/QtPrintSupport.
+    PrintSupport
 )
 
 find_package(Qt6Keychain REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(CMARK_GFM REQUIRED IMPORTED_TARGET libcmark-gfm)
+
+# ── MicroTeX (LaTeX/math rendering) ────────────────────────────────────
+# Pulled via FetchContent so the build is reproducible and we don't
+# need a packaged libmicrotex on the host. The upstream CMake exposes
+# the static target as `LaTeX`, the Qt backend gates on -DQT=ON, and a
+# `res/` directory must be reachable at runtime — its absolute source
+# path is baked in as AIREADER_MICROTEX_RES_DIR for now (M5 packaging
+# will switch to a relocatable copy beside the binary).
+include(FetchContent)
+set(QT             ON  CACHE BOOL "" FORCE)
+set(HAVE_LOG       OFF CACHE BOOL "" FORCE)
+set(GRAPHICS_DEBUG OFF CACHE BOOL "" FORCE)
+set(BUILD_EXAMPLE  OFF CACHE BOOL "" FORCE)
+set(MEM_CHECK      OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+    microtex
+    GIT_REPOSITORY https://github.com/NanoMichael/MicroTeX.git
+    GIT_TAG        master
+    GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(microtex)
 
 qt_standard_project_setup()
 
@@ -65,6 +88,12 @@ qt_add_executable(ai-reader
     src/ChatHistoryCache.cpp
     src/MarkdownRenderer.h
     src/MarkdownRenderer.cpp
+    src/LatexRenderer.h
+    src/LatexRenderer.cpp
+)
+
+target_compile_definitions(ai-reader PRIVATE
+    AIREADER_MICROTEX_RES_DIR="${microtex_SOURCE_DIR}/res"
 )
 
 qt_add_qml_module(ai-reader
@@ -110,6 +139,9 @@ target_link_libraries(ai-reader PRIVATE
     Qt6::QuickControls2
     Qt6::Pdf
     Qt6::PdfQuick
+    Qt6::Widgets
+    Qt6::PrintSupport
     Qt6Keychain::Qt6Keychain
     PkgConfig::CMARK_GFM
+    LaTeX                # MicroTeX static lib (provided by FetchContent)
 )
