@@ -252,6 +252,10 @@ ApplicationWindow {
                     anchors.fill: parent
                     document: pdfDoc
                     visible: pdfDoc.status === PdfDocument.Ready
+                    // Mirror the user's PDF selection into the controller so
+                    // the chat tool `get_user_selection` can read it.
+                    onSelectedTextChanged: paperController.setCurrentSelection(
+                        selectedText, currentPage)
                 }
 
                 Rectangle {

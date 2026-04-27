@@ -68,6 +68,19 @@ void PaperController::clear()
     emit pdfSourceChanged();
     emit pdfPasswordChanged();
     emit blocksChanged();
+    if (!m_currentSelection.isEmpty() || m_currentSelectionPage != -1) {
+        m_currentSelection.clear();
+        m_currentSelectionPage = -1;
+        emit currentSelectionChanged();
+    }
+}
+
+void PaperController::setCurrentSelection(const QString &text, int page)
+{
+    if (text == m_currentSelection && page == m_currentSelectionPage) return;
+    m_currentSelection = text;
+    m_currentSelectionPage = page;
+    emit currentSelectionChanged();
 }
 
 void PaperController::reload()

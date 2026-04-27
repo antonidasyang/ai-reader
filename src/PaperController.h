@@ -20,6 +20,8 @@ class PaperController : public QObject
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
     Q_PROPERTY(QString errorString READ errorString NOTIFY statusChanged)
     Q_PROPERTY(QString paperId READ paperId NOTIFY blocksChanged)
+    Q_PROPERTY(QString currentSelection READ currentSelection NOTIFY currentSelectionChanged)
+    Q_PROPERTY(int currentSelectionPage READ currentSelectionPage NOTIFY currentSelectionChanged)
 
 public:
     enum Status { Empty, Loading, Ready, Error };
@@ -36,6 +38,8 @@ public:
     QString errorString() const { return m_errorString; }
     int pageCount() const { return m_doc.pageCount(); }
     QString paperId() const { return m_paperId; }
+    QString currentSelection() const { return m_currentSelection; }
+    int currentSelectionPage() const { return m_currentSelectionPage; }
 
     // Rasterize a page at approximately `targetWidthPx` wide. Returns a null
     // image when the page is out of range or the document isn't loaded.
@@ -45,6 +49,9 @@ public slots:
     void openPdf(const QUrl &url);
     void setPassword(const QString &password);
     void clear();
+    // Pushed from QML whenever the user's PDF selection changes; the chat
+    // tool `get_user_selection` reads the latest value.
+    Q_INVOKABLE void setCurrentSelection(const QString &text, int page);
 
 signals:
     void pdfSourceChanged();
@@ -52,6 +59,7 @@ signals:
     void blocksChanged();
     void statusChanged();
     void passwordRequired();
+    void currentSelectionChanged();
 
 private:
     void reload();
@@ -62,6 +70,8 @@ private:
     QUrl m_source;
     QString m_password;
     QString m_paperId;
+    QString m_currentSelection;
+    int m_currentSelectionPage = -1;
     Status m_status = Empty;
     QString m_errorString;
 };

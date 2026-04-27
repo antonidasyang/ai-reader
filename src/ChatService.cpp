@@ -282,6 +282,21 @@ QVector<ToolDef> ChatService::toolDefinitions() const
 
     {
         ToolDef t;
+        t.name = QStringLiteral("get_user_selection");
+        t.description = QStringLiteral(
+            "Return the text the user currently has highlighted in the PDF, "
+            "along with the page it lives on. Returns an empty selection when "
+            "nothing is highlighted. Use this when the user refers to "
+            "'this', 'the highlighted bit', a quoted snippet, etc.");
+        QJsonObject schema;
+        schema[QStringLiteral("type")] = QStringLiteral("object");
+        schema[QStringLiteral("properties")] = QJsonObject{};
+        t.inputSchema = schema;
+        defs.append(t);
+    }
+
+    {
+        ToolDef t;
         t.name = QStringLiteral("read_section");
         t.description = QStringLiteral(
             "Return the full text of a section identified by its TOC id "
@@ -319,7 +334,22 @@ QString ChatService::runTool(const ToolCall &call) const
             call.input.value(QStringLiteral("section_id")).toString();
         return runReadSection(sid);
     }
+    if (call.name == QLatin1String("get_user_selection"))
+        return runGetUserSelection();
     return QStringLiteral("Error: unknown tool '%1'.").arg(call.name);
+}
+
+QString ChatService::runGetUserSelection() const
+{
+    if (!m_paper)
+        return QStringLiteral("{\"text\":\"\",\"page\":0}");
+    const QString text = m_paper->currentSelection();
+    const int page = m_paper->currentSelectionPage();
+    QJsonObject o;
+    o[QStringLiteral("text")] = text;
+    o[QStringLiteral("page")] = (text.isEmpty() || page < 0) ? 0 : page + 1;
+    return QString::fromUtf8(
+        QJsonDocument(o).toJson(QJsonDocument::Compact));
 }
 
 QString ChatService::runListSections() const

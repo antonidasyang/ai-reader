@@ -57,6 +57,7 @@ private:
     QString runListSections() const;
     QString runReadPage(int page) const;
     QString runReadSection(const QString &sectionId) const;
+    QString runGetUserSelection() const;
     void cleanupAfterFinal();
 
     QPointer<Settings> m_settings;
