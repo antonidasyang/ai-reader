@@ -3,6 +3,7 @@
 #include "Block.h"
 #include "BlockListModel.h"
 #include "LlmClient.h"
+#include "PaperController.h"
 #include "Settings.h"
 
 #include <QAbstractItemModel>
@@ -26,24 +27,49 @@ QByteArray extractJsonObject(const QString &text)
 } // namespace
 
 TocService::TocService(Settings *settings,
-                       BlockListModel *blocks,
+                       PaperController *paper,
                        QObject *parent)
     : QObject(parent)
     , m_settings(settings)
-    , m_blocks(blocks)
+    , m_paper(paper)
+    , m_blocks(paper ? paper->blocks() : nullptr)
 {
-    if (m_blocks) {
-        connect(m_blocks, &QAbstractItemModel::modelReset,
-                this, &TocService::onModelReset);
+    if (m_paper) {
+        connect(m_paper, &PaperController::blocksChanged,
+                this, &TocService::onPaperChanged);
     }
 }
 
 TocService::~TocService() = default;
 
-void TocService::onModelReset()
+void TocService::onPaperChanged()
 {
     cancel();
     clear();
+    m_cache.setPaperId(m_paper ? m_paper->paperId() : QString());
+    rehydrateFromCache();
+}
+
+void TocService::rehydrateFromCache()
+{
+    if (!m_settings || !m_blocks) return;
+    if (m_cache.paperId().isEmpty()) return;
+
+    const QVector<Section> cached = m_cache.lookup(
+        m_settings->model(), TocCache::sha(systemPrompt()));
+    if (cached.isEmpty()) return;
+
+    // Rebuild blockId → page map so any UI that resolves start_block back
+    // to a page (TOC sidebar click) keeps working without regenerating.
+    m_blockIdToPage.clear();
+    for (int row = 0; row < m_blocks->blockCount(); ++row) {
+        const Block *b = m_blocks->blockAt(row);
+        if (b) m_blockIdToPage.insert(b->id, b->page);
+    }
+
+    m_model.setSections(QVector<Section>(cached));
+    emit sectionsChanged();
+    setStatus(Done);
 }
 
 void TocService::clear()
@@ -339,6 +365,11 @@ void TocService::parseResponse(const QString &text)
         return;
     }
 
+    if (m_settings && !m_cache.paperId().isEmpty()) {
+        m_cache.store(m_settings->model(),
+                      TocCache::sha(systemPrompt()),
+                      flat);
+    }
     m_model.setSections(std::move(flat));
     emit sectionsChanged();
     setStatus(Done);

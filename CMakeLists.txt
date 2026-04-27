@@ -46,6 +46,8 @@ qt_add_executable(ai-reader
     src/TocModel.cpp
     src/TocService.h
     src/TocService.cpp
+    src/TocCache.h
+    src/TocCache.cpp
     src/VisionService.h
     src/VisionService.cpp
     src/ChatModel.h

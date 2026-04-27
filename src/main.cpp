@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
     PaperController paperController;
     TranslationService translation(&settings, &paperController);
     SummaryService summary(&settings, paperController.blocks());
-    TocService toc(&settings, paperController.blocks());
+    TocService toc(&settings, &paperController);
     VisionService vision(&settings, &paperController);
     ChatService chat(&settings, &paperController, &toc);
 

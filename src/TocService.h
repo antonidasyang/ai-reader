@@ -1,5 +1,6 @@
 #pragma once
 
+#include "TocCache.h"
 #include "TocModel.h"
 
 #include <QHash>
@@ -10,6 +11,7 @@
 class BlockListModel;
 class LlmClient;
 class LlmReply;
+class PaperController;
 class Settings;
 
 class TocService : public QObject
@@ -26,9 +28,9 @@ public:
     enum Status { Idle, Generating, Done, Failed };
     Q_ENUM(Status)
 
-    explicit TocService(Settings *settings,
-                        BlockListModel *blocks,
-                        QObject *parent = nullptr);
+    TocService(Settings *settings,
+               PaperController *paper,
+               QObject *parent = nullptr);
     ~TocService() override;
 
     TocModel *sections()    { return &m_model; }
@@ -49,17 +51,20 @@ signals:
     void navigationRequested(int blockId, int page);
 
 private:
-    void onModelReset();
+    void onPaperChanged();
+    void rehydrateFromCache();
     QString systemPrompt() const;
     QString userPrompt() const;
     void parseResponse(const QString &text);
     void setStatus(Status s, const QString &err = {});
 
     QPointer<Settings> m_settings;
+    QPointer<PaperController> m_paper;
     QPointer<BlockListModel> m_blocks;
     QPointer<LlmClient> m_client;
     QPointer<LlmReply> m_reply;
     TocModel m_model;
+    TocCache m_cache;
 
     // Map block_id → page recorded when we sent the heading list, so we can
     // resolve the LLM's `start_block` references back to a navigable page.
