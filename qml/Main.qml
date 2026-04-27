@@ -172,6 +172,18 @@ ApplicationWindow {
                 checked: chatPane.visible
                 onClicked: chatPane.visible = !chatPane.visible
             }
+            ToolButton {
+                text: qsTr("Quote → Chat")
+                visible: paperController.currentSelection.length > 0
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("Quote the highlighted PDF text into the chat input")
+                onClicked: {
+                    chatPane.visible = true
+                    chatPane.prefillInput(paperController.currentSelection,
+                                          paperController.currentSelectionPage + 1)
+                }
+            }
             Label {
                 text: pdfDoc.status === PdfDocument.Ready
                       ? qsTr("%1 pages · %2 blocks")
