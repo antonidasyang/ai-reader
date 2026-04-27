@@ -12,6 +12,7 @@ Rectangle {
     property bool syncEnabled: true
 
     signal pageRequested(int page)
+    signal askInChatRequested(string text, int page)
 
     function showPage(page) {
         if (!root.model)
@@ -103,9 +104,32 @@ Rectangle {
                 ScrollBar.vertical: ScrollBar { active: true }
 
                 delegate: Rectangle {
+                    id: blockDelegate
                     width: ListView.view ? ListView.view.width : 0
-                    color: "transparent"
+                    color: ctxArea.containsMouse ? "#f0f3ff" : "transparent"
                     implicitHeight: cell.implicitHeight + 16
+
+                    // Right-click → context menu. Left-click is passed
+                    // through (no other delegate-level handler to compete
+                    // with), so block selection still feels passive.
+                    MouseArea {
+                        id: ctxArea
+                        anchors.fill: parent
+                        acceptedButtons: Qt.RightButton
+                        hoverEnabled: true
+                        onClicked: function(mouse) {
+                            if (mouse.button === Qt.RightButton)
+                                ctxMenu.popup()
+                        }
+                    }
+
+                    Menu {
+                        id: ctxMenu
+                        MenuItem {
+                            text: qsTr("Ask AI about this")
+                            onTriggered: root.askInChatRequested(model.text, model.page)
+                        }
+                    }
 
                     ColumnLayout {
                         id: cell

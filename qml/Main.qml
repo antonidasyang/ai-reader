@@ -111,6 +111,10 @@ ApplicationWindow {
             pdfView.goToPage(page)
             Qt.callLater(function() { scrollSync.suppressPdfSync = false })
         }
+        function onAskInChatRequested(text, page) {
+            chatPane.visible = true
+            chatPane.prefillInput(text, page + 1)
+        }
     }
 
     header: ToolBar {

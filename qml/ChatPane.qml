@@ -217,4 +217,18 @@ Rectangle {
         chat.sendMessage(t)
         input.clear()
     }
+
+    // Called by the BlockList right-click → "Ask AI about this". Prefills
+    // the input with the block text quoted as a Markdown blockquote and
+    // leaves the cursor on a fresh line below for the user to type their
+    // question. Does NOT auto-send — the user controls the moment.
+    function prefillInput(text, page) {
+        const quoted = text.split("\n").map(function(l) { return "> " + l }).join("\n")
+        const header = page > 0
+                       ? qsTr("About this passage (page %1):").arg(page)
+                       : qsTr("About this passage:")
+        input.text = header + "\n" + quoted + "\n\n"
+        input.cursorPosition = input.text.length
+        input.forceActiveFocus()
+    }
 }
