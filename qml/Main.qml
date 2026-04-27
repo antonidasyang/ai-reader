@@ -237,6 +237,11 @@ ApplicationWindow {
             Item {
                 SplitView.preferredWidth: split.width * 0.45
                 SplitView.minimumWidth: 280
+                // Without clip the PdfMultiPageView (a Flickable) can paint
+                // pages past the pane's right/left edges when the user
+                // shrinks the splitter and scrolls horizontally — the
+                // overflow draws over the TOC and BlockList panes.
+                clip: true
 
                 PdfMultiPageView {
                     id: pdfView
