@@ -10,7 +10,11 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 
-#include <qt6keychain/keychain.h>
+// qtkeychain is now built in-tree via FetchContent; its public header
+// lives at the source root so we include it unprefixed (the system
+// install would put it at qt6keychain/keychain.h, but we don't rely
+// on a system install anymore).
+#include <keychain.h>
 
 using QKeychain::DeletePasswordJob;
 using QKeychain::Error;

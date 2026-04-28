@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.4 REQUIRED COMPONENTS
+set(_aireader_qt_components
     Core
     Gui
     Network
@@ -17,11 +17,34 @@ find_package(Qt6 6.4 REQUIRED COMPONENTS
     Widgets       # MicroTeX's Qt backend pulls in QtWidgets/QtPrintSupport.
     PrintSupport
 )
-
-find_package(Qt6Keychain REQUIRED)
+if(UNIX AND NOT APPLE)
+    # qtkeychain's Linux backend (libsecret IPC) uses QtDBus; on Windows
+    # it uses Credential Manager and on macOS Security.framework, neither
+    # of which need DBus.
+    list(APPEND _aireader_qt_components DBus)
+endif()
+find_package(Qt6 6.4 REQUIRED COMPONENTS ${_aireader_qt_components})
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(CMARK_GFM REQUIRED IMPORTED_TARGET libcmark-gfm)
+
+include(FetchContent)
+
+# ── qtkeychain (secure credential storage) ─────────────────────────────
+# FetchContent so we don't require a system install — Linux distros
+# usually ship it via libqt6keychain-dev but Windows/macOS rarely do.
+# Built static so no extra DLL has to ship with the executable.
+set(BUILD_WITH_QT6         ON  CACHE BOOL "" FORCE)
+set(BUILD_TEST_APPLICATION OFF CACHE BOOL "" FORCE)
+set(BUILD_TRANSLATIONS     OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS      OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+    qtkeychain
+    GIT_REPOSITORY https://github.com/frankosterfeld/qtkeychain.git
+    GIT_TAG        0.14.3
+    GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(qtkeychain)
 
 # ── MicroTeX (LaTeX/math rendering) ────────────────────────────────────
 # Pulled via FetchContent so the build is reproducible and we don't
@@ -30,7 +53,6 @@ pkg_check_modules(CMARK_GFM REQUIRED IMPORTED_TARGET libcmark-gfm)
 # `res/` directory must be reachable at runtime — its absolute source
 # path is baked in as AIREADER_MICROTEX_RES_DIR for now (M5 packaging
 # will switch to a relocatable copy beside the binary).
-include(FetchContent)
 set(QT             ON  CACHE BOOL "" FORCE)
 set(HAVE_LOG       OFF CACHE BOOL "" FORCE)
 set(GRAPHICS_DEBUG OFF CACHE BOOL "" FORCE)
@@ -96,6 +118,14 @@ target_compile_definitions(ai-reader PRIVATE
     AIREADER_MICROTEX_RES_DIR="${microtex_SOURCE_DIR}/res"
 )
 
+# qtkeychain via FetchContent doesn't publish its include dir for
+# in-tree consumers (only INSTALL_INTERFACE), so wire it up explicitly.
+# The binary dir is needed for the generated qkeychain_export.h header.
+target_include_directories(ai-reader PRIVATE
+    ${qtkeychain_SOURCE_DIR}
+    ${qtkeychain_BINARY_DIR}
+)
+
 qt_add_qml_module(ai-reader
     URI AiReader
     VERSION 1.0
@@ -141,7 +171,10 @@ target_link_libraries(ai-reader PRIVATE
     Qt6::PdfQuick
     Qt6::Widgets
     Qt6::PrintSupport
-    Qt6Keychain::Qt6Keychain
+    qt6keychain          # qtkeychain static lib (provided by FetchContent)
     PkgConfig::CMARK_GFM
     LaTeX                # MicroTeX static lib (provided by FetchContent)
 )
+if(UNIX AND NOT APPLE)
+    target_link_libraries(ai-reader PRIVATE Qt6::DBus)
+endif()
