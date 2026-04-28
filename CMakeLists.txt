@@ -25,10 +25,23 @@ if(UNIX AND NOT APPLE)
 endif()
 find_package(Qt6 6.4 REQUIRED COMPONENTS ${_aireader_qt_components})
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(CMARK_GFM REQUIRED IMPORTED_TARGET libcmark-gfm)
-
 include(FetchContent)
+
+# ── cmark-gfm (CommonMark + GFM extensions) ────────────────────────────
+# FetchContent for the same uniformity reasons as qtkeychain: Windows
+# typically has no pkg-config, and bundling the static libs avoids
+# shipping cmark-gfm DLLs alongside the binary. Tests + shared build
+# are turned off so we only get the two static targets we link below.
+set(CMARK_TESTS  OFF CACHE BOOL "" FORCE)
+set(CMARK_SHARED OFF CACHE BOOL "" FORCE)
+set(CMARK_STATIC ON  CACHE BOOL "" FORCE)
+FetchContent_Declare(
+    cmark
+    GIT_REPOSITORY https://github.com/github/cmark-gfm.git
+    GIT_TAG        0.29.0.gfm.13
+    GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(cmark)
 
 # ── qtkeychain (secure credential storage) ─────────────────────────────
 # FetchContent so we don't require a system install — Linux distros
@@ -118,12 +131,18 @@ target_compile_definitions(ai-reader PRIVATE
     AIREADER_MICROTEX_RES_DIR="${microtex_SOURCE_DIR}/res"
 )
 
-# qtkeychain via FetchContent doesn't publish its include dir for
-# in-tree consumers (only INSTALL_INTERFACE), so wire it up explicitly.
-# The binary dir is needed for the generated qkeychain_export.h header.
+# Neither qtkeychain nor cmark-gfm publishes its include dirs to
+# in-tree consumers (qtkeychain only sets INSTALL_INTERFACE; cmark-gfm
+# uses bare include_directories() that don't propagate as target
+# properties). Wire them up explicitly. Binary dirs are needed for the
+# generated qkeychain_export.h / cmark-gfm_export.h / cmark-gfm_version.h.
 target_include_directories(ai-reader PRIVATE
     ${qtkeychain_SOURCE_DIR}
     ${qtkeychain_BINARY_DIR}
+    ${cmark_SOURCE_DIR}/src
+    ${cmark_SOURCE_DIR}/extensions
+    ${cmark_BINARY_DIR}/src
+    ${cmark_BINARY_DIR}/extensions
 )
 
 qt_add_qml_module(ai-reader
@@ -171,9 +190,10 @@ target_link_libraries(ai-reader PRIVATE
     Qt6::PdfQuick
     Qt6::Widgets
     Qt6::PrintSupport
-    qt6keychain          # qtkeychain static lib (provided by FetchContent)
-    PkgConfig::CMARK_GFM
-    LaTeX                # MicroTeX static lib (provided by FetchContent)
+    qt6keychain                          # qtkeychain static    (FetchContent)
+    libcmark-gfm_static                  # cmark-gfm core       (FetchContent)
+    libcmark-gfm-extensions_static       # cmark-gfm GFM exts   (FetchContent)
+    LaTeX                                # MicroTeX static      (FetchContent)
 )
 if(UNIX AND NOT APPLE)
     target_link_libraries(ai-reader PRIVATE Qt6::DBus)
