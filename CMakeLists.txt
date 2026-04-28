@@ -59,13 +59,28 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(qtkeychain)
 
+# ── tinyxml2 ───────────────────────────────────────────────────────────
+# MicroTeX's only external dep. Upstream CMake calls find_package on it,
+# which on Windows MSVC means vcpkg and on Linux means pkg-config — both
+# absent on a vanilla install. FetchContent makes it portable.
+set(tinyxml2_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING          OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+    tinyxml2
+    GIT_REPOSITORY https://github.com/leethomason/tinyxml2.git
+    GIT_TAG        10.0.0
+    GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(tinyxml2)
+
 # ── MicroTeX (LaTeX/math rendering) ────────────────────────────────────
-# Pulled via FetchContent so the build is reproducible and we don't
-# need a packaged libmicrotex on the host. The upstream CMake exposes
-# the static target as `LaTeX`, the Qt backend gates on -DQT=ON, and a
-# `res/` directory must be reachable at runtime — its absolute source
-# path is baked in as AIREADER_MICROTEX_RES_DIR for now (M5 packaging
-# will switch to a relocatable copy beside the binary).
+# Pulled via FetchContent and patched in-place to skip its
+# find_package(tinyxml2)/PkgConfig lookups — our FetchContent above
+# already provides the `tinyxml2` (and `tinyxml2::tinyxml2`) targets
+# that LaTeX target links against. Resources live under res/ and are
+# reached at runtime via AIREADER_MICROTEX_RES_DIR; M5 packaging will
+# replace the absolute source path with a relocatable copy beside the
+# binary.
 set(QT             ON  CACHE BOOL "" FORCE)
 set(HAVE_LOG       OFF CACHE BOOL "" FORCE)
 set(GRAPHICS_DEBUG OFF CACHE BOOL "" FORCE)
@@ -77,7 +92,37 @@ FetchContent_Declare(
     GIT_TAG        master
     GIT_SHALLOW    TRUE
 )
-FetchContent_MakeAvailable(microtex)
+FetchContent_GetProperties(microtex)
+if(NOT microtex_POPULATED)
+    # CMP0169 (CMake 3.30+) deprecates the single-arg FetchContent_Populate.
+    # We need the populate-then-patch flow until upstream stops calling
+    # find_package on tinyxml2.
+    if(POLICY CMP0169)
+        cmake_policy(PUSH)
+        cmake_policy(SET CMP0169 OLD)
+    endif()
+    FetchContent_Populate(microtex)
+    if(POLICY CMP0169)
+        cmake_policy(POP)
+    endif()
+
+    file(READ "${microtex_SOURCE_DIR}/CMakeLists.txt" _mt_cmake)
+    string(REPLACE
+        "find_package(tinyxml2 CONFIG REQUIRED)"
+        "# find_package(tinyxml2 CONFIG REQUIRED)  # ai-reader: from FetchContent"
+        _mt_cmake "${_mt_cmake}")
+    string(REPLACE
+        "find_package(PkgConfig REQUIRED)"
+        "# find_package(PkgConfig REQUIRED)  # ai-reader: tinyxml2 from FetchContent"
+        _mt_cmake "${_mt_cmake}")
+    string(REPLACE
+        "pkg_check_modules(tinyxml2 REQUIRED IMPORTED_TARGET tinyxml2)"
+        "# pkg_check_modules(tinyxml2 ...)  # ai-reader: from FetchContent"
+        _mt_cmake "${_mt_cmake}")
+    file(WRITE "${microtex_SOURCE_DIR}/CMakeLists.txt" "${_mt_cmake}")
+
+    add_subdirectory("${microtex_SOURCE_DIR}" "${microtex_BINARY_DIR}")
+endif()
 
 qt_standard_project_setup()
 
