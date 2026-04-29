@@ -215,7 +215,7 @@ qt_add_qml_module(ai-reader
         qml/PasswordDialog.qml
         qml/BlockList.qml
         qml/SettingsDialog.qml
-        qml/SummaryDialog.qml
+        qml/SummaryPane.qml
         qml/TocSidebar.qml
         qml/VisionDialog.qml
         qml/PromptsDialog.qml

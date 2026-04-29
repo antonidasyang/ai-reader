@@ -41,11 +41,6 @@ ApplicationWindow {
         anchors.centerIn: Overlay.overlay
     }
 
-    SummaryDialog {
-        id: summaryDialog
-        anchors.centerIn: Overlay.overlay
-    }
-
     VisionDialog {
         id: visionDialog
         anchors.centerIn: Overlay.overlay
@@ -175,14 +170,9 @@ ApplicationWindow {
             }
             ToolButton {
                 text: qsTr("Interpret")
-                enabled: paperController.status === PaperController.Ready
-                         && settings.isConfigured
-                onClicked: {
-                    summaryDialog.open()
-                    if (summary.text.length === 0
-                        && summary.status !== SummaryService.Generating)
-                        summary.generate()
-                }
+                checkable: true
+                checked: summaryPane.visible
+                onClicked: summaryPane.visible = !summaryPane.visible
             }
             ToolButton {
                 text: qsTr("Read page (vision)")
@@ -344,6 +334,14 @@ ApplicationWindow {
                 SplitView.minimumWidth: 240
                 model: paperController.blocks
                 paperStatus: paperController.status
+            }
+
+            // ── Interpretation pane (toggleable) ───────────────────────
+            SummaryPane {
+                id: summaryPane
+                visible: false
+                SplitView.preferredWidth: 360
+                SplitView.minimumWidth: 240
             }
 
             // ── Far right: chat pane (toggleable) ──────────────────────
