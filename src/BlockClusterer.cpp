@@ -169,6 +169,20 @@ double medianOf(QVector<double> v)
     return v[v.size() / 2];
 }
 
+// 25th-percentile gap. Used as the intra-line baseline instead of the
+// median: once a column has more than a couple of short paragraphs,
+// the median climbs into the no-man's-land between intra-line and
+// inter-paragraph gaps and the threshold sits *above* the real
+// inter-paragraph gaps — so paragraph breaks never fire. The lower
+// quartile stays in the intra-line cluster as long as paragraphs
+// average more than ~one line, which holds for body text.
+double lowerQuartileOf(QVector<double> v)
+{
+    if (v.isEmpty()) return 0.0;
+    std::sort(v.begin(), v.end());
+    return v[v.size() / 4];
+}
+
 bool sameColumn(const QRectF &a, const QRectF &b)
 {
     if (a.isEmpty() || b.isEmpty()) return true;
@@ -260,7 +274,7 @@ QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
             if (gap >= 0) gaps.append(gap);
         }
         const double medianHeight = medianOf(heights);
-        const double medianGap    = medianOf(gaps);
+        const double tightGap     = lowerQuartileOf(gaps);
 
         const Line *prev = nullptr;
         for (int i = 0; i < lines.size(); ++i) {
@@ -276,8 +290,13 @@ QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
             if (!startNew && prev) {
                 const bool sameCol = sameColumn(prev->bbox, ln.bbox);
                 const qreal vgap   = ln.bbox.top() - prev->bbox.bottom();
-                const qreal gapThreshold = qMax(medianGap * 1.7,
-                                                medianHeight * 0.55);
+                // Tight intra-line baseline × 1.4 catches paragraph
+                // breaks even on pages where many gaps are inter-
+                // paragraph (median would have drifted up). Floor at
+                // 0.4 × line-height so we still split on visible
+                // whitespace when intra-line gaps are near zero.
+                const qreal gapThreshold = qMax(tightGap * 1.4,
+                                                medianHeight * 0.4);
                 const bool fontJump = medianHeight > 0
                     && qAbs(ln.bbox.height() - prev->bbox.height())
                        > medianHeight * 0.35;
