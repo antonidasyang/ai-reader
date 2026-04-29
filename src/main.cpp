@@ -18,6 +18,7 @@
 #include <QQuickStyle>
 #include <QQuickWindow>
 #include <QSettings>
+#include <QTimer>
 #include <QTranslator>
 #include <QWindow>
 #include <QtQml>
@@ -144,19 +145,25 @@ int main(int argc, char *argv[])
 
     // Restore + persist the main window's geometry and visibility.
     // Done in C++ (rather than via Qt.labs.settings in QML) because
-    // that module isn't shipped with every Qt install — keeping it
-    // here means no extra dependency. Geometry is written only when
-    // the window is in the Windowed state so a maximized session
-    // doesn't overwrite the "normal" size we want to fall back to
-    // when the user un-maximizes after restore.
+    // that module isn't shipped with every Qt install.
+    //
+    // Persistence is event-driven, not shutdown-driven: aboutToQuit
+    // fires *after* the close event has already flipped visibility to
+    // Hidden, so guarding "save geometry only when Windowed" there
+    // would always skip the write. Instead we listen to the window's
+    // own geometry/visibility signals and snapshot via a debounced
+    // timer — collapses bursts (e.g. width and visibility both change
+    // when maximizing) into one save once the dust settles.
     if (auto *root = engine.rootObjects().value(0)) {
         if (auto *win = qobject_cast<QQuickWindow *>(root)) {
             QSettings ws;
             ws.beginGroup(QStringLiteral("window"));
-            if (ws.contains(QStringLiteral("width")))
+            const bool hasGeom = ws.contains(QStringLiteral("width"))
+                              && ws.contains(QStringLiteral("height"));
+            if (hasGeom) {
                 win->setWidth(ws.value(QStringLiteral("width")).toInt());
-            if (ws.contains(QStringLiteral("height")))
                 win->setHeight(ws.value(QStringLiteral("height")).toInt());
+            }
             if (ws.contains(QStringLiteral("x")))
                 win->setX(ws.value(QStringLiteral("x")).toInt());
             if (ws.contains(QStringLiteral("y")))
@@ -175,11 +182,23 @@ int main(int argc, char *argv[])
             }
             ws.endGroup();
 
-            QObject::connect(&app, &QGuiApplication::aboutToQuit, win, [win]() {
+            auto *saveTimer = new QTimer(win);
+            saveTimer->setSingleShot(true);
+            saveTimer->setInterval(250);
+            QObject::connect(saveTimer, &QTimer::timeout, win, [win]() {
                 QSettings ws;
                 ws.beginGroup(QStringLiteral("window"));
                 const auto vis = win->visibility();
-                ws.setValue(QStringLiteral("visibility"), int(vis));
+                // Skip Hidden/Minimized so a user who quits while
+                // minimized doesn't reopen to a hidden window.
+                if (vis == QWindow::Windowed
+                    || vis == QWindow::Maximized
+                    || vis == QWindow::FullScreen) {
+                    ws.setValue(QStringLiteral("visibility"), int(vis));
+                }
+                // Only persist geometry while in the normal Windowed
+                // state — otherwise we'd overwrite the un-maximize
+                // fallback with the screen-sized geometry.
                 if (vis == QWindow::Windowed) {
                     ws.setValue(QStringLiteral("width"),  win->width());
                     ws.setValue(QStringLiteral("height"), win->height());
@@ -187,8 +206,13 @@ int main(int argc, char *argv[])
                     ws.setValue(QStringLiteral("y"),      win->y());
                 }
                 ws.endGroup();
-                ws.sync();
             });
+            auto kick = [saveTimer]() { saveTimer->start(); };
+            QObject::connect(win, &QWindow::widthChanged,      win, kick);
+            QObject::connect(win, &QWindow::heightChanged,     win, kick);
+            QObject::connect(win, &QWindow::xChanged,          win, kick);
+            QObject::connect(win, &QWindow::yChanged,          win, kick);
+            QObject::connect(win, &QWindow::visibilityChanged, win, kick);
         }
     }
 
