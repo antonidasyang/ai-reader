@@ -68,6 +68,18 @@
         <translation>目录</translation>
     </message>
     <message>
+        <source>Zoom in</source>
+        <translation>放大</translation>
+    </message>
+    <message>
+        <source>Zoom out</source>
+        <translation>缩小</translation>
+    </message>
+    <message>
+        <source>Reset zoom</source>
+        <translation>重置缩放</translation>
+    </message>
+    <message>
         <source>Quote → Chat</source>
         <translation>引用 → 对话</translation>
     </message>

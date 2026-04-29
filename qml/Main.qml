@@ -14,6 +14,36 @@ ApplicationWindow {
            ? "AI Reader — " + paperController.fileName
            : "AI Reader"
 
+    // Zoom limits picked to match the rest of the Qt PDF demos: below
+    // 25 % the text becomes unreadable, above 500 % we burn memory on
+    // raster pages the user could see by scrolling instead. Step is
+    // 1.2× per click so seven clicks span the full range.
+    readonly property real _zoomMin: 0.25
+    readonly property real _zoomMax: 5.0
+    readonly property real _zoomStep: 1.2
+    function _setZoom(s) {
+        pdfView.renderScale = Math.max(_zoomMin, Math.min(_zoomMax, s))
+    }
+    function zoomIn()    { _setZoom(pdfView.renderScale * _zoomStep) }
+    function zoomOut()   { _setZoom(pdfView.renderScale / _zoomStep) }
+    function resetZoom() { _setZoom(1.0) }
+
+    Shortcut {
+        sequences: [StandardKey.ZoomIn, "Ctrl+="]
+        enabled: pdfDoc.status === PdfDocument.Ready
+        onActivated: window.zoomIn()
+    }
+    Shortcut {
+        sequence: StandardKey.ZoomOut
+        enabled: pdfDoc.status === PdfDocument.Ready
+        onActivated: window.zoomOut()
+    }
+    Shortcut {
+        sequence: "Ctrl+0"
+        enabled: pdfDoc.status === PdfDocument.Ready
+        onActivated: window.resetZoom()
+    }
+
     PdfDocument {
         id: pdfDoc
         source: paperController.pdfSource
@@ -201,6 +231,36 @@ ApplicationWindow {
                     vision.readPage(pdfView.currentPage)
                 }
             }
+            ToolSeparator {}
+            ToolButton {
+                text: "−"
+                enabled: pdfDoc.status === PdfDocument.Ready
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("Zoom out")
+                onClicked: window.zoomOut()
+            }
+            ToolButton {
+                // Doubles as a "current zoom" readout and a reset button —
+                // saves a slot vs. a separate label + button.
+                text: pdfDoc.status === PdfDocument.Ready
+                      ? Math.round(pdfView.renderScale * 100) + "%"
+                      : "—"
+                enabled: pdfDoc.status === PdfDocument.Ready
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("Reset zoom")
+                onClicked: window.resetZoom()
+            }
+            ToolButton {
+                text: "+"
+                enabled: pdfDoc.status === PdfDocument.Ready
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("Zoom in")
+                onClicked: window.zoomIn()
+            }
+            ToolSeparator {}
             ToolButton {
                 text: qsTr("Folder")
                 checkable: true
@@ -326,6 +386,20 @@ ApplicationWindow {
                     // the chat tool `get_user_selection` can read it.
                     onSelectedTextChanged: paperController.setCurrentSelection(
                         selectedText, currentPage)
+
+                    // Ctrl + wheel → zoom. acceptedModifiers gates the
+                    // handler so plain wheel events fall through to the
+                    // PdfMultiPageView's own Flickable for vertical
+                    // scrolling — no manual propagate-events plumbing.
+                    WheelHandler {
+                        acceptedModifiers: Qt.ControlModifier
+                        onWheel: function(event) {
+                            if (event.angleDelta.y > 0)
+                                window.zoomIn()
+                            else if (event.angleDelta.y < 0)
+                                window.zoomOut()
+                        }
+                    }
                 }
 
                 Rectangle {
