@@ -13,6 +13,16 @@ Dialog {
     readonly property var providerOptions:
         ["anthropic", "openai", "deepseek", "openai-compatible"]
 
+    // Parallel arrays — display label shown in the combo, code persisted
+    // to QSettings. Empty code = follow QLocale::system().
+    readonly property var languageCodes:
+        ["", "en", "zh_CN"]
+    readonly property var languageLabels: [
+        qsTr("System default"),
+        qsTr("English"),
+        qsTr("中文 (Simplified)")
+    ]
+
     onOpened: {
         const idx = providerOptions.indexOf(settings.provider)
         providerBox.currentIndex = idx >= 0 ? idx : 0
@@ -24,6 +34,8 @@ Dialog {
         contextWindowField.value = settings.contextWindow
         toolBudgetField.value   = settings.toolBudget
         targetLangField.text    = settings.targetLang
+        const lidx = languageCodes.indexOf(settings.uiLanguage)
+        languageBox.currentIndex = lidx >= 0 ? lidx : 0
         apiKeyField.forceActiveFocus()
     }
 
@@ -37,6 +49,7 @@ Dialog {
         settings.contextWindow = contextWindowField.value
         settings.toolBudget    = toolBudgetField.value
         settings.targetLang    = targetLangField.text.trim()
+        settings.uiLanguage    = languageCodes[languageBox.currentIndex]
     }
 
     contentItem: ColumnLayout {
@@ -146,6 +159,13 @@ Dialog {
                 id: targetLangField
                 Layout.fillWidth: true
                 placeholderText: "zh-CN"
+            }
+
+            Label { text: qsTr("UI language") }
+            ComboBox {
+                id: languageBox
+                Layout.fillWidth: true
+                model: dialog.languageLabels
             }
         }
 

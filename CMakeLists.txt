@@ -16,6 +16,7 @@ set(_aireader_qt_components
     PdfQuick
     Widgets       # MicroTeX's Qt backend pulls in QtWidgets/QtPrintSupport.
     PrintSupport
+    LinguistTools # qt_add_translations / lupdate / lrelease for i18n.
 )
 if(UNIX AND NOT APPLE)
     # qtkeychain's Linux backend (libsecret IPC) uses QtDBus; on Windows
@@ -220,6 +221,15 @@ qt_add_qml_module(ai-reader
         qml/VisionDialog.qml
         qml/PromptsDialog.qml
         qml/ChatPane.qml
+)
+
+# Compile .ts → .qm and embed under :/i18n so QTranslator::load() in
+# main.cpp can find them with no on-disk translations dir. The basename
+# convention (ai-reader_<locale>.qm) is what main.cpp's load("ai-reader",
+# "_", ":/i18n") expects; keep new languages on the same pattern.
+qt_add_translations(ai-reader
+    TS_FILES i18n/ai-reader_zh_CN.ts
+    RESOURCE_PREFIX "/i18n"
 )
 
 qt_add_resources(ai-reader "icons"

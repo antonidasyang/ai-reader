@@ -23,6 +23,9 @@ class Settings : public QObject
     Q_PROPERTY(int     contextWindow READ contextWindow WRITE setContextWindow NOTIFY contextWindowChanged)
     Q_PROPERTY(int     toolBudget   READ toolBudget   WRITE setToolBudget   NOTIFY toolBudgetChanged)
     Q_PROPERTY(QString targetLang   READ targetLang   WRITE setTargetLang   NOTIFY targetLangChanged)
+    // UI language: empty string ⇒ follow QLocale::system(); otherwise an
+    // ISO code we know how to load a .qm for ("en", "zh_CN").
+    Q_PROPERTY(QString uiLanguage   READ uiLanguage   WRITE setUiLanguage   NOTIFY uiLanguageChanged)
     Q_PROPERTY(bool    isConfigured READ isConfigured                       NOTIFY configurationChanged)
 
     // Custom system prompts. Empty string ⇒ service uses its built-in
@@ -53,6 +56,7 @@ public:
     int     contextWindow() const { return m_contextWindow; }
     int     toolBudget()    const { return m_toolBudget; }
     QString targetLang()    const { return m_targetLang; }
+    QString uiLanguage()    const { return m_uiLanguage; }
     bool    isConfigured()  const;
 
     QString summaryPrompt()     const { return m_summaryPrompt; }
@@ -76,6 +80,7 @@ public:
     void setContextWindow(int v);
     void setToolBudget(int v);
     void setTargetLang(const QString &v);
+    void setUiLanguage(const QString &v);
 
     // Supports variable {{lang}}. Empty ⇒ built-in default.
     void setSummaryPrompt(const QString &v);
@@ -107,6 +112,7 @@ signals:
     void contextWindowChanged();
     void toolBudgetChanged();
     void targetLangChanged();
+    void uiLanguageChanged();
     void configurationChanged();
 
     void summaryPromptChanged();
@@ -141,6 +147,7 @@ private:
     int     m_contextWindow = 128000;
     int     m_toolBudget = 30;
     QString m_targetLang;
+    QString m_uiLanguage;
     QString m_summaryPrompt;
     QString m_translationPrompt;
     QString m_tocPrompt;

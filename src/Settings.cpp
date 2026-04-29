@@ -32,6 +32,7 @@ constexpr auto kKeyMaxTokens     = "llm/maxTokens";
 constexpr auto kKeyContextWindow = "llm/contextWindow";
 constexpr auto kKeyToolBudget    = "chat/toolBudget";
 constexpr auto kKeyTargetLang    = "translation/targetLang";
+constexpr auto kKeyUiLanguage    = "ui/language";
 constexpr auto kKeySummaryPrompt     = "prompts/summary";
 constexpr auto kKeyTranslationPrompt = "prompts/translation";
 constexpr auto kKeyTocPrompt         = "prompts/toc";
@@ -161,6 +162,14 @@ void Settings::setTargetLang(const QString &v)
     m_targetLang = v;
     save();
     emit targetLangChanged();
+}
+
+void Settings::setUiLanguage(const QString &v)
+{
+    if (v == m_uiLanguage) return;
+    m_uiLanguage = v;
+    save();
+    emit uiLanguageChanged();
 }
 
 void Settings::setSummaryPrompt(const QString &v)
@@ -403,6 +412,7 @@ void Settings::load()
     m_contextWindow = m_qs.value(kKeyContextWindow, 128000).toInt();
     m_toolBudget    = qBound(1, m_qs.value(kKeyToolBudget, 30).toInt(), 100);
     m_targetLang    = m_qs.value(kKeyTargetLang,    QStringLiteral("zh-CN")).toString();
+    m_uiLanguage    = m_qs.value(kKeyUiLanguage,    QString{}).toString();
     m_summaryPrompt     = m_qs.value(kKeySummaryPrompt,     QString{}).toString();
     m_translationPrompt = m_qs.value(kKeyTranslationPrompt, QString{}).toString();
     m_tocPrompt         = m_qs.value(kKeyTocPrompt,         QString{}).toString();
@@ -422,6 +432,7 @@ void Settings::save()
     m_qs.setValue(kKeyContextWindow, m_contextWindow);
     m_qs.setValue(kKeyToolBudget,    m_toolBudget);
     m_qs.setValue(kKeyTargetLang,    m_targetLang);
+    m_qs.setValue(kKeyUiLanguage,    m_uiLanguage);
     m_qs.setValue(kKeySummaryPrompt,     m_summaryPrompt);
     m_qs.setValue(kKeyTranslationPrompt, m_translationPrompt);
     m_qs.setValue(kKeyTocPrompt,         m_tocPrompt);

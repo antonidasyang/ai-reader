@@ -9,10 +9,13 @@
 
 #include <QGuiApplication>
 #include <QIcon>
+#include <QLibraryInfo>
+#include <QLocale>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickStyle>
+#include <QTranslator>
 #include <QtQml>
 
 namespace {
@@ -62,6 +65,28 @@ int main(int argc, char *argv[])
         QStringLiteral("Use the chat context property"));
 
     Settings settings;
+
+    // Install translators based on the persisted ui/language setting.
+    // Empty ⇒ follow QLocale::system(); otherwise load the .qm matching
+    // the explicit code. qtbase translations come from the Qt install so
+    // standard dialog buttons (OK/Cancel/etc.) get translated too — if
+    // the qtbase file isn't present at runtime we silently skip it.
+    QTranslator appTranslator;
+    QTranslator qtTranslator;
+    auto applyLanguage = [&](const QString &code) {
+        const QLocale loc = code.isEmpty() ? QLocale::system() : QLocale(code);
+        QCoreApplication::removeTranslator(&appTranslator);
+        QCoreApplication::removeTranslator(&qtTranslator);
+        if (appTranslator.load(loc, QStringLiteral("ai-reader"),
+                               QStringLiteral("_"), QStringLiteral(":/i18n")))
+            QCoreApplication::installTranslator(&appTranslator);
+        if (qtTranslator.load(loc, QStringLiteral("qtbase"),
+                              QStringLiteral("_"),
+                              QLibraryInfo::path(QLibraryInfo::TranslationsPath)))
+            QCoreApplication::installTranslator(&qtTranslator);
+    };
+    applyLanguage(settings.uiLanguage());
+
     PaperController paperController;
     TranslationService translation(&settings, &paperController);
     SummaryService summary(&settings, &paperController);
@@ -89,6 +114,15 @@ int main(int argc, char *argv[])
         &app,
         []() { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
+
+    // Re-load translators and ask the QML engine to re-evaluate every
+    // qsTr() binding when the user picks a new UI language. C++ tr()
+    // strings already in flight (cached errors, etc.) won't change
+    // until they're regenerated.
+    QObject::connect(&settings, &Settings::uiLanguageChanged, &app, [&]() {
+        applyLanguage(settings.uiLanguage());
+        engine.retranslate();
+    });
 
     engine.loadFromModule("AiReader", "Main");
     return app.exec();
