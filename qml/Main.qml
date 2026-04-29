@@ -36,6 +36,18 @@ ApplicationWindow {
         onAccepted: paperController.openPdf(selectedFile)
     }
 
+    FolderDialog {
+        id: openFolderDialog
+        title: qsTr("Open folder")
+        currentFolder: library.currentFolder.length > 0
+                       ? Qt.url("file://" + library.currentFolder)
+                       : ""
+        onAccepted: {
+            library.openFolder(selectedFolder)
+            folderPane.visible = true
+        }
+    }
+
     SettingsDialog {
         id: settingsDialog
         anchors.centerIn: Overlay.overlay
@@ -151,6 +163,10 @@ ApplicationWindow {
                 onClicked: fileDialog.open()
             }
             ToolButton {
+                text: qsTr("Open folder…")
+                onClicked: openFolderDialog.open()
+            }
+            ToolButton {
                 text: qsTr("Close")
                 enabled: paperController.status !== PaperController.Empty
                 onClicked: paperController.clear()
@@ -184,6 +200,12 @@ ApplicationWindow {
                     visionDialog.open()
                     vision.readPage(pdfView.currentPage)
                 }
+            }
+            ToolButton {
+                text: qsTr("Folder")
+                checkable: true
+                checked: folderPane.visible
+                onClicked: folderPane.visible = !folderPane.visible
             }
             ToolButton {
                 text: qsTr("TOC")
@@ -263,7 +285,18 @@ ApplicationWindow {
             anchors.fill: parent
             orientation: Qt.Horizontal
 
-            // ── Far left: TOC sidebar ──────────────────────────────────
+            // ── Far left: folder browser (toggleable) ──────────────────
+            // Visible by default if the user previously had a folder
+            // open; auto-hidden otherwise so first-launch isn't crowded.
+            FolderPane {
+                id: folderPane
+                visible: library.currentFolder.length > 0
+                SplitView.preferredWidth: 240
+                SplitView.minimumWidth: 0
+                onPdfChosen: function(path) { paperController.openPdf(path) }
+            }
+
+            // ── TOC sidebar ────────────────────────────────────────────
             TocSidebar {
                 id: tocSidebar
                 SplitView.preferredWidth: 220

@@ -24,6 +24,18 @@
         <translation>打开…</translation>
     </message>
     <message>
+        <source>Open folder…</source>
+        <translation>打开文件夹…</translation>
+    </message>
+    <message>
+        <source>Open folder</source>
+        <translation>打开文件夹</translation>
+    </message>
+    <message>
+        <source>Folder</source>
+        <translation>文件夹</translation>
+    </message>
+    <message>
         <source>Close</source>
         <translation>关闭</translation>
     </message>
@@ -118,6 +130,29 @@
     <message>
         <source>Vision</source>
         <translation>视觉</translation>
+    </message>
+</context>
+<context>
+    <name>FolderPane</name>
+    <message>
+        <source>Folder</source>
+        <translation>文件夹</translation>
+    </message>
+    <message>
+        <source>Open…</source>
+        <translation>打开…</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>关闭</translation>
+    </message>
+    <message>
+        <source>Open folder</source>
+        <translation>打开文件夹</translation>
+    </message>
+    <message>
+        <source>Click &quot;Open…&quot; to choose a folder of PDFs.</source>
+        <translation>点击「打开…」选择 PDF 所在的文件夹。</translation>
     </message>
 </context>
 <context>

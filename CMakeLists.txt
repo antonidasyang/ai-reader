@@ -188,6 +188,8 @@ qt_add_executable(ai-reader
     src/MarkdownRenderer.cpp
     src/LatexRenderer.h
     src/LatexRenderer.cpp
+    src/Library.h
+    src/Library.cpp
 )
 
 target_compile_definitions(ai-reader PRIVATE
@@ -221,6 +223,7 @@ qt_add_qml_module(ai-reader
         qml/VisionDialog.qml
         qml/PromptsDialog.qml
         qml/ChatPane.qml
+        qml/FolderPane.qml
 )
 
 # Compile .ts → .qm and embed under :/i18n so QTranslator::load() in
