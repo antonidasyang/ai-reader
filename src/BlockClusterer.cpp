@@ -1,5 +1,6 @@
 #include "BlockClusterer.h"
 
+#include <QDebug>
 #include <QPdfDocument>
 #include <QPdfSelection>
 #include <QPolygonF>
@@ -143,17 +144,33 @@ QVector<Line> extractPageLines(const QPdfSelection &sel)
         text.split(QChar('\n'), Qt::KeepEmptyParts);
     const QList<QPolygonF> polys = sel.bounds();
 
-    // QPdfSelection::bounds() typically returns one polygon per visible line.
-    // When the count matches the \n-split lines, we get bboxes for free; if
-    // it doesn't (some layouts split a line across multiple polys, etc.) we
-    // degrade to text-only lines and the caller falls back to blank-line
-    // splitting.
-    if (rawLines.size() == polys.size() && !polys.isEmpty()) {
-        out.reserve(polys.size());
-        for (int i = 0; i < polys.size(); ++i)
-            out.append(preprocessLine(rawLines[i], polys[i].boundingRect()));
+    // QPdfSelection::bounds() returns one polygon per *visible* line, but
+    // sel.text() typically ends with a trailing '\n' (so split produces
+    // one extra empty entry) and blank vertical space can also produce
+    // empty rawLines without a matching poly. Strict count-match used to
+    // drop the whole page to text-only mode in those cases — which is
+    // why pages came out as one mega-block. Align polys with the non-
+    // empty raw lines instead: each non-empty rawLine[i] gets polys[k++],
+    // empty rawLines stay bbox-less. Falls through to text-only only
+    // when the *non-empty* counts still don't match.
+    QVector<int> nonEmptyIdx;
+    nonEmptyIdx.reserve(rawLines.size());
+    for (int i = 0; i < rawLines.size(); ++i)
+        if (!rawLines[i].trimmed().isEmpty())
+            nonEmptyIdx.append(i);
+
+    out.reserve(rawLines.size());
+    if (!polys.isEmpty() && polys.size() == nonEmptyIdx.size()) {
+        int p = 0;
+        for (int i = 0; i < rawLines.size(); ++i) {
+            QRectF bbox;
+            if (p < nonEmptyIdx.size() && i == nonEmptyIdx[p]) {
+                bbox = polys[p].boundingRect();
+                ++p;
+            }
+            out.append(preprocessLine(rawLines[i], bbox));
+        }
     } else {
-        out.reserve(rawLines.size());
         for (const QString &raw : rawLines)
             out.append(preprocessLine(raw, QRectF()));
     }
@@ -198,6 +215,12 @@ QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
 {
     QVector<Block> blocks;
     int nextId = 0;
+
+    // Env-gated diagnostic. Set AIREADER_DEBUG_BLOCKS=1 and rerun: per
+    // page we'll print poly/line counts and the gap distribution so we
+    // can see whether the bbox path even runs and what threshold it
+    // ends up using. No-op in normal use.
+    const bool debugDump = qEnvironmentVariableIntValue("AIREADER_DEBUG_BLOCKS") != 0;
 
     for (int p = 0; p < doc.pageCount(); ++p) {
         QPdfSelection sel = doc.getAllText(p);
@@ -275,6 +298,20 @@ QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
         }
         const double medianHeight = medianOf(heights);
         const double tightGap     = lowerQuartileOf(gaps);
+
+        if (debugDump) {
+            QVector<double> sortedGaps = gaps;
+            std::sort(sortedGaps.begin(), sortedGaps.end());
+            qDebug().nospace()
+                << "[blocks] page=" << p
+                << " rawLines=" << QString::number(lines.size())
+                << " bboxes=" << (haveBboxes ? "yes" : "no")
+                << " medianHeight=" << medianHeight
+                << " tightGap=" << tightGap
+                << " medianGap=" << medianOf(gaps)
+                << " threshold=" << qMax(tightGap * 1.4, medianHeight * 0.4)
+                << " sortedGaps=" << sortedGaps;
+        }
 
         const Line *prev = nullptr;
         for (int i = 0; i < lines.size(); ++i) {
