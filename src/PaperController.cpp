@@ -8,6 +8,8 @@
 #include <QSizeF>
 
 namespace {
+constexpr auto kKeyLastUrl = "paper/lastUrl";
+
 // Hash the first 4 MB of the PDF (and the file size) so we get a stable
 // id even when the file is moved or renamed, but we don't pay for full
 // SHA-256 over a 200 MB book. Cheap and good enough as a cache key.
@@ -41,6 +43,16 @@ void PaperController::openPdf(const QUrl &url)
         return;
     m_source = url;
     m_password.clear();
+    // Persist immediately so a hard crash mid-load still restores the
+    // user's last paper next launch. Remote URLs are skipped — restoring
+    // them would block on the network at startup.
+    if (m_source.isLocalFile()) {
+        m_qs.setValue(kKeyLastUrl, m_source);
+        m_qs.sync();
+    } else {
+        m_qs.remove(kKeyLastUrl);
+        m_qs.sync();
+    }
     emit pdfSourceChanged();
     emit pdfPasswordChanged();
     m_model.clear();
@@ -64,6 +76,8 @@ void PaperController::clear()
     m_source = {};
     m_password.clear();
     m_paperId.clear();
+    m_qs.remove(kKeyLastUrl);
+    m_qs.sync();
     setStatus(Empty);
     emit pdfSourceChanged();
     emit pdfPasswordChanged();
@@ -73,6 +87,21 @@ void PaperController::clear()
         m_currentSelectionPage = -1;
         emit currentSelectionChanged();
     }
+}
+
+void PaperController::restoreLast()
+{
+    const QUrl saved = m_qs.value(kKeyLastUrl).toUrl();
+    if (saved.isEmpty())
+        return;
+    // Drop the entry quietly if the file has been moved/deleted since
+    // the last session — better than booting straight into an Error.
+    if (saved.isLocalFile() && !QFileInfo::exists(saved.toLocalFile())) {
+        m_qs.remove(kKeyLastUrl);
+        m_qs.sync();
+        return;
+    }
+    openPdf(saved);
 }
 
 void PaperController::setCurrentSelection(const QString &text, int page)

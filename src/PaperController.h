@@ -5,6 +5,7 @@
 #include <QImage>
 #include <QObject>
 #include <QPdfDocument>
+#include <QSettings>
 #include <QString>
 #include <QUrl>
 
@@ -49,6 +50,10 @@ public slots:
     void openPdf(const QUrl &url);
     void setPassword(const QString &password);
     void clear();
+    // Re-open the PDF that was loaded last session, if it still exists.
+    // Called by main.cpp once the QML scene is up so QML Connections
+    // (password dialog, etc.) can react to the load.
+    Q_INVOKABLE void restoreLast();
     // Pushed from QML whenever the user's PDF selection changes; the chat
     // tool `get_user_selection` reads the latest value.
     Q_INVOKABLE void setCurrentSelection(const QString &text, int page);
@@ -74,4 +79,5 @@ private:
     int m_currentSelectionPage = -1;
     Status m_status = Empty;
     QString m_errorString;
+    QSettings m_qs;
 };

@@ -131,5 +131,13 @@ int main(int argc, char *argv[])
     });
 
     engine.loadFromModule("AiReader", "Main");
+
+    // Re-open the last paper (if any) once the QML scene is live so
+    // Connections like the password-prompt dialog can react to the
+    // load. The folder pane already restored its state inside
+    // Library's constructor — the model is read-only there so it can
+    // safely run before QML is up.
+    paperController.restoreLast();
+
     return app.exec();
 }
