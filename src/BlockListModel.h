@@ -46,6 +46,21 @@ public:
     Q_INVOKABLE int firstRowOnPage(int page) const;
     Q_INVOKABLE int pageOfRow(int row) const;
 
+    // Manual paragraph editing — exposed to QML. Splits/merges/removes
+    // operate on the row indices the view sees. Translations on edited
+    // rows are reset to NotTranslated since the source text changes.
+    // Note: if a translation is in flight on the affected row, its
+    // chunks may land on the wrong row — caller should avoid editing
+    // during translation.
+    Q_INVOKABLE bool splitBlock(int row, int textOffset);
+    Q_INVOKABLE bool mergeWithNext(int row);
+    Q_INVOKABLE bool removeBlock(int row);
+
+signals:
+    void blocksMutated();
+
 private:
+    int nextBlockId() const;
+
     QVector<Block> m_blocks;
 };

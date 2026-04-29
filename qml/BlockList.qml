@@ -109,25 +109,63 @@ Rectangle {
                     color: ctxArea.containsMouse ? "#f0f3ff" : "transparent"
                     implicitHeight: cell.implicitHeight + 16
 
-                    // Right-click → context menu. Left-click is passed
-                    // through (no other delegate-level handler to compete
-                    // with), so block selection still feels passive.
+                    // Captured by the right-click handler so the menu's
+                    // actions know which row to operate on, even after the
+                    // model mutates (which would otherwise re-bind `index`).
+                    readonly property int rowIndex: index
+
+                    // Right-click → context menu. We map the click position
+                    // into the source TextEdit and remember the character
+                    // offset so "Split here" knows where to cut. Left-click
+                    // is left to the TextEdit (selection still works).
                     MouseArea {
                         id: ctxArea
                         anchors.fill: parent
                         acceptedButtons: Qt.RightButton
                         hoverEnabled: true
-                        onClicked: function(mouse) {
-                            if (mouse.button === Qt.RightButton)
-                                ctxMenu.popup()
+                        onPressed: function(mouse) {
+                            if (mouse.button !== Qt.RightButton) return
+                            const local = mapToItem(sourceText, mouse.x, mouse.y)
+                            const off = sourceText.positionAt(local.x, local.y)
+                            ctxMenu.cursorOffset =
+                                (off > 0 && off < model.text.length) ? off : -1
+                            ctxMenu.popup()
                         }
                     }
 
                     Menu {
                         id: ctxMenu
+                        // Character offset inside the source text where the
+                        // user right-clicked. -1 means the click was on the
+                        // header strip / outside the text or at a boundary
+                        // where splitting wouldn't produce two halves.
+                        property int cursorOffset: -1
+
                         MenuItem {
                             text: qsTr("Ask AI about this")
                             onTriggered: root.askInChatRequested(model.text, model.page)
+                        }
+                        MenuSeparator {}
+                        MenuItem {
+                            text: qsTr("Split here")
+                            enabled: ctxMenu.cursorOffset > 0
+                            onTriggered: root.model.splitBlock(blockDelegate.rowIndex,
+                                                               ctxMenu.cursorOffset)
+                        }
+                        MenuItem {
+                            text: qsTr("Merge with previous")
+                            enabled: blockDelegate.rowIndex > 0
+                            onTriggered: root.model.mergeWithNext(blockDelegate.rowIndex - 1)
+                        }
+                        MenuItem {
+                            text: qsTr("Merge with next")
+                            enabled: blockDelegate.rowIndex < list.count - 1
+                            onTriggered: root.model.mergeWithNext(blockDelegate.rowIndex)
+                        }
+                        MenuSeparator {}
+                        MenuItem {
+                            text: qsTr("Delete paragraph")
+                            onTriggered: root.model.removeBlock(blockDelegate.rowIndex)
                         }
                     }
 
@@ -168,12 +206,17 @@ Rectangle {
                             }
                         }
 
-                        // Source text (English) — secondary styling
-                        Text {
+                        // Source text (English) — read-only TextEdit so the
+                        // user can position a cursor for "Split here" and
+                        // also select / copy passages.
+                        TextEdit {
+                            id: sourceText
                             Layout.fillWidth: true
                             text: model.text
-                            wrapMode: Text.Wrap
-                            textFormat: Text.PlainText
+                            readOnly: true
+                            selectByMouse: true
+                            wrapMode: TextEdit.Wrap
+                            textFormat: TextEdit.PlainText
                             color: "#5f6368"
                             font.pixelSize: model.kindName === "heading" ? 14 : 12
                             font.italic: model.kindName === "caption"

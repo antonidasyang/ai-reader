@@ -296,6 +296,22 @@
         <translation>向 AI 提问</translation>
     </message>
     <message>
+        <source>Split here</source>
+        <translation>在此处拆分</translation>
+    </message>
+    <message>
+        <source>Merge with previous</source>
+        <translation>与上一段合并</translation>
+    </message>
+    <message>
+        <source>Merge with next</source>
+        <translation>与下一段合并</translation>
+    </message>
+    <message>
+        <source>Delete paragraph</source>
+        <translation>删除该段</translation>
+    </message>
+    <message>
         <source>p.%1 · %2</source>
         <translation>第 %1 页 · %2</translation>
     </message>

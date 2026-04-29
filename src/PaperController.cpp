@@ -28,6 +28,10 @@ PaperController::PaperController(QObject *parent)
     : QObject(parent)
     , m_doc(this)
 {
+    // Manual paragraph edits (split/merge/delete) need to refresh the
+    // paragraph-count badge bound to PaperController::blockCount.
+    connect(&m_model, &BlockListModel::blocksMutated,
+            this, &PaperController::blocksChanged);
 }
 
 QString PaperController::fileName() const

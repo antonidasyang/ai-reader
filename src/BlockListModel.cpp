@@ -160,3 +160,92 @@ int BlockListModel::pageOfRow(int row) const
         return -1;
     return m_blocks.at(row).page;
 }
+
+int BlockListModel::nextBlockId() const
+{
+    int id = 0;
+    for (const Block &b : m_blocks)
+        id = qMax(id, b.id);
+    return id + 1;
+}
+
+bool BlockListModel::splitBlock(int row, int textOffset)
+{
+    if (row < 0 || row >= m_blocks.size())
+        return false;
+    const Block &orig = m_blocks.at(row);
+    if (textOffset <= 0 || textOffset >= orig.text.size())
+        return false;
+
+    const QString left  = orig.text.left(textOffset).trimmed();
+    const QString right = orig.text.mid(textOffset).trimmed();
+    if (left.isEmpty() || right.isEmpty())
+        return false;
+
+    // Update the original row in place.
+    Block &edited = m_blocks[row];
+    edited.text              = left;
+    edited.translation.clear();
+    edited.translationStatus = Block::NotTranslated;
+    edited.translationError.clear();
+    const QModelIndex idxRow = index(row);
+    emit dataChanged(idxRow, idxRow,
+                     {TextRole, TranslationRole,
+                      TranslationStatusRole, TranslationStatusNameRole,
+                      TranslationErrorRole});
+
+    // Insert the right half as a new row immediately after.
+    Block tail;
+    tail.id   = nextBlockId();
+    tail.ord  = tail.id;
+    tail.page = orig.page;
+    tail.kind = orig.kind;
+    tail.text = right;
+    tail.bbox = orig.bbox;  // best we can do — no per-character geometry
+    beginInsertRows({}, row + 1, row + 1);
+    m_blocks.insert(row + 1, tail);
+    endInsertRows();
+
+    emit blocksMutated();
+    return true;
+}
+
+bool BlockListModel::mergeWithNext(int row)
+{
+    if (row < 0 || row + 1 >= m_blocks.size())
+        return false;
+
+    const Block next = m_blocks.at(row + 1);
+    Block &keep = m_blocks[row];
+    if (!keep.text.endsWith(QChar(' ')) && !next.text.startsWith(QChar(' ')))
+        keep.text += QChar(' ');
+    keep.text             += next.text;
+    keep.bbox              = keep.bbox.united(next.bbox);
+    keep.translation.clear();
+    keep.translationStatus = Block::NotTranslated;
+    keep.translationError.clear();
+
+    beginRemoveRows({}, row + 1, row + 1);
+    m_blocks.removeAt(row + 1);
+    endRemoveRows();
+
+    const QModelIndex idxRow = index(row);
+    emit dataChanged(idxRow, idxRow,
+                     {TextRole, TranslationRole,
+                      TranslationStatusRole, TranslationStatusNameRole,
+                      TranslationErrorRole});
+
+    emit blocksMutated();
+    return true;
+}
+
+bool BlockListModel::removeBlock(int row)
+{
+    if (row < 0 || row >= m_blocks.size())
+        return false;
+    beginRemoveRows({}, row, row);
+    m_blocks.removeAt(row);
+    endRemoveRows();
+    emit blocksMutated();
+    return true;
+}

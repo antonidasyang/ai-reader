@@ -1,6 +1,5 @@
 #include "BlockClusterer.h"
 
-#include <QDebug>
 #include <QPdfDocument>
 #include <QPdfSelection>
 #include <QPolygonF>
@@ -187,20 +186,6 @@ double medianOf(QVector<double> v)
     return v[v.size() / 2];
 }
 
-// 25th-percentile gap. Used as the intra-line baseline instead of the
-// median: once a column has more than a couple of short paragraphs,
-// the median climbs into the no-man's-land between intra-line and
-// inter-paragraph gaps and the threshold sits *above* the real
-// inter-paragraph gaps — so paragraph breaks never fire. The lower
-// quartile stays in the intra-line cluster as long as paragraphs
-// average more than ~one line, which holds for body text.
-double lowerQuartileOf(QVector<double> v)
-{
-    if (v.isEmpty()) return 0.0;
-    std::sort(v.begin(), v.end());
-    return v[v.size() / 4];
-}
-
 bool sameColumn(const QRectF &a, const QRectF &b)
 {
     if (a.isEmpty() || b.isEmpty()) return true;
@@ -210,18 +195,38 @@ bool sameColumn(const QRectF &a, const QRectF &b)
     return minWidth > 0 && overlap > 0.5 * minWidth;
 }
 
+// Paragraph-terminating rule: did this line end with sentence-final
+// punctuation? Trailing closing brackets/quotes are skipped first
+// (so `…end.")` still counts). Gap-threshold heuristics didn't work
+// reliably across PDFs; this is intentionally simple — over-merges
+// can be fixed manually from the UI.
+bool endsParagraph(const QString &t)
+{
+    int i = t.size() - 1;
+    while (i >= 0) {
+        const ushort u = t.at(i).unicode();
+        const bool isCloser =
+            u == ')' || u == ']' || u == '}' ||
+            u == '"' || u == '\'' ||
+            u == 0x201D /* ” */ || u == 0x2019 /* ’ */ ||
+            u == 0xFF09 /* ） */ || u == 0xFF3D /* ］ */;
+        if (!isCloser) break;
+        --i;
+    }
+    if (i < 0) return false;
+    const ushort u = t.at(i).unicode();
+    return u == '.' || u == '?' || u == '!'
+        || u == 0x3002 /* 。 */
+        || u == 0xFF1F /* ？ */
+        || u == 0xFF01 /* ！ */;
+}
+
 } // namespace
 
 QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
 {
     QVector<Block> blocks;
     int nextId = 0;
-
-    // Env-gated diagnostic. Set AIREADER_DEBUG_BLOCKS=1 and rerun: per
-    // page we'll print poly/line counts and the gap distribution so we
-    // can see whether the bbox path even runs and what threshold it
-    // ends up using. No-op in normal use.
-    const bool debugDump = qEnvironmentVariableIntValue("AIREADER_DEBUG_BLOCKS") != 0;
 
     for (int p = 0; p < doc.pageCount(); ++p) {
         QPdfSelection sel = doc.getAllText(p);
@@ -235,12 +240,24 @@ QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
             lines.begin(), lines.end(),
             [](const Line &l) { return !l.bbox.isEmpty(); });
 
+        // Median line height is still useful for the heading classifier.
+        QVector<double> heights;
+        if (haveBboxes) {
+            heights.reserve(lines.size());
+            for (const Line &ln : lines) {
+                if (ln.bbox.isEmpty() || ln.text.isEmpty()) continue;
+                heights.append(ln.bbox.height());
+            }
+        }
+        const double medianHeight = medianOf(heights);
+
         QString currentText;
         QRectF  currentBox;
         double  currentMaxHeight = 0;
         bool    prevHyphen = false;
+        bool    flushBeforeNext = false;
 
-        auto flush = [&](double medianHeight) {
+        auto flush = [&]() {
             if (currentText.isEmpty()) return;
             Block b;
             b.id = nextId;
@@ -256,109 +273,52 @@ QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
             currentMaxHeight = 0;
         };
 
-        if (!haveBboxes) {
-            for (const Line &ln : lines) {
-                if (ln.text.isEmpty()) {
-                    flush(0);
-                    prevHyphen = false;
-                    continue;
-                }
-                if (currentText.isEmpty()) {
-                    currentText = ln.text;
-                } else if (prevHyphen) {
-                    currentText += ln.text;
-                } else {
-                    currentText += QChar(' ');
-                    currentText += ln.text;
-                }
-                prevHyphen = ln.hyphenated;
-            }
-            flush(0);
-            continue;
-        }
-
-        // Geometric path: compute typical line height, width, and intra-
-        // paragraph gap, then split whenever consecutive lines suggest a
-        // new paragraph (large vertical gap, column change, font jump).
-        QVector<double> heights, widths, gaps;
-        heights.reserve(lines.size());
-        widths.reserve(lines.size());
-        gaps.reserve(lines.size());
-        for (const Line &ln : lines) {
-            if (ln.bbox.isEmpty() || ln.text.isEmpty()) continue;
-            heights.append(ln.bbox.height());
-            widths.append(ln.bbox.width());
-        }
-        for (int i = 1; i < lines.size(); ++i) {
-            const Line &a = lines[i - 1];
-            const Line &b = lines[i];
-            if (a.bbox.isEmpty() || b.bbox.isEmpty()) continue;
-            if (!sameColumn(a.bbox, b.bbox)) continue;
-            const qreal gap = b.bbox.top() - a.bbox.bottom();
-            if (gap >= 0) gaps.append(gap);
-        }
-        const double medianHeight = medianOf(heights);
-        const double tightGap     = lowerQuartileOf(gaps);
-
-        if (debugDump) {
-            QVector<double> sortedGaps = gaps;
-            std::sort(sortedGaps.begin(), sortedGaps.end());
-            qDebug().nospace()
-                << "[blocks] page=" << p
-                << " rawLines=" << QString::number(lines.size())
-                << " bboxes=" << (haveBboxes ? "yes" : "no")
-                << " medianHeight=" << medianHeight
-                << " tightGap=" << tightGap
-                << " medianGap=" << medianOf(gaps)
-                << " threshold=" << qMax(tightGap * 1.4, medianHeight * 0.4)
-                << " sortedGaps=" << sortedGaps;
-        }
-
         const Line *prev = nullptr;
         for (int i = 0; i < lines.size(); ++i) {
             const Line &ln = lines[i];
+
             if (ln.text.isEmpty()) {
-                flush(medianHeight);
+                flush();
                 prevHyphen = false;
+                flushBeforeNext = false;
                 prev = nullptr;
                 continue;
             }
 
-            bool startNew = currentText.isEmpty();
-            if (!startNew && prev) {
+            bool startNew = currentText.isEmpty() || flushBeforeNext;
+            if (!startNew && prev && haveBboxes
+                && !prev->bbox.isEmpty() && !ln.bbox.isEmpty()) {
                 const bool sameCol = sameColumn(prev->bbox, ln.bbox);
-                const qreal vgap   = ln.bbox.top() - prev->bbox.bottom();
-                // Tight intra-line baseline × 1.4 catches paragraph
-                // breaks even on pages where many gaps are inter-
-                // paragraph (median would have drifted up). Floor at
-                // 0.4 × line-height so we still split on visible
-                // whitespace when intra-line gaps are near zero.
-                const qreal gapThreshold = qMax(tightGap * 1.4,
-                                                medianHeight * 0.4);
                 const bool fontJump = medianHeight > 0
                     && qAbs(ln.bbox.height() - prev->bbox.height())
                        > medianHeight * 0.35;
-                if (!sameCol || vgap > gapThreshold || fontJump)
+                if (!sameCol || fontJump)
                     startNew = true;
             }
 
             if (startNew) {
-                flush(medianHeight);
+                flush();
                 currentText = ln.text;
                 currentBox = ln.bbox;
             } else if (prevHyphen) {
                 currentText += ln.text;
-                currentBox = currentBox.united(ln.bbox);
+                if (!ln.bbox.isEmpty())
+                    currentBox = currentBox.united(ln.bbox);
             } else {
                 currentText += QChar(' ');
                 currentText += ln.text;
-                currentBox = currentBox.united(ln.bbox);
+                if (!ln.bbox.isEmpty())
+                    currentBox = currentBox.united(ln.bbox);
             }
-            currentMaxHeight = qMax(currentMaxHeight, ln.bbox.height());
+            if (!ln.bbox.isEmpty())
+                currentMaxHeight = qMax(currentMaxHeight, ln.bbox.height());
             prevHyphen = ln.hyphenated;
+            // The line's *visible* end-of-line punctuation drives the split:
+            // a hyphenated continuation can't terminate a paragraph.
+            flushBeforeNext = !ln.hyphenated && endsParagraph(ln.text);
             prev = &ln;
         }
-        flush(medianHeight);
+        flush();
     }
 
     return blocks;
@@ -387,6 +347,7 @@ QString BlockClusterer::dumpDebug(QPdfDocument &doc)
 
         const QVector<Line> lines = extractPageLines(sel);
         ts << "--- Lines after preprocess + poly alignment ---\n";
+        ts << "  ¶ marks lines that end a paragraph; ¬ marks hyphenated.\n";
         for (int i = 0; i < lines.size(); ++i) {
             const Line &ln = lines[i];
             const QString bboxStr = ln.bbox.isEmpty()
@@ -396,45 +357,14 @@ QString BlockClusterer::dumpDebug(QPdfDocument &doc)
                     .arg(ln.bbox.y(),     7, 'f', 1)
                     .arg(ln.bbox.width(), 6, 'f', 1)
                     .arg(ln.bbox.height(),5, 'f', 1);
+            const bool ends = !ln.hyphenated && endsParagraph(ln.text);
             ts << QString("  [%1] ").arg(i, 3)
                << bboxStr
                << (ln.hyphenated ? " ¬" : "  ")
+               << (ends ? " ¶" : "  ")
                << " | " << ln.text << "\n";
         }
         ts << "\n";
-
-        // Recompute the splitter's per-page stats so the user can see
-        // exactly what threshold the geometric path is using.
-        QVector<double> heights, gaps;
-        for (const Line &ln : lines) {
-            if (ln.bbox.isEmpty() || ln.text.isEmpty()) continue;
-            heights.append(ln.bbox.height());
-        }
-        for (int i = 1; i < lines.size(); ++i) {
-            const Line &a = lines[i - 1];
-            const Line &b = lines[i];
-            if (a.bbox.isEmpty() || b.bbox.isEmpty()) continue;
-            if (!sameColumn(a.bbox, b.bbox)) continue;
-            const qreal gap = b.bbox.top() - a.bbox.bottom();
-            if (gap >= 0) gaps.append(gap);
-        }
-        const double medianHeight = medianOf(heights);
-        const double medianGap    = medianOf(gaps);
-        const double tightGap     = lowerQuartileOf(gaps);
-        const double threshold    = qMax(tightGap * 1.4, medianHeight * 0.4);
-        QVector<double> sortedGaps = gaps;
-        std::sort(sortedGaps.begin(), sortedGaps.end());
-        ts << "--- Splitter stats ---\n";
-        ts << "  medianHeight=" << medianHeight
-           << "  tightGap(P25)=" << tightGap
-           << "  medianGap=" << medianGap
-           << "  threshold=" << threshold << "\n";
-        ts << "  sortedGaps=[";
-        for (int i = 0; i < sortedGaps.size(); ++i) {
-            if (i) ts << ", ";
-            ts << sortedGaps[i];
-        }
-        ts << "]\n\n";
     }
 
     ts << "================================================================\n";
