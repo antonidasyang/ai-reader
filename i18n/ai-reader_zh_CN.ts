@@ -88,8 +88,8 @@
         <translation>将选中的 PDF 文字引用到对话输入框</translation>
     </message>
     <message>
-        <source>%1 pages · %2 blocks</source>
-        <translation>%1 页 · %2 块</translation>
+        <source>%1 pages · %2 paragraphs</source>
+        <translation>%1 页 · %2 段</translation>
     </message>
     <message>
         <source>%1 · %2</source>
@@ -260,12 +260,12 @@
 <context>
     <name>BlockList</name>
     <message>
-        <source>Blocks (%1)</source>
-        <translation>块 (%1)</translation>
+        <source>Paragraphs (%1)</source>
+        <translation>段 (%1)</translation>
     </message>
     <message>
-        <source>Blocks</source>
-        <translation>块</translation>
+        <source>Paragraphs</source>
+        <translation>段</translation>
     </message>
     <message>
         <source>translating %1/%2…</source>
@@ -284,12 +284,12 @@
         <translation>第 %1 页 · %2</translation>
     </message>
     <message>
-        <source>Extracting blocks…</source>
-        <translation>正在提取文本块…</translation>
+        <source>Extracting paragraphs…</source>
+        <translation>正在提取段…</translation>
     </message>
     <message>
-        <source>No blocks (load failed).</source>
-        <translation>无文本块(加载失败)。</translation>
+        <source>No paragraphs (load failed).</source>
+        <translation>无段(加载失败)。</translation>
     </message>
     <message>
         <source>Open a PDF to see extracted text.</source>
@@ -491,8 +491,8 @@
         <translation>「解读」命令的系统提示词。变量 {{lang}} → 目标语言。留空以使用内置默认值。</translation>
     </message>
     <message>
-        <source>System prompt for per-block translation. Variable: {{lang}} → target language. Leave empty to use the built-in default.</source>
-        <translation>逐块翻译的系统提示词。变量 {{lang}} → 目标语言。留空以使用内置默认值。</translation>
+        <source>System prompt for per-paragraph translation. Variable: {{lang}} → target language. Leave empty to use the built-in default.</source>
+        <translation>逐段翻译的系统提示词。变量 {{lang}} → 目标语言。留空以使用内置默认值。</translation>
     </message>
     <message>
         <source>System prompt for TOC extraction. No variables. Output must be JSON only. Leave empty to use the built-in default.</source>

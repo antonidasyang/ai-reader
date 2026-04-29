@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/cmark-subbuild/CMakeFiles/cmark-populate"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/cmark-subbuild/CMakeFiles/cmark-populate.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/cmark-subbuild/CMakeFiles/cmark-populate-complete.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/cmark-subbuild/cmark-populate-prefix/src/cmark-populate-stamp/cmark-populate-build.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/cmark-subbuild/cmark-populate-prefix/src/cmark-populate-stamp/cmark-populate-configure.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/cmark-subbuild/cmark-populate-prefix/src/cmark-populate-stamp/cmark-populate-download.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/cmark-subbuild/cmark-populate-prefix/src/cmark-populate-stamp/cmark-populate-install.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/cmark-subbuild/cmark-populate-prefix/src/cmark-populate-stamp/cmark-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/cmark-subbuild/cmark-populate-prefix/src/cmark-populate-stamp/cmark-populate-patch.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/cmark-subbuild/cmark-populate-prefix/src/cmark-populate-stamp/cmark-populate-test.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/cmark-subbuild/cmark-populate-prefix/src/cmark-populate-stamp/cmark-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"cmark-populate"
+		],
+		"name" : "cmark-populate"
+	}
+}

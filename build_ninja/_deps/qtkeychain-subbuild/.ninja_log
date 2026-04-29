@@ -1,0 +1,21 @@
+# ninja log v5
+4	77	1777389372753863497	qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-mkdir	8ee524268ddabf94
+4	77	1777389372753863497	/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-mkdir	8ee524268ddabf94
+77	2053	1777389374729647439	qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-download	3b75215b9471280c
+77	2053	1777389374729647439	/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-download	3b75215b9471280c
+2053	2137	0	qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-update	f23631a448b52dc5
+2053	2137	0	/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-update	f23631a448b52dc5
+2137	2207	1777389374883630620	qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-patch	14f9209daec27bce
+2137	2207	1777389374883630620	/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-patch	14f9209daec27bce
+2207	2283	1777389374958622429	qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-configure	6e84fece7f7be4d3
+2207	2283	1777389374958622429	/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-configure	6e84fece7f7be4d3
+2283	2354	1777389375030614571	qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-build	3a5f6cdff00dcf4e
+2283	2354	1777389375030614571	/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-build	3a5f6cdff00dcf4e
+2355	2427	1777389375103606611	qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-install	e7729955cf4ae7ea
+2355	2427	1777389375103606611	/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-install	e7729955cf4ae7ea
+2428	2497	1777389375173598978	qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-test	4c63eb394739805
+2428	2497	1777389375173598978	/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-test	4c63eb394739805
+2498	2602	1777389375278587529	CMakeFiles/qtkeychain-populate-complete	63643b742aaca541
+2498	2602	1777389375278587529	qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-done	63643b742aaca541
+2498	2602	1777389375278587529	/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/CMakeFiles/qtkeychain-populate-complete	63643b742aaca541
+2498	2602	1777389375278587529	/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-done	63643b742aaca541

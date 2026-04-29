@@ -1,0 +1,14 @@
+# Target labels
+ tinyxml2-populate
+# Source files and their labels
+/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/CMakeFiles/tinyxml2-populate
+/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/CMakeFiles/tinyxml2-populate.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/CMakeFiles/tinyxml2-populate-complete.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-build.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-configure.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-download.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-install.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-mkdir.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-patch.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-test.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-update.rule

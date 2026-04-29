@@ -1,0 +1,9 @@
+/AiReader/qml/Main.qml
+/AiReader/qml/PasswordDialog.qml
+/AiReader/qml/BlockList.qml
+/AiReader/qml/SettingsDialog.qml
+/AiReader/qml/SummaryDialog.qml
+/AiReader/qml/TocSidebar.qml
+/AiReader/qml/VisionDialog.qml
+/AiReader/qml/PromptsDialog.qml
+/AiReader/qml/ChatPane.qml

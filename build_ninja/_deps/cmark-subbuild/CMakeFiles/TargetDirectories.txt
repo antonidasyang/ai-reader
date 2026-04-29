@@ -1,0 +1,3 @@
+/home/yangxc/codes/ai-reader/build_ninja/_deps/cmark-subbuild/CMakeFiles/cmark-populate.dir
+/home/yangxc/codes/ai-reader/build_ninja/_deps/cmark-subbuild/CMakeFiles/edit_cache.dir
+/home/yangxc/codes/ai-reader/build_ninja/_deps/cmark-subbuild/CMakeFiles/rebuild_cache.dir

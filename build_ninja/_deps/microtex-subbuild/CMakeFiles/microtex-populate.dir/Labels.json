@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/microtex-subbuild/CMakeFiles/microtex-populate"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/microtex-subbuild/CMakeFiles/microtex-populate.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/microtex-subbuild/CMakeFiles/microtex-populate-complete.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/microtex-subbuild/microtex-populate-prefix/src/microtex-populate-stamp/microtex-populate-build.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/microtex-subbuild/microtex-populate-prefix/src/microtex-populate-stamp/microtex-populate-configure.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/microtex-subbuild/microtex-populate-prefix/src/microtex-populate-stamp/microtex-populate-download.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/microtex-subbuild/microtex-populate-prefix/src/microtex-populate-stamp/microtex-populate-install.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/microtex-subbuild/microtex-populate-prefix/src/microtex-populate-stamp/microtex-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/microtex-subbuild/microtex-populate-prefix/src/microtex-populate-stamp/microtex-populate-patch.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/microtex-subbuild/microtex-populate-prefix/src/microtex-populate-stamp/microtex-populate-test.rule"
+		},
+		{
+			"file" : "/home/yangxc/codes/ai-reader/build_ninja/_deps/microtex-subbuild/microtex-populate-prefix/src/microtex-populate-stamp/microtex-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"microtex-populate"
+		],
+		"name" : "microtex-populate"
+	}
+}

@@ -1,0 +1,14 @@
+# Target labels
+ qtkeychain-populate
+# Source files and their labels
+/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/CMakeFiles/qtkeychain-populate
+/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/CMakeFiles/qtkeychain-populate.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/CMakeFiles/qtkeychain-populate-complete.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-build.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-configure.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-download.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-install.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-mkdir.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-patch.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-test.rule
+/home/yangxc/codes/ai-reader/build_ninja/_deps/qtkeychain-subbuild/qtkeychain-populate-prefix/src/qtkeychain-populate-stamp/qtkeychain-populate-update.rule

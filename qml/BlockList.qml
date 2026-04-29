@@ -51,8 +51,8 @@ Rectangle {
                 anchors.rightMargin: 12
                 Label {
                     text: list.count > 0
-                          ? qsTr("Blocks (%1)").arg(list.count)
-                          : qsTr("Blocks")
+                          ? qsTr("Paragraphs (%1)").arg(list.count)
+                          : qsTr("Paragraphs")
                     font.bold: true
                 }
                 Item { Layout.fillWidth: true }
@@ -221,9 +221,9 @@ Rectangle {
                 horizontalAlignment: Text.AlignHCenter
                 color: "#888"
                 text: root.paperStatus === PaperController.Loading
-                      ? qsTr("Extracting blocks…")
+                      ? qsTr("Extracting paragraphs…")
                       : root.paperStatus === PaperController.Error
-                        ? qsTr("No blocks (load failed).")
+                        ? qsTr("No paragraphs (load failed).")
                         : qsTr("Open a PDF to see extracted text.")
             }
         }

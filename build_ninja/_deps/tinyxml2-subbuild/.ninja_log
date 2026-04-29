@@ -1,0 +1,21 @@
+# ninja log v5
+3	78	1777389376020506622	tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-mkdir	57e79dbe11ca84a6
+3	78	1777389376020506622	/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-mkdir	57e79dbe11ca84a6
+79	2548	1777389378490238048	tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-download	c1cf4271c3144146
+79	2548	1777389378490238048	/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-download	c1cf4271c3144146
+2548	2623	0	tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-update	93caad4c8ca72c30
+2548	2623	0	/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-update	93caad4c8ca72c30
+2623	2695	1777389378637222094	tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-patch	dee5236ab9bacb2c
+2623	2695	1777389378637222094	/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-patch	dee5236ab9bacb2c
+2695	2765	1777389378707214496	tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-configure	590a43e261af3b5a
+2695	2765	1777389378707214496	/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-configure	590a43e261af3b5a
+2765	2836	1777389378778206791	tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-build	133623ab95819a6d
+2765	2836	1777389378778206791	/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-build	133623ab95819a6d
+2836	2907	1777389378849199085	tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-install	552a880b6326a0f1
+2836	2907	1777389378849199085	/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-install	552a880b6326a0f1
+2908	2977	1777389378919191488	tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-test	79718afd524117ea
+2908	2977	1777389378919191488	/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-test	79718afd524117ea
+2977	3083	1777389379025179988	CMakeFiles/tinyxml2-populate-complete	2fce506591b86860
+2977	3083	1777389379025179988	tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-done	2fce506591b86860
+2977	3083	1777389379025179988	/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/CMakeFiles/tinyxml2-populate-complete	2fce506591b86860
+2977	3083	1777389379025179988	/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/tinyxml2-populate-prefix/src/tinyxml2-populate-stamp/tinyxml2-populate-done	2fce506591b86860

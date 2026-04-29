@@ -293,7 +293,7 @@ ApplicationWindow {
             }
             Label {
                 text: pdfDoc.status === PdfDocument.Ready
-                      ? qsTr("%1 pages · %2 blocks")
+                      ? qsTr("%1 pages · %2 paragraphs")
                             .arg(pdfDoc.pageCount)
                             .arg(paperController.blockCount)
                       : ""

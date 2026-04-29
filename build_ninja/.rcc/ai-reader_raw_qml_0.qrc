@@ -1,0 +1,14 @@
+<RCC>
+  <qresource prefix="/AiReader/">
+    <file alias="qml/Main.qml">/home/yangxc/codes/ai-reader/qml/Main.qml</file>
+    <file alias="qml/PasswordDialog.qml">/home/yangxc/codes/ai-reader/qml/PasswordDialog.qml</file>
+    <file alias="qml/BlockList.qml">/home/yangxc/codes/ai-reader/qml/BlockList.qml</file>
+    <file alias="qml/SettingsDialog.qml">/home/yangxc/codes/ai-reader/qml/SettingsDialog.qml</file>
+    <file alias="qml/SummaryDialog.qml">/home/yangxc/codes/ai-reader/qml/SummaryDialog.qml</file>
+    <file alias="qml/TocSidebar.qml">/home/yangxc/codes/ai-reader/qml/TocSidebar.qml</file>
+    <file alias="qml/VisionDialog.qml">/home/yangxc/codes/ai-reader/qml/VisionDialog.qml</file>
+    <file alias="qml/PromptsDialog.qml">/home/yangxc/codes/ai-reader/qml/PromptsDialog.qml</file>
+    <file alias="qml/ChatPane.qml">/home/yangxc/codes/ai-reader/qml/ChatPane.qml</file>
+  </qresource>
+</RCC>
+

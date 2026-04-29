@@ -143,19 +143,20 @@ QVector<Line> extractPageLines(const QPdfSelection &sel)
         text.split(QChar('\n'), Qt::KeepEmptyParts);
     const QList<QPolygonF> polys = sel.bounds();
 
-    // QPdfSelection::bounds() typically returns one polygon per visible line.
-    // When the count matches the \n-split lines, we get bboxes for free; if
-    // it doesn't (some layouts split a line across multiple polys, etc.) we
-    // degrade to text-only lines and the caller falls back to blank-line
-    // splitting.
-    if (rawLines.size() == polys.size() && !polys.isEmpty()) {
-        out.reserve(polys.size());
-        for (int i = 0; i < polys.size(); ++i)
-            out.append(preprocessLine(rawLines[i], polys[i].boundingRect()));
-    } else {
-        out.reserve(rawLines.size());
-        for (const QString &raw : rawLines)
-            out.append(preprocessLine(raw, QRectF()));
+    // QPdfSelection::bounds() typically returns one polygon per visible
+    // line — but not always: some layouts split a single line across
+    // several polys (font runs, justified spacing, etc.) so the counts
+    // don't match. Use polys best-effort: assign the i-th poly to the
+    // i-th line when present, otherwise leave bbox empty. Even partial
+    // bbox coverage lets the geometric splitter do useful work; full-
+    // mismatch pages naturally fall through to the text-only path
+    // because all bboxes end up empty.
+    out.reserve(rawLines.size());
+    for (int i = 0; i < rawLines.size(); ++i) {
+        QRectF bbox;
+        if (i < polys.size())
+            bbox = polys[i].boundingRect();
+        out.append(preprocessLine(rawLines[i], bbox));
     }
     return out;
 }
@@ -180,6 +181,41 @@ double lowerQuartileOf(QVector<double> v)
     if (v.isEmpty()) return 0.0;
     std::sort(v.begin(), v.end());
     return v[v.size() / 4];
+}
+
+// True when a line looks like the *last* line of a paragraph: it ends
+// with sentence-final punctuation AND it's noticeably shorter than the
+// page's typical line length. Mid-paragraph lines that wrap inside a
+// sentence don't end with terminal punctuation, and full-width lines
+// that happen to end on a period don't trip this either — the length
+// check is what keeps it from firing on every justified line that
+// happens to land on a period.
+bool looksLikeParagraphEnd(const QString &line, int typicalLen)
+{
+    if (typicalLen <= 0 || line.isEmpty())
+        return false;
+    if (line.length() >= int(typicalLen * 0.85))
+        return false;
+    // Walk past trailing closing brackets/quotes — "(see §3.)" still ends
+    // a paragraph. Stop at the first character that's "real text".
+    int idx = line.length() - 1;
+    while (idx >= 0) {
+        const QChar c = line.at(idx);
+        if (c == QChar(')') || c == QChar(']') || c == QChar('}')
+            || c == QChar('"') || c == QChar('\'')
+            || c == QChar(0x201D)  // ”
+            || c == QChar(0x2019)  // ’
+            || c == QChar(0xFF09)) // )
+            --idx;
+        else
+            break;
+    }
+    if (idx < 0) return false;
+    const QChar last = line.at(idx);
+    return last == QChar('.') || last == QChar('!') || last == QChar('?')
+        || last == QChar(0x3002)  // 。
+        || last == QChar(0xFF01)  // !
+        || last == QChar(0xFF1F); // ?
 }
 
 bool sameColumn(const QRectF &a, const QRectF &b)
@@ -231,14 +267,32 @@ QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
             currentMaxHeight = 0;
         };
 
+        // Median *line text length* — used by both paths as the
+        // baseline for "this line is short enough to be a paragraph
+        // end" detection. Computed once per page over non-empty lines.
+        QVector<double> lens;
+        lens.reserve(lines.size());
+        for (const Line &ln : lines)
+            if (!ln.text.isEmpty()) lens.append(ln.text.length());
+        const int typicalLen = int(medianOf(lens));
+
         if (!haveBboxes) {
+            const Line *prevText = nullptr;
             for (const Line &ln : lines) {
                 if (ln.text.isEmpty()) {
                     flush(0);
                     prevHyphen = false;
+                    prevText = nullptr;
                     continue;
                 }
-                if (currentText.isEmpty()) {
+                bool startNew = currentText.isEmpty();
+                if (!startNew && prevText
+                    && !prevHyphen
+                    && looksLikeParagraphEnd(prevText->text, typicalLen)) {
+                    startNew = true;
+                }
+                if (startNew) {
+                    flush(0);
                     currentText = ln.text;
                 } else if (prevHyphen) {
                     currentText += ln.text;
@@ -247,6 +301,7 @@ QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
                     currentText += ln.text;
                 }
                 prevHyphen = ln.hyphenated;
+                prevText = &ln;
             }
             flush(0);
             continue;
@@ -329,7 +384,14 @@ QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
                 const bool indented = !ln.bbox.isEmpty()
                     && (ln.bbox.left() - columnLefts[i]) > indentThreshold
                     && (prev->bbox.left() - columnLefts[i]) <= indentThreshold;
-                if (!sameCol || vgap > gapThreshold || fontJump || indented)
+                // Text-side fallback for layouts where geometry doesn't
+                // give a clear signal (uniform leading, no indent, no
+                // column change): the previous line was short and ended
+                // in sentence-final punctuation.
+                const bool paraEnd = !prevHyphen
+                    && looksLikeParagraphEnd(prev->text, typicalLen);
+                if (!sameCol || vgap > gapThreshold || fontJump
+                    || indented || paraEnd)
                     startNew = true;
             }
 

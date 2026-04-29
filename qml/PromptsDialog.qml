@@ -103,7 +103,7 @@ Dialog {
                         wrapMode: Text.Wrap
                         font.pixelSize: 11
                         color: "#666"
-                        text: qsTr("System prompt for per-block translation. " +
+                        text: qsTr("System prompt for per-paragraph translation. " +
                                    "Variable: {{lang}} → target language. " +
                                    "Leave empty to use the built-in default.")
                     }

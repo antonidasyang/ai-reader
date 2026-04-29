@@ -1,0 +1,13 @@
+module AiReader
+typeinfo ai-reader.qmltypes
+prefer :/AiReader/
+Main 1.0 qml/Main.qml
+PasswordDialog 1.0 qml/PasswordDialog.qml
+BlockList 1.0 qml/BlockList.qml
+SettingsDialog 1.0 qml/SettingsDialog.qml
+SummaryDialog 1.0 qml/SummaryDialog.qml
+TocSidebar 1.0 qml/TocSidebar.qml
+VisionDialog 1.0 qml/VisionDialog.qml
+PromptsDialog 1.0 qml/PromptsDialog.qml
+ChatPane 1.0 qml/ChatPane.qml
+
