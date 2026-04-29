@@ -169,6 +169,19 @@ double medianOf(QVector<double> v)
     return v[v.size() / 2];
 }
 
+// 25th-percentile gap. Used instead of the median when estimating the
+// "tight" intra-line gap: paragraph spacing skews the distribution
+// upward, so the median sits between the intra-line and inter-paragraph
+// clusters and the 1.x× threshold drifts; the lower quartile lives
+// firmly inside the intra-line cluster as long as paragraphs span more
+// than ~one line on average, which is true for body text.
+double lowerQuartileOf(QVector<double> v)
+{
+    if (v.isEmpty()) return 0.0;
+    std::sort(v.begin(), v.end());
+    return v[v.size() / 4];
+}
+
 bool sameColumn(const QRectF &a, const QRectF &b)
 {
     if (a.isEmpty() || b.isEmpty()) return true;
@@ -241,7 +254,8 @@ QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
 
         // Geometric path: compute typical line height, width, and intra-
         // paragraph gap, then split whenever consecutive lines suggest a
-        // new paragraph (large vertical gap, column change, font jump).
+        // new paragraph (large vertical gap, column change, font jump,
+        // first-line indent).
         QVector<double> heights, widths, gaps;
         heights.reserve(lines.size());
         widths.reserve(lines.size());
@@ -260,7 +274,27 @@ QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
             if (gap >= 0) gaps.append(gap);
         }
         const double medianHeight = medianOf(heights);
-        const double medianGap    = medianOf(gaps);
+        const double tightGap     = lowerQuartileOf(gaps);
+
+        // Per-line "what's the column's flush-left edge here?". For
+        // each line, take the median left of all lines that share its
+        // column. Median (not min) so a stray hanging-indent outlier
+        // doesn't make every body line look "indented". Used below to
+        // detect the first line of an indented paragraph — a strong
+        // signal that gap-based splitting alone misses in papers that
+        // use indents instead of extra paragraph spacing.
+        QVector<double> columnLefts(lines.size(), 0.0);
+        for (int i = 0; i < lines.size(); ++i) {
+            if (lines[i].bbox.isEmpty()) continue;
+            QVector<double> sameLefts;
+            sameLefts.reserve(lines.size());
+            for (int j = 0; j < lines.size(); ++j) {
+                if (lines[j].bbox.isEmpty()) continue;
+                if (sameColumn(lines[i].bbox, lines[j].bbox))
+                    sameLefts.append(lines[j].bbox.left());
+            }
+            columnLefts[i] = medianOf(sameLefts);
+        }
 
         const Line *prev = nullptr;
         for (int i = 0; i < lines.size(); ++i) {
@@ -276,12 +310,26 @@ QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
             if (!startNew && prev) {
                 const bool sameCol = sameColumn(prev->bbox, ln.bbox);
                 const qreal vgap   = ln.bbox.top() - prev->bbox.bottom();
-                const qreal gapThreshold = qMax(medianGap * 1.7,
-                                                medianHeight * 0.55);
+                // 1.8× the tight intra-line gap, floored at half a
+                // line height so we still split on visible whitespace
+                // even when intra-line gaps are near zero (some PDFs
+                // pack lines so tightly the bbox bottoms touch).
+                const qreal gapThreshold = qMax(tightGap * 1.8,
+                                                medianHeight * 0.5);
                 const bool fontJump = medianHeight > 0
                     && qAbs(ln.bbox.height() - prev->bbox.height())
                        > medianHeight * 0.35;
-                if (!sameCol || vgap > gapThreshold || fontJump)
+                // First-line indent: the new line starts noticeably
+                // to the right of its column's flush-left edge while
+                // the previous line was at (or near) the flush left.
+                // Threshold floored at 6 pt so sub-pixel jitter from
+                // PDFium bboxes doesn't fire spuriously.
+                const qreal indentThreshold =
+                    qMax<qreal>(medianHeight * 0.5, 6.0);
+                const bool indented = !ln.bbox.isEmpty()
+                    && (ln.bbox.left() - columnLefts[i]) > indentThreshold
+                    && (prev->bbox.left() - columnLefts[i]) <= indentThreshold;
+                if (!sameCol || vgap > gapThreshold || fontJump || indented)
                     startNew = true;
             }
 
