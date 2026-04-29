@@ -386,19 +386,41 @@ ApplicationWindow {
                     // the chat tool `get_user_selection` can read it.
                     onSelectedTextChanged: paperController.setCurrentSelection(
                         selectedText, currentPage)
+                }
 
-                    // Ctrl + wheel → zoom. acceptedModifiers gates the
-                    // handler so plain wheel events fall through to the
-                    // PdfMultiPageView's own Flickable for vertical
-                    // scrolling — no manual propagate-events plumbing.
-                    WheelHandler {
-                        acceptedModifiers: Qt.ControlModifier
-                        onWheel: function(event) {
-                            if (event.angleDelta.y > 0)
+                // Wheel router. WheelHandler-on-pdfView didn't reliably
+                // consume the event — the underlying Flickable still
+                // scrolled while we zoomed, so the page slid up/down on
+                // every Ctrl+wheel tick. A MouseArea overlay with
+                // acceptedButtons=NoButton lets clicks/drags (including
+                // text selection) reach pdfView untouched, while we keep
+                // the wheel for ourselves and forward plain scrolls by
+                // driving Flickable.contentX/Y directly.
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    enabled: pdfDoc.status === PdfDocument.Ready
+                    onWheel: function(wheel) {
+                        if (wheel.modifiers & Qt.ControlModifier) {
+                            if (wheel.angleDelta.y > 0)
                                 window.zoomIn()
-                            else if (event.angleDelta.y < 0)
+                            else if (wheel.angleDelta.y < 0)
                                 window.zoomOut()
+                        } else {
+                            const dy = wheel.angleDelta.y
+                            const dx = wheel.angleDelta.x
+                            if (dy !== 0) {
+                                const maxY = Math.max(0, pdfView.contentHeight - pdfView.height)
+                                pdfView.contentY = Math.max(0,
+                                    Math.min(maxY, pdfView.contentY - dy))
+                            }
+                            if (dx !== 0) {
+                                const maxX = Math.max(0, pdfView.contentWidth - pdfView.width)
+                                pdfView.contentX = Math.max(0,
+                                    Math.min(maxX, pdfView.contentX - dx))
+                            }
                         }
+                        wheel.accepted = true
                     }
                 }
 
