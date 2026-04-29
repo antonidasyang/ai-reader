@@ -16,7 +16,10 @@
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickStyle>
+#include <QQuickWindow>
+#include <QSettings>
 #include <QTranslator>
+#include <QWindow>
 #include <QtQml>
 
 namespace {
@@ -138,6 +141,56 @@ int main(int argc, char *argv[])
     // Library's constructor — the model is read-only there so it can
     // safely run before QML is up.
     paperController.restoreLast();
+
+    // Restore + persist the main window's geometry and visibility.
+    // Done in C++ (rather than via Qt.labs.settings in QML) because
+    // that module isn't shipped with every Qt install — keeping it
+    // here means no extra dependency. Geometry is written only when
+    // the window is in the Windowed state so a maximized session
+    // doesn't overwrite the "normal" size we want to fall back to
+    // when the user un-maximizes after restore.
+    if (auto *root = engine.rootObjects().value(0)) {
+        if (auto *win = qobject_cast<QQuickWindow *>(root)) {
+            QSettings ws;
+            ws.beginGroup(QStringLiteral("window"));
+            if (ws.contains(QStringLiteral("width")))
+                win->setWidth(ws.value(QStringLiteral("width")).toInt());
+            if (ws.contains(QStringLiteral("height")))
+                win->setHeight(ws.value(QStringLiteral("height")).toInt());
+            if (ws.contains(QStringLiteral("x")))
+                win->setX(ws.value(QStringLiteral("x")).toInt());
+            if (ws.contains(QStringLiteral("y")))
+                win->setY(ws.value(QStringLiteral("y")).toInt());
+            if (ws.contains(QStringLiteral("visibility"))) {
+                const int vis = ws.value(QStringLiteral("visibility")).toInt();
+                // Only honor sensible visibilities. Restoring "Minimized"
+                // or "Hidden" would mean the user can't see the app at
+                // launch — clamp to Windowed in that case.
+                const auto v = static_cast<QWindow::Visibility>(vis);
+                if (v == QWindow::Maximized
+                    || v == QWindow::FullScreen
+                    || v == QWindow::Windowed) {
+                    win->setVisibility(v);
+                }
+            }
+            ws.endGroup();
+
+            QObject::connect(&app, &QGuiApplication::aboutToQuit, win, [win]() {
+                QSettings ws;
+                ws.beginGroup(QStringLiteral("window"));
+                const auto vis = win->visibility();
+                ws.setValue(QStringLiteral("visibility"), int(vis));
+                if (vis == QWindow::Windowed) {
+                    ws.setValue(QStringLiteral("width"),  win->width());
+                    ws.setValue(QStringLiteral("height"), win->height());
+                    ws.setValue(QStringLiteral("x"),      win->x());
+                    ws.setValue(QStringLiteral("y"),      win->y());
+                }
+                ws.endGroup();
+                ws.sync();
+            });
+        }
+    }
 
     return app.exec();
 }
