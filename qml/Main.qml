@@ -66,6 +66,21 @@ ApplicationWindow {
         onAccepted: paperController.openPdf(selectedFile)
     }
 
+    FileDialog {
+        id: exportTextDialog
+        title: qsTr("Export extracted text")
+        fileMode: FileDialog.SaveFile
+        defaultSuffix: "txt"
+        nameFilters: ["Text files (*.txt)", "All files (*)"]
+        onAccepted: {
+            const ok = paperController.exportExtractedText(selectedFile)
+            if (!ok) {
+                errorBanner.text = qsTr("Failed to write extracted text.")
+                errorBanner.visible = true
+            }
+        }
+    }
+
     FolderDialog {
         id: openFolderDialog
         title: qsTr("Open folder")
@@ -200,6 +215,14 @@ ApplicationWindow {
                 text: qsTr("Close")
                 enabled: paperController.status !== PaperController.Empty
                 onClicked: paperController.clear()
+            }
+            ToolButton {
+                text: qsTr("Export text…")
+                enabled: paperController.status === PaperController.Ready
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("Save the raw PDF text + per-line bboxes + detected paragraphs to a .txt file")
+                onClicked: exportTextDialog.open()
             }
             ToolSeparator {}
             ToolButton {

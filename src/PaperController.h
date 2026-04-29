@@ -57,6 +57,10 @@ public slots:
     // Pushed from QML whenever the user's PDF selection changes; the chat
     // tool `get_user_selection` reads the latest value.
     Q_INVOKABLE void setCurrentSelection(const QString &text, int page);
+    // Diagnostic: write a UTF-8 text report (raw PDFium text per page,
+    // line bboxes, splitter stats, final blocks) to `dest`. Returns
+    // true on success.
+    Q_INVOKABLE bool exportExtractedText(const QUrl &dest);
 
 signals:
     void pdfSourceChanged();

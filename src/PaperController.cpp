@@ -163,6 +163,20 @@ void PaperController::reload()
     }
 }
 
+bool PaperController::exportExtractedText(const QUrl &dest)
+{
+    if (m_status != Ready)
+        return false;
+    const QString path = dest.isLocalFile() ? dest.toLocalFile() : dest.toString();
+    if (path.isEmpty())
+        return false;
+    QFile f(path);
+    if (!f.open(QIODevice::WriteOnly | QIODevice::Text))
+        return false;
+    const QByteArray bytes = BlockClusterer::dumpDebug(m_doc).toUtf8();
+    return f.write(bytes) == bytes.size();
+}
+
 QImage PaperController::renderPage(int page, int targetWidthPx) const
 {
     if (m_status != Ready) return {};

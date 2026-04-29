@@ -7,6 +7,7 @@
 #include <QRectF>
 #include <QRegularExpression>
 #include <QSet>
+#include <QTextStream>
 #include <algorithm>
 
 namespace {
@@ -361,4 +362,98 @@ QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
     }
 
     return blocks;
+}
+
+QString BlockClusterer::dumpDebug(QPdfDocument &doc)
+{
+    QString out;
+    QTextStream ts(&out);
+
+    for (int p = 0; p < doc.pageCount(); ++p) {
+        QPdfSelection sel = doc.getAllText(p);
+        const QString rawText = sel.text();
+        const QStringList rawLines =
+            rawText.split(QChar('\n'), Qt::KeepEmptyParts);
+        const QList<QPolygonF> polys = sel.bounds();
+
+        ts << "================================================================\n";
+        ts << "Page " << p << "  rawLines=" << rawLines.size()
+           << " polys=" << polys.size() << "\n";
+        ts << "================================================================\n";
+        ts << "--- Raw text from QPdfSelection.text() ---\n";
+        ts << rawText;
+        if (!rawText.endsWith(QChar('\n'))) ts << "\n";
+        ts << "--- end raw text ---\n\n";
+
+        const QVector<Line> lines = extractPageLines(sel);
+        ts << "--- Lines after preprocess + poly alignment ---\n";
+        for (int i = 0; i < lines.size(); ++i) {
+            const Line &ln = lines[i];
+            const QString bboxStr = ln.bbox.isEmpty()
+                ? QStringLiteral("    (no-bbox)        ")
+                : QString("(%1,%2,%3,%4)")
+                    .arg(ln.bbox.x(),     7, 'f', 1)
+                    .arg(ln.bbox.y(),     7, 'f', 1)
+                    .arg(ln.bbox.width(), 6, 'f', 1)
+                    .arg(ln.bbox.height(),5, 'f', 1);
+            ts << QString("  [%1] ").arg(i, 3)
+               << bboxStr
+               << (ln.hyphenated ? " ¬" : "  ")
+               << " | " << ln.text << "\n";
+        }
+        ts << "\n";
+
+        // Recompute the splitter's per-page stats so the user can see
+        // exactly what threshold the geometric path is using.
+        QVector<double> heights, gaps;
+        for (const Line &ln : lines) {
+            if (ln.bbox.isEmpty() || ln.text.isEmpty()) continue;
+            heights.append(ln.bbox.height());
+        }
+        for (int i = 1; i < lines.size(); ++i) {
+            const Line &a = lines[i - 1];
+            const Line &b = lines[i];
+            if (a.bbox.isEmpty() || b.bbox.isEmpty()) continue;
+            if (!sameColumn(a.bbox, b.bbox)) continue;
+            const qreal gap = b.bbox.top() - a.bbox.bottom();
+            if (gap >= 0) gaps.append(gap);
+        }
+        const double medianHeight = medianOf(heights);
+        const double medianGap    = medianOf(gaps);
+        const double tightGap     = lowerQuartileOf(gaps);
+        const double threshold    = qMax(tightGap * 1.4, medianHeight * 0.4);
+        QVector<double> sortedGaps = gaps;
+        std::sort(sortedGaps.begin(), sortedGaps.end());
+        ts << "--- Splitter stats ---\n";
+        ts << "  medianHeight=" << medianHeight
+           << "  tightGap(P25)=" << tightGap
+           << "  medianGap=" << medianGap
+           << "  threshold=" << threshold << "\n";
+        ts << "  sortedGaps=[";
+        for (int i = 0; i < sortedGaps.size(); ++i) {
+            if (i) ts << ", ";
+            ts << sortedGaps[i];
+        }
+        ts << "]\n\n";
+    }
+
+    ts << "================================================================\n";
+    ts << "Final blocks produced by extract()\n";
+    ts << "================================================================\n";
+    const QVector<Block> blocks = extract(doc);
+    for (const Block &b : blocks) {
+        const char *kindStr =
+            b.kind == Block::Heading   ? "heading"   :
+            b.kind == Block::Caption   ? "caption"   :
+            b.kind == Block::ListItem  ? "list"      :
+            b.kind == Block::Equation  ? "equation"  : "paragraph";
+        ts << "[#" << b.id << "] page=" << b.page
+           << " kind=" << kindStr
+           << " bbox=(" << b.bbox.x() << "," << b.bbox.y()
+           << "," << b.bbox.width() << "," << b.bbox.height() << ")"
+           << " chars=" << b.text.length() << "\n";
+        ts << b.text << "\n\n";
+    }
+
+    return out;
 }

@@ -32,6 +32,22 @@
         <translation>打开文件夹</translation>
     </message>
     <message>
+        <source>Export extracted text</source>
+        <translation>导出提取的文本</translation>
+    </message>
+    <message>
+        <source>Export text…</source>
+        <translation>导出文本…</translation>
+    </message>
+    <message>
+        <source>Save the raw PDF text + per-line bboxes + detected paragraphs to a .txt file</source>
+        <translation>将 PDF 原始文本、每行 bbox、识别出的段落保存为 .txt 文件</translation>
+    </message>
+    <message>
+        <source>Failed to write extracted text.</source>
+        <translation>写入提取文本失败。</translation>
+    </message>
+    <message>
         <source>Folder</source>
         <translation>文件夹</translation>
     </message>
