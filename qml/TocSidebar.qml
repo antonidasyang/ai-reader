@@ -17,6 +17,7 @@ Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 32
             color: "#ececec"
+            clip: true
 
             RowLayout {
                 anchors.fill: parent
@@ -25,12 +26,14 @@ Rectangle {
                 spacing: 6
 
                 Label {
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
                     text: list.count > 0
                           ? qsTr("TOC (%1)").arg(list.count)
                           : qsTr("TOC")
                     font.bold: true
+                    elide: Text.ElideRight
                 }
-                Item { Layout.fillWidth: true }
                 BusyIndicator {
                     running: toc.status === TocService.Generating
                     visible: running
