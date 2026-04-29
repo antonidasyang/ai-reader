@@ -196,6 +196,12 @@ ApplicationWindow {
                 }
             }
             ToolButton {
+                text: qsTr("TOC")
+                checkable: true
+                checked: tocSidebar.visible
+                onClicked: tocSidebar.visible = !tocSidebar.visible
+            }
+            ToolButton {
                 text: qsTr("Chat")
                 checkable: true
                 checked: chatPane.visible
