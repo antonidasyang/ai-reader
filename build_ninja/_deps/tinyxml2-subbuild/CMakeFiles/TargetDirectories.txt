@@ -1,3 +1,0 @@
-/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/CMakeFiles/tinyxml2-populate.dir
-/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/CMakeFiles/edit_cache.dir
-/home/yangxc/codes/ai-reader/build_ninja/_deps/tinyxml2-subbuild/CMakeFiles/rebuild_cache.dir

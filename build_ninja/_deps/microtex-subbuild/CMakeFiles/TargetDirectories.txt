@@ -1,3 +1,0 @@
-/home/yangxc/codes/ai-reader/build_ninja/_deps/microtex-subbuild/CMakeFiles/microtex-populate.dir
-/home/yangxc/codes/ai-reader/build_ninja/_deps/microtex-subbuild/CMakeFiles/edit_cache.dir
-/home/yangxc/codes/ai-reader/build_ninja/_deps/microtex-subbuild/CMakeFiles/rebuild_cache.dir

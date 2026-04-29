@@ -1,6 +1,0 @@
-<RCC>
-  <qresource prefix="/AiReader">
-    <file alias="qmldir">/home/yangxc/codes/ai-reader/build_ninja/AiReader/qmldir</file>
-  </qresource>
-</RCC>
-
