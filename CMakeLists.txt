@@ -124,6 +124,23 @@ if(NOT microtex_POPULATED)
     add_subdirectory("${microtex_SOURCE_DIR}" "${microtex_BINARY_DIR}")
 endif()
 
+# Upstream cmark-gfm and MicroTeX hard-code /WX in their CMakeLists, so any
+# stray MSVC warning blows up the build: cmark's html.c is saved in a
+# codepage that triggers C4819 on cp936 hosts, and MicroTeX's font_parser
+# discards [[nodiscard]] returns (C4834). We don't want to fork those repos
+# over cosmetics, so just turn warnings-as-errors back off for the three
+# imported static libs. Our own targets stay strict.
+if(MSVC)
+    foreach(_aireader_relaxed_target
+            libcmark-gfm_static
+            libcmark-gfm-extensions_static
+            LaTeX)
+        if(TARGET ${_aireader_relaxed_target})
+            target_compile_options(${_aireader_relaxed_target} PRIVATE /WX-)
+        endif()
+    endforeach()
+endif()
+
 qt_standard_project_setup()
 
 qt_add_executable(ai-reader
