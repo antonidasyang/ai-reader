@@ -102,12 +102,31 @@ Rectangle {
                     // TreeViewDelegate inherits ItemDelegate's clicked()
                     // signal. Folder click toggles expansion, file click
                     // opens it. Matches VSCode's Explorer pane.
+
+                    // Cache the model index so the active-row check and
+                    // the click handler don't each rebuild it.
+                    readonly property var _modelIndex:
+                        tree.index(row, column)
+                    readonly property bool _isActiveFile:
+                        !library.isDir(_modelIndex)
+                        && library.fileUrl(_modelIndex).toString()
+                           === paperController.pdfSource.toString()
+
+                    // Replace the Fusion default — which paints
+                    // alternating row backgrounds via palette.alternateBase
+                    // — with a single uniform background plus a soft hover
+                    // tint and a stronger highlight on the active PDF.
+                    background: Rectangle {
+                        color: delegateRoot._isActiveFile ? "#d4e2f5"
+                             : delegateRoot.hovered       ? "#e8eaef"
+                                                          : "transparent"
+                    }
+
                     onClicked: {
-                        const idx = tree.index(row, column)
-                        if (library.isDir(idx))
+                        if (library.isDir(_modelIndex))
                             tree.toggleExpanded(row)
                         else
-                            root.pdfChosen(library.fileUrl(idx))
+                            root.pdfChosen(library.fileUrl(_modelIndex))
                     }
                 }
             }
