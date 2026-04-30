@@ -175,6 +175,47 @@ void TranslationService::retryFailed()
     scheduleNext();
 }
 
+void TranslationService::translateBlock(int row)
+{
+    if (!m_settings || !m_model) return;
+    if (row < 0 || row >= m_model->blockCount()) return;
+    const Block *b = m_model->blockAt(row);
+    if (!b) return;
+
+    if (!m_settings->isConfigured()) {
+        setLastError(tr("LLM is not configured. Open Settings to add a model and API key."));
+        return;
+    }
+    if (!m_client) {
+        m_client = m_settings->createClient(this);
+    } else {
+        m_client->setApiKey(m_settings->apiKey());
+        m_client->setModel(m_settings->model());
+        if (!m_settings->baseUrl().isEmpty())
+            m_client->setBaseUrl(QUrl(m_settings->baseUrl()));
+    }
+
+    if (shouldSkip(b->text)) {
+        m_model->setTranslationStatus(row, Block::Skipped);
+        m_model->setTranslation(row, b->text);
+        return;
+    }
+    if (b->translationStatus == Block::Translating
+        || b->translationStatus == Block::Queued) {
+        return;  // already in flight
+    }
+    if (m_pending.contains(row)) return;
+
+    m_pending.enqueue(row);
+    m_model->setTranslationStatus(row, Block::Queued);
+    ++m_total;
+    setLastError({});
+    emit progressChanged();
+    if (m_inflight == 0)
+        emit busyChanged();
+    scheduleNext();
+}
+
 void TranslationService::scheduleNext()
 {
     while (m_inflight < m_maxInflight && !m_pending.isEmpty()) {

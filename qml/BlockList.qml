@@ -114,6 +114,24 @@ Rectangle {
                     // model mutates (which would otherwise re-bind `index`).
                     readonly property int rowIndex: index
 
+                    // Visibility logic — properties of the delegate
+                    // root so visibility bindings inside `cell` can
+                    // reference them via `blockDelegate.x`. The
+                    // per-paragraph toggles (model.sourceVisible /
+                    // model.translationVisible) are user-driven and
+                    // take precedence. _showTrans guards the
+                    // translation block until something is actually
+                    // translated; _showSrc falls back to showing the
+                    // source when both halves of an un-translated
+                    // paragraph are hidden, so the row never collapses
+                    // to just the header line.
+                    readonly property bool _hasTranslation:
+                        model.translation && model.translation.length > 0
+                    readonly property bool _showTrans:
+                        model.translationVisible && _hasTranslation
+                    readonly property bool _showSrc:
+                        model.sourceVisible || !_showTrans
+
                     // Right-click → context menu. We map the click position
                     // into the source TextEdit and remember the character
                     // offset so "Split here" knows where to cut. Left-click
@@ -144,6 +162,17 @@ Rectangle {
                         MenuItem {
                             text: qsTr("Ask AI about this")
                             onTriggered: root.askInChatRequested(model.text, model.page)
+                        }
+                        MenuItem {
+                            // Translate just this paragraph. Disabled
+                            // while it's already in flight, when no LLM
+                            // is configured, or while the row's text
+                            // would be skipped (very short / numeric).
+                            text: qsTr("Translate this paragraph")
+                            enabled: settings.isConfigured
+                                     && model.translationStatusName !== "translating"
+                                     && model.translationStatusName !== "queued"
+                            onTriggered: translation.translateBlock(blockDelegate.rowIndex)
                         }
                         MenuSeparator {}
                         MenuItem {
@@ -190,13 +219,13 @@ Rectangle {
                                 color: "#999"
                             }
 
-                            // ▼ collapsed indicator → click to show
-                            // again; ▲ expanded indicator → click to
-                            // hide. Translation chevron is disabled
-                            // (greyed) when the paragraph hasn't been
-                            // translated yet — toggling would have no
-                            // visible effect.
+                            // Show the chevrons only when there's a
+                            // translation to compare against — for an
+                            // untranslated paragraph there's nothing
+                            // useful to toggle. ▲ expanded → click
+                            // hides; ▼ collapsed → click reveals.
                             ToolButton {
+                                visible: blockDelegate._hasTranslation
                                 text: (model.sourceVisible ? "▲ " : "▼ ") + qsTr("Src")
                                 flat: true
                                 font.pixelSize: 10
@@ -209,11 +238,11 @@ Rectangle {
                                 onClicked: model.sourceVisible = !model.sourceVisible
                             }
                             ToolButton {
+                                visible: blockDelegate._hasTranslation
                                 text: (model.translationVisible ? "▲ " : "▼ ") + qsTr("Trans")
                                 flat: true
                                 font.pixelSize: 10
                                 padding: 2
-                                enabled: blockDelegate._hasTranslation
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 400
                                 ToolTip.text: model.translationVisible
@@ -239,22 +268,6 @@ Rectangle {
                                 }
                             }
                         }
-
-                        // Visibility logic. The per-paragraph toggles
-                        // (model.sourceVisible / model.translationVisible)
-                        // are user-driven and take precedence. The
-                        // _showTrans guard keeps the translation block
-                        // hidden until something is actually translated;
-                        // _showSrc falls back to showing the source when
-                        // the user has hidden both halves of an
-                        // un-translated paragraph, so the row never
-                        // collapses to just the header line.
-                        readonly property bool _hasTranslation:
-                            model.translation && model.translation.length > 0
-                        readonly property bool _showTrans:
-                            model.translationVisible && _hasTranslation
-                        readonly property bool _showSrc:
-                            model.sourceVisible || !_showTrans
 
                         // Source text (English) — read-only TextEdit so the
                         // user can position a cursor for "Split here" and

@@ -328,6 +328,10 @@
         <translation>向 AI 提问</translation>
     </message>
     <message>
+        <source>Translate this paragraph</source>
+        <translation>翻译该段</translation>
+    </message>
+    <message>
         <source>Split here</source>
         <translation>在此处拆分</translation>
     </message>
