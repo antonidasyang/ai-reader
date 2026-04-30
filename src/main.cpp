@@ -5,6 +5,7 @@
 #include "PaperController.h"
 #include "Settings.h"
 #include "SummaryService.h"
+#include "Tabs.h"
 #include "TocService.h"
 #include "TranslationService.h"
 #include "VisionService.h"
@@ -75,6 +76,9 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<LayoutSettings>(
         "AiReader", 1, 0, "LayoutSettings",
         QStringLiteral("Use the layoutSettings context property"));
+    qmlRegisterUncreatableType<Tabs>(
+        "AiReader", 1, 0, "Tabs",
+        QStringLiteral("Use the tabs context property"));
 
     Settings settings;
 
@@ -108,6 +112,7 @@ int main(int argc, char *argv[])
     MarkdownRenderer markdown;
     Library library;
     LayoutSettings layoutSettings;
+    Tabs tabs(&paperController);
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
@@ -123,6 +128,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("markdown", &markdown);
     engine.rootContext()->setContextProperty("library", &library);
     engine.rootContext()->setContextProperty("layoutSettings", &layoutSettings);
+    engine.rootContext()->setContextProperty("tabs", &tabs);
 
     QObject::connect(
         &engine,
@@ -142,12 +148,19 @@ int main(int argc, char *argv[])
 
     engine.loadFromModule("AiReader", "Main");
 
-    // Re-open the last paper (if any) once the QML scene is live so
-    // Connections like the password-prompt dialog can react to the
-    // load. The folder pane already restored its state inside
-    // Library's constructor — the model is read-only there so it can
-    // safely run before QML is up.
-    paperController.restoreLast();
+    // Re-open the previously open papers (if any) once the QML scene
+    // is live so Connections like the password-prompt dialog can
+    // react to the load. The folder pane already restored its state
+    // inside Library's constructor — the model is read-only there so
+    // it can safely run before QML is up.
+    //
+    // Tabs is now the source of truth for the open-paper list. If
+    // there is no saved tab list yet (fresh install or first run
+    // after upgrade) we fall back to PaperController's legacy
+    // single-paper restore so existing users don't see a blank
+    // window on first launch with the new build.
+    if (!tabs.restoreSession())
+        paperController.restoreLast();
 
     // Restore + persist the main window's geometry and visibility.
     // Done in C++ (rather than via Qt.labs.settings in QML) because

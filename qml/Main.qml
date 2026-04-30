@@ -56,14 +56,21 @@ ApplicationWindow {
         anchors.centerIn: Overlay.overlay
         promptText: qsTr("\"%1\" is encrypted. Enter the password:").arg(paperController.fileName)
         onAccepted: paperController.setPassword(password)
-        onRejected: paperController.clear()
+        // User chose not to unlock this paper — drop it from the tab
+        // list rather than leaving an inert "stuck on password" tab.
+        onRejected: {
+            if (tabs.activeIndex >= 0)
+                tabs.closePaper(tabs.activeIndex)
+            else
+                paperController.clear()
+        }
     }
 
     FileDialog {
         id: fileDialog
         title: qsTr("Open PDF")
         nameFilters: ["PDF files (*.pdf)", "All files (*)"]
-        onAccepted: paperController.openPdf(selectedFile)
+        onAccepted: tabs.openPaper(selectedFile)
     }
 
     FileDialog {
@@ -250,11 +257,6 @@ ApplicationWindow {
                 onClicked: openFolderDialog.open()
             }
             ToolButton {
-                text: qsTr("Close")
-                enabled: paperController.status !== PaperController.Empty
-                onClicked: paperController.clear()
-            }
-            ToolButton {
                 text: qsTr("Export text…")
                 enabled: paperController.status === PaperController.Ready
                 ToolTip.visible: hovered
@@ -391,7 +393,7 @@ ApplicationWindow {
                 for (let i = 0; i < drop.urls.length; ++i) {
                     const u = drop.urls[i].toString()
                     if (u.toLowerCase().endsWith(".pdf")) {
-                        paperController.openPdf(drop.urls[i])
+                        tabs.openPaper(drop.urls[i])
                         drop.accepted = true
                         return
                     }
@@ -415,7 +417,7 @@ ApplicationWindow {
                 visible: library.currentFolder.length > 0
                 SplitView.preferredWidth: 240
                 SplitView.minimumWidth: 0
-                onPdfChosen: function(path) { paperController.openPdf(path) }
+                onPdfChosen: function(path) { tabs.openPaper(path) }
 
                 DockGrip {
                     anchors.left: parent.left
@@ -464,77 +466,200 @@ ApplicationWindow {
                 // overflow draws over the TOC and BlockList panes.
                 clip: true
 
-                PdfMultiPageView {
-                    id: pdfView
+                ColumnLayout {
                     anchors.fill: parent
-                    document: pdfDoc
-                    visible: pdfDoc.status === PdfDocument.Ready
-                    // Mirror the user's PDF selection into the controller so
-                    // the chat tool `get_user_selection` can read it.
-                    onSelectedTextChanged: paperController.setCurrentSelection(
-                        selectedText, currentPage)
+                    spacing: 0
 
-                    // Wheel router as a *child* of pdfView so it sits in
-                    // the event chain ABOVE the inner Flickable but
-                    // INSIDE the pdfView item, which means a non-accepted
-                    // wheel cleanly bubbles up to pdfView's own scroll
-                    // handling. acceptedButtons=NoButton keeps clicks
-                    // and drags (text selection) flowing to pdfView
-                    // untouched; only Ctrl+wheel is consumed.
-                    MouseArea {
-                        anchors.fill: parent
-                        acceptedButtons: Qt.NoButton
-                        z: 1
-                        onWheel: function(wheel) {
-                            if (wheel.modifiers & Qt.ControlModifier) {
-                                if (wheel.angleDelta.y > 0)
-                                    window.zoomIn()
-                                else if (wheel.angleDelta.y < 0)
-                                    window.zoomOut()
-                                wheel.accepted = true
-                            } else {
-                                wheel.accepted = false
+                    // ── VS Code-style tab strip ─────────────────────────
+                    // Hidden when no papers are open so the empty-state
+                    // hero card stays the dominant element on first run.
+                    Rectangle {
+                        id: pdfTabBar
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: tabs.count > 0 ? 30 : 0
+                        visible: tabs.count > 0
+                        color: "#2d2d30"
+
+                        Flickable {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 28   // space for the DockGrip
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.bottom: parent.bottom
+                            contentWidth: tabRow.width
+                            contentHeight: height
+                            clip: true
+                            interactive: contentWidth > width
+
+                            Row {
+                                id: tabRow
+                                spacing: 1
+                                height: parent.height
+
+                                Repeater {
+                                    model: tabs.count
+                                    delegate: Rectangle {
+                                        id: tabDelegate
+                                        readonly property bool isActive: index === tabs.activeIndex
+                                        height: parent.height
+                                        // Cap tabs at ~220px so a long paper name
+                                        // doesn't push the others off-screen.
+                                        width: Math.min(220,
+                                                        Math.max(80,
+                                                                 nameLabel.implicitWidth + 44))
+                                        color: isActive ? "#1e1f22"
+                                                        : (tabHover.containsMouse ? "#3e3e42" : "#252526")
+
+                                        // Active-tab accent stripe (top edge).
+                                        Rectangle {
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            height: 2
+                                            color: tabDelegate.isActive ? "#5b8def" : "transparent"
+                                        }
+
+                                        Label {
+                                            id: nameLabel
+                                            anchors.left: parent.left
+                                            anchors.leftMargin: 10
+                                            anchors.right: closeBtn.left
+                                            anchors.rightMargin: 4
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: tabs.nameAt(index)
+                                            color: tabDelegate.isActive ? "white" : "#c8c8c8"
+                                            elide: Text.ElideMiddle
+                                            font.pixelSize: 12
+                                        }
+
+                                        // Click anywhere on the tab body
+                                        // (other than the × button) to
+                                        // activate. Middle-click closes,
+                                        // matching VS Code.
+                                        MouseArea {
+                                            id: tabHover
+                                            anchors.left: parent.left
+                                            anchors.top: parent.top
+                                            anchors.bottom: parent.bottom
+                                            anchors.right: closeBtn.left
+                                            hoverEnabled: true
+                                            acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+                                            onClicked: function(mouse) {
+                                                if (mouse.button === Qt.LeftButton)
+                                                    tabs.activatePaper(index)
+                                                else
+                                                    tabs.closePaper(index)
+                                            }
+                                        }
+
+                                        Rectangle {
+                                            id: closeBtn
+                                            anchors.right: parent.right
+                                            anchors.rightMargin: 6
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            width: 18
+                                            height: 18
+                                            radius: 3
+                                            color: closeArea.containsMouse ? "#c0392b" : "transparent"
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "×"
+                                                color: closeArea.containsMouse ? "white"
+                                                                                : (tabDelegate.isActive ? "#bbb" : "#888")
+                                                font.pixelSize: 14
+                                            }
+                                            MouseArea {
+                                                id: closeArea
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: tabs.closePaper(index)
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
-                }
 
-                Rectangle {
-                    anchors.fill: parent
-                    visible: paperController.status === PaperController.Empty
-                             || (paperController.status === PaperController.Error
-                                 && paperController.pdfSource.toString().length === 0)
-                    color: "#1e1f22"
-                    ColumnLayout {
-                        anchors.centerIn: parent
-                        spacing: 12
-                        Label {
-                            text: qsTr("Drag a PDF here, or click Open…")
-                            color: "#bbbbbb"
-                            font.pixelSize: 18
-                            Layout.alignment: Qt.AlignHCenter
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        clip: true
+
+                        PdfMultiPageView {
+                            id: pdfView
+                            anchors.fill: parent
+                            document: pdfDoc
+                            visible: pdfDoc.status === PdfDocument.Ready
+                            // Mirror the user's PDF selection into the controller so
+                            // the chat tool `get_user_selection` can read it.
+                            onSelectedTextChanged: paperController.setCurrentSelection(
+                                selectedText, currentPage)
+
+                            // Wheel router as a *child* of pdfView so it sits in
+                            // the event chain ABOVE the inner Flickable but
+                            // INSIDE the pdfView item, which means a non-accepted
+                            // wheel cleanly bubbles up to pdfView's own scroll
+                            // handling. acceptedButtons=NoButton keeps clicks
+                            // and drags (text selection) flowing to pdfView
+                            // untouched; only Ctrl+wheel is consumed.
+                            MouseArea {
+                                anchors.fill: parent
+                                acceptedButtons: Qt.NoButton
+                                z: 1
+                                onWheel: function(wheel) {
+                                    if (wheel.modifiers & Qt.ControlModifier) {
+                                        if (wheel.angleDelta.y > 0)
+                                            window.zoomIn()
+                                        else if (wheel.angleDelta.y < 0)
+                                            window.zoomOut()
+                                        wheel.accepted = true
+                                    } else {
+                                        wheel.accepted = false
+                                    }
+                                }
+                            }
                         }
-                        Label {
-                            text: qsTr("AI Reader — milestone 3.2 (TOC sidebar)")
-                            color: "#666666"
-                            font.pixelSize: 12
-                            Layout.alignment: Qt.AlignHCenter
+
+                        Rectangle {
+                            anchors.fill: parent
+                            visible: paperController.status === PaperController.Empty
+                                     || (paperController.status === PaperController.Error
+                                         && paperController.pdfSource.toString().length === 0)
+                            color: "#1e1f22"
+                            ColumnLayout {
+                                anchors.centerIn: parent
+                                spacing: 12
+                                Label {
+                                    text: qsTr("Drag a PDF here, or click Open…")
+                                    color: "#bbbbbb"
+                                    font.pixelSize: 18
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+                                Label {
+                                    text: qsTr("AI Reader — milestone 3.2 (TOC sidebar)")
+                                    color: "#666666"
+                                    font.pixelSize: 12
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+                            }
+                        }
+
+                        BusyIndicator {
+                            anchors.centerIn: parent
+                            running: paperController.status === PaperController.Loading
+                                     || pdfDoc.status === PdfDocument.Loading
+                            visible: running
                         }
                     }
-                }
-
-                BusyIndicator {
-                    anchors.centerIn: parent
-                    running: paperController.status === PaperController.Loading
-                             || pdfDoc.status === PdfDocument.Loading
-                    visible: running
                 }
 
                 DockGrip {
                     anchors.left: parent.left
                     anchors.top: parent.top
                     anchors.leftMargin: 4
-                    anchors.topMargin: 4
+                    anchors.topMargin: 6
                     pane: pdfPane
                     split: split
                     marker: dropMarker

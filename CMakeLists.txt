@@ -192,6 +192,8 @@ qt_add_executable(ai-reader
     src/Library.cpp
     src/LayoutSettings.h
     src/LayoutSettings.cpp
+    src/Tabs.h
+    src/Tabs.cpp
 )
 
 target_compile_definitions(ai-reader PRIVATE
