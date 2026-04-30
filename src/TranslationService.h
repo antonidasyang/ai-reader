@@ -44,7 +44,7 @@ public slots:
     // Translate a single paragraph (used by the BlockList right-click
     // menu). No-op when the row is invalid, the LLM isn't configured,
     // or the row is already translating.
-    Q_INVOKABLE void translateBlock(int row);
+    void translateBlock(int row);
 
 signals:
     void busyChanged();
