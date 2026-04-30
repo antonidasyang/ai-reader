@@ -264,6 +264,14 @@ ApplicationWindow {
                 ToolTip.text: qsTr("Save the raw PDF text + per-line bboxes + detected paragraphs to a .txt file")
                 onClicked: exportTextDialog.open()
             }
+            ToolButton {
+                text: qsTr("Re-extract")
+                enabled: paperController.status === PaperController.Ready
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("Discard manual paragraph edits and re-run automatic extraction")
+                onClicked: paperController.rebuildBlocks()
+            }
             ToolSeparator {}
             ToolButton {
                 text: translation.busy ? qsTr("Cancel") : qsTr("Translate")

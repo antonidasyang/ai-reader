@@ -27,11 +27,16 @@ QString computePaperId(const QString &filePath)
 PaperController::PaperController(QObject *parent)
     : QObject(parent)
     , m_doc(this)
+    , m_blockCache(this)
 {
     // Manual paragraph edits (split/merge/delete) need to refresh the
-    // paragraph-count badge bound to PaperController::blockCount.
+    // paragraph-count badge bound to PaperController::blockCount and
+    // also flush the new block list to the on-disk cache so the edit
+    // survives reopening the paper.
     connect(&m_model, &BlockListModel::blocksMutated,
             this, &PaperController::blocksChanged);
+    connect(&m_model, &BlockListModel::blocksMutated,
+            this, [this]() { m_blockCache.setBlocks(m_model.allBlocks()); });
 }
 
 QString PaperController::fileName() const
@@ -77,6 +82,7 @@ void PaperController::clear()
 {
     m_doc.close();
     m_model.clear();
+    m_blockCache.setPaperId({});
     m_source = {};
     m_password.clear();
     m_paperId.clear();
@@ -138,7 +144,18 @@ void PaperController::reload()
             m_paperId = computePaperId(m_source.toLocalFile());
         else
             m_paperId.clear();
-        QVector<Block> blocks = BlockClusterer::extract(m_doc);
+        m_blockCache.setPaperId(m_paperId);
+        // Use the user's saved/edited paragraph list when one exists;
+        // otherwise run automatic extraction and seed the cache so
+        // future opens skip clustering and any later edits are
+        // preserved.
+        QVector<Block> blocks;
+        if (m_blockCache.hasBlocks()) {
+            blocks = m_blockCache.blocks();
+        } else {
+            blocks = BlockClusterer::extract(m_doc);
+            m_blockCache.setBlocks(blocks);
+        }
         m_model.setBlocks(std::move(blocks));
         emit blocksChanged();
         setStatus(Ready);
@@ -165,6 +182,16 @@ void PaperController::reload()
         setStatus(Error, tr("Failed to load PDF."));
         break;
     }
+}
+
+void PaperController::rebuildBlocks()
+{
+    if (m_status != Ready) return;
+    m_blockCache.clear();
+    QVector<Block> blocks = BlockClusterer::extract(m_doc);
+    m_blockCache.setBlocks(blocks);
+    m_model.setBlocks(std::move(blocks));
+    emit blocksChanged();
 }
 
 bool PaperController::exportExtractedText(const QUrl &dest)

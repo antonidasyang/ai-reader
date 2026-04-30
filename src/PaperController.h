@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BlockCache.h"
 #include "BlockListModel.h"
 
 #include <QImage>
@@ -62,6 +63,12 @@ public slots:
     // true on success.
     Q_INVOKABLE bool exportExtractedText(const QUrl &dest);
 
+    // Discard any saved (auto-extracted + manually-edited) paragraphs
+    // for the current paper and re-run the clusterer. Use this when
+    // the user wants to start over after manual edits, or to pick up
+    // an improved splitter.
+    Q_INVOKABLE void rebuildBlocks();
+
 signals:
     void pdfSourceChanged();
     void pdfPasswordChanged();
@@ -76,6 +83,7 @@ private:
 
     QPdfDocument m_doc;
     BlockListModel m_model;
+    BlockCache m_blockCache;
     QUrl m_source;
     QString m_password;
     QString m_paperId;

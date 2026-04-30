@@ -37,6 +37,11 @@ public:
     // Read-only access for in-process consumers (TranslationService).
     const Block *blockAt(int row) const;
 
+    // Snapshot of the current block vector. Used by BlockCache to
+    // persist after every mutation. Returns a copy so callers don't
+    // have to worry about lifetime if they outlive the model.
+    QVector<Block> allBlocks() const { return m_blocks; }
+
     // Mutators used by the translation pipeline.
     void setTranslationStatus(int row, Block::TranslationStatus status,
                               const QString &error = {});

@@ -44,6 +44,14 @@
         <translation>将 PDF 原始文本、每行 bbox、识别出的段落保存为 .txt 文件</translation>
     </message>
     <message>
+        <source>Re-extract</source>
+        <translation>重新分段</translation>
+    </message>
+    <message>
+        <source>Discard manual paragraph edits and re-run automatic extraction</source>
+        <translation>丢弃手动段落编辑并重新自动分段</translation>
+    </message>
+    <message>
         <source>Failed to write extracted text.</source>
         <translation>写入提取文本失败。</translation>
     </message>

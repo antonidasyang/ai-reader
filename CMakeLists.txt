@@ -151,6 +151,8 @@ qt_add_executable(ai-reader
     src/BlockClusterer.cpp
     src/BlockListModel.h
     src/BlockListModel.cpp
+    src/BlockCache.h
+    src/BlockCache.cpp
     src/PaperController.h
     src/PaperController.cpp
     src/LlmClient.h
