@@ -11,6 +11,169 @@ Rectangle {
         anchors.fill: parent
         spacing: 0
 
+        // ── Session strip ────────────────────────────────────────────────
+        // VS Code style row of session tabs. Each tab shows the session
+        // name and a × close button; clicking the body activates the
+        // session, double-click renames inline, + at the right adds a new
+        // empty session.
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 30
+            color: "#e4e4e4"
+
+            RowLayout {
+                anchors.fill: parent
+                spacing: 0
+
+                Flickable {
+                    id: tabFlick
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    contentWidth: tabRow.implicitWidth
+                    contentHeight: height
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+
+                    Row {
+                        id: tabRow
+                        height: tabFlick.height
+                        spacing: 0
+
+                        Repeater {
+                            model: chat.sessions
+                            delegate: Rectangle {
+                                id: tab
+                                height: tabRow.height
+                                width: Math.min(180, Math.max(90, label.implicitWidth + 44))
+                                color: model.isActive ? "#fafafa" : "transparent"
+                                border.color: model.isActive ? "#d0d0d0" : "transparent"
+                                border.width: 1
+
+                                // Active accent strip.
+                                Rectangle {
+                                    visible: model.isActive
+                                    width: parent.width
+                                    height: 2
+                                    color: "#4c8bf5"
+                                    anchors.bottom: parent.bottom
+                                }
+
+                                MouseArea {
+                                    id: tabMouse
+                                    anchors.fill: parent
+                                    acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+                                    hoverEnabled: true
+                                    onClicked: function(mouse) {
+                                        if (mouse.button === Qt.MiddleButton) {
+                                            chat.deleteSession(model.sessionId)
+                                        } else {
+                                            chat.activateSession(model.sessionId)
+                                        }
+                                    }
+                                    onDoubleClicked: function(mouse) {
+                                        if (mouse.button !== Qt.LeftButton) return
+                                        renameField.text = model.sessionName
+                                        renameField.visible = true
+                                        label.visible = false
+                                        renameField.forceActiveFocus()
+                                        renameField.selectAll()
+                                    }
+                                }
+
+                                Label {
+                                    id: label
+                                    anchors.left: parent.left
+                                    anchors.right: closeBtn.left
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.leftMargin: 10
+                                    anchors.rightMargin: 4
+                                    elide: Text.ElideRight
+                                    text: model.sessionName
+                                    color: model.isActive ? "#1d1d1d" : "#555"
+                                    font.pixelSize: 12
+                                }
+
+                                TextField {
+                                    id: renameField
+                                    anchors.left: parent.left
+                                    anchors.right: closeBtn.left
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.leftMargin: 6
+                                    anchors.rightMargin: 4
+                                    visible: false
+                                    selectByMouse: true
+                                    font.pixelSize: 12
+                                    background: Rectangle {
+                                        color: "#ffffff"
+                                        border.color: "#c0c0c0"
+                                        radius: 2
+                                    }
+                                    onAccepted: {
+                                        chat.renameSession(model.sessionId, text.trim())
+                                        visible = false
+                                        label.visible = true
+                                    }
+                                    Keys.onEscapePressed: {
+                                        visible = false
+                                        label.visible = true
+                                    }
+                                    onActiveFocusChanged: {
+                                        if (!activeFocus && visible) {
+                                            chat.renameSession(model.sessionId, text.trim())
+                                            visible = false
+                                            label.visible = true
+                                        }
+                                    }
+                                }
+
+                                ToolButton {
+                                    id: closeBtn
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.rightMargin: 2
+                                    width: 18
+                                    height: 18
+                                    flat: true
+                                    padding: 0
+                                    text: "×"
+                                    font.pixelSize: 14
+                                    ToolTip.visible: hovered
+                                    ToolTip.delay: 400
+                                    ToolTip.text: qsTr("Close session")
+                                    onClicked: chat.deleteSession(model.sessionId)
+                                }
+
+                                // Slim divider between non-active tabs to
+                                // keep the strip readable.
+                                Rectangle {
+                                    visible: !model.isActive
+                                    width: 1
+                                    height: parent.height - 8
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: "#cfcfcf"
+                                }
+                            }
+                        }
+                    }
+                }
+
+                ToolButton {
+                    Layout.preferredHeight: 26
+                    Layout.preferredWidth: 28
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.rightMargin: 4
+                    text: "+"
+                    font.pixelSize: 16
+                    flat: true
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 400
+                    ToolTip.text: qsTr("New session")
+                    onClicked: chat.newSession()
+                }
+            }
+        }
+
         // ── Header ──────────────────────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
@@ -40,6 +203,9 @@ Rectangle {
                     text: qsTr("Clear")
                     enabled: !chat.busy && chat.messages.rowCount() > 0
                     onClicked: chat.clear()
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 400
+                    ToolTip.text: qsTr("Clear messages in the current session")
                 }
             }
         }

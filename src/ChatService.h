@@ -2,6 +2,8 @@
 
 #include "ChatHistoryCache.h"
 #include "ChatModel.h"
+#include "ChatSession.h"
+#include "ChatSessionListModel.h"
 #include "LlmClient.h"
 
 #include <QObject>
@@ -17,10 +19,12 @@ class ChatService : public QObject
 {
     Q_OBJECT
 
-    Q_PROPERTY(ChatModel *messages   READ messages   CONSTANT)
-    Q_PROPERTY(bool       busy       READ busy       NOTIFY busyChanged)
-    Q_PROPERTY(QString    lastError  READ lastError  NOTIFY lastErrorChanged)
-    Q_PROPERTY(QString    defaultSystemPrompt READ defaultSystemPrompt CONSTANT)
+    Q_PROPERTY(ChatModel             *messages         READ messages          CONSTANT)
+    Q_PROPERTY(ChatSessionListModel  *sessions         READ sessionsModel     CONSTANT)
+    Q_PROPERTY(QString                activeSessionId  READ activeSessionId   NOTIFY activeSessionChanged)
+    Q_PROPERTY(bool                   busy             READ busy              NOTIFY busyChanged)
+    Q_PROPERTY(QString                lastError        READ lastError         NOTIFY lastErrorChanged)
+    Q_PROPERTY(QString                defaultSystemPrompt READ defaultSystemPrompt CONSTANT)
 
 public:
     ChatService(Settings *settings,
@@ -29,24 +33,47 @@ public:
                 QObject *parent = nullptr);
     ~ChatService() override;
 
-    ChatModel *messages() { return &m_messages; }
-    bool       busy()      const { return m_reply != nullptr || !m_pendingTools.isEmpty(); }
-    QString    lastError() const { return m_lastError; }
-    QString    defaultSystemPrompt() const;
+    ChatModel            *messages()       { return &m_messages; }
+    ChatSessionListModel *sessionsModel()  { return &m_sessionsModel; }
+    QString               activeSessionId() const;
+    bool                  busy()      const { return m_reply != nullptr || !m_pendingTools.isEmpty(); }
+    QString               lastError() const { return m_lastError; }
+    QString               defaultSystemPrompt() const;
 
 public slots:
     void sendMessage(const QString &text);
     void cancel();
+    // Empties the current session's transcript without removing the
+    // session itself. Use deleteSession to drop a session entirely.
     void clear();
+
+    // Session management (called from the chat pane's session strip).
+    // newSession creates an empty session and switches to it; activate
+    // is a no-op when `id` already names the active session; delete
+    // removes the session and falls back to a neighbour or a fresh
+    // session when the last one is deleted.
+    void newSession();
+    void activateSession(const QString &id);
+    void deleteSession(const QString &id);
+    void renameSession(const QString &id, const QString &name);
 
 signals:
     void busyChanged();
     void lastErrorChanged();
+    void activeSessionChanged();
 
 private:
     void onPaperChanged();
     void rehydrateFromCache();
     void persistHistory();
+    void refreshSessionsModel();
+    void syncActiveToSession();
+    void loadSessionToActive();
+    void touchActiveSession();
+    void ensureAtLeastOneSession();
+    void maybeAutoNameActiveSession();
+    QString defaultSessionName() const;
+
     QString systemPrompt() const;
     void setLastError(const QString &err);
 
@@ -80,11 +107,16 @@ private:
     QPointer<LlmReply> m_reply;
 
     ChatModel m_messages;
+    ChatSessionListModel m_sessionsModel;
+    QVector<ChatSession> m_sessions;
+    int m_activeIndex = -1;
+
     ChatHistoryCache m_cache;
     QString m_lastError;
 
-    // Conversation state sent to the API (includes tool_use / tool_result
-    // round-trips that aren't surfaced in m_messages).
+    // Conversation state sent to the API for the active session
+    // (includes tool_use / tool_result round-trips that aren't surfaced
+    // in m_messages).
     QVector<LlmClient::Message> m_apiMessages;
     QVector<PendingTool> m_pendingTools;
     QList<QPointer<LlmReply>> m_toolReplies;

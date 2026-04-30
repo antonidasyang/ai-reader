@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ChatModel.h"
+#include "ChatSession.h"
 #include "LlmClient.h"
 
 #include <QObject>
@@ -8,17 +9,19 @@
 #include <QTimer>
 #include <QVector>
 
-// On-disk JSON cache of a paper's chat conversation. One file per paper at
-// <AppDataLocation>/cache/chat/<paperId>.json. Saves both the user-visible
-// ChatModel turns and the structured API history (which carries tool_use /
-// tool_result round-trips) so reopening the paper restores both views.
+// On-disk JSON cache of a paper's chat sessions. One file per paper at
+// <AppDataLocation>/cache/chat/<paperId>.json. Each file holds an array of
+// sessions (id + metadata + messages + api history) plus the id of the
+// session that was active when the file was written. The reader is
+// backward-compatible with the single-session format produced by older
+// builds — those files load as one session called "Chat".
 class ChatHistoryCache : public QObject
 {
     Q_OBJECT
 public:
-    struct History {
-        QVector<ChatMessage> messages;
-        QVector<LlmClient::Message> apiMessages;
+    struct Snapshot {
+        QVector<ChatSession> sessions;
+        QString activeId;
     };
 
     explicit ChatHistoryCache(QObject *parent = nullptr);
@@ -26,9 +29,8 @@ public:
     void setPaperId(const QString &paperId);
     QString paperId() const { return m_paperId; }
 
-    History load() const;
-    void save(const QVector<ChatMessage> &messages,
-              const QVector<LlmClient::Message> &apiMessages);
+    Snapshot load() const;
+    void save(const QVector<ChatSession> &sessions, const QString &activeId);
     void clear();
 
 private:
@@ -39,8 +41,8 @@ private:
     QString m_paperId;
     QString m_cacheDir;
 
-    QVector<ChatMessage> m_pendingMessages;
-    QVector<LlmClient::Message> m_pendingApi;
+    QVector<ChatSession> m_pendingSessions;
+    QString m_pendingActiveId;
     bool m_havePending = false;
     QTimer m_saveTimer;
 };

@@ -527,6 +527,41 @@
         <source>About this passage:</source>
         <translation>关于这段文字:</translation>
     </message>
+    <message>
+        <source>Close session</source>
+        <translation>关闭会话</translation>
+    </message>
+    <message>
+        <source>New session</source>
+        <translation>新建会话</translation>
+    </message>
+    <message>
+        <source>Clear messages in the current session</source>
+        <translation>清空当前会话的消息</translation>
+    </message>
+</context>
+<context>
+    <name>ChatService</name>
+    <message>
+        <source>New chat</source>
+        <translation>新对话</translation>
+    </message>
+    <message>
+        <source>Chat</source>
+        <translation>对话</translation>
+    </message>
+    <message>
+        <source>Interrupted.</source>
+        <translation>已中断。</translation>
+    </message>
+    <message>
+        <source>Cancelled.</source>
+        <translation>已取消。</translation>
+    </message>
+    <message>
+        <source>LLM is not configured. Open Settings to add a model and API key.</source>
+        <translation>未配置大模型。请在设置中添加模型和 API 密钥。</translation>
+    </message>
 </context>
 <context>
     <name>PromptsDialog</name>

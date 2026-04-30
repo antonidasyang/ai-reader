@@ -10,10 +10,50 @@
 #include <algorithm>
 #include <climits>
 #include <QBuffer>
+#include <QDateTime>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QUuid>
+
+namespace {
+
+ChatSession makeSession(const QString &name)
+{
+    ChatSession s;
+    s.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    s.name = name;
+    s.autoNamed = true;
+    s.createdAt = QDateTime::currentDateTime();
+    s.updatedAt = s.createdAt;
+    return s;
+}
+
+QString deriveTitle(const QString &firstUserMessage)
+{
+    // Take the first non-empty line, strip blockquote / "About this
+    // passage:" prefilled prefixes, and clip to ~24 chars so the tab
+    // strip stays compact.
+    const QStringList lines = firstUserMessage.split(QChar('\n'));
+    QString line;
+    for (const QString &l : lines) {
+        const QString t = l.trimmed();
+        if (t.isEmpty()) continue;
+        if (t.startsWith(QStringLiteral("> "))) continue;
+        if (t.startsWith(QStringLiteral("About this passage"))) continue;
+        line = t;
+        break;
+    }
+    if (line.isEmpty()) line = firstUserMessage.trimmed();
+    if (line.isEmpty()) return {};
+    constexpr int kMax = 24;
+    if (line.size() > kMax)
+        line = line.left(kMax).trimmed() + QStringLiteral("…");
+    return line;
+}
+
+} // namespace
 
 ChatService::ChatService(Settings *settings,
                          PaperController *paper,
@@ -28,9 +68,36 @@ ChatService::ChatService(Settings *settings,
         connect(m_paper, &PaperController::blocksChanged,
                 this, &ChatService::onPaperChanged);
     }
+    // Start with one empty session so QML always has something to bind
+    // to even before the first paper is opened.
+    ensureAtLeastOneSession();
 }
 
 ChatService::~ChatService() = default;
+
+QString ChatService::activeSessionId() const
+{
+    if (m_activeIndex < 0 || m_activeIndex >= m_sessions.size()) return {};
+    return m_sessions.at(m_activeIndex).id;
+}
+
+QString ChatService::defaultSessionName() const
+{
+    return tr("New chat");
+}
+
+void ChatService::ensureAtLeastOneSession()
+{
+    if (!m_sessions.isEmpty() && m_activeIndex >= 0
+        && m_activeIndex < m_sessions.size())
+        return;
+    if (m_sessions.isEmpty())
+        m_sessions.append(makeSession(defaultSessionName()));
+    if (m_activeIndex < 0 || m_activeIndex >= m_sessions.size())
+        m_activeIndex = 0;
+    refreshSessionsModel();
+    emit activeSessionChanged();
+}
 
 void ChatService::onPaperChanged()
 {
@@ -39,40 +106,124 @@ void ChatService::onPaperChanged()
     m_apiMessages.clear();
     m_iterations = 0;
     setLastError({});
+    m_sessions.clear();
+    m_activeIndex = -1;
+
     m_cache.setPaperId(m_paper ? m_paper->paperId() : QString());
     rehydrateFromCache();
+    ensureAtLeastOneSession();
+    loadSessionToActive();
+    refreshSessionsModel();
+    emit activeSessionChanged();
 }
 
 void ChatService::rehydrateFromCache()
 {
     if (m_cache.paperId().isEmpty()) return;
-    ChatHistoryCache::History h = m_cache.load();
-    if (h.messages.isEmpty() && h.apiMessages.isEmpty()) return;
+    ChatHistoryCache::Snapshot snap = m_cache.load();
+    if (snap.sessions.isEmpty()) return;
+
     // Any turn that was mid-stream when the app last quit is no longer
     // recoverable — surface it as failed rather than a frozen Streaming.
-    for (ChatMessage &m : h.messages) {
-        if (m.status == ChatMessage::Streaming) {
-            m.status = ChatMessage::Failed;
-            if (m.error.isEmpty())
-                m.error = tr("Interrupted.");
+    for (ChatSession &s : snap.sessions) {
+        for (ChatMessage &m : s.messages) {
+            if (m.status == ChatMessage::Streaming) {
+                m.status = ChatMessage::Failed;
+                if (m.error.isEmpty())
+                    m.error = tr("Interrupted.");
+            }
         }
     }
-    m_messages.setMessages(std::move(h.messages));
-    m_apiMessages = std::move(h.apiMessages);
+
+    m_sessions = std::move(snap.sessions);
+    m_activeIndex = 0;
+    if (!snap.activeId.isEmpty()) {
+        for (int i = 0; i < m_sessions.size(); ++i) {
+            if (m_sessions.at(i).id == snap.activeId) {
+                m_activeIndex = i;
+                break;
+            }
+        }
+    }
+}
+
+void ChatService::syncActiveToSession()
+{
+    if (m_activeIndex < 0 || m_activeIndex >= m_sessions.size()) return;
+    ChatSession &s = m_sessions[m_activeIndex];
+    s.messages = m_messages.messages();
+    s.apiMessages = m_apiMessages;
+}
+
+void ChatService::loadSessionToActive()
+{
+    if (m_activeIndex < 0 || m_activeIndex >= m_sessions.size()) {
+        m_messages.clear();
+        m_apiMessages.clear();
+        return;
+    }
+    const ChatSession &s = m_sessions.at(m_activeIndex);
+    m_messages.setMessages(s.messages);
+    m_apiMessages = s.apiMessages;
+}
+
+void ChatService::touchActiveSession()
+{
+    if (m_activeIndex < 0 || m_activeIndex >= m_sessions.size()) return;
+    m_sessions[m_activeIndex].updatedAt = QDateTime::currentDateTime();
+}
+
+void ChatService::refreshSessionsModel()
+{
+    QVector<ChatSessionListModel::Row> rows;
+    rows.reserve(m_sessions.size());
+    for (int i = 0; i < m_sessions.size(); ++i) {
+        const ChatSession &s = m_sessions.at(i);
+        ChatSessionListModel::Row r;
+        r.id = s.id;
+        r.name = s.name.isEmpty() ? defaultSessionName() : s.name;
+        r.updatedAt = s.updatedAt;
+        r.isActive = (i == m_activeIndex);
+        // Active session's count comes from the live ChatModel (it may
+        // be ahead of the session record between syncs).
+        r.messageCount = (i == m_activeIndex)
+                             ? m_messages.messageCount()
+                             : s.messages.size();
+        rows.append(r);
+    }
+    m_sessionsModel.resetRows(std::move(rows));
 }
 
 void ChatService::persistHistory()
 {
-    m_cache.save(m_messages.messages(), m_apiMessages);
+    if (m_cache.paperId().isEmpty()) return;
+    syncActiveToSession();
+    refreshSessionsModel();
+    m_cache.save(m_sessions, activeSessionId());
 }
 
 void ChatService::clear()
 {
+    if (m_activeIndex < 0 || m_activeIndex >= m_sessions.size()) {
+        m_messages.clear();
+        m_apiMessages.clear();
+        m_iterations = 0;
+        setLastError({});
+        return;
+    }
     m_messages.clear();
     m_apiMessages.clear();
     m_iterations = 0;
     setLastError({});
-    m_cache.clear();
+    ChatSession &s = m_sessions[m_activeIndex];
+    s.messages.clear();
+    s.apiMessages.clear();
+    s.autoNamed = true;
+    s.name = defaultSessionName();
+    s.updatedAt = QDateTime::currentDateTime();
+    refreshSessionsModel();
+    if (!m_cache.paperId().isEmpty())
+        m_cache.save(m_sessions, activeSessionId());
 }
 
 void ChatService::cancel()
@@ -96,6 +247,7 @@ void ChatService::cancel()
     if (wasBusy) {
         m_messages.setLastStatus(ChatMessage::Failed, tr("Cancelled."));
         m_iterations = 0;
+        touchActiveSession();
         persistHistory();
         emit busyChanged();
     }
@@ -107,6 +259,8 @@ void ChatService::sendMessage(const QString &text)
     const QString trimmed = text.trimmed();
     if (trimmed.isEmpty()) return;
     if (busy()) return;
+    if (m_activeIndex < 0)
+        ensureAtLeastOneSession();
 
     if (!m_settings->isConfigured()) {
         setLastError(tr("LLM is not configured. Open Settings to add a model and API key."));
@@ -128,8 +282,116 @@ void ChatService::sendMessage(const QString &text)
     apiUser.content = trimmed;
     m_apiMessages.append(apiUser);
 
+    touchActiveSession();
+    refreshSessionsModel();
+
     m_iterations = 0;
     runTurn();
+}
+
+void ChatService::newSession()
+{
+    syncActiveToSession();
+    cancel();
+    ChatSession s = makeSession(defaultSessionName());
+    m_sessions.append(s);
+    m_activeIndex = m_sessions.size() - 1;
+    loadSessionToActive();
+    refreshSessionsModel();
+    if (!m_cache.paperId().isEmpty())
+        m_cache.save(m_sessions, activeSessionId());
+    emit activeSessionChanged();
+}
+
+void ChatService::activateSession(const QString &id)
+{
+    if (id.isEmpty()) return;
+    int idx = -1;
+    for (int i = 0; i < m_sessions.size(); ++i) {
+        if (m_sessions.at(i).id == id) { idx = i; break; }
+    }
+    if (idx < 0 || idx == m_activeIndex) return;
+    syncActiveToSession();
+    cancel();
+    m_activeIndex = idx;
+    loadSessionToActive();
+    refreshSessionsModel();
+    if (!m_cache.paperId().isEmpty())
+        m_cache.save(m_sessions, activeSessionId());
+    emit activeSessionChanged();
+}
+
+void ChatService::deleteSession(const QString &id)
+{
+    if (id.isEmpty()) return;
+    int idx = -1;
+    for (int i = 0; i < m_sessions.size(); ++i) {
+        if (m_sessions.at(i).id == id) { idx = i; break; }
+    }
+    if (idx < 0) return;
+
+    const bool wasActive = (idx == m_activeIndex);
+    if (wasActive) cancel();
+
+    m_sessions.remove(idx);
+
+    if (m_sessions.isEmpty()) {
+        // Always keep at least one session so the chat pane stays usable.
+        m_sessions.append(makeSession(defaultSessionName()));
+        m_activeIndex = 0;
+        loadSessionToActive();
+    } else if (wasActive) {
+        m_activeIndex = qMin(idx, m_sessions.size() - 1);
+        loadSessionToActive();
+    } else if (idx < m_activeIndex) {
+        --m_activeIndex;
+    }
+
+    refreshSessionsModel();
+    if (!m_cache.paperId().isEmpty())
+        m_cache.save(m_sessions, activeSessionId());
+    emit activeSessionChanged();
+}
+
+void ChatService::renameSession(const QString &id, const QString &name)
+{
+    int idx = -1;
+    for (int i = 0; i < m_sessions.size(); ++i) {
+        if (m_sessions.at(i).id == id) { idx = i; break; }
+    }
+    if (idx < 0) return;
+    const QString trimmed = name.trimmed();
+    if (trimmed.isEmpty()) return;
+    if (m_sessions.at(idx).name == trimmed) return;
+    m_sessions[idx].name = trimmed;
+    m_sessions[idx].autoNamed = false;
+    m_sessions[idx].updatedAt = QDateTime::currentDateTime();
+    refreshSessionsModel();
+    if (!m_cache.paperId().isEmpty())
+        m_cache.save(m_sessions, activeSessionId());
+}
+
+void ChatService::maybeAutoNameActiveSession()
+{
+    if (m_activeIndex < 0 || m_activeIndex >= m_sessions.size()) return;
+    ChatSession &s = m_sessions[m_activeIndex];
+    if (!s.autoNamed) return;
+    const auto &msgs = m_messages.messages();
+    // Wait until we've seen at least the first user → assistant → user
+    // exchange (or 3 messages of any shape) so the title reflects the
+    // actual topic instead of a one-word opener.
+    if (msgs.size() < 3) return;
+    QString firstUser;
+    for (const ChatMessage &m : msgs) {
+        if (m.role == QStringLiteral("user") && !m.content.trimmed().isEmpty()) {
+            firstUser = m.content;
+            break;
+        }
+    }
+    const QString derived = deriveTitle(firstUser);
+    if (derived.isEmpty()) return;
+    if (s.name == derived) return;
+    s.name = derived;
 }
 
 void ChatService::runTurn()
@@ -180,6 +442,7 @@ void ChatService::runTurn()
         m_messages.setLastStatus(ChatMessage::Failed, message);
         setLastError(message);
         m_iterations = 0;
+        touchActiveSession();
         persistHistory();
         emit busyChanged();
     });
@@ -281,6 +544,8 @@ void ChatService::onToolResolved(int slotIndex, const QString &result)
 void ChatService::cleanupAfterFinal()
 {
     m_iterations = 0;
+    touchActiveSession();
+    maybeAutoNameActiveSession();
     persistHistory();
     emit busyChanged();
 }

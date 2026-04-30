@@ -186,6 +186,9 @@ qt_add_executable(ai-reader
     src/ChatService.cpp
     src/ChatHistoryCache.h
     src/ChatHistoryCache.cpp
+    src/ChatSession.h
+    src/ChatSessionListModel.h
+    src/ChatSessionListModel.cpp
     src/MarkdownRenderer.h
     src/MarkdownRenderer.cpp
     src/LatexRenderer.h
