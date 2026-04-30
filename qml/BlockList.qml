@@ -13,6 +13,7 @@ Rectangle {
 
     signal pageRequested(int page)
     signal askInChatRequested(string text, int page)
+    signal translateBlockRequested(int row)
 
     function showPage(page) {
         if (!root.model)
@@ -172,7 +173,7 @@ Rectangle {
                             enabled: settings.isConfigured
                                      && model.translationStatusName !== "translating"
                                      && model.translationStatusName !== "queued"
-                            onTriggered: translation.translateBlock(blockDelegate.rowIndex)
+                            onTriggered: root.translateBlockRequested(blockDelegate.rowIndex)
                         }
                         MenuSeparator {}
                         MenuItem {

@@ -241,6 +241,9 @@ ApplicationWindow {
             chatPane.visible = true
             chatPane.prefillInput(text, page + 1)
         }
+        function onTranslateBlockRequested(row) {
+            translation.translateBlock(row)
+        }
     }
 
     header: ToolBar {
