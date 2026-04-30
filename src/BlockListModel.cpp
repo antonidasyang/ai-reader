@@ -61,9 +61,35 @@ QVariant BlockListModel::data(const QModelIndex &index, int role) const
         return translationStatusName(b.translationStatus);
     case TranslationErrorRole:
         return b.translationError;
+    case SourceVisibleRole:
+        return b.sourceVisible;
+    case TranslationVisibleRole:
+        return b.translationVisible;
     default:
         return {};
     }
+}
+
+bool BlockListModel::setData(const QModelIndex &idx, const QVariant &value, int role)
+{
+    if (!idx.isValid() || idx.row() < 0 || idx.row() >= m_blocks.size())
+        return false;
+    Block &b = m_blocks[idx.row()];
+    bool changed = false;
+    if (role == SourceVisibleRole) {
+        const bool v = value.toBool();
+        if (b.sourceVisible != v) { b.sourceVisible = v; changed = true; }
+    } else if (role == TranslationVisibleRole) {
+        const bool v = value.toBool();
+        if (b.translationVisible != v) { b.translationVisible = v; changed = true; }
+    } else {
+        return false;
+    }
+    if (changed) {
+        emit dataChanged(idx, idx, {role});
+        emit blockMetaChanged();
+    }
+    return changed;
 }
 
 QHash<int, QByteArray> BlockListModel::roleNames() const
@@ -79,6 +105,8 @@ QHash<int, QByteArray> BlockListModel::roleNames() const
         {TranslationStatusRole,        "translationStatus"},
         {TranslationStatusNameRole,    "translationStatusName"},
         {TranslationErrorRole,         "translationError"},
+        {SourceVisibleRole,            "sourceVisible"},
+        {TranslationVisibleRole,       "translationVisible"},
     };
 }
 

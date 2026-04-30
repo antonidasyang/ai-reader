@@ -308,12 +308,20 @@
         <translation>译文</translation>
     </message>
     <message>
-        <source>Show original (source) text for each paragraph</source>
-        <translation>显示每段的原文</translation>
+        <source>Hide source text</source>
+        <translation>隐藏原文</translation>
     </message>
     <message>
-        <source>Show translated text for each paragraph (when available)</source>
-        <translation>显示每段的译文（如已翻译）</translation>
+        <source>Show source text</source>
+        <translation>显示原文</translation>
+    </message>
+    <message>
+        <source>Hide translation</source>
+        <translation>隐藏译文</translation>
+    </message>
+    <message>
+        <source>Show translation</source>
+        <translation>显示译文</translation>
     </message>
     <message>
         <source>Ask AI about this</source>

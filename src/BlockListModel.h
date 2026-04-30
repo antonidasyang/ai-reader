@@ -21,12 +21,15 @@ public:
         TranslationStatusRole,
         TranslationStatusNameRole,
         TranslationErrorRole,
+        SourceVisibleRole,
+        TranslationVisibleRole,
     };
 
     explicit BlockListModel(QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = {}) const override;
     QVariant data(const QModelIndex &index, int role) const override;
+    bool setData(const QModelIndex &index, const QVariant &value, int role) override;
     QHash<int, QByteArray> roleNames() const override;
 
     void setBlocks(QVector<Block> blocks);
@@ -63,6 +66,12 @@ public:
 
 signals:
     void blocksMutated();
+    // Lightweight per-block metadata change (currently just the
+    // sourceVisible / translationVisible toggles). Distinct from
+    // blocksMutated so that visibility flips don't kick the
+    // TranslationService into rehydrate/cancel — only PaperController
+    // should listen to this, to schedule a cache write.
+    void blockMetaChanged();
 
 private:
     int nextBlockId() const;

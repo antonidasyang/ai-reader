@@ -37,6 +37,11 @@ PaperController::PaperController(QObject *parent)
             this, &PaperController::blocksChanged);
     connect(&m_model, &BlockListModel::blocksMutated,
             this, [this]() { m_blockCache.setBlocks(m_model.allBlocks()); });
+    // Lighter signal — just per-block visibility flips. Goes only
+    // to the cache (no blocksChanged emission) so TranslationService
+    // doesn't see them and rehydrate / cancel translations.
+    connect(&m_model, &BlockListModel::blockMetaChanged,
+            this, [this]() { m_blockCache.setBlocks(m_model.allBlocks()); });
 }
 
 QString PaperController::fileName() const

@@ -70,31 +70,6 @@ Rectangle {
                     color: "#c62828"
                     font.pixelSize: 11
                 }
-                // Visibility toggles. Both default on. Turning both
-                // off falls back to "show source" — the delegate's
-                // visibility logic handles it; see below.
-                ToolButton {
-                    text: qsTr("Src")
-                    checkable: true
-                    checked: layoutSettings.showSource
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 400
-                    ToolTip.text: qsTr("Show original (source) text for each paragraph")
-                    onToggled: layoutSettings.showSource = checked
-                    font.pixelSize: 11
-                    padding: 4
-                }
-                ToolButton {
-                    text: qsTr("Trans")
-                    checkable: true
-                    checked: layoutSettings.showTranslation
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 400
-                    ToolTip.text: qsTr("Show translated text for each paragraph (when available)")
-                    onToggled: layoutSettings.showTranslation = checked
-                    font.pixelSize: 11
-                    padding: 4
-                }
             }
         }
 
@@ -203,7 +178,8 @@ Rectangle {
                         anchors.bottomMargin: 8
                         spacing: 4
 
-                        // Header strip: page · kind · status
+                        // Header strip: page · kind · per-paragraph
+                        // visibility chevrons · status badge.
                         RowLayout {
                             spacing: 6
                             Layout.fillWidth: true
@@ -213,6 +189,39 @@ Rectangle {
                                 font.pixelSize: 10
                                 color: "#999"
                             }
+
+                            // ▼ collapsed indicator → click to show
+                            // again; ▲ expanded indicator → click to
+                            // hide. Translation chevron is disabled
+                            // (greyed) when the paragraph hasn't been
+                            // translated yet — toggling would have no
+                            // visible effect.
+                            ToolButton {
+                                text: (model.sourceVisible ? "▲ " : "▼ ") + qsTr("Src")
+                                flat: true
+                                font.pixelSize: 10
+                                padding: 2
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 400
+                                ToolTip.text: model.sourceVisible
+                                              ? qsTr("Hide source text")
+                                              : qsTr("Show source text")
+                                onClicked: model.sourceVisible = !model.sourceVisible
+                            }
+                            ToolButton {
+                                text: (model.translationVisible ? "▲ " : "▼ ") + qsTr("Trans")
+                                flat: true
+                                font.pixelSize: 10
+                                padding: 2
+                                enabled: blockDelegate._hasTranslation
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 400
+                                ToolTip.text: model.translationVisible
+                                              ? qsTr("Hide translation")
+                                              : qsTr("Show translation")
+                                onClicked: model.translationVisible = !model.translationVisible
+                            }
+
                             Item { Layout.fillWidth: true }
                             Rectangle {
                                 visible: model.translationStatusName !== "idle"
@@ -231,17 +240,21 @@ Rectangle {
                             }
                         }
 
-                        // Visibility helpers — hide source / translation
-                        // per the toggles in the header. If the user
-                        // turns both off we fall back to showing source,
-                        // so a paragraph never collapses to just the
-                        // page · kind line.
+                        // Visibility logic. The per-paragraph toggles
+                        // (model.sourceVisible / model.translationVisible)
+                        // are user-driven and take precedence. The
+                        // _showTrans guard keeps the translation block
+                        // hidden until something is actually translated;
+                        // _showSrc falls back to showing the source when
+                        // the user has hidden both halves of an
+                        // un-translated paragraph, so the row never
+                        // collapses to just the header line.
                         readonly property bool _hasTranslation:
                             model.translation && model.translation.length > 0
                         readonly property bool _showTrans:
-                            layoutSettings.showTranslation && _hasTranslation
+                            model.translationVisible && _hasTranslation
                         readonly property bool _showSrc:
-                            layoutSettings.showSource || !_showTrans
+                            model.sourceVisible || !_showTrans
 
                         // Source text (English) — read-only TextEdit so the
                         // user can position a cursor for "Split here" and

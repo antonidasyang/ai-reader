@@ -96,6 +96,8 @@ void BlockCache::load()
                             box.at(2).toDouble(),
                             box.at(3).toDouble());
         }
+        b.sourceVisible      = o.value(QStringLiteral("srcVis")).toBool(true);
+        b.translationVisible = o.value(QStringLiteral("transVis")).toBool(true);
         if (b.text.isEmpty()) continue;  // ignore obviously broken entries
         out.append(b);
     }
@@ -128,6 +130,12 @@ void BlockCache::saveNow()
         box.append(b.bbox.width());
         box.append(b.bbox.height());
         o[QStringLiteral("bbox")] = box;
+        // Only persist the visibility flags when they're not at their
+        // default — keeps the JSON compact for the common case.
+        if (!b.sourceVisible)
+            o[QStringLiteral("srcVis")] = false;
+        if (!b.translationVisible)
+            o[QStringLiteral("transVis")] = false;
         arr.append(o);
     }
 
