@@ -70,6 +70,31 @@ Rectangle {
                     color: "#c62828"
                     font.pixelSize: 11
                 }
+                // Visibility toggles. Both default on. Turning both
+                // off falls back to "show source" — the delegate's
+                // visibility logic handles it; see below.
+                ToolButton {
+                    text: qsTr("Src")
+                    checkable: true
+                    checked: layoutSettings.showSource
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 400
+                    ToolTip.text: qsTr("Show original (source) text for each paragraph")
+                    onToggled: layoutSettings.showSource = checked
+                    font.pixelSize: 11
+                    padding: 4
+                }
+                ToolButton {
+                    text: qsTr("Trans")
+                    checkable: true
+                    checked: layoutSettings.showTranslation
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 400
+                    ToolTip.text: qsTr("Show translated text for each paragraph (when available)")
+                    onToggled: layoutSettings.showTranslation = checked
+                    font.pixelSize: 11
+                    padding: 4
+                }
             }
         }
 
@@ -206,11 +231,24 @@ Rectangle {
                             }
                         }
 
+                        // Visibility helpers — hide source / translation
+                        // per the toggles in the header. If the user
+                        // turns both off we fall back to showing source,
+                        // so a paragraph never collapses to just the
+                        // page · kind line.
+                        readonly property bool _hasTranslation:
+                            model.translation && model.translation.length > 0
+                        readonly property bool _showTrans:
+                            layoutSettings.showTranslation && _hasTranslation
+                        readonly property bool _showSrc:
+                            layoutSettings.showSource || !_showTrans
+
                         // Source text (English) — read-only TextEdit so the
                         // user can position a cursor for "Split here" and
                         // also select / copy passages.
                         TextEdit {
                             id: sourceText
+                            visible: blockDelegate._showSrc
                             Layout.fillWidth: true
                             text: model.text
                             readOnly: true
@@ -224,7 +262,7 @@ Rectangle {
 
                         // Translation — primary styling
                         Text {
-                            visible: model.translation && model.translation.length > 0
+                            visible: blockDelegate._showTrans
                             Layout.fillWidth: true
                             text: model.translation || ""
                             wrapMode: Text.Wrap

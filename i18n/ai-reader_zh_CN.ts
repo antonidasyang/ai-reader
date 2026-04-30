@@ -300,6 +300,22 @@
         <translation>%1 项失败</translation>
     </message>
     <message>
+        <source>Src</source>
+        <translation>原文</translation>
+    </message>
+    <message>
+        <source>Trans</source>
+        <translation>译文</translation>
+    </message>
+    <message>
+        <source>Show original (source) text for each paragraph</source>
+        <translation>显示每段的原文</translation>
+    </message>
+    <message>
+        <source>Show translated text for each paragraph (when available)</source>
+        <translation>显示每段的译文（如已翻译）</translation>
+    </message>
+    <message>
         <source>Ask AI about this</source>
         <translation>向 AI 提问</translation>
     </message>
