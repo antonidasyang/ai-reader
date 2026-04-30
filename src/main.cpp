@@ -1,4 +1,5 @@
 #include "ChatService.h"
+#include "LayoutSettings.h"
 #include "Library.h"
 #include "MarkdownRenderer.h"
 #include "PaperController.h"
@@ -71,6 +72,9 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<Library>(
         "AiReader", 1, 0, "Library",
         QStringLiteral("Use the library context property"));
+    qmlRegisterUncreatableType<LayoutSettings>(
+        "AiReader", 1, 0, "LayoutSettings",
+        QStringLiteral("Use the layoutSettings context property"));
 
     Settings settings;
 
@@ -103,6 +107,7 @@ int main(int argc, char *argv[])
     ChatService chat(&settings, &paperController, &toc);
     MarkdownRenderer markdown;
     Library library;
+    LayoutSettings layoutSettings;
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
@@ -117,6 +122,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("chat", &chat);
     engine.rootContext()->setContextProperty("markdown", &markdown);
     engine.rootContext()->setContextProperty("library", &library);
+    engine.rootContext()->setContextProperty("layoutSettings", &layoutSettings);
 
     QObject::connect(
         &engine,

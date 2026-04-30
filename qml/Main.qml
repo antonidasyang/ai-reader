@@ -170,6 +170,44 @@ ApplicationWindow {
         property int  lastShownPage: -1
     }
 
+    // ── Pane reorder helpers ──────────────────────────────────────────
+    // The DockGrip in each pane drags the pane to a new slot in the
+    // SplitView; on release we serialize the order to QSettings so it
+    // survives across launches. Pane identity is tracked by objectName.
+    function persistPaneOrder() {
+        const arr = []
+        for (let i = 0; i < split.count; ++i) {
+            const it = split.itemAt(i)
+            if (it && it.objectName && it.objectName.length > 0)
+                arr.push(it.objectName)
+        }
+        layoutSettings.setPaneOrder(arr.join(","))
+    }
+
+    function applySavedPaneOrder() {
+        const csv = layoutSettings.paneOrder()
+        if (!csv || csv.length === 0) return
+        const desired = csv.split(",")
+        // Walk each desired position and pull the matching pane (by
+        // objectName) into that slot. Skip ids that aren't present
+        // any longer (e.g., a pane was removed in a new build).
+        for (let dst = 0; dst < desired.length; ++dst) {
+            const id = desired[dst]
+            for (let i = dst; i < split.count; ++i) {
+                const it = split.itemAt(i)
+                if (it && it.objectName === id) {
+                    if (i !== dst) {
+                        const item = split.takeItem(i)
+                        split.insertItem(dst, item)
+                    }
+                    break
+                }
+            }
+        }
+    }
+
+    Component.onCompleted: applySavedPaneOrder()
+
     // PDF → block list. Watch pdfView.currentPage via a side-effect binding.
     Item {
         property int observedPage: pdfView.currentPage
@@ -373,25 +411,51 @@ ApplicationWindow {
             // open; auto-hidden otherwise so first-launch isn't crowded.
             FolderPane {
                 id: folderPane
+                objectName: "folder"
                 visible: library.currentFolder.length > 0
                 SplitView.preferredWidth: 240
                 SplitView.minimumWidth: 0
                 onPdfChosen: function(path) { paperController.openPdf(path) }
+
+                DockGrip {
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.leftMargin: 4
+                    anchors.topMargin: 7
+                    pane: folderPane
+                    split: split
+                    marker: dropMarker
+                    onReordered: window.persistPaneOrder()
+                }
             }
 
             // ── TOC sidebar ────────────────────────────────────────────
             TocSidebar {
                 id: tocSidebar
+                objectName: "toc"
                 SplitView.preferredWidth: 220
                 SplitView.minimumWidth: 0
                 onSectionClicked: function(blockId, page) {
                     blockList.showPage(page)
                     pdfView.goToPage(page)
                 }
+
+                DockGrip {
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.leftMargin: 4
+                    anchors.topMargin: 7
+                    pane: tocSidebar
+                    split: split
+                    marker: dropMarker
+                    onReordered: window.persistPaneOrder()
+                }
             }
 
             // ── Middle: PDF reader ─────────────────────────────────────
             Item {
+                id: pdfPane
+                objectName: "pdf"
                 SplitView.preferredWidth: split.width * 0.45
                 SplitView.minimumWidth: 280
                 // Without clip the PdfMultiPageView (a Flickable) can paint
@@ -465,31 +529,78 @@ ApplicationWindow {
                              || pdfDoc.status === PdfDocument.Loading
                     visible: running
                 }
+
+                DockGrip {
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.leftMargin: 4
+                    anchors.topMargin: 4
+                    pane: pdfPane
+                    split: split
+                    marker: dropMarker
+                    onReordered: window.persistPaneOrder()
+                }
             }
 
             // ── Right: extracted blocks / translations ─────────────────
             BlockList {
                 id: blockList
+                objectName: "blocks"
                 SplitView.fillWidth: true
                 SplitView.minimumWidth: 240
                 model: paperController.blocks
                 paperStatus: paperController.status
+
+                DockGrip {
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.leftMargin: 4
+                    anchors.topMargin: 7
+                    pane: blockList
+                    split: split
+                    marker: dropMarker
+                    onReordered: window.persistPaneOrder()
+                }
             }
 
             // ── Interpretation pane (toggleable) ───────────────────────
             SummaryPane {
                 id: summaryPane
+                objectName: "summary"
                 visible: false
                 SplitView.preferredWidth: 360
                 SplitView.minimumWidth: 240
+
+                DockGrip {
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.leftMargin: 4
+                    anchors.topMargin: 7
+                    pane: summaryPane
+                    split: split
+                    marker: dropMarker
+                    onReordered: window.persistPaneOrder()
+                }
             }
 
             // ── Far right: chat pane (toggleable) ──────────────────────
             ChatPane {
                 id: chatPane
+                objectName: "chat"
                 visible: false
                 SplitView.preferredWidth: 360
                 SplitView.minimumWidth: 240
+
+                DockGrip {
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.leftMargin: 4
+                    anchors.topMargin: 7
+                    pane: chatPane
+                    split: split
+                    marker: dropMarker
+                    onReordered: window.persistPaneOrder()
+                }
             }
 
             handle: Rectangle {
@@ -497,6 +608,18 @@ ApplicationWindow {
                 color: SplitHandle.pressed ? "#5b8def"
                        : SplitHandle.hovered ? "#bbbbbb" : "#dddddd"
             }
+        }
+
+        // Floating insertion marker shown by DockGrip during a drag.
+        // Sibling of `split` so the absolute-positioned x/y from the
+        // grip's mapToItem(parent, ...) line up correctly.
+        Rectangle {
+            id: dropMarker
+            visible: false
+            width: 3
+            color: "#5b8def"
+            opacity: 0.85
+            z: 1000
         }
 
         Rectangle {
