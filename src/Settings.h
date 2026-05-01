@@ -31,6 +31,13 @@ class Settings : public QObject
     // Custom system prompts. Empty string ⇒ service uses its built-in
     // default. Where templates support variables, the supported tokens
     // are listed in the docstring above each setter.
+    // Auto-update + privacy. updateManifestUrl falls back to the
+    // canonical raw.githubusercontent.com path when blank so users
+    // never have to type a URL to opt back into update checks.
+    Q_PROPERTY(bool    autoCheckUpdates     READ autoCheckUpdates     WRITE setAutoCheckUpdates     NOTIFY autoCheckUpdatesChanged)
+    Q_PROPERTY(QString updateManifestUrl    READ updateManifestUrl    WRITE setUpdateManifestUrl    NOTIFY updateManifestUrlChanged)
+    Q_PROPERTY(bool    crashReportsOptIn    READ crashReportsOptIn    WRITE setCrashReportsOptIn    NOTIFY crashReportsOptInChanged)
+
     Q_PROPERTY(QString summaryPrompt     READ summaryPrompt     WRITE setSummaryPrompt     NOTIFY summaryPromptChanged)
     Q_PROPERTY(QString translationPrompt READ translationPrompt WRITE setTranslationPrompt NOTIFY translationPromptChanged)
     Q_PROPERTY(QString tocPrompt         READ tocPrompt         WRITE setTocPrompt         NOTIFY tocPromptChanged)
@@ -65,6 +72,10 @@ public:
     bool    isConfigured()  const;
     QString appVersion()    const { return QStringLiteral(AIREADER_VERSION); }
 
+    bool    autoCheckUpdates()  const { return m_autoCheckUpdates; }
+    QString updateManifestUrl() const { return m_updateManifestUrl; }
+    bool    crashReportsOptIn() const { return m_crashReportsOptIn; }
+
     QString summaryPrompt()     const { return m_summaryPrompt; }
     QString translationPrompt() const { return m_translationPrompt; }
     QString tocPrompt()         const { return m_tocPrompt; }
@@ -87,6 +98,10 @@ public:
     void setToolBudget(int v);
     void setTargetLang(const QString &v);
     void setUiLanguage(const QString &v);
+
+    void setAutoCheckUpdates(bool v);
+    void setUpdateManifestUrl(const QString &v);
+    void setCrashReportsOptIn(bool v);
 
     // Supports variable {{lang}}. Empty ⇒ built-in default.
     void setSummaryPrompt(const QString &v);
@@ -121,6 +136,10 @@ signals:
     void uiLanguageChanged();
     void configurationChanged();
 
+    void autoCheckUpdatesChanged();
+    void updateManifestUrlChanged();
+    void crashReportsOptInChanged();
+
     void summaryPromptChanged();
     void translationPromptChanged();
     void tocPromptChanged();
@@ -154,6 +173,11 @@ private:
     int     m_toolBudget = 30;
     QString m_targetLang;
     QString m_uiLanguage;
+
+    bool    m_autoCheckUpdates = true;
+    QString m_updateManifestUrl;
+    bool    m_crashReportsOptIn = false;
+
     QString m_summaryPrompt;
     QString m_translationPrompt;
     QString m_tocPrompt;

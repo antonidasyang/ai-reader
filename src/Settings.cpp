@@ -39,6 +39,9 @@ constexpr auto kKeyTocPrompt         = "prompts/toc";
 constexpr auto kKeyVisionPrompt      = "prompts/vision";
 constexpr auto kKeyChatPrompt           = "prompts/chat";
 constexpr auto kKeyChatIncludePaperText = "chat/includePaperText";
+constexpr auto kKeyAutoCheckUpdates     = "updates/autoCheck";
+constexpr auto kKeyUpdateManifestUrl    = "updates/manifestUrl";
+constexpr auto kKeyCrashReportsOptIn    = "privacy/crashReportsOptIn";
 
 QUrl defaultBaseUrlFor(const QString &providerLower)
 {
@@ -419,6 +422,9 @@ void Settings::load()
     m_visionPrompt      = m_qs.value(kKeyVisionPrompt,      QString{}).toString();
     m_chatPrompt           = m_qs.value(kKeyChatPrompt,           QString{}).toString();
     m_chatIncludePaperText = m_qs.value(kKeyChatIncludePaperText, false).toBool();
+    m_autoCheckUpdates     = m_qs.value(kKeyAutoCheckUpdates,     true).toBool();
+    m_updateManifestUrl    = m_qs.value(kKeyUpdateManifestUrl,    QString{}).toString();
+    m_crashReportsOptIn    = m_qs.value(kKeyCrashReportsOptIn,    false).toBool();
 }
 
 void Settings::save()
@@ -439,5 +445,34 @@ void Settings::save()
     m_qs.setValue(kKeyVisionPrompt,      m_visionPrompt);
     m_qs.setValue(kKeyChatPrompt,           m_chatPrompt);
     m_qs.setValue(kKeyChatIncludePaperText, m_chatIncludePaperText);
+    m_qs.setValue(kKeyAutoCheckUpdates,     m_autoCheckUpdates);
+    m_qs.setValue(kKeyUpdateManifestUrl,    m_updateManifestUrl);
+    m_qs.setValue(kKeyCrashReportsOptIn,    m_crashReportsOptIn);
     m_qs.sync();
+}
+
+// ── Updates / privacy setters ──────────────────────────────────────
+
+void Settings::setAutoCheckUpdates(bool v)
+{
+    if (v == m_autoCheckUpdates) return;
+    m_autoCheckUpdates = v;
+    save();
+    emit autoCheckUpdatesChanged();
+}
+
+void Settings::setUpdateManifestUrl(const QString &v)
+{
+    if (v == m_updateManifestUrl) return;
+    m_updateManifestUrl = v;
+    save();
+    emit updateManifestUrlChanged();
+}
+
+void Settings::setCrashReportsOptIn(bool v)
+{
+    if (v == m_crashReportsOptIn) return;
+    m_crashReportsOptIn = v;
+    save();
+    emit crashReportsOptInChanged();
 }

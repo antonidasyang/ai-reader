@@ -36,20 +36,26 @@ Dialog {
         targetLangField.text    = settings.targetLang
         const lidx = languageCodes.indexOf(settings.uiLanguage)
         languageBox.currentIndex = lidx >= 0 ? lidx : 0
+        autoCheckBox.checked    = settings.autoCheckUpdates
+        manifestUrlField.text   = settings.updateManifestUrl
+        crashOptInBox.checked   = settings.crashReportsOptIn
         apiKeyField.forceActiveFocus()
     }
 
     onAccepted: {
-        settings.provider      = providerOptions[providerBox.currentIndex]
-        settings.model         = modelBox.editText.trim()
-        settings.baseUrl       = baseUrlField.text.trim()
-        settings.apiKey        = apiKeyField.text
-        settings.temperature   = tempSlider.value
-        settings.maxTokens     = maxTokensField.value
-        settings.contextWindow = contextWindowField.value
-        settings.toolBudget    = toolBudgetField.value
-        settings.targetLang    = targetLangField.text.trim()
-        settings.uiLanguage    = languageCodes[languageBox.currentIndex]
+        settings.provider          = providerOptions[providerBox.currentIndex]
+        settings.model             = modelBox.editText.trim()
+        settings.baseUrl           = baseUrlField.text.trim()
+        settings.apiKey            = apiKeyField.text
+        settings.temperature       = tempSlider.value
+        settings.maxTokens         = maxTokensField.value
+        settings.contextWindow     = contextWindowField.value
+        settings.toolBudget        = toolBudgetField.value
+        settings.targetLang        = targetLangField.text.trim()
+        settings.uiLanguage        = languageCodes[languageBox.currentIndex]
+        settings.autoCheckUpdates  = autoCheckBox.checked
+        settings.updateManifestUrl = manifestUrlField.text.trim()
+        settings.crashReportsOptIn = crashOptInBox.checked
     }
 
     contentItem: ColumnLayout {
@@ -202,6 +208,70 @@ Dialog {
                        "(Keychain on macOS, Credential Manager on Windows, " +
                        "libsecret on Linux); when no keychain backend is " +
                        "available it falls back to plaintext QSettings.")
+        }
+
+        // ── Updates & privacy ──────────────────────────────────────
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            Layout.topMargin: 4
+            color: "#e0e0e0"
+        }
+        Label {
+            text: qsTr("Updates & privacy")
+            font.bold: true
+            font.pixelSize: 12
+            color: "#444"
+            Layout.topMargin: 4
+        }
+        GridLayout {
+            columns: 2
+            columnSpacing: 12
+            rowSpacing: 6
+            Layout.fillWidth: true
+
+            Label { text: qsTr("Auto-check for updates") }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                CheckBox {
+                    id: autoCheckBox
+                    text: qsTr("Check on launch")
+                }
+                Button {
+                    text: updates.checking ? qsTr("Checking…") : qsTr("Check now")
+                    enabled: !updates.checking
+                    onClicked: updates.checkNow()
+                }
+            }
+
+            Label { text: qsTr("Manifest URL") }
+            TextField {
+                id: manifestUrlField
+                Layout.fillWidth: true
+                placeholderText: "https://raw.githubusercontent.com/antonidasyang/ai-reader/main/manifest.json"
+            }
+
+            Label { text: qsTr("Crash reports") }
+            CheckBox {
+                id: crashOptInBox
+                text: qsTr("Send anonymous crash reports (off by default)")
+            }
+        }
+        Label {
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+            color: updates.lastError.length > 0 ? "#c62828" : "#666"
+            font.pixelSize: 11
+            visible: text.length > 0
+            text: updates.lastError.length > 0
+                  ? qsTr("Update check failed: %1").arg(updates.lastError)
+                  : (updates.latestVersion.length > 0
+                     ? (updates.updateAvailable
+                        ? qsTr("v%1 is available — see the banner at the bottom of the window.")
+                              .arg(updates.latestVersion)
+                        : qsTr("You're on the latest version (v%1).").arg(updates.latestVersion))
+                     : "")
         }
 
         // ── Version footer ──────────────────────────────────────────

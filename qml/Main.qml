@@ -878,4 +878,56 @@ ApplicationWindow {
         interval: 10000
         onTriggered: errorBanner.visible = false
     }
+
+    // ── Update-available banner ─────────────────────────────────────
+    // Sits above the error banner, anchored to the window bottom. The
+    // C++ UpdateChecker decides when updateAvailable flips on; the
+    // user can either Download (opens the release URL in the default
+    // browser) or Dismiss (suppresses for the rest of this process).
+    Rectangle {
+        id: updateBanner
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: errorBanner.visible ? errorBanner.top : parent.bottom
+        height: visible ? 38 : 0
+        visible: updates.updateAvailable && !updates.dismissed
+        color: "#1f3a5a"
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 12
+            anchors.rightMargin: 8
+            spacing: 12
+
+            Label {
+                color: "white"
+                text: qsTr("Update available: v%1").arg(updates.latestVersion)
+                font.bold: true
+            }
+            Label {
+                visible: updates.releaseDate.length > 0
+                color: "#aac6ff"
+                font.pixelSize: 11
+                text: "(" + updates.releaseDate + ")"
+            }
+            Item { Layout.fillWidth: true }
+            ToolButton {
+                text: qsTr("Download")
+                enabled: updates.downloadUrl.length > 0
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: updates.downloadUrl.length > 0
+                              ? updates.downloadUrl
+                              : qsTr("No download for this platform yet — check the website.")
+                onClicked: updates.openDownload()
+            }
+            ToolButton {
+                text: "✕"
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("Dismiss")
+                onClicked: updates.dismiss()
+            }
+        }
+    }
 }

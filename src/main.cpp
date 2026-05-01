@@ -1,6 +1,7 @@
 #include "ChatContent.h"
 #include "ChatService.h"
 #include "LayoutSettings.h"
+#include "UpdateChecker.h"
 #include "Library.h"
 #include "MarkdownRenderer.h"
 #include "PaperController.h"
@@ -148,6 +149,9 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<Tabs>(
         "AiReader", 1, 0, "Tabs",
         QStringLiteral("Use the tabs context property"));
+    qmlRegisterUncreatableType<UpdateChecker>(
+        "AiReader", 1, 0, "UpdateChecker",
+        QStringLiteral("Use the updates context property"));
 
     Settings settings;
 
@@ -183,6 +187,7 @@ int main(int argc, char *argv[])
     Library library;
     LayoutSettings layoutSettings;
     Tabs tabs(&paperController);
+    UpdateChecker updateChecker(&settings);
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
@@ -200,6 +205,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("library", &library);
     engine.rootContext()->setContextProperty("layoutSettings", &layoutSettings);
     engine.rootContext()->setContextProperty("tabs", &tabs);
+    engine.rootContext()->setContextProperty("updates", &updateChecker);
 
     QObject::connect(
         &engine,
@@ -233,6 +239,14 @@ int main(int argc, char *argv[])
         qCritical() << "Failed to instantiate AiReader/Main — check the lines"
                        " above for QML errors.";
         return 1;
+    }
+
+    // Auto-check for updates on launch if the user opted in. Deferred
+    // a few seconds so the network call doesn't compete with the
+    // initial QML render — the banner appearing two seconds in is
+    // fine; a stuttery launch is not.
+    if (settings.autoCheckUpdates()) {
+        QTimer::singleShot(2500, &updateChecker, &UpdateChecker::checkNow);
     }
 
     // Re-open the previously open papers (if any) once the QML scene

@@ -219,6 +219,22 @@
         <source>Open &lt;b&gt;Settings…&lt;/b&gt; to add a model and API key (Anthropic Claude or any OpenAI-compatible endpoint). Use &lt;b&gt;Prompts…&lt;/b&gt; to customise system prompts. Re-open this tour any time from the &lt;b&gt;?&lt;/b&gt; button.</source>
         <translation>打开 &lt;b&gt;设置…&lt;/b&gt; 添加模型和 API 密钥(Anthropic Claude 或任意 OpenAI 兼容端点)。使用 &lt;b&gt;提示词…&lt;/b&gt; 自定义系统提示词。任何时候都可以从 &lt;b&gt;?&lt;/b&gt; 按钮重新打开本向导。</translation>
     </message>
+    <message>
+        <source>Update available: v%1</source>
+        <translation>有可用更新:v%1</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <translation>下载</translation>
+    </message>
+    <message>
+        <source>Dismiss</source>
+        <translation>忽略</translation>
+    </message>
+    <message>
+        <source>No download for this platform yet — check the website.</source>
+        <translation>当前平台暂无下载——请到项目网站查看。</translation>
+    </message>
 </context>
 <context>
     <name>FolderPane</name>
@@ -328,6 +344,50 @@
     <message>
         <source>github.com/antonidasyang/ai-reader</source>
         <translation>github.com/antonidasyang/ai-reader</translation>
+    </message>
+    <message>
+        <source>Updates &amp; privacy</source>
+        <translation>更新与隐私</translation>
+    </message>
+    <message>
+        <source>Auto-check for updates</source>
+        <translation>自动检查更新</translation>
+    </message>
+    <message>
+        <source>Check on launch</source>
+        <translation>启动时检查</translation>
+    </message>
+    <message>
+        <source>Check now</source>
+        <translation>立即检查</translation>
+    </message>
+    <message>
+        <source>Checking…</source>
+        <translation>检查中…</translation>
+    </message>
+    <message>
+        <source>Manifest URL</source>
+        <translation>清单 URL</translation>
+    </message>
+    <message>
+        <source>Crash reports</source>
+        <translation>崩溃报告</translation>
+    </message>
+    <message>
+        <source>Send anonymous crash reports (off by default)</source>
+        <translation>发送匿名崩溃报告(默认关闭)</translation>
+    </message>
+    <message>
+        <source>Update check failed: %1</source>
+        <translation>检查更新失败:%1</translation>
+    </message>
+    <message>
+        <source>v%1 is available — see the banner at the bottom of the window.</source>
+        <translation>v%1 已发布——请查看窗口底部的提示横幅。</translation>
+    </message>
+    <message>
+        <source>You're on the latest version (v%1).</source>
+        <translation>当前已是最新版本(v%1)。</translation>
     </message>
 </context>
 <context>
