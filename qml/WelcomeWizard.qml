@@ -2,210 +2,294 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-// First-run tour. Walks the user through the five major capabilities:
-// open a paper, the panel layout, paragraph translation, AI chat with
-// sessions, and where to configure the LLM. Auto-shown once on first
-// launch (gated by layoutSettings.wizardSeen) and re-launchable from
-// the toolbar's "?" Help button.
-Dialog {
+// Coach-mark style first-run tour. Instead of a centered modal that
+// hides the UI it's trying to teach, we draw a four-rectangle dim
+// mask over the whole window with a cut-out around the target widget,
+// outline the cut-out in accent blue, and float a callout card next
+// to it pointing at the highlighted control.
+//
+// Steps are configured by the parent (Main.qml) at component-completed
+// time as an array of { target, title, body } objects, where `target`
+// is a reference to the QML item to spotlight (typically a toolbar
+// button or a pane). Re-use it later via the toolbar's "?" button.
+Popup {
     id: root
-    modal: true
-    title: qsTr("Welcome to AI Reader")
-    standardButtons: Dialog.NoButton
+
+    parent: Overlay.overlay
+    width: parent ? parent.width : 0
+    height: parent ? parent.height : 0
+    padding: 0
+    modal: false
     closePolicy: Popup.NoAutoClose
-    width: Math.min(parent ? parent.width  - 60 : 560, 560)
-    height: Math.min(parent ? parent.height - 60 : 460, 460)
+    background: Item {}
 
-    property int step: 0
-    readonly property int stepCount: 5
+    property var steps: []
+    property int stepIndex: 0
 
-    function reset() { step = 0 }
+    readonly property var currentStep:
+        (steps && stepIndex >= 0 && stepIndex < steps.length)
+            ? steps[stepIndex] : null
+    readonly property Item targetItem:
+        currentStep && currentStep.target ? currentStep.target : null
+
+    // Padding around the target so the spotlight outline doesn't
+    // clip the button's own bevel/shadow.
+    property int spotPadding: 8
+
+    // Bounding rect of the spotlight target in this popup's
+    // coordinate system. Touches targetItem.x/y/width/height + the
+    // popup's own size so binding re-evaluates on resize, pane
+    // toggles, etc.
+    readonly property rect targetRect: {
+        const w = root.width, h = root.height
+        if (!targetItem || !targetItem.visible)
+            return Qt.rect(w / 2 - 1, h / 2 - 1, 2, 2)
+        // Touch deps so the binding tracks layout changes.
+        const _ = targetItem.x + targetItem.y
+                + targetItem.width + targetItem.height
+        const p = targetItem.mapToItem(content, 0, 0)
+        return Qt.rect(p.x, p.y, targetItem.width, targetItem.height)
+    }
+    readonly property rect spotRect: Qt.rect(
+        targetRect.x - spotPadding,
+        targetRect.y - spotPadding,
+        targetRect.width  + 2 * spotPadding,
+        targetRect.height + 2 * spotPadding
+    )
+
+    function start()  { stepIndex = 0; open() }
     function finish() {
         if (typeof layoutSettings !== "undefined")
             layoutSettings.setWizardSeen(true)
-        root.close()
+        close()
     }
 
-    onAboutToShow: reset()
+    contentItem: Item {
+        id: content
 
-    contentItem: ColumnLayout {
-        spacing: 14
+        // Top-level click-blocker so clicks to underlying widgets are
+        // swallowed while the tour is up. The user follows the wizard's
+        // Next / Back / Skip buttons.
+        MouseArea {
+            anchors.fill: parent
+            preventStealing: true
+            onPressed: function(mouse) { mouse.accepted = true }
+            onReleased: function(mouse) { mouse.accepted = true }
+            onClicked: function(mouse) { mouse.accepted = true }
+        }
 
-        // Step indicator dots — centered above the body.
-        RowLayout {
-            Layout.alignment: Qt.AlignHCenter
-            spacing: 6
-            Repeater {
-                model: root.stepCount
-                delegate: Rectangle {
-                    width: 8
-                    height: 8
-                    radius: 4
-                    color: index === root.step ? "#4c8bf5" : "#cfcfcf"
-                    Behavior on color { ColorAnimation { duration: 120 } }
+        // ── 4-piece dim mask leaving a cut-out around spotRect ──────
+        Rectangle {  // top
+            x: 0; y: 0
+            width: parent.width
+            height: Math.max(0, root.spotRect.y)
+            color: "#a0000000"
+            Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+        }
+        Rectangle {  // bottom
+            x: 0
+            y: root.spotRect.y + root.spotRect.height
+            width: parent.width
+            height: Math.max(0, parent.height - y)
+            color: "#a0000000"
+            Behavior on y      { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+            Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+        }
+        Rectangle {  // left
+            x: 0
+            y: root.spotRect.y
+            width: Math.max(0, root.spotRect.x)
+            height: root.spotRect.height
+            color: "#a0000000"
+            Behavior on y      { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+            Behavior on width  { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+            Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+        }
+        Rectangle {  // right
+            x: root.spotRect.x + root.spotRect.width
+            y: root.spotRect.y
+            width: Math.max(0, parent.width - x)
+            height: root.spotRect.height
+            color: "#a0000000"
+            Behavior on x      { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+            Behavior on y      { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+            Behavior on width  { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+            Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+        }
+
+        // Spotlight outline + soft halo.
+        Rectangle {
+            x: root.spotRect.x - 4
+            y: root.spotRect.y - 4
+            width: root.spotRect.width + 8
+            height: root.spotRect.height + 8
+            color: "transparent"
+            border.color: "#664c8bf5"
+            border.width: 4
+            radius: 10
+            Behavior on x      { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+            Behavior on y      { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+            Behavior on width  { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+            Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+        }
+        Rectangle {
+            x: root.spotRect.x
+            y: root.spotRect.y
+            width: root.spotRect.width
+            height: root.spotRect.height
+            color: "transparent"
+            border.color: "#4c8bf5"
+            border.width: 2
+            radius: 6
+            Behavior on x      { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+            Behavior on y      { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+            Behavior on width  { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+            Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+        }
+
+        // Numbered marker badge anchored to the spotlight's upper-left.
+        Rectangle {
+            x: Math.max(8, root.spotRect.x - width / 2)
+            y: Math.max(8, root.spotRect.y - height / 2)
+            width: 28; height: 28
+            radius: 14
+            color: "#4c8bf5"
+            border.color: "#ffffff"
+            border.width: 2
+            Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+            Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+            Label {
+                anchors.centerIn: parent
+                text: (root.stepIndex + 1).toString()
+                color: "#ffffff"
+                font.bold: true
+                font.pixelSize: 13
+            }
+        }
+
+        // ── Floating callout card with the explanation. ─────────────
+        // Picks the side (below/above/right/left) that fits in the
+        // window; falls back to centered when nothing fits.
+        Rectangle {
+            id: callout
+            width: 380
+            height: calloutBody.implicitHeight + 32
+            radius: 8
+            color: "#ffffff"
+            border.color: "#cccccc"
+            border.width: 1
+
+            readonly property real gap: 24
+            readonly property bool fitsBelow: root.spotRect.y + root.spotRect.height + gap + height + 16 <= parent.height
+            readonly property bool fitsAbove: root.spotRect.y - gap - height - 16 >= 0
+            readonly property bool fitsRight: root.spotRect.x + root.spotRect.width + gap + width + 16 <= parent.width
+            readonly property bool fitsLeft:  root.spotRect.x - gap - width - 16 >= 0
+
+            x: {
+                if (fitsBelow || fitsAbove)
+                    return Math.max(16, Math.min(parent.width - width - 16,
+                        root.spotRect.x + root.spotRect.width / 2 - width / 2))
+                if (fitsRight)
+                    return root.spotRect.x + root.spotRect.width + gap
+                if (fitsLeft)
+                    return root.spotRect.x - gap - width
+                return (parent.width - width) / 2
+            }
+            y: {
+                if (fitsBelow)
+                    return root.spotRect.y + root.spotRect.height + gap
+                if (fitsAbove)
+                    return root.spotRect.y - gap - height
+                if (fitsRight || fitsLeft)
+                    return Math.max(16, Math.min(parent.height - height - 16,
+                        root.spotRect.y + root.spotRect.height / 2 - height / 2))
+                return (parent.height - height) / 2
+            }
+
+            Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+            Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
+
+            // Subtle shadow so the card lifts off the dim mask.
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -1
+                z: -1
+                color: "transparent"
+                border.color: "#33000000"
+                border.width: 1
+                radius: 9
+            }
+
+            ColumnLayout {
+                id: calloutBody
+                anchors.fill: parent
+                anchors.margins: 16
+                spacing: 10
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Label {
+                        text: qsTr("Step %1 of %2")
+                              .arg(root.stepIndex + 1)
+                              .arg(root.steps.length)
+                        color: "#888"
+                        font.pixelSize: 11
+                    }
+                    Item { Layout.fillWidth: true }
+                    // Step indicator dots.
+                    Repeater {
+                        model: root.steps.length
+                        delegate: Rectangle {
+                            width: 8; height: 8; radius: 4
+                            color: index === root.stepIndex ? "#4c8bf5" : "#cfcfcf"
+                            Behavior on color { ColorAnimation { duration: 120 } }
+                        }
+                    }
                 }
-            }
-        }
 
-        // Per-step body. Each step renders its own subtree via a
-        // switching Loader so we don't keep all five mounted at once.
-        Loader {
-            id: bodyLoader
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            sourceComponent:
-                root.step === 0 ? step1
-              : root.step === 1 ? step2
-              : root.step === 2 ? step3
-              : root.step === 3 ? step4
-                                : step5
-        }
-
-        // Footer: Skip on the left, Back/Next/Finish on the right.
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 8
-
-            Button {
-                text: qsTr("Skip")
-                flat: true
-                visible: root.step < root.stepCount - 1
-                onClicked: root.finish()
-            }
-            Item { Layout.fillWidth: true }
-            Button {
-                text: qsTr("Back")
-                enabled: root.step > 0
-                onClicked: root.step = root.step - 1
-            }
-            Button {
-                text: root.step === root.stepCount - 1
-                      ? qsTr("Got it!")
-                      : qsTr("Next")
-                highlighted: true
-                onClicked: {
-                    if (root.step === root.stepCount - 1) root.finish()
-                    else root.step = root.step + 1
+                Label {
+                    text: root.currentStep ? root.currentStep.title : ""
+                    font.bold: true
+                    font.pixelSize: 16
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
                 }
-            }
-        }
-    }
+                Label {
+                    text: root.currentStep ? root.currentStep.body : ""
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    color: "#444"
+                    textFormat: Text.RichText
+                }
 
-    // ── Step components ────────────────────────────────────────────
-    // Each step is a self-contained ColumnLayout with a heading + a
-    // bulleted body explaining what to look for in the actual UI.
-
-    Component {
-        id: step1
-        ColumnLayout {
-            spacing: 10
-            Label {
-                text: qsTr("1 · Open a paper")
-                font.bold: true
-                font.pixelSize: 16
-            }
-            Label {
-                Layout.fillWidth: true
-                wrapMode: Text.Wrap
-                text: qsTr("AI Reader helps you read academic PDFs with side-by-side translation, AI chat, and an auto-generated table of contents.")
-            }
-            Label {
-                Layout.fillWidth: true
-                wrapMode: Text.Wrap
-                color: "#444"
-                text: qsTr("To get started, click <b>Open…</b> on the toolbar to load one PDF, or <b>Open folder…</b> to browse a whole library. You can also drag-and-drop a .pdf into the window. Each paper opens in its own tab — close a tab with the × on the right edge.")
-            }
-        }
-    }
-
-    Component {
-        id: step2
-        ColumnLayout {
-            spacing: 10
-            Label {
-                text: qsTr("2 · Panels and layout")
-                font.bold: true
-                font.pixelSize: 16
-            }
-            Label {
-                Layout.fillWidth: true
-                wrapMode: Text.Wrap
-                text: qsTr("The window is split into panes — Folder, TOC, PDF, Paragraphs, Interpretation, Chat. Toggle each one on or off from the toolbar.")
-            }
-            Label {
-                Layout.fillWidth: true
-                wrapMode: Text.Wrap
-                color: "#444"
-                text: qsTr("Each pane has a small ⋮⋮ grip in its top-left corner. Drag a grip onto another pane's edge to <b>reorder the panels</b> — the layout is remembered between launches. Drag the splitter bars to resize.")
-            }
-        }
-    }
-
-    Component {
-        id: step3
-        ColumnLayout {
-            spacing: 10
-            Label {
-                text: qsTr("3 · Translate paragraphs")
-                font.bold: true
-                font.pixelSize: 16
-            }
-            Label {
-                Layout.fillWidth: true
-                wrapMode: Text.Wrap
-                text: qsTr("The Paragraphs pane shows extracted text from the PDF. Click <b>Translate</b> in the toolbar to translate every paragraph at once.")
-            }
-            Label {
-                Layout.fillWidth: true
-                wrapMode: Text.Wrap
-                color: "#444"
-                text: qsTr("<b>Right-click</b> a paragraph for more: translate just that paragraph, ask AI about it, split it at the cursor, merge it with the neighbour, or delete it. The ▲▼ chevrons next to each paragraph hide/show the source or translation.")
-            }
-        }
-    }
-
-    Component {
-        id: step4
-        ColumnLayout {
-            spacing: 10
-            Label {
-                text: qsTr("4 · Chat with the paper")
-                font.bold: true
-                font.pixelSize: 16
-            }
-            Label {
-                Layout.fillWidth: true
-                wrapMode: Text.Wrap
-                text: qsTr("Open the Chat pane and ask questions about the paper. The model has tools to read pages, search the text, look up captions, and view rendered pages with vision.")
-            }
-            Label {
-                Layout.fillWidth: true
-                wrapMode: Text.Wrap
-                color: "#444"
-                text: qsTr("Each paper keeps its own list of <b>chat sessions</b> in the tab strip on top of the pane: + adds a new session, × closes one, double-click to rename. To quote a passage, right-click it in the Paragraphs pane and choose <b>Ask AI about this</b>.")
-            }
-        }
-    }
-
-    Component {
-        id: step5
-        ColumnLayout {
-            spacing: 10
-            Label {
-                text: qsTr("5 · Configure your LLM")
-                font.bold: true
-                font.pixelSize: 16
-            }
-            Label {
-                Layout.fillWidth: true
-                wrapMode: Text.Wrap
-                text: qsTr("Open <b>Settings…</b> from the toolbar to add a model and API key. Anthropic Claude and any OpenAI-compatible endpoint (DeepSeek, OpenRouter, local llama.cpp, …) are supported.")
-            }
-            Label {
-                Layout.fillWidth: true
-                wrapMode: Text.Wrap
-                color: "#444"
-                text: qsTr("Use <b>Prompts…</b> to customise the system prompts for translation, summary, TOC, and chat. You can re-open this tour any time from the <b>?</b> button on the toolbar.")
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+                    Button {
+                        text: qsTr("Skip")
+                        flat: true
+                        visible: root.stepIndex < root.steps.length - 1
+                        onClicked: root.finish()
+                    }
+                    Item { Layout.fillWidth: true }
+                    Button {
+                        text: qsTr("Back")
+                        enabled: root.stepIndex > 0
+                        onClicked: root.stepIndex = root.stepIndex - 1
+                    }
+                    Button {
+                        text: root.stepIndex === root.steps.length - 1
+                              ? qsTr("Got it!")
+                              : qsTr("Next")
+                        highlighted: true
+                        onClicked: {
+                            if (root.stepIndex === root.steps.length - 1)
+                                root.finish()
+                            else
+                                root.stepIndex = root.stepIndex + 1
+                        }
+                    }
+                }
             }
         }
     }

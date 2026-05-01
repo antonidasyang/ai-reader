@@ -589,64 +589,48 @@
         <translation>明白了!</translation>
     </message>
     <message>
+        <source>Step %1 of %2</source>
+        <translation>第 %1 步,共 %2 步</translation>
+    </message>
+    <message>
         <source>1 · Open a paper</source>
         <translation>1 · 打开论文</translation>
     </message>
     <message>
-        <source>AI Reader helps you read academic PDFs with side-by-side translation, AI chat, and an auto-generated table of contents.</source>
-        <translation>AI Reader 帮助你阅读学术 PDF,提供并排翻译、AI 对话和自动生成的目录。</translation>
+        <source>Click &lt;b&gt;Open…&lt;/b&gt; to load a single PDF, or use &lt;b&gt;Open folder…&lt;/b&gt; next to it to browse a whole library. You can also drag a .pdf into the window. Each paper opens in its own tab.</source>
+        <translation>点击 &lt;b&gt;打开…&lt;/b&gt; 加载单个 PDF,或使用旁边的 &lt;b&gt;打开文件夹…&lt;/b&gt; 浏览整个库。也可以将 .pdf 拖入窗口。每个论文会在单独的标签页中打开。</translation>
     </message>
     <message>
-        <source>To get started, click &lt;b&gt;Open…&lt;/b&gt; on the toolbar to load one PDF, or &lt;b&gt;Open folder…&lt;/b&gt; to browse a whole library. You can also drag-and-drop a .pdf into the window. Each paper opens in its own tab — close a tab with the × on the right edge.</source>
-        <translation>开始时,请点击工具栏的 &lt;b&gt;打开…&lt;/b&gt; 加载单个 PDF,或者 &lt;b&gt;打开文件夹…&lt;/b&gt; 浏览整个库。也可以将 .pdf 拖入窗口。每个论文会在单独的标签页中打开——点击标签右侧的 × 关闭。</translation>
+        <source>2 · Toggle panels</source>
+        <translation>2 · 切换面板</translation>
     </message>
     <message>
-        <source>2 · Panels and layout</source>
-        <translation>2 · 面板与布局</translation>
-    </message>
-    <message>
-        <source>The window is split into panes — Folder, TOC, PDF, Paragraphs, Interpretation, Chat. Toggle each one on or off from the toolbar.</source>
-        <translation>窗口被分为多个面板——文件夹、目录、PDF、段落、解读、对话。在工具栏中可以分别开关每个面板。</translation>
-    </message>
-    <message>
-        <source>Each pane has a small ⋮⋮ grip in its top-left corner. Drag a grip onto another pane's edge to &lt;b&gt;reorder the panels&lt;/b&gt; — the layout is remembered between launches. Drag the splitter bars to resize.</source>
-        <translation>每个面板左上角都有 ⋮⋮ 拖柄。把拖柄拖到另一个面板的边缘可以&lt;b&gt;重新排列面板&lt;/b&gt;,布局会在下次启动时保留。拖动分隔条调整大小。</translation>
+        <source>Use the toolbar's &lt;b&gt;Folder / TOC / Chat&lt;/b&gt; buttons to show or hide each pane. Drag the small &lt;b&gt;⋮⋮ grip&lt;/b&gt; in any pane's top-left corner to reorder the layout — your arrangement is remembered between launches.</source>
+        <translation>使用工具栏的 &lt;b&gt;文件夹 / 目录 / 对话&lt;/b&gt; 按钮来显示或隐藏对应面板。拖动任意面板左上角的 &lt;b&gt;⋮⋮ 拖柄&lt;/b&gt; 可以重新排列布局——下次启动时会保留你的布局。</translation>
     </message>
     <message>
         <source>3 · Translate paragraphs</source>
         <translation>3 · 段落翻译</translation>
     </message>
     <message>
-        <source>The Paragraphs pane shows extracted text from the PDF. Click &lt;b&gt;Translate&lt;/b&gt; in the toolbar to translate every paragraph at once.</source>
-        <translation>段落面板显示从 PDF 中提取的文本。点击工具栏的 &lt;b&gt;翻译&lt;/b&gt; 一键翻译所有段落。</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Right-click&lt;/b&gt; a paragraph for more: translate just that paragraph, ask AI about it, split it at the cursor, merge it with the neighbour, or delete it. The ▲▼ chevrons next to each paragraph hide/show the source or translation.</source>
-        <translation>&lt;b&gt;右键点击&lt;/b&gt;段落可执行更多操作:仅翻译该段、就该段提问 AI、在光标处拆分、与相邻段合并或删除。每段旁边的 ▲▼ 箭头可以显示或隐藏原文或译文。</translation>
+        <source>Click &lt;b&gt;Translate&lt;/b&gt; to translate every paragraph at once. Or right-click a single paragraph to translate, split, merge, delete, or quote it into the chat.</source>
+        <translation>点击 &lt;b&gt;翻译&lt;/b&gt; 一键翻译所有段落。也可以右键单个段落,执行翻译、拆分、合并、删除,或将其引用到对话中。</translation>
     </message>
     <message>
         <source>4 · Chat with the paper</source>
         <translation>4 · 与论文对话</translation>
     </message>
     <message>
-        <source>Open the Chat pane and ask questions about the paper. The model has tools to read pages, search the text, look up captions, and view rendered pages with vision.</source>
-        <translation>打开对话面板,就论文向 AI 提问。模型可调用工具读取页面、搜索文本、查找图表标题,并通过视觉模型查看渲染后的页面。</translation>
-    </message>
-    <message>
-        <source>Each paper keeps its own list of &lt;b&gt;chat sessions&lt;/b&gt; in the tab strip on top of the pane: + adds a new session, × closes one, double-click to rename. To quote a passage, right-click it in the Paragraphs pane and choose &lt;b&gt;Ask AI about this&lt;/b&gt;.</source>
-        <translation>每篇论文在对话面板顶部的标签栏中维护自己的&lt;b&gt;对话会话&lt;/b&gt;列表:+ 新建会话,× 关闭会话,双击重命名。要引用某段,在段落面板中右键并选择&lt;b&gt;就此提问 AI&lt;/b&gt;。</translation>
+        <source>Open the &lt;b&gt;Chat&lt;/b&gt; pane and ask questions. The model can read pages, search the text, and view rendered figures with vision. Each paper keeps its own list of &lt;b&gt;chat sessions&lt;/b&gt; in the tab strip on top — + to add, × to close, double-click to rename.</source>
+        <translation>打开 &lt;b&gt;对话&lt;/b&gt; 面板向 AI 提问。模型可读取页面、搜索文本,并通过视觉模型查看渲染后的图表。每篇论文在面板顶部的标签栏中维护自己的 &lt;b&gt;对话会话&lt;/b&gt; 列表——+ 新建,× 关闭,双击重命名。</translation>
     </message>
     <message>
         <source>5 · Configure your LLM</source>
         <translation>5 · 配置你的大模型</translation>
     </message>
     <message>
-        <source>Open &lt;b&gt;Settings…&lt;/b&gt; from the toolbar to add a model and API key. Anthropic Claude and any OpenAI-compatible endpoint (DeepSeek, OpenRouter, local llama.cpp, …) are supported.</source>
-        <translation>从工具栏打开&lt;b&gt;设置…&lt;/b&gt;添加模型和 API 密钥。支持 Anthropic Claude 以及任意 OpenAI 兼容端点(DeepSeek、OpenRouter、本地 llama.cpp 等)。</translation>
-    </message>
-    <message>
-        <source>Use &lt;b&gt;Prompts…&lt;/b&gt; to customise the system prompts for translation, summary, TOC, and chat. You can re-open this tour any time from the &lt;b&gt;?&lt;/b&gt; button on the toolbar.</source>
-        <translation>使用&lt;b&gt;提示词…&lt;/b&gt;为翻译、摘要、目录和对话自定义系统提示词。可以随时从工具栏的 &lt;b&gt;?&lt;/b&gt; 按钮重新打开本向导。</translation>
+        <source>Open &lt;b&gt;Settings…&lt;/b&gt; to add a model and API key (Anthropic Claude or any OpenAI-compatible endpoint). Use &lt;b&gt;Prompts…&lt;/b&gt; to customise system prompts. Re-open this tour any time from the &lt;b&gt;?&lt;/b&gt; button.</source>
+        <translation>打开 &lt;b&gt;设置…&lt;/b&gt; 添加模型和 API 密钥(Anthropic Claude 或任意 OpenAI 兼容端点)。使用 &lt;b&gt;提示词…&lt;/b&gt; 自定义系统提示词。任何时候都可以从 &lt;b&gt;?&lt;/b&gt; 按钮重新打开本向导。</translation>
     </message>
 </context>
 <context>

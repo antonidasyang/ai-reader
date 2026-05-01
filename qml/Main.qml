@@ -117,7 +117,41 @@ ApplicationWindow {
 
     WelcomeWizard {
         id: welcomeWizard
-        anchors.centerIn: Overlay.overlay
+    }
+
+    // Steps are wired up after the toolbar buttons / panes have been
+    // instantiated, so the spotlight target references resolve. The
+    // wizard auto-opens on first run via the Component.onCompleted
+    // hook below; users can also re-trigger it from the "?" toolbar
+    // button.
+    function buildWizardSteps() {
+        return [
+            {
+                target: openBtn,
+                title: qsTr("1 · Open a paper"),
+                body: qsTr("Click <b>Open…</b> to load a single PDF, or use <b>Open folder…</b> next to it to browse a whole library. You can also drag a .pdf into the window. Each paper opens in its own tab.")
+            },
+            {
+                target: chatToggleBtn,
+                title: qsTr("2 · Toggle panels"),
+                body: qsTr("Use the toolbar's <b>Folder / TOC / Chat</b> buttons to show or hide each pane. Drag the small <b>⋮⋮ grip</b> in any pane's top-left corner to reorder the layout — your arrangement is remembered between launches.")
+            },
+            {
+                target: translateBtn,
+                title: qsTr("3 · Translate paragraphs"),
+                body: qsTr("Click <b>Translate</b> to translate every paragraph at once. Or right-click a single paragraph to translate, split, merge, delete, or quote it into the chat.")
+            },
+            {
+                target: chatToggleBtn,
+                title: qsTr("4 · Chat with the paper"),
+                body: qsTr("Open the <b>Chat</b> pane and ask questions. The model can read pages, search the text, and view rendered figures with vision. Each paper keeps its own list of <b>chat sessions</b> in the tab strip on top — + to add, × to close, double-click to rename.")
+            },
+            {
+                target: settingsBtn,
+                title: qsTr("5 · Configure your LLM"),
+                body: qsTr("Open <b>Settings…</b> to add a model and API key (Anthropic Claude or any OpenAI-compatible endpoint). Use <b>Prompts…</b> to customise system prompts. Re-open this tour any time from the <b>?</b> button.")
+            }
+        ]
     }
 
     function showError(prefix, message) {
@@ -220,10 +254,12 @@ ApplicationWindow {
 
     Component.onCompleted: {
         applySavedPaneOrder()
-        // First-run tour: defer past the initial render so the wizard
-        // pops over a finished UI rather than over an empty window.
+        // Wire spotlight targets now that the toolbar / panes exist.
+        welcomeWizard.steps = buildWizardSteps()
+        // First-run tour: defer past the initial render so the spotlight
+        // anchors to fully laid-out widgets, not zero-sized stubs.
         if (!layoutSettings.wizardSeen())
-            Qt.callLater(function() { welcomeWizard.open() })
+            Qt.callLater(function() { welcomeWizard.start() })
     }
 
     // PDF → block list. Watch pdfView.currentPage via a side-effect binding.
@@ -263,6 +299,7 @@ ApplicationWindow {
             anchors.leftMargin: 8
             anchors.rightMargin: 8
             ToolButton {
+                id: openBtn
                 text: qsTr("Open…")
                 onClicked: fileDialog.open()
             }
@@ -288,6 +325,7 @@ ApplicationWindow {
             }
             ToolSeparator {}
             ToolButton {
+                id: translateBtn
                 text: translation.busy ? qsTr("Cancel") : qsTr("Translate")
                 enabled: paperController.status === PaperController.Ready
                          && (translation.busy || settings.isConfigured)
@@ -359,6 +397,7 @@ ApplicationWindow {
                 onClicked: tocSidebar.visible = !tocSidebar.visible
             }
             ToolButton {
+                id: chatToggleBtn
                 text: qsTr("Chat")
                 checkable: true
                 checked: chatPane.visible
@@ -399,6 +438,7 @@ ApplicationWindow {
                 onClicked: promptsDialog.open()
             }
             ToolButton {
+                id: settingsBtn
                 text: qsTr("Settings…")
                 onClicked: settingsDialog.open()
             }
@@ -408,7 +448,7 @@ ApplicationWindow {
                 ToolTip.visible: hovered
                 ToolTip.delay: 400
                 ToolTip.text: qsTr("Show getting-started tour")
-                onClicked: welcomeWizard.open()
+                onClicked: welcomeWizard.start()
             }
         }
     }
