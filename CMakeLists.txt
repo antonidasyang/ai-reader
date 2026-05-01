@@ -153,49 +153,32 @@ if(AIREADER_ENABLE_SENTRY)
     FetchContent_MakeAvailable(sentry)
 endif()
 
-# Upstream cmark-gfm and MicroTeX hard-code /WX in their CMakeLists, so any
-# stray MSVC warning blows up the build: cmark's html.c is saved in a
-# codepage that triggers C4819 on cp936 hosts, and MicroTeX's font_parser
-# discards [[nodiscard]] returns (C4834). We don't want to fork those repos
-# over cosmetics, so disable warnings-as-errors for those static libs.
+# Vendored libs ship MSVC builds that promote stray warnings to
+# errors via /WX in their *own* CMakeLists — appended to CMAKE_C_FLAGS
+# inside their subdirectory, which is parent-scope mutation we can't
+# reach from out here. Two warnings actually trigger:
 #
-# Tactic: STRIP /WX from each target's COMPILE_OPTIONS rather than
-# appending /WX-. Appending the negation makes both flags appear on
-# the command line, which triggers MSVC's D9025 ("overriding '/WX'
-# with '/WX-'") on every translation unit — hundreds of warnings on
-# a clean build. Removing /WX outright produces no chatter and the
-# end result (warnings-as-errors off) is identical. Our own targets
-# stay strict because we never added /WX to them in the first place.
+#   C4819 in cmark/src/html.c  — file contains multi-byte chars saved
+#       in UTF-8 that MSVC can't read on a cp936 (Chinese Windows)
+#       host without /utf-8. Cosmetic on every other host.
+#   C4834 in microtex/font_parser.cpp — discards a [[nodiscard]]
+#       return from fread. Real bug but upstream's, not ours.
+#
+# Suppressing the specific warning IDs disarms /WX cleanly: cl never
+# emits the warning so /WX has nothing to promote to error. This
+# avoids D9025 ("overriding '/WX' with '/WX-'"), which the older
+# /WX- override approach generated on every translation unit.
 if(MSVC)
-    foreach(_aireader_relaxed_target
+    foreach(_aireader_cmark_target
             libcmark-gfm_static
-            libcmark-gfm-extensions_static
-            LaTeX
-            tinyxml2)
-        if(TARGET ${_aireader_relaxed_target})
-            get_target_property(_opts ${_aireader_relaxed_target} COMPILE_OPTIONS)
-            if(_opts)
-                list(FILTER _opts EXCLUDE REGEX "^/WX$")
-                list(FILTER _opts EXCLUDE REGEX "^-Werror$")
-                set_target_properties(${_aireader_relaxed_target}
-                    PROPERTIES COMPILE_OPTIONS "${_opts}")
-            endif()
-            # Some upstreams set /WX via add_compile_options() at the
-            # directory scope, which doesn't show up in the target's
-            # own COMPILE_OPTIONS. Clear it there too.
-            get_target_property(_src_dir ${_aireader_relaxed_target} SOURCE_DIR)
-            if(_src_dir)
-                get_directory_property(_dir_opts
-                    DIRECTORY "${_src_dir}" COMPILE_OPTIONS)
-                if(_dir_opts)
-                    list(FILTER _dir_opts EXCLUDE REGEX "^/WX$")
-                    list(FILTER _dir_opts EXCLUDE REGEX "^-Werror$")
-                    set_directory_properties(DIRECTORY "${_src_dir}"
-                        PROPERTIES COMPILE_OPTIONS "${_dir_opts}")
-                endif()
-            endif()
+            libcmark-gfm-extensions_static)
+        if(TARGET ${_aireader_cmark_target})
+            target_compile_options(${_aireader_cmark_target} PRIVATE /wd4819)
         endif()
     endforeach()
+    if(TARGET LaTeX)
+        target_compile_options(LaTeX PRIVATE /wd4834 /wd4819)
+    endif()
 endif()
 
 qt_standard_project_setup()
