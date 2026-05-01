@@ -321,6 +321,14 @@
         <source>Settings are stored per-user in the OS-native QSettings location. The API key lives in the OS keychain (Keychain on macOS, Credential Manager on Windows, libsecret on Linux); when no keychain backend is available it falls back to plaintext QSettings.</source>
         <translation>设置以系统默认方式按用户存储于 QSettings 位置;API 密钥保存在系统密钥链中(macOS 钥匙串、Windows 凭据管理器、Linux libsecret)。若无可用的密钥链后端,则回退到 QSettings 明文存储。</translation>
     </message>
+    <message>
+        <source>AI Reader</source>
+        <translation>AI Reader</translation>
+    </message>
+    <message>
+        <source>github.com/antonidasyang/ai-reader</source>
+        <translation>github.com/antonidasyang/ai-reader</translation>
+    </message>
 </context>
 <context>
     <name>PasswordDialog</name>

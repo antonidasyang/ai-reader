@@ -203,5 +203,38 @@ Dialog {
                        "libsecret on Linux); when no keychain backend is " +
                        "available it falls back to plaintext QSettings.")
         }
+
+        // ── Version footer ──────────────────────────────────────────
+        // settings.appVersion is sourced from AIREADER_VERSION baked in
+        // via CMake's target_compile_definitions, so it tracks
+        // PROJECT_VERSION automatically — no second number to keep in
+        // sync with CMakeLists.txt.
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            Layout.topMargin: 6
+            color: "#e0e0e0"
+        }
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 6
+            Label {
+                text: qsTr("AI Reader")
+                font.pixelSize: 11
+                color: "#666"
+            }
+            Label {
+                text: "v" + settings.appVersion
+                font.pixelSize: 11
+                font.bold: true
+                color: "#3949AB"
+            }
+            Item { Layout.fillWidth: true }
+            Label {
+                text: qsTr("github.com/antonidasyang/ai-reader")
+                font.pixelSize: 11
+                color: "#666"
+            }
+        }
     }
 }

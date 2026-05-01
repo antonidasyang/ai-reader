@@ -24,10 +24,24 @@
 AppId={{6E0AF8DC-4F36-4A6B-9F38-9E91D9E32F9D}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
+AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL=https://github.com/antonidasyang/ai-reader
 AppSupportURL=https://github.com/antonidasyang/ai-reader/issues
 AppUpdatesURL=https://github.com/antonidasyang/ai-reader/releases
+AppCopyright=Copyright © AI Reader contributors
+; Embed version + product fields into the setup .exe's PE resource
+; so Windows Properties → Details and Add/Remove Programs both show
+; the same version string. VersionInfoVersion must be a 4-component
+; numeric tuple — anything else is rejected by the Windows resource
+; compiler. MyAppVersion is the human-readable string shown in the
+; wizard chrome, dialogs, and install registry entries.
+VersionInfoVersion={#MyAppVersion}.0
+VersionInfoProductName={#MyAppName}
+VersionInfoProductVersion={#MyAppVersion}
+VersionInfoCompany={#MyAppPublisher}
+VersionInfoDescription={#MyAppName} installer
+VersionInfoCopyright=Copyright © AI Reader contributors
 DefaultDirName={autopf}\AI Reader
 DefaultGroupName=AI Reader
 DisableProgramGroupPage=yes

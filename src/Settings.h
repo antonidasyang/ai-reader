@@ -38,6 +38,11 @@ class Settings : public QObject
     Q_PROPERTY(QString chatPrompt        READ chatPrompt        WRITE setChatPrompt        NOTIFY chatPromptChanged)
     Q_PROPERTY(bool    chatIncludePaperText READ chatIncludePaperText WRITE setChatIncludePaperText NOTIFY chatIncludePaperTextChanged)
 
+    // Compile-time version baked in via CMake's target_compile_definitions
+    // (AIREADER_VERSION="${PROJECT_VERSION}"). CONSTANT — never changes
+    // at runtime, so QML bindings don't need a NOTIFY signal.
+    Q_PROPERTY(QString appVersion    READ appVersion                          CONSTANT)
+
     Q_PROPERTY(QStringList availableModels READ availableModels NOTIFY availableModelsChanged)
     Q_PROPERTY(bool    fetchingModels READ fetchingModels       NOTIFY fetchingModelsChanged)
     Q_PROPERTY(QString modelsError    READ modelsError          NOTIFY modelsErrorChanged)
@@ -58,6 +63,7 @@ public:
     QString targetLang()    const { return m_targetLang; }
     QString uiLanguage()    const { return m_uiLanguage; }
     bool    isConfigured()  const;
+    QString appVersion()    const { return QStringLiteral(AIREADER_VERSION); }
 
     QString summaryPrompt()     const { return m_summaryPrompt; }
     QString translationPrompt() const { return m_translationPrompt; }
