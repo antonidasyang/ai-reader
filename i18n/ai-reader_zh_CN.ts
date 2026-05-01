@@ -541,6 +541,28 @@
     </message>
 </context>
 <context>
+    <name>CodeBlock</name>
+    <message>
+        <source>code</source>
+        <translation>代码</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation>复制</translation>
+    </message>
+    <message>
+        <source>Copy code to clipboard</source>
+        <translation>复制代码到剪贴板</translation>
+    </message>
+</context>
+<context>
+    <name>MathBlock</name>
+    <message>
+        <source>Copy LaTeX source</source>
+        <translation>复制 LaTeX 源码</translation>
+    </message>
+</context>
+<context>
     <name>ChatService</name>
     <message>
         <source>New chat</source>

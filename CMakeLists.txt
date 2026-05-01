@@ -189,6 +189,10 @@ qt_add_executable(ai-reader
     src/ChatSession.h
     src/ChatSessionListModel.h
     src/ChatSessionListModel.cpp
+    src/ChatContent.h
+    src/ChatContent.cpp
+    src/CodeHighlighter.h
+    src/CodeHighlighter.cpp
     src/MarkdownRenderer.h
     src/MarkdownRenderer.cpp
     src/LatexRenderer.h
@@ -234,6 +238,8 @@ qt_add_qml_module(ai-reader
         qml/ChatPane.qml
         qml/FolderPane.qml
         qml/DockGrip.qml
+        qml/MathBlock.qml
+        qml/CodeBlock.qml
 )
 
 # Compile .ts → .qm and embed under :/i18n so QTranslator::load() in

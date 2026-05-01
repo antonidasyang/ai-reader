@@ -7,6 +7,45 @@ Rectangle {
     id: root
     color: "#fafafa"
 
+    // ── Typed-item delegate factories (file-root scope so the
+    //     dynamically-loaded ColumnLayout in the message bubble can
+    //     resolve them by id; nested scopes don't always see ids
+    //     declared inside a dynamically-instantiated subtree).
+    Component {
+        id: textComp
+        TextEdit {
+            Layout.fillWidth: true
+            readOnly: true
+            selectByMouse: true
+            wrapMode: TextEdit.Wrap
+            textFormat: TextEdit.RichText
+            color: "#1d1d1d"
+            text: parent.entry ? parent.entry.html : ""
+            cursorVisible: false
+            activeFocusOnPress: false
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
+                cursorShape: Qt.IBeamCursor
+            }
+        }
+    }
+    Component {
+        id: codeComp
+        CodeBlock {
+            source:   parent.entry ? parent.entry.source   : ""
+            html:     parent.entry ? parent.entry.html     : ""
+            language: parent.entry ? parent.entry.language : ""
+        }
+    }
+    Component {
+        id: mathComp
+        MathBlock {
+            latex:   parent.entry ? parent.entry.source  : ""
+            dataUrl: parent.entry ? parent.entry.dataUrl : ""
+        }
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -228,16 +267,26 @@ Rectangle {
             onContentHeightChanged: if (chat.busy) positionViewAtEnd()
 
             delegate: Item {
+                id: msgDelegate
                 width: ListView.view ? ListView.view.width : 0
                 implicitHeight: bubble.height + 12
+
+                // Capture per-row model data on the delegate root so
+                // nested QML scopes (Repeater inside Loader inside
+                // bubble) can read it without `model` being shadowed
+                // by the inner Repeater's own `model` property.
+                readonly property string msgRole:    model.role
+                readonly property string msgContent: model.content
+                readonly property int    msgStatus:  model.status
+                readonly property string msgError:   model.error
 
                 Rectangle {
                     id: bubble
                     anchors {
-                        left: model.role === "user" ? undefined : parent.left
-                        right: model.role === "user" ? parent.right : undefined
-                        leftMargin: model.role === "user" ? 0 : 10
-                        rightMargin: model.role === "user" ? 10 : 0
+                        left: msgDelegate.msgRole === "user" ? undefined : parent.left
+                        right: msgDelegate.msgRole === "user" ? parent.right : undefined
+                        leftMargin: msgDelegate.msgRole === "user" ? 0 : 10
+                        rightMargin: msgDelegate.msgRole === "user" ? 10 : 0
                         top: parent.top
                     }
                     width: Math.min(parent.width - 20,
@@ -247,10 +296,20 @@ Rectangle {
                     // this binding the bubble collapses to ~0 px and the
                     // TextEdit's caret/I-beam shows through as a stray cross.
                     height: bubbleContent.implicitHeight + 16
-                    color: model.role === "user" ? "#dee5ff" : "#ffffff"
-                    border.color: model.status === 2 /*Failed*/ ? "#c62828" : "#dddddd"
+                    color: msgDelegate.msgRole === "user" ? "#dee5ff" : "#ffffff"
+                    border.color: msgDelegate.msgStatus === 2 /*Failed*/ ? "#c62828" : "#dddddd"
                     border.width: 1
                     radius: 6
+
+                    // True when the bubble's body should render as
+                    // typed items (Repeater over chatContent.render).
+                    // We only typify completed assistant replies — user
+                    // messages stay PlainText, streaming and failed
+                    // replies stay in the single TextEdit so chunk
+                    // arrival doesn't tear down/re-create item trees.
+                    readonly property bool _typed:
+                        msgDelegate.msgRole === "assistant"
+                        && msgDelegate.msgStatus === 0
 
                     ColumnLayout {
                         id: bubbleContent
@@ -261,58 +320,88 @@ Rectangle {
                         spacing: 4
 
                         Label {
-                            text: model.role === "user" ? qsTr("You")
-                                                        : qsTr("Assistant")
+                            text: msgDelegate.msgRole === "user" ? qsTr("You")
+                                                                  : qsTr("Assistant")
                             font.pixelSize: 10
                             color: "#888"
                         }
+
+                        // ── Streaming / user / failed: single TextEdit
                         TextEdit {
                             id: bodyText
+                            visible: !bubble._typed
                             Layout.fillWidth: true
                             readOnly: true
                             selectByMouse: true
                             wrapMode: TextEdit.Wrap
                             color: "#1d1d1d"
-                            // Assistant replies route through cmark-gfm for
-                            // GFM tables / strikethrough / footnotes /
-                            // task lists. During streaming we use Qt's
-                            // built-in MarkdownText to skip re-parsing the
-                            // doc on every chunk; once the turn is Done we
-                            // swap to RichText with the cmark-rendered
-                            // HTML for the richer output. User messages
-                            // stay verbatim.
-                            textFormat: model.role !== "assistant"
+                            // PlainText for user messages; MarkdownText
+                            // for streaming assistant replies (cheap,
+                            // no per-chunk cmark walk). When the reply
+                            // completes we switch this off entirely
+                            // and the typed Repeater takes over.
+                            textFormat: msgDelegate.msgRole !== "assistant"
                                         ? TextEdit.PlainText
-                                        : (model.status === 1 /*Streaming*/
-                                           ? TextEdit.MarkdownText
-                                           : TextEdit.RichText)
-                            text: model.content.length === 0
-                                  ? (model.status === 1 ? "..." : " ")
-                                  : (model.role === "assistant"
-                                     && model.status !== 1
-                                     ? markdown.toHtml(model.content)
-                                     : model.content)
-                            // Hide the blinking text caret — this is a
-                            // read-only view, not an editable field.
+                                        : TextEdit.MarkdownText
+                            text: msgDelegate.msgContent.length === 0
+                                  ? (msgDelegate.msgStatus === 1 ? "..." : " ")
+                                  : msgDelegate.msgContent
                             cursorVisible: false
                             activeFocusOnPress: false
-                            // Pointer stays as the default arrow except when
-                            // the user is dragging to select text.
                             MouseArea {
                                 anchors.fill: parent
                                 acceptedButtons: Qt.NoButton
                                 cursorShape: Qt.IBeamCursor
                             }
                         }
+
+                        // ── Done assistant: typed-item pipeline.
+                        // chatContent.render() walks the Markdown once
+                        // and returns a list of {type, html|source|…}
+                        // maps; the Repeater dispatches each entry to
+                        // the matching delegate (text / code / math).
+                        // Wrapped in a Loader so the QObject tree only
+                        // exists when actually shown.
+                        Loader {
+                            active: bubble._typed
+                            visible: bubble._typed
+                            Layout.fillWidth: true
+                            sourceComponent: ColumnLayout {
+                                spacing: 6
+
+                                Repeater {
+                                    // bubble.parent === msgDelegate ListView delegate
+                                    // — read content from there to
+                                    // sidestep the inner-Repeater
+                                    // `model` shadow.
+                                    model: chatContent.render(msgDelegate.msgContent)
+                                    delegate: Loader {
+                                        Layout.fillWidth: true
+                                        // NOTE: name this `entry` not
+                                        // `item` — Loader.item is a
+                                        // built-in property holding the
+                                        // loaded object; a custom `item`
+                                        // would be silently shadowed.
+                                        property var entry: modelData
+                                        sourceComponent:
+                                            modelData.type === "code" ? codeComp
+                                          : modelData.type === "math" ? mathComp
+                                                                      : textComp
+                                    }
+                                }
+                            }
+                        }
+
                         Label {
-                            visible: model.status === 2 /*Failed*/
-                            text: qsTr("Error: %1").arg(model.error)
+                            visible: msgDelegate.msgStatus === 2 /*Failed*/
+                            text: qsTr("Error: %1").arg(msgDelegate.msgError)
                             color: "#c62828"
                             font.pixelSize: 10
                             wrapMode: Text.Wrap
                             Layout.fillWidth: true
                         }
                     }
+
                 }
             }
 

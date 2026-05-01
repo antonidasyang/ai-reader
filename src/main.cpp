@@ -1,3 +1,4 @@
+#include "ChatContent.h"
 #include "ChatService.h"
 #include "LayoutSettings.h"
 #include "Library.h"
@@ -110,6 +111,7 @@ int main(int argc, char *argv[])
     VisionService vision(&settings, &paperController);
     ChatService chat(&settings, &paperController, &toc);
     MarkdownRenderer markdown;
+    ChatContent chatContent(&markdown);
     Library library;
     LayoutSettings layoutSettings;
     Tabs tabs(&paperController);
@@ -126,6 +128,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("vision", &vision);
     engine.rootContext()->setContextProperty("chat", &chat);
     engine.rootContext()->setContextProperty("markdown", &markdown);
+    engine.rootContext()->setContextProperty("chatContent", &chatContent);
     engine.rootContext()->setContextProperty("library", &library);
     engine.rootContext()->setContextProperty("layoutSettings", &layoutSettings);
     engine.rootContext()->setContextProperty("tabs", &tabs);
