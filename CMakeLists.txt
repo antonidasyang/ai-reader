@@ -290,3 +290,20 @@ target_link_libraries(ai-reader PRIVATE
 if(UNIX AND NOT APPLE)
     target_link_libraries(ai-reader PRIVATE Qt6::DBus)
 endif()
+
+# ── Windows packaging: stage build output into dist\ ───────────────
+# After every Release build, drop ai-reader.exe into <repo>/dist so
+# windeploy.bat (Qt runtime) and AiReader.iss (Inno Setup) can pull
+# from a stable, predictable path. Using copy_if_different keeps
+# rebuilds quick when the binary hasn't changed.
+if(WIN32)
+    set(_aireader_dist_dir "${CMAKE_SOURCE_DIR}/dist")
+    add_custom_command(TARGET ai-reader POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${_aireader_dist_dir}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:ai-reader>"
+                "${_aireader_dist_dir}/"
+        COMMENT "Staging $<TARGET_FILE_NAME:ai-reader> into ${_aireader_dist_dir}"
+        VERBATIM
+    )
+endif()

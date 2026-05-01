@@ -1,6 +1,8 @@
 build/
 build-*/
 build_ninja/
+dist/
+installer/
 *.user
 *.user.*
 .vscode/
