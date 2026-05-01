@@ -125,6 +125,34 @@ if(NOT microtex_POPULATED)
     add_subdirectory("${microtex_SOURCE_DIR}" "${microtex_BINARY_DIR}")
 endif()
 
+# ── Optional: Sentry-Native (crash reporting) ──────────────────────
+# Pulled via FetchContent only when the user opts in via
+# -DAIREADER_ENABLE_SENTRY=ON. The "inproc" backend captures crashes
+# via in-process signal / SetUnhandledExceptionFilter handlers, so we
+# don't have to ship an external crashpad_handler.exe alongside the
+# binary; it's slightly less reliable than crashpad for hard SEH
+# crashes but materially simpler to package.
+if(AIREADER_ENABLE_SENTRY)
+    set(SENTRY_BACKEND          "inproc" CACHE STRING "" FORCE)
+    set(SENTRY_BUILD_TESTS      OFF      CACHE BOOL   "" FORCE)
+    set(SENTRY_BUILD_EXAMPLES   OFF      CACHE BOOL   "" FORCE)
+    set(SENTRY_BUILD_SHARED_LIBS OFF     CACHE BOOL   "" FORCE)
+    if(WIN32)
+        set(SENTRY_TRANSPORT "winhttp" CACHE STRING "" FORCE)
+    elseif(APPLE)
+        set(SENTRY_TRANSPORT "curl"    CACHE STRING "" FORCE)
+    else()
+        set(SENTRY_TRANSPORT "curl"    CACHE STRING "" FORCE)
+    endif()
+    FetchContent_Declare(
+        sentry
+        GIT_REPOSITORY https://github.com/getsentry/sentry-native.git
+        GIT_TAG        0.7.20
+        GIT_SHALLOW    TRUE
+    )
+    FetchContent_MakeAvailable(sentry)
+endif()
+
 # Upstream cmark-gfm and MicroTeX hard-code /WX in their CMakeLists, so any
 # stray MSVC warning blows up the build: cmark's html.c is saved in a
 # codepage that triggers C4819 on cp936 hosts, and MicroTeX's font_parser
@@ -205,12 +233,28 @@ qt_add_executable(ai-reader
     src/Tabs.cpp
     src/UpdateChecker.h
     src/UpdateChecker.cpp
+    src/CrashReporter.h
+    src/CrashReporter.cpp
 )
 
 target_compile_definitions(ai-reader PRIVATE
     AIREADER_MICROTEX_RES_DIR="${microtex_SOURCE_DIR}/res"
     AIREADER_VERSION="${PROJECT_VERSION}"
 )
+
+if(AIREADER_ENABLE_SENTRY)
+    if(NOT AIREADER_SENTRY_DSN)
+        message(WARNING
+            "AIREADER_ENABLE_SENTRY=ON but AIREADER_SENTRY_DSN is empty; "
+            "Sentry will be linked but no events will be sent. "
+            "Pass -DAIREADER_SENTRY_DSN=https://… to fix.")
+    endif()
+    target_compile_definitions(ai-reader PRIVATE
+        AIREADER_HAS_SENTRY=1
+        AIREADER_SENTRY_DSN="${AIREADER_SENTRY_DSN}"
+    )
+    target_link_libraries(ai-reader PRIVATE sentry::sentry)
+endif()
 
 # Diagnostic build flag — flip to ON to use the console subsystem on
 # Windows so qDebug / Qt error messages are visible in cmd. The GUI
@@ -220,6 +264,18 @@ target_compile_definitions(ai-reader PRIVATE
 # starts (missing DLL, missing platform plugin), which never reach
 # the message handler.
 option(AIREADER_CONSOLE "Build a console subsystem binary on Windows for visible stderr" OFF)
+
+# ── Optional Sentry-Native crash reporting ─────────────────────────
+# Off by default so the basic build stays dependency-light. When ON,
+# FetchContent pulls sentry-native and links it into ai-reader; main
+# starts the SDK only after both:
+#   * settings.crashReportsOptIn() returns true (the user has ticked
+#     the Settings → Updates & privacy box), AND
+#   * AIREADER_SENTRY_DSN was set at configure time.
+# Sentry DSNs are designed to be embedded in client builds — they're
+# project identifiers, not secrets, so safe to bake into the binary.
+option(AIREADER_ENABLE_SENTRY "Enable Sentry-Native crash reporting (requires AIREADER_SENTRY_DSN)" OFF)
+set(AIREADER_SENTRY_DSN "" CACHE STRING "Sentry DSN URL embedded into the build (empty = no events sent)")
 
 # Neither qtkeychain nor cmark-gfm publishes its include dirs to
 # in-tree consumers (qtkeychain only sets INSTALL_INTERFACE; cmark-gfm
@@ -321,6 +377,21 @@ if(WIN32)
                 "$<TARGET_FILE:ai-reader>"
                 "${_aireader_dist_dir}/"
         COMMENT "Staging $<TARGET_FILE_NAME:ai-reader> into ${_aireader_dist_dir}"
+        VERBATIM
+    )
+
+    # MicroTeX needs its res/ tree (TeXFonts, syms, etc.) at runtime.
+    # The build defaults to AIREADER_MICROTEX_RES_DIR — an absolute
+    # path into the build tree — which works on the dev box but
+    # vanishes on a packaged install. Mirror res/ next to ai-reader.exe
+    # under a stable name so LatexRenderer can find it relative to
+    # the binary; AiReader.iss bundles dist\* recursively, so the
+    # installer captures it without extra config.
+    add_custom_command(TARGET ai-reader POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${microtex_SOURCE_DIR}/res"
+                "${_aireader_dist_dir}/microtex_res"
+        COMMENT "Staging MicroTeX res/ into ${_aireader_dist_dir}/microtex_res"
         VERBATIM
     )
 endif()

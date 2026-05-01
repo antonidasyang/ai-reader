@@ -1,5 +1,6 @@
 #include "ChatContent.h"
 #include "ChatService.h"
+#include "CrashReporter.h"
 #include "LayoutSettings.h"
 #include "UpdateChecker.h"
 #include "Library.h"
@@ -154,6 +155,24 @@ int main(int argc, char *argv[])
         QStringLiteral("Use the updates context property"));
 
     Settings settings;
+
+    // Start Sentry as early as possible so it can catch crashes that
+    // happen during the rest of bootstrap. Internally it's a no-op
+    // when the user hasn't opted in, when Sentry isn't compiled in,
+    // or when the build was made without a DSN. Pair stop() with
+    // aboutToQuit so queued events get a chance to flush.
+    CrashReporter::start(&settings);
+    QObject::connect(&app, &QGuiApplication::aboutToQuit,
+                     &app, []() { CrashReporter::stop(); });
+    QObject::connect(&settings, &Settings::crashReportsOptInChanged, &app, [&]() {
+        // Live-toggle: enabling re-runs the (idempotent) start();
+        // disabling tears the SDK back down so events stop flowing
+        // without a restart.
+        if (settings.crashReportsOptIn())
+            CrashReporter::start(&settings);
+        else
+            CrashReporter::stop();
+    });
 
     // Install translators based on the persisted ui/language setting.
     // Empty ⇒ follow QLocale::system(); otherwise load the .qm matching

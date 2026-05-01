@@ -2,8 +2,11 @@
 
 #include <QBuffer>
 #include <QByteArray>
+#include <QCoreApplication>
 #include <QDebug>
+#include <QFileInfo>
 #include <QPainter>
+#include <QString>
 
 // MicroTeX public headers. The library is pulled in via FetchContent
 // and exposes `src/` on the include path.
@@ -31,9 +34,44 @@ LatexRenderer &LatexRenderer::instance()
 
 LatexRenderer::LatexRenderer()
 {
+    // MicroTeX needs a directory of font/glyph definitions at startup.
+    // Two valid sources:
+    //
+    //   1. <exe-dir>/microtex_res — what packaged installs ship; the
+    //      Windows POST_BUILD step in CMakeLists.txt mirrors the
+    //      upstream res/ tree there, and AiReader.iss bundles it.
+    //   2. AIREADER_MICROTEX_RES_DIR — the absolute build-machine
+    //      path baked in by CMake. Only valid when running from the
+    //      developer's own checkout, but it's the only thing
+    //      available in early dev before D8 packaging exists.
+    //
+    // We pick the first one that contains the expected layout
+    // (TeXFonts/) so a stale build-machine path on a packaged install
+    // never overrides the relocatable copy.
+    const QString relocatable =
+        QCoreApplication::applicationDirPath() + QStringLiteral("/microtex_res");
+    const QString builtIn =
+        QString::fromUtf8(AIREADER_MICROTEX_RES_DIR);
+
+    QString resDir;
+    if (QFileInfo(relocatable + QStringLiteral("/TeXFonts")).isDir())
+        resDir = relocatable;
+    else if (QFileInfo(builtIn + QStringLiteral("/TeXFonts")).isDir())
+        resDir = builtIn;
+
+    if (resDir.isEmpty()) {
+        qWarning("LatexRenderer: no MicroTeX res dir found "
+                 "(tried %s and %s); math will fall back to raw LaTeX.",
+                 qUtf8Printable(relocatable),
+                 qUtf8Printable(builtIn));
+        return;
+    }
+
     try {
-        tex::LaTeX::init(AIREADER_MICROTEX_RES_DIR);
+        tex::LaTeX::init(resDir.toLocal8Bit().constData());
         m_initialized = true;
+        qInfo("LatexRenderer: MicroTeX initialised from %s",
+              qUtf8Printable(resDir));
     } catch (const std::exception &e) {
         qWarning("LatexRenderer: MicroTeX init failed: %s", e.what());
     } catch (...) {
