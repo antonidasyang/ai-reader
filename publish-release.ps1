@@ -60,6 +60,18 @@ if (-not (Test-Path $installer)) {
     throw "Installer not found: $installer  (build it first via ISCC.exe AiReader.iss)"
 }
 
+# Make sure we're up-to-date with origin/$Branch BEFORE we make a new
+# commit, so the post-rewrite git push doesn't get rejected as
+# non-fast-forward. Using --rebase keeps history linear (the manifest
+# commit lands on top of whatever's on the remote, no merge bubble).
+Write-Host "[publish] pulling latest $Branch with --rebase"
+& git fetch origin $Branch
+if ($LASTEXITCODE -ne 0) { throw "git fetch failed." }
+& git pull --rebase origin $Branch
+if ($LASTEXITCODE -ne 0) {
+    throw "git pull --rebase failed. Resolve conflicts then re-run with -ManifestOnly."
+}
+
 # SHA-256 of the installer for the manifest.
 Write-Host "[publish] hashing $installer"
 $sha = (Get-FileHash -Algorithm SHA256 $installer).Hash.ToLower()
