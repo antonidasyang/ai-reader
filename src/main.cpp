@@ -118,6 +118,23 @@ int main(int argc, char *argv[])
     // before — and any qWarning from this point on lands in the file.
     installLaunchLogger();
 
+    // Dump every storage location at startup so users (and us) can
+    // tell at a glance where the app is reading + writing — useful
+    // when "I deleted the cache and it's still there" turns out to
+    // mean the data lives somewhere unexpected (registry, keychain,
+    // a different AppData root in a different Qt version).
+    qInfo().noquote() << "Storage:";
+    qInfo().noquote() << "  AppData       :"
+                      << QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    qInfo().noquote() << "  AppLocalData  :"
+                      << QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    qInfo().noquote() << "  Cache         :"
+                      << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    qInfo().noquote() << "  Config        :"
+                      << QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+    qInfo().noquote() << "  QSettings file:"
+                      << QSettings().fileName();
+
     QQuickStyle::setStyle(QStringLiteral("Fusion"));
 
     qmlRegisterUncreatableType<PaperController>(
