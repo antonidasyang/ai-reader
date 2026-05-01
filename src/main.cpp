@@ -217,7 +217,23 @@ int main(int argc, char *argv[])
         engine.retranslate();
     });
 
+    // qt_add_qml_module bakes our QML files into the resource system
+    // at qrc:/AiReader/... and the qmldir at qrc:/AiReader/qmldir.
+    // Adding :/ to the engine's import path makes that qmldir
+    // discoverable by name; without this an out-of-tree windeployqt
+    // copy of dist\\AiReader\\qmldir (if present and stale) can mask
+    // the embedded one and the load fails with
+    //     Module \"AiReader\" contains no type named \"Main\"
+    // even though the C++ side of the module is fully registered.
+    engine.addImportPath(QStringLiteral(":/"));
+    qInfo().noquote() << "QML import paths:" << engine.importPathList();
+
     engine.loadFromModule("AiReader", "Main");
+    if (engine.rootObjects().isEmpty()) {
+        qCritical() << "Failed to instantiate AiReader/Main — check the lines"
+                       " above for QML errors.";
+        return 1;
+    }
 
     // Re-open the previously open papers (if any) once the QML scene
     // is live so Connections like the password-prompt dialog can
