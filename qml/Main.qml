@@ -115,6 +115,11 @@ ApplicationWindow {
         anchors.centerIn: Overlay.overlay
     }
 
+    WelcomeWizard {
+        id: welcomeWizard
+        anchors.centerIn: Overlay.overlay
+    }
+
     function showError(prefix, message) {
         if (!message || message.length === 0) return
         errorBanner.text = prefix && prefix.length > 0
@@ -213,7 +218,13 @@ ApplicationWindow {
         }
     }
 
-    Component.onCompleted: applySavedPaneOrder()
+    Component.onCompleted: {
+        applySavedPaneOrder()
+        // First-run tour: defer past the initial render so the wizard
+        // pops over a finished UI rather than over an empty window.
+        if (!layoutSettings.wizardSeen())
+            Qt.callLater(function() { welcomeWizard.open() })
+    }
 
     // PDF → block list. Watch pdfView.currentPage via a side-effect binding.
     Item {
@@ -390,6 +401,14 @@ ApplicationWindow {
             ToolButton {
                 text: qsTr("Settings…")
                 onClicked: settingsDialog.open()
+            }
+            ToolButton {
+                text: "?"
+                font.pixelSize: 16
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("Show getting-started tour")
+                onClicked: welcomeWizard.open()
             }
         }
     }

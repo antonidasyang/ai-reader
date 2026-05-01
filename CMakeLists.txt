@@ -240,6 +240,7 @@ qt_add_qml_module(ai-reader
         qml/DockGrip.qml
         qml/MathBlock.qml
         qml/CodeBlock.qml
+        qml/WelcomeWizard.qml
 )
 
 # Compile .ts → .qm and embed under :/i18n so QTranslator::load() in
