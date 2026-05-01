@@ -29,26 +29,45 @@ Popup {
     readonly property var currentStep:
         (steps && stepIndex >= 0 && stepIndex < steps.length)
             ? steps[stepIndex] : null
-    readonly property Item targetItem:
-        currentStep && currentStep.target ? currentStep.target : null
 
-    // Padding around the target so the spotlight outline doesn't
-    // clip the button's own bevel/shadow.
+    // A step's `target` may be a single Item OR an array of Items —
+    // useful when one explanation covers a related group of buttons
+    // (Open + Open folder, the three pane-toggle buttons, etc.).
+    readonly property var targetItems: {
+        if (!currentStep || !currentStep.target) return []
+        const t = currentStep.target
+        return Array.isArray(t) ? t : [t]
+    }
+
+    // Padding around the bounding rect so the spotlight outline
+    // doesn't clip the button's own bevel/shadow.
     property int spotPadding: 8
 
-    // Bounding rect of the spotlight target in this popup's
-    // coordinate system. Touches targetItem.x/y/width/height + the
-    // popup's own size so binding re-evaluates on resize, pane
+    // Bounding rect that covers every visible target item in this
+    // popup's coordinate system. Reading each item's x/y/w/h + the
+    // popup's own size makes the binding re-evaluate on resize, pane
     // toggles, etc.
     readonly property rect targetRect: {
         const w = root.width, h = root.height
-        if (!targetItem || !targetItem.visible)
+        if (targetItems.length === 0)
             return Qt.rect(w / 2 - 1, h / 2 - 1, 2, 2)
-        // Touch deps so the binding tracks layout changes.
-        const _ = targetItem.x + targetItem.y
-                + targetItem.width + targetItem.height
-        const p = targetItem.mapToItem(content, 0, 0)
-        return Qt.rect(p.x, p.y, targetItem.width, targetItem.height)
+        let minX = Infinity, minY = Infinity
+        let maxX = -Infinity, maxY = -Infinity
+        let any = false
+        for (let i = 0; i < targetItems.length; ++i) {
+            const it = targetItems[i]
+            if (!it || !it.visible) continue
+            // Touch deps so the binding tracks layout changes.
+            const _ = it.x + it.y + it.width + it.height
+            const p = it.mapToItem(content, 0, 0)
+            if (p.x < minX) minX = p.x
+            if (p.y < minY) minY = p.y
+            if (p.x + it.width  > maxX) maxX = p.x + it.width
+            if (p.y + it.height > maxY) maxY = p.y + it.height
+            any = true
+        }
+        if (!any) return Qt.rect(w / 2 - 1, h / 2 - 1, 2, 2)
+        return Qt.rect(minX, minY, maxX - minX, maxY - minY)
     }
     readonly property rect spotRect: Qt.rect(
         targetRect.x - spotPadding,

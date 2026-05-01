@@ -127,28 +127,33 @@ ApplicationWindow {
     function buildWizardSteps() {
         return [
             {
-                target: openBtn,
+                target: [openBtn, openFolderBtn],
                 title: qsTr("1 · Open a paper"),
-                body: qsTr("Click <b>Open…</b> to load a single PDF, or use <b>Open folder…</b> next to it to browse a whole library. You can also drag a .pdf into the window. Each paper opens in its own tab.")
+                body: qsTr("Click <b>Open…</b> to load a single PDF, or <b>Open folder…</b> to browse a whole library. You can also drag a .pdf into the window. Each paper opens in its own tab.")
             },
             {
-                target: chatToggleBtn,
+                target: [folderToggleBtn, tocToggleBtn, chatToggleBtn],
                 title: qsTr("2 · Toggle panels"),
-                body: qsTr("Use the toolbar's <b>Folder / TOC / Chat</b> buttons to show or hide each pane. Drag the small <b>⋮⋮ grip</b> in any pane's top-left corner to reorder the layout — your arrangement is remembered between launches.")
+                body: qsTr("Use the toolbar's <b>Folder / TOC / Chat</b> buttons to show or hide each pane.")
+            },
+            {
+                target: pdfPaneGrip,
+                title: qsTr("3 · Move panels"),
+                body: qsTr("Each pane has a small <b>⋮⋮ grip</b> in its top-left corner. Press and drag a grip horizontally to slide that pane to a new slot in the layout — a vertical marker shows where it will land. The arrangement is remembered between launches.")
             },
             {
                 target: translateBtn,
-                title: qsTr("3 · Translate paragraphs"),
+                title: qsTr("4 · Translate paragraphs"),
                 body: qsTr("Click <b>Translate</b> to translate every paragraph at once. Or right-click a single paragraph to translate, split, merge, delete, or quote it into the chat.")
             },
             {
                 target: chatToggleBtn,
-                title: qsTr("4 · Chat with the paper"),
+                title: qsTr("5 · Chat with the paper"),
                 body: qsTr("Open the <b>Chat</b> pane and ask questions. The model can read pages, search the text, and view rendered figures with vision. Each paper keeps its own list of <b>chat sessions</b> in the tab strip on top — + to add, × to close, double-click to rename.")
             },
             {
                 target: settingsBtn,
-                title: qsTr("5 · Configure your LLM"),
+                title: qsTr("6 · Configure your LLM"),
                 body: qsTr("Open <b>Settings…</b> to add a model and API key (Anthropic Claude or any OpenAI-compatible endpoint). Use <b>Prompts…</b> to customise system prompts. Re-open this tour any time from the <b>?</b> button.")
             }
         ]
@@ -304,6 +309,7 @@ ApplicationWindow {
                 onClicked: fileDialog.open()
             }
             ToolButton {
+                id: openFolderBtn
                 text: qsTr("Open folder…")
                 onClicked: openFolderDialog.open()
             }
@@ -385,12 +391,14 @@ ApplicationWindow {
             }
             ToolSeparator {}
             ToolButton {
+                id: folderToggleBtn
                 text: qsTr("Folder")
                 checkable: true
                 checked: folderPane.visible
                 onClicked: folderPane.visible = !folderPane.visible
             }
             ToolButton {
+                id: tocToggleBtn
                 text: qsTr("TOC")
                 checkable: true
                 checked: tocSidebar.visible
@@ -726,6 +734,7 @@ ApplicationWindow {
                 }
 
                 DockGrip {
+                    id: pdfPaneGrip
                     anchors.left: parent.left
                     anchors.top: parent.top
                     anchors.leftMargin: 4
