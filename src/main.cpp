@@ -11,16 +11,21 @@
 #include "TranslationService.h"
 #include "VisionService.h"
 
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
 #include <QGuiApplication>
 #include <QIcon>
 #include <QLibraryInfo>
 #include <QLocale>
+#include <QMutex>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickStyle>
 #include <QQuickWindow>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QTimer>
 #include <QTranslator>
 #include <QWindow>
@@ -38,6 +43,64 @@ QIcon loadAppIcon()
     return icon;
 }
 
+// ── Persistent log file for the GUI build ──────────────────────────
+// On Windows the binary uses the GUI subsystem (WIN32_EXECUTABLE
+// TRUE), so qDebug / qWarning / qFatal output is silently dropped:
+// no console attaches, no popup appears, the user sees the process
+// exit. To make first-run failures (missing platform plugin, missing
+// QML module, MicroTeX init crash, etc.) diagnosable from a packaged
+// install, every Qt log message is also appended to
+// <AppData>/launch.log. Capped at ~1 MB by truncating on each
+// process start; that's plenty to capture a startup failure and
+// keeps the file from growing unbounded across long-running
+// sessions.
+QString g_launchLogPath;
+QtMessageHandler g_prevHandler = nullptr;
+QMutex g_launchLogMutex;
+
+void writeLaunchLog(QtMsgType type, const QMessageLogContext &ctx,
+                    const QString &msg)
+{
+    if (g_prevHandler)
+        g_prevHandler(type, ctx, msg);
+
+    if (g_launchLogPath.isEmpty()) return;
+
+    const char *level = "INFO";
+    switch (type) {
+    case QtDebugMsg:    level = "DEBUG";    break;
+    case QtInfoMsg:     level = "INFO";     break;
+    case QtWarningMsg:  level = "WARNING";  break;
+    case QtCriticalMsg: level = "CRITICAL"; break;
+    case QtFatalMsg:    level = "FATAL";    break;
+    }
+
+    QMutexLocker lock(&g_launchLogMutex);
+    QFile f(g_launchLogPath);
+    if (!f.open(QIODevice::Append | QIODevice::Text)) return;
+    QTextStream ts(&f);
+    ts << QDateTime::currentDateTime().toString(Qt::ISODateWithMs)
+       << " [" << level << "] "
+       << (ctx.category ? ctx.category : "default") << ": "
+       << msg << '\n';
+}
+
+void installLaunchLogger()
+{
+    const QString dir = QStandardPaths::writableLocation(
+        QStandardPaths::AppDataLocation);
+    if (dir.isEmpty()) return;
+    QDir().mkpath(dir);
+    g_launchLogPath = dir + QStringLiteral("/launch.log");
+
+    // Truncate on each process start so the file doesn't balloon.
+    QFile::remove(g_launchLogPath);
+
+    g_prevHandler = qInstallMessageHandler(writeLaunchLog);
+    qInfo().noquote() << "ai-reader" << QStringLiteral(AIREADER_VERSION)
+                      << "starting up; log:" << g_launchLogPath;
+}
+
 } // namespace
 
 int main(int argc, char *argv[])
@@ -47,6 +110,11 @@ int main(int argc, char *argv[])
     app.setOrganizationDomain("ai-reader.local");
     app.setApplicationName("AI Reader");
     app.setWindowIcon(loadAppIcon());
+
+    // QStandardPaths needs the org/app names above to resolve the
+    // per-user AppData directory, so install the logger now — not
+    // before — and any qWarning from this point on lands in the file.
+    installLaunchLogger();
 
     QQuickStyle::setStyle(QStringLiteral("Fusion"));
 

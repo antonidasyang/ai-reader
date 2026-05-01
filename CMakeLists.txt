@@ -207,7 +207,17 @@ qt_add_executable(ai-reader
 
 target_compile_definitions(ai-reader PRIVATE
     AIREADER_MICROTEX_RES_DIR="${microtex_SOURCE_DIR}/res"
+    AIREADER_VERSION="${PROJECT_VERSION}"
 )
+
+# Diagnostic build flag — flip to ON to use the console subsystem on
+# Windows so qDebug / Qt error messages are visible in cmd. The GUI
+# build always tees Qt log messages to <AppData>/launch.log via the
+# message handler in main.cpp; reach for AIREADER_CONSOLE only when
+# you need to catch failures that happen *before* QGuiApplication
+# starts (missing DLL, missing platform plugin), which never reach
+# the message handler.
+option(AIREADER_CONSOLE "Build a console subsystem binary on Windows for visible stderr" OFF)
 
 # Neither qtkeychain nor cmark-gfm publishes its include dirs to
 # in-tree consumers (qtkeychain only sets INSTALL_INTERFACE; cmark-gfm
@@ -265,10 +275,15 @@ qt_add_resources(ai-reader "icons"
 )
 
 # Windows: embed multi-resolution .ico into the .exe and ship as a GUI
-# subsystem binary (no console window).
+# subsystem binary (no console window). AIREADER_CONSOLE flips us to
+# the console subsystem so launch failures become visible in cmd.
 if(WIN32)
     target_sources(ai-reader PRIVATE resources/icons/app.rc)
-    set_target_properties(ai-reader PROPERTIES WIN32_EXECUTABLE TRUE)
+    if(AIREADER_CONSOLE)
+        set_target_properties(ai-reader PROPERTIES WIN32_EXECUTABLE FALSE)
+    else()
+        set_target_properties(ai-reader PROPERTIES WIN32_EXECUTABLE TRUE)
+    endif()
 endif()
 
 target_link_libraries(ai-reader PRIVATE

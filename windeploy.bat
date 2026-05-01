@@ -31,12 +31,15 @@ if errorlevel 1 (
 )
 
 echo [windeploy] Staging Qt runtime into %DIST%
+REM We deliberately keep d3d-compiler + the software OpenGL fallback so
+REM the binary still launches on machines whose GPU drivers reject
+REM ANGLE/D3D11 — those bytes are cheap insurance against "double-click,
+REM nothing happens". --no-translations stays on because we ship our
+REM own .qm files compiled into the binary.
 windeployqt ^
     --release ^
     --qmldir "%ROOT%qml" ^
     --no-translations ^
-    --no-system-d3d-compiler ^
-    --no-opengl-sw ^
     "%DIST%\ai-reader.exe"
 
 if errorlevel 1 (
