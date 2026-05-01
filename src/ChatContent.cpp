@@ -41,11 +41,13 @@ QVector<Segment> tokenize(const QString &md)
         s.lang = m.captured(2).trimmed();
         s.content = m.captured(3);
         // Skip the leading \n (if present) so the surrounding text
-        // segment doesn't end with a stray blank line.
-        int start = m.capturedStart(0);
+        // segment doesn't end with a stray blank line. Cast to int —
+        // QRegularExpressionMatch::captured*() returns qsizetype, and
+        // MSVC won't auto-narrow inside brace-init.
+        int start = int(m.capturedStart(0));
         if (start < md.size() && md[start] == QLatin1Char('\n'))
             ++start;
-        ranges.append({ start, m.capturedEnd(0), s });
+        ranges.append({ start, int(m.capturedEnd(0)), s });
     }
 
     auto inCode = [&ranges](int pos) {
@@ -58,11 +60,11 @@ QVector<Segment> tokenize(const QString &md)
     auto mit = mathRe.globalMatch(md);
     while (mit.hasNext()) {
         const QRegularExpressionMatch m = mit.next();
-        if (inCode(m.capturedStart(0))) continue;
+        if (inCode(int(m.capturedStart(0)))) continue;
         Segment s;
         s.type = Segment::Math;
         s.content = m.captured(1).trimmed();
-        ranges.append({ m.capturedStart(0), m.capturedEnd(0), s });
+        ranges.append({ int(m.capturedStart(0)), int(m.capturedEnd(0)), s });
     }
 
     std::sort(ranges.begin(), ranges.end(),
