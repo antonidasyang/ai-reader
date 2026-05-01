@@ -157,15 +157,43 @@ endif()
 # stray MSVC warning blows up the build: cmark's html.c is saved in a
 # codepage that triggers C4819 on cp936 hosts, and MicroTeX's font_parser
 # discards [[nodiscard]] returns (C4834). We don't want to fork those repos
-# over cosmetics, so just turn warnings-as-errors back off for the three
-# imported static libs. Our own targets stay strict.
+# over cosmetics, so disable warnings-as-errors for those static libs.
+#
+# Tactic: STRIP /WX from each target's COMPILE_OPTIONS rather than
+# appending /WX-. Appending the negation makes both flags appear on
+# the command line, which triggers MSVC's D9025 ("overriding '/WX'
+# with '/WX-'") on every translation unit — hundreds of warnings on
+# a clean build. Removing /WX outright produces no chatter and the
+# end result (warnings-as-errors off) is identical. Our own targets
+# stay strict because we never added /WX to them in the first place.
 if(MSVC)
     foreach(_aireader_relaxed_target
             libcmark-gfm_static
             libcmark-gfm-extensions_static
-            LaTeX)
+            LaTeX
+            tinyxml2)
         if(TARGET ${_aireader_relaxed_target})
-            target_compile_options(${_aireader_relaxed_target} PRIVATE /WX-)
+            get_target_property(_opts ${_aireader_relaxed_target} COMPILE_OPTIONS)
+            if(_opts)
+                list(FILTER _opts EXCLUDE REGEX "^/WX$")
+                list(FILTER _opts EXCLUDE REGEX "^-Werror$")
+                set_target_properties(${_aireader_relaxed_target}
+                    PROPERTIES COMPILE_OPTIONS "${_opts}")
+            endif()
+            # Some upstreams set /WX via add_compile_options() at the
+            # directory scope, which doesn't show up in the target's
+            # own COMPILE_OPTIONS. Clear it there too.
+            get_target_property(_src_dir ${_aireader_relaxed_target} SOURCE_DIR)
+            if(_src_dir)
+                get_directory_property(_dir_opts
+                    DIRECTORY "${_src_dir}" COMPILE_OPTIONS)
+                if(_dir_opts)
+                    list(FILTER _dir_opts EXCLUDE REGEX "^/WX$")
+                    list(FILTER _dir_opts EXCLUDE REGEX "^-Werror$")
+                    set_directory_properties(DIRECTORY "${_src_dir}"
+                        PROPERTIES COMPILE_OPTIONS "${_dir_opts}")
+                endif()
+            endif()
         endif()
     endforeach()
 endif()
