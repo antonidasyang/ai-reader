@@ -1,5 +1,6 @@
 @echo off
-REM ── windeployqt helper ──────────────────────────────────────────────
+REM windeployqt helper.
+REM
 REM Stages the Qt DLLs, plugins and QML modules ai-reader.exe needs
 REM next to the binary. Assumes a CMake Release build has just run; the
 REM POST_BUILD step in CMakeLists.txt copies ai-reader.exe into dist\
@@ -8,14 +9,16 @@ REM
 REM How windeployqt is located, in priority order:
 REM   1. The WINDEPLOYQT environment variable (explicit override).
 REM   2. windeployqt.exe on PATH.
-REM   3. Derived from build\CMakeCache.txt:Qt6_DIR — strips the
+REM   3. Derived from build\CMakeCache.txt:Qt6_DIR -- strips the
 REM      \lib\cmake\Qt6 suffix and appends \bin\windeployqt.exe. This
 REM      means a working CMake configure is sufficient; you don't need
 REM      to add the Qt bin folder to PATH separately.
 REM   4. Hard-coded common install paths (C:\Qt\6.x.x\msvc2022_64\bin).
 REM
-REM Output: dist\ becomes a fully self-contained portable folder that
-REM Inno Setup (AiReader.iss) packages into AiReader-Setup-x.y.z.exe.
+REM IMPORTANT: this file is ASCII-only on purpose. cmd.exe parses .bat
+REM as the system codepage (GBK on Chinese Windows, cp1252 elsewhere),
+REM not as UTF-8, so any non-ASCII byte in a comment can break the
+REM parser. Do not add box-drawing or smart-punctuation characters.
 
 setlocal EnableDelayedExpansion
 set "ROOT=%~dp0"
@@ -27,20 +30,20 @@ if not exist "%DIST%\ai-reader.exe" (
     exit /b 1
 )
 
-REM ── 1. Explicit override ────────────────────────────────────────────
+REM 1. Explicit override.
 if defined WINDEPLOYQT (
     if exist "%WINDEPLOYQT%" goto :found
     echo [windeploy] WINDEPLOYQT='%WINDEPLOYQT%' is set but the file does not exist.
     exit /b 1
 )
 
-REM ── 2. PATH lookup ──────────────────────────────────────────────────
+REM 2. PATH lookup.
 for /f "delims=" %%p in ('where windeployqt 2^>nul') do (
     set "WINDEPLOYQT=%%p"
     goto :found
 )
 
-REM ── 3. Derive from CMakeCache.txt ───────────────────────────────────
+REM 3. Derive from CMakeCache.txt.
 set "CACHE=%ROOT%build\CMakeCache.txt"
 if exist "%CACHE%" (
     for /f "tokens=2 delims==" %%i in ('findstr /b /c:"Qt6_DIR:" "%CACHE%" 2^>nul') do (
@@ -59,7 +62,7 @@ if exist "%CACHE%" (
     )
 )
 
-REM ── 4. Hard-coded common install paths ──────────────────────────────
+REM 4. Hard-coded common install paths.
 for %%v in (6.11.0 6.10.0 6.9.0 6.8.0 6.7.0 6.6.0 6.5.0 6.4.0) do (
     if exist "C:\Qt\%%v\msvc2022_64\bin\windeployqt.exe" (
         set "WINDEPLOYQT=C:\Qt\%%v\msvc2022_64\bin\windeployqt.exe"
@@ -85,18 +88,17 @@ exit /b 1
 echo [windeploy] Using "!WINDEPLOYQT!"
 echo [windeploy] Staging Qt runtime into %DIST%
 REM Flags worth knowing about:
-REM   --compiler-runtime     Pull vcruntime140.dll / vcruntime140_1.dll /
-REM                          msvcp140.dll out of MSVC's redist tree and copy
-REM                          them next to the .exe. Without this users on a
-REM                          stock Windows install hit "VCRUNTIME140_1.dll
-REM                          not found" because they've never installed the
-REM                          Visual C++ Redistributable. Bundling adds ~1MB
-REM                          and removes that dependency.
-REM   --no-translations      We ship our own .qm files compiled into the
-REM                          binary; skipping Qt's catalog saves ~30MB.
+REM   --compiler-runtime   Pull vcruntime140.dll / vcruntime140_1.dll /
+REM                        msvcp140.dll out of MSVC's redist tree and copy
+REM                        them next to the .exe. Without this, users on a
+REM                        stock Windows install hit "VCRUNTIME140_1.dll
+REM                        not found" because they have never installed
+REM                        the Visual C++ Redistributable. Adds about 1MB.
+REM   --no-translations    We ship our own .qm files compiled into the
+REM                        binary; skipping Qt's catalog saves ~30MB.
 REM   d3d-compiler + software OpenGL fallback are kept (default) so the
 REM   binary still launches on machines whose GPU drivers reject
-REM   ANGLE/D3D11 — cheap insurance against "double-click, nothing happens".
+REM   ANGLE/D3D11.
 "!WINDEPLOYQT!" ^
     --release ^
     --qmldir "%ROOT%qml" ^
