@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "latestVersion": "0.1.0",
-  "releaseDate": "2026-05-01",
-  "releaseNotes": "Initial M5 packaging build.\n\n- Windows installer pipeline (Inno Setup + windeployqt).\n- First-run coach-mark wizard.\n- Multi-session chat per paper.\n- Typed QML message rendering with MathBlock and CodeBlock.",
+  "latestVersion": "0.2.0",
+  "releaseDate": "2026-05-02",
+  "releaseNotes": "first real release: multi-session chat, typed code/math rendering, per-row translate, in-app updates, signed Windows installer pipeline, persistent panel layout, MicroTeX in packaged installs.",
   "platforms": {
     "windows-x64": {
-      "downloadUrl": "https://github.com/antonidasyang/ai-reader/releases/download/v0.1.0/AiReader-Setup-0.1.0.exe",
-      "sha256": ""
+      "downloadUrl": "https://github.com/antonidasyang/ai-reader/releases/download/v0.2.0/AiReader-Setup-0.2.0.exe",
+      "sha256": "3607313f8085ef36700e46ba4e0261d276936dae325b5d8151586431f34fa520"
     }
   }
 }
