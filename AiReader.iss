@@ -16,7 +16,7 @@
 ; Bump MyAppVersion below to match CMakeLists.txt's project(... VERSION).
 
 #define MyAppName       "AI Reader"
-#define MyAppVersion    "0.1.0"
+#define MyAppVersion    "0.2.0"
 #define MyAppPublisher  "AI Reader"
 #define MyAppExeName    "ai-reader.exe"
 

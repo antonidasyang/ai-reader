@@ -78,8 +78,15 @@ Popup {
 
     function start()  { stepIndex = 0; open() }
     function finish() {
-        if (typeof layoutSettings !== "undefined")
+        if (typeof layoutSettings !== "undefined") {
             layoutSettings.setWizardSeen(true)
+            // Stamp the version too so the changelog dialog doesn't
+            // pop immediately after the wizard on a brand-new
+            // install. The user has effectively seen what's new --
+            // they just installed it.
+            if (typeof settings !== "undefined")
+                layoutSettings.setLastSeenVersion(settings.appVersion)
+        }
         close()
     }
 

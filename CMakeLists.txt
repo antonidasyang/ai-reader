@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 0.1.0 LANGUAGES CXX)
+project(ai-reader VERSION 0.2.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -320,6 +320,7 @@ qt_add_qml_module(ai-reader
         qml/MathBlock.qml
         qml/CodeBlock.qml
         qml/WelcomeWizard.qml
+        qml/ChangelogDialog.qml
 )
 
 # Compile .ts → .qm and embed under :/i18n so QTranslator::load() in
@@ -341,6 +342,16 @@ qt_add_resources(ai-reader "icons"
         resources/icons/app-64.png
         resources/icons/app-128.png
         resources/icons/app-256.png
+)
+
+# CHANGELOG.md is loaded by qml/ChangelogDialog.qml via XMLHttpRequest
+# from qrc:/CHANGELOG.md. Embedding it into the binary's resource
+# system (rather than reading from disk) means a packaged install
+# always has the right version of the changelog -- the one that
+# shipped with the binary -- regardless of where it's installed.
+qt_add_resources(ai-reader "changelog"
+    PREFIX "/"
+    FILES CHANGELOG.md
 )
 
 # Windows: embed multi-resolution .ico into the .exe and ship as a GUI

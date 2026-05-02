@@ -119,6 +119,11 @@ ApplicationWindow {
         id: welcomeWizard
     }
 
+    ChangelogDialog {
+        id: changelogDialog
+        anchors.centerIn: Overlay.overlay
+    }
+
     // Steps are wired up after the toolbar buttons / panes have been
     // instantiated, so the spotlight target references resolve. The
     // wizard auto-opens on first run via the Component.onCompleted
@@ -259,12 +264,48 @@ ApplicationWindow {
 
     Component.onCompleted: {
         applySavedPaneOrder()
+
+        // Restore the saved splitter handle positions. Defer one
+        // event-loop cycle so SplitView has finished applying the
+        // pane reorder before we hand it the byte array; restoring
+        // before reorder applies puts handles in the wrong slots.
+        Qt.callLater(function() {
+            const saved = layoutSettings.splitterState()
+            if (saved && saved.length > 0) split.restoreState(saved)
+        })
+
         // Wire spotlight targets now that the toolbar / panes exist.
         welcomeWizard.steps = buildWizardSteps()
-        // First-run tour: defer past the initial render so the spotlight
-        // anchors to fully laid-out widgets, not zero-sized stubs.
-        if (!layoutSettings.wizardSeen())
+
+        // Three mutually-exclusive first-render popups, in priority
+        // order: brand-new user gets the welcome tour; returning
+        // user on a freshly-upgraded build gets the changelog;
+        // everyone else gets nothing. Both popups stamp the current
+        // version into layoutSettings.lastSeenVersion on close, so
+        // the changelog only fires once per release.
+        if (!layoutSettings.wizardSeen()) {
             Qt.callLater(function() { welcomeWizard.start() })
+        } else if (layoutSettings.lastSeenVersion() !== settings.appVersion) {
+            Qt.callLater(function() { changelogDialog.open() })
+        }
+    }
+
+    // Save splitter sizes 500 ms after the user lets go of a handle
+    // (or any width binding settles). Coalescing with a debounce
+    // means we don't write QSettings on every frame of a drag.
+    Timer {
+        id: splitterSaveTimer
+        interval: 500
+        repeat: false
+        onTriggered: layoutSettings.setSplitterState(split.saveState())
+    }
+    Connections {
+        target: split
+        function onResizingChanged() {
+            // resizing flips false when the drag ends -- save then,
+            // not on every contentY tick during the drag.
+            if (!split.resizing) splitterSaveTimer.restart()
+        }
     }
 
     // PDF → block list. Watch pdfView.currentPage via a side-effect binding.

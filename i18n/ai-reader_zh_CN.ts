@@ -411,6 +411,21 @@
     </message>
 </context>
 <context>
+    <name>ChangelogDialog</name>
+    <message>
+        <source>What's new in v%1</source>
+        <translation>v%1 更新日志</translation>
+    </message>
+    <message>
+        <source>(changelog unavailable)</source>
+        <translation>(无法加载更新日志)</translation>
+    </message>
+    <message>
+        <source>(failed to load changelog: %1)</source>
+        <translation>(加载更新日志失败:%1)</translation>
+    </message>
+</context>
+<context>
     <name>PasswordDialog</name>
     <message>
         <source>Password required</source>
