@@ -136,11 +136,23 @@ REM   ANGLE/D3D11.
     --release ^
     --qmldir "%ROOT%qml" ^
     --no-translations ^
-    --compiler-runtime ^
     "%DIST%\ai-reader.exe"
 
 if errorlevel 1 (
     echo [windeploy] windeployqt reported an error.
+    exit /b 1
+)
+
+REM windeployqt's --compiler-runtime was deprecated in Qt 6.5 and is
+REM silently ignored from 6.5+, so we copy the MSVC runtime DLLs
+REM ourselves via a small PowerShell helper. Without this, end-users
+REM on a stock Windows install (no Visual C++ Redistributable) hit
+REM "VCRUNTIME140_1.dll not found" the moment they double-click the
+REM installed .exe.
+echo [windeploy] Copying MSVC runtime DLLs into %DIST%
+powershell -NoProfile -ExecutionPolicy Bypass -File "%ROOT%copy-vc-runtime.ps1" -Dist "%DIST%"
+if errorlevel 1 (
+    echo [windeploy] copy-vc-runtime.ps1 reported an error.
     exit /b 1
 )
 
