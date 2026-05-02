@@ -43,24 +43,57 @@ for /f "delims=" %%p in ('where windeployqt 2^>nul') do (
     goto :found
 )
 
-REM 3. Derive from CMakeCache.txt.
-set "CACHE=%ROOT%build\CMakeCache.txt"
-if exist "%CACHE%" (
-    for /f "tokens=2 delims==" %%i in ('findstr /b /c:"Qt6_DIR:" "%CACHE%" 2^>nul') do (
-        set "QT_CMAKE_DIR=%%i"
-    )
-    if defined QT_CMAKE_DIR (
-        REM Qt6_DIR looks like   C:/Qt/6.11.0/msvc2022_64/lib/cmake/Qt6
-        REM We want              C:\Qt\6.11.0\msvc2022_64\bin\windeployqt.exe
-        set "QT_BASE=!QT_CMAKE_DIR:/lib/cmake/Qt6=!"
-        set "QT_BASE=!QT_BASE:/=\!"
-        set "WINDEPLOYQT=!QT_BASE!\bin\windeployqt.exe"
-        if exist "!WINDEPLOYQT!" goto :found
-        echo [windeploy] Derived path from CMakeCache.txt does not exist:
-        echo            !WINDEPLOYQT!
-        set "WINDEPLOYQT="
+REM 3. Derive from CMakeCache.txt. Check, in order:
+REM      a) %ROOT%\build\CMakeCache.txt                  (our default)
+REM      b) %ROOT%\build\<subdir>\CMakeCache.txt         (Qt Creator
+REM         nested layout, e.g. Desktop_Qt_6_11_0_MSVC2022_64bit-Release)
+REM      c) %ROOT%\..\build-*\<subdir>?\CMakeCache.txt   (Qt Creator
+REM         sibling-folder layout, less common)
+REM    First hit wins.
+set "CACHE="
+if exist "%ROOT%build\CMakeCache.txt" (
+    set "CACHE=%ROOT%build\CMakeCache.txt"
+    goto :have_cache
+)
+if exist "%ROOT%build" (
+    for /d %%d in ("%ROOT%build\*") do (
+        if exist "%%d\CMakeCache.txt" (
+            set "CACHE=%%d\CMakeCache.txt"
+            goto :have_cache
+        )
     )
 )
+for /d %%d in ("%ROOT%..\build-*") do (
+    if exist "%%d\CMakeCache.txt" (
+        set "CACHE=%%d\CMakeCache.txt"
+        goto :have_cache
+    )
+    for /d %%e in ("%%d\*") do (
+        if exist "%%e\CMakeCache.txt" (
+            set "CACHE=%%e\CMakeCache.txt"
+            goto :have_cache
+        )
+    )
+)
+goto :no_cache
+
+:have_cache
+echo [windeploy] Reading "!CACHE!"
+for /f "tokens=2 delims==" %%i in ('findstr /b /c:"Qt6_DIR:" "!CACHE!" 2^>nul') do (
+    set "QT_CMAKE_DIR=%%i"
+)
+if defined QT_CMAKE_DIR (
+    REM Qt6_DIR looks like   C:/Qt/6.11.0/msvc2022_64/lib/cmake/Qt6
+    REM We want              C:\Qt\6.11.0\msvc2022_64\bin\windeployqt.exe
+    set "QT_BASE=!QT_CMAKE_DIR:/lib/cmake/Qt6=!"
+    set "QT_BASE=!QT_BASE:/=\!"
+    set "WINDEPLOYQT=!QT_BASE!\bin\windeployqt.exe"
+    if exist "!WINDEPLOYQT!" goto :found
+    echo [windeploy] Derived path from CMakeCache.txt does not exist:
+    echo            !WINDEPLOYQT!
+    set "WINDEPLOYQT="
+)
+:no_cache
 
 REM 4. Hard-coded common install paths.
 for %%v in (6.11.0 6.10.0 6.9.0 6.8.0 6.7.0 6.6.0 6.5.0 6.4.0) do (
