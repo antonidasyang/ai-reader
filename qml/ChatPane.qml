@@ -260,12 +260,34 @@ Rectangle {
             model: chat.messages
             ScrollBar.vertical: ScrollBar { active: true }
 
-            // Auto-scroll to the bottom as new content streams in.
-            // onCountChanged covers new bubbles; onContentHeightChanged
-            // covers the active assistant bubble growing chunk-by-chunk
-            // (count stays the same, contentHeight grows).
-            onCountChanged: positionViewAtEnd()
-            onContentHeightChanged: if (chat.busy) positionViewAtEnd()
+            // Stick-to-bottom flag tracking whether the viewport is at
+            // (or near) the last message. Streaming auto-scroll only
+            // fires while this is true, so a user reading an earlier
+            // message stays put instead of being yanked to the bottom
+            // on every chunk.
+            property bool stickBottom: true
+            onContentYChanged: {
+                const atBottom = (contentY + height) >= (contentHeight - 8)
+                if (atBottom !== stickBottom) stickBottom = atBottom
+            }
+
+            // positionViewAtIndex(count-1, ListView.End) anchors the
+            // *bottom* of the last delegate to the bottom of the
+            // viewport, which is what we actually want while a delegate
+            // is still growing. Plain positionViewAtEnd() snaps to the
+            // current contentHeight, which gets stale between chunks.
+            // Qt.callLater defers one cycle so the layout has applied
+            // the latest delegate height before we sample it.
+            function scrollToBottom() {
+                if (count > 0)
+                    positionViewAtIndex(count - 1, ListView.End)
+            }
+
+            onCountChanged: Qt.callLater(scrollToBottom)
+            onContentHeightChanged: {
+                if (stickBottom && chat.busy)
+                    Qt.callLater(scrollToBottom)
+            }
 
             delegate: Item {
                 id: msgDelegate

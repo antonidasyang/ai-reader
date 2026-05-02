@@ -60,14 +60,47 @@ Rectangle {
             color: "#fafafa"
             border.color: "#e0e0e0"
 
-            ScrollView {
-                id: summaryScroll
+            // A direct Flickable instead of ScrollView so we have a
+            // first-class contentY / contentHeight to drive the
+            // streaming auto-scroll. ScrollView wraps its content in
+            // an internal Flickable whose update timing relative to
+            // TextArea.contentHeightChanged isn't reliable -- the
+            // previous version often scrolled to the wrong spot or
+            // not at all while SSE chunks arrived.
+            Flickable {
+                id: summaryFlick
                 anchors.fill: parent
                 anchors.margins: 1
                 clip: true
+                contentWidth: width
+                contentHeight: body.implicitHeight
+                boundsBehavior: Flickable.StopAtBounds
+
+                ScrollBar.vertical: ScrollBar { active: true; policy: ScrollBar.AsNeeded }
+
+                // True when the viewport is at (or near) the bottom.
+                // Streaming auto-scroll only fires while this is set,
+                // so a user who scrolled up to read something earlier
+                // doesn't get yanked back down on every chunk.
+                property bool stickBottom: true
+                onContentYChanged: {
+                    const atBottom = (contentY + height) >= (contentHeight - 8)
+                    if (atBottom !== stickBottom) stickBottom = atBottom
+                }
+                onContentHeightChanged: {
+                    if (stickBottom && summary.status === SummaryService.Generating) {
+                        // Defer one event-loop cycle so the layout
+                        // picks up the new TextArea size before we
+                        // sample contentHeight.
+                        Qt.callLater(function() {
+                            contentY = Math.max(0, contentHeight - height)
+                        })
+                    }
+                }
 
                 TextArea {
                     id: body
+                    width: parent.width
                     readOnly: true
                     selectByMouse: true
                     wrapMode: TextEdit.Wrap
@@ -86,16 +119,6 @@ Rectangle {
                     rightPadding: 16
                     topPadding: 12
                     bottomPadding: 12
-
-                    onContentHeightChanged: {
-                        if (summary.status === SummaryService.Generating)
-                            Qt.callLater(scrollToEnd)
-                    }
-                }
-
-                function scrollToEnd() {
-                    const f = summaryScroll.contentItem
-                    if (f) f.contentY = Math.max(0, f.contentHeight - f.height)
                 }
             }
         }
