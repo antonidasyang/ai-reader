@@ -5,15 +5,19 @@ REM next to the binary. Assumes a CMake Release build has just run; the
 REM POST_BUILD step in CMakeLists.txt copies ai-reader.exe into dist\
 REM so this script runs windeployqt directly against that staged copy.
 REM
-REM Requirements:
-REM   * windeployqt.exe must be on PATH (run from a Qt 6 dev shell, or
-REM     prepend it manually, e.g. set PATH=C:\Qt\6.8.0\msvc2022_64\bin;%PATH%)
-REM   * dist\ai-reader.exe must exist (build the project first)
+REM How windeployqt is located, in priority order:
+REM   1. The WINDEPLOYQT environment variable (explicit override).
+REM   2. windeployqt.exe on PATH.
+REM   3. Derived from build\CMakeCache.txt:Qt6_DIR — strips the
+REM      \lib\cmake\Qt6 suffix and appends \bin\windeployqt.exe. This
+REM      means a working CMake configure is sufficient; you don't need
+REM      to add the Qt bin folder to PATH separately.
+REM   4. Hard-coded common install paths (C:\Qt\6.x.x\msvc2022_64\bin).
 REM
 REM Output: dist\ becomes a fully self-contained portable folder that
 REM Inno Setup (AiReader.iss) packages into AiReader-Setup-x.y.z.exe.
 
-setlocal
+setlocal EnableDelayedExpansion
 set "ROOT=%~dp0"
 set "DIST=%ROOT%dist"
 
@@ -23,13 +27,62 @@ if not exist "%DIST%\ai-reader.exe" (
     exit /b 1
 )
 
-where windeployqt >nul 2>nul
-if errorlevel 1 (
-    echo [windeploy] windeployqt.exe not on PATH. Open a Qt 6 dev shell, or add
-    echo            the Qt bin directory to PATH, then re-run this script.
+REM ── 1. Explicit override ────────────────────────────────────────────
+if defined WINDEPLOYQT (
+    if exist "%WINDEPLOYQT%" goto :found
+    echo [windeploy] WINDEPLOYQT='%WINDEPLOYQT%' is set but the file does not exist.
     exit /b 1
 )
 
+REM ── 2. PATH lookup ──────────────────────────────────────────────────
+for /f "delims=" %%p in ('where windeployqt 2^>nul') do (
+    set "WINDEPLOYQT=%%p"
+    goto :found
+)
+
+REM ── 3. Derive from CMakeCache.txt ───────────────────────────────────
+set "CACHE=%ROOT%build\CMakeCache.txt"
+if exist "%CACHE%" (
+    for /f "tokens=2 delims==" %%i in ('findstr /b /c:"Qt6_DIR:" "%CACHE%" 2^>nul') do (
+        set "QT_CMAKE_DIR=%%i"
+    )
+    if defined QT_CMAKE_DIR (
+        REM Qt6_DIR looks like   C:/Qt/6.11.0/msvc2022_64/lib/cmake/Qt6
+        REM We want              C:\Qt\6.11.0\msvc2022_64\bin\windeployqt.exe
+        set "QT_BASE=!QT_CMAKE_DIR:/lib/cmake/Qt6=!"
+        set "QT_BASE=!QT_BASE:/=\!"
+        set "WINDEPLOYQT=!QT_BASE!\bin\windeployqt.exe"
+        if exist "!WINDEPLOYQT!" goto :found
+        echo [windeploy] Derived path from CMakeCache.txt does not exist:
+        echo            !WINDEPLOYQT!
+        set "WINDEPLOYQT="
+    )
+)
+
+REM ── 4. Hard-coded common install paths ──────────────────────────────
+for %%v in (6.11.0 6.10.0 6.9.0 6.8.0 6.7.0 6.6.0 6.5.0 6.4.0) do (
+    if exist "C:\Qt\%%v\msvc2022_64\bin\windeployqt.exe" (
+        set "WINDEPLOYQT=C:\Qt\%%v\msvc2022_64\bin\windeployqt.exe"
+        goto :found
+    )
+    if exist "C:\Qt\%%v\msvc2019_64\bin\windeployqt.exe" (
+        set "WINDEPLOYQT=C:\Qt\%%v\msvc2019_64\bin\windeployqt.exe"
+        goto :found
+    )
+)
+
+echo [windeploy] Could not locate windeployqt.exe.
+echo.
+echo Try one of:
+echo   * Add Qt's bin dir to PATH, e.g.:
+echo       set PATH=C:\Qt\6.11.0\msvc2022_64\bin;%%PATH%%
+echo   * Set WINDEPLOYQT explicitly:
+echo       set WINDEPLOYQT=C:\Qt\6.11.0\msvc2022_64\bin\windeployqt.exe
+echo   * Re-run cmake -B build ...   to refresh CMakeCache.txt's Qt6_DIR.
+exit /b 1
+
+:found
+echo [windeploy] Using "!WINDEPLOYQT!"
 echo [windeploy] Staging Qt runtime into %DIST%
 REM Flags worth knowing about:
 REM   --compiler-runtime     Pull vcruntime140.dll / vcruntime140_1.dll /
@@ -44,7 +97,7 @@ REM                          binary; skipping Qt's catalog saves ~30MB.
 REM   d3d-compiler + software OpenGL fallback are kept (default) so the
 REM   binary still launches on machines whose GPU drivers reject
 REM   ANGLE/D3D11 — cheap insurance against "double-click, nothing happens".
-windeployqt ^
+"!WINDEPLOYQT!" ^
     --release ^
     --qmldir "%ROOT%qml" ^
     --no-translations ^
