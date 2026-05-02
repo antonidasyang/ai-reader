@@ -1,9 +1,11 @@
 #pragma once
 
 #include <QByteArray>
+#include <QHash>
 #include <QObject>
 #include <QSettings>
 #include <QString>
+#include <QTimer>
 
 // Persists the user's main-window layout choices (currently just the
 // pane order in the central SplitView). QML reads/writes via the
@@ -40,12 +42,13 @@ public:
     Q_INVOKABLE QString lastSeenVersion() const;
     Q_INVOKABLE void setLastSeenVersion(const QString &v);
 
-    // Returns the bundled CHANGELOG.md text or an empty string if it
-    // can't be located. Tries the Qt resource (:/CHANGELOG.md) first,
-    // then a copy beside the executable -- so it works in dev runs
-    // from build/, in packaged installs, and in build configurations
-    // that for whatever reason didn't compile the resource in.
-    Q_INVOKABLE QString readChangelog() const;
+    // Returns the bundled CHANGELOG.md text for the given UI locale,
+    // or an empty string if neither the localized file nor the
+    // English fallback can be located. localeCode is the same string
+    // Settings::uiLanguage() exposes (e.g. "zh_CN", "en", or empty
+    // to follow QLocale::system()). Tries the Qt resource first,
+    // then a sibling file beside the executable.
+    Q_INVOKABLE QString readChangelog(const QString &localeCode = QString()) const;
 
     // Per-pane visibility (folder / toc / chat / summary / ...).
     // Each pane binds visible: layoutSettings.paneVisible("name", <default>)
@@ -53,6 +56,19 @@ public:
     Q_INVOKABLE bool paneVisible(const QString &name, bool defaultValue) const;
     Q_INVOKABLE void setPaneVisible(const QString &name, bool visible);
 
+    // Per-pane width in px. Each pane binds
+    //     SplitView.preferredWidth: layoutSettings.paneWidth("name", default)
+    //     onWidthChanged: layoutSettings.setPaneWidth("name", width)
+    // The setter is debounced via a 300 ms timer so a single drag
+    // (which fires onWidthChanged at frame rate) becomes one disk
+    // write rather than dozens.
+    Q_INVOKABLE int  paneWidth(const QString &name, int defaultWidth) const;
+    Q_INVOKABLE void setPaneWidth(const QString &name, int width);
+
 private:
+    void flushPendingWidths();
+
     QSettings m_qs;
+    QHash<QString, int> m_pendingWidths;
+    QTimer m_widthSaveTimer;
 };

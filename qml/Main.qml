@@ -265,14 +265,10 @@ ApplicationWindow {
     Component.onCompleted: {
         applySavedPaneOrder()
 
-        // Restore the saved splitter handle positions. Defer one
-        // event-loop cycle so SplitView has finished applying the
-        // pane reorder before we hand it the byte array; restoring
-        // before reorder applies puts handles in the wrong slots.
-        Qt.callLater(function() {
-            const saved = layoutSettings.splitterState()
-            if (saved && saved.length > 0) split.restoreState(saved)
-        })
+        // Pane sizes are restored automatically: each pane binds
+        // SplitView.preferredWidth to layoutSettings.paneWidth(...)
+        // and persists via onWidthChanged. The C++ setter debounces
+        // writes so a drag becomes one disk write.
 
         // Wire spotlight targets now that the toolbar / panes exist.
         welcomeWizard.steps = buildWizardSteps()
@@ -287,24 +283,6 @@ ApplicationWindow {
             Qt.callLater(function() { welcomeWizard.start() })
         } else if (layoutSettings.lastSeenVersion() !== settings.appVersion) {
             Qt.callLater(function() { changelogDialog.open() })
-        }
-    }
-
-    // Save splitter sizes 500 ms after the user lets go of a handle
-    // (or any width binding settles). Coalescing with a debounce
-    // means we don't write QSettings on every frame of a drag.
-    Timer {
-        id: splitterSaveTimer
-        interval: 500
-        repeat: false
-        onTriggered: layoutSettings.setSplitterState(split.saveState())
-    }
-    Connections {
-        target: split
-        function onResizingChanged() {
-            // resizing flips false when the drag ends -- save then,
-            // not on every contentY tick during the drag.
-            if (!split.resizing) splitterSaveTimer.restart()
         }
     }
 
@@ -542,8 +520,9 @@ ApplicationWindow {
                 visible: layoutSettings.paneVisible("folder",
                     library.currentFolder.length > 0)
                 onVisibleChanged: layoutSettings.setPaneVisible("folder", visible)
-                SplitView.preferredWidth: 240
+                SplitView.preferredWidth: layoutSettings.paneWidth("folder", 240)
                 SplitView.minimumWidth: 0
+                onWidthChanged: layoutSettings.setPaneWidth("folder", width)
                 onPdfChosen: function(path) { tabs.openPaper(path) }
 
                 DockGrip {
@@ -564,8 +543,9 @@ ApplicationWindow {
                 objectName: "toc"
                 visible: layoutSettings.paneVisible("toc", true)
                 onVisibleChanged: layoutSettings.setPaneVisible("toc", visible)
-                SplitView.preferredWidth: 220
+                SplitView.preferredWidth: layoutSettings.paneWidth("toc", 220)
                 SplitView.minimumWidth: 0
+                onWidthChanged: layoutSettings.setPaneWidth("toc", width)
                 onSectionClicked: function(blockId, page) {
                     blockList.showPage(page)
                     pdfView.goToPage(page)
@@ -587,8 +567,10 @@ ApplicationWindow {
             Item {
                 id: pdfPane
                 objectName: "pdf"
-                SplitView.preferredWidth: split.width * 0.45
+                SplitView.preferredWidth: layoutSettings.paneWidth("pdf",
+                    Math.max(280, Math.round(split.width * 0.45)))
                 SplitView.minimumWidth: 280
+                onWidthChanged: layoutSettings.setPaneWidth("pdf", width)
                 // Without clip the PdfMultiPageView (a Flickable) can paint
                 // pages past the pane's right/left edges when the user
                 // shrinks the splitter and scrolls horizontally — the
@@ -824,8 +806,9 @@ ApplicationWindow {
                 objectName: "summary"
                 visible: layoutSettings.paneVisible("summary", false)
                 onVisibleChanged: layoutSettings.setPaneVisible("summary", visible)
-                SplitView.preferredWidth: 360
+                SplitView.preferredWidth: layoutSettings.paneWidth("summary", 360)
                 SplitView.minimumWidth: 240
+                onWidthChanged: layoutSettings.setPaneWidth("summary", width)
 
                 DockGrip {
                     anchors.left: parent.left
@@ -845,8 +828,9 @@ ApplicationWindow {
                 objectName: "chat"
                 visible: layoutSettings.paneVisible("chat", false)
                 onVisibleChanged: layoutSettings.setPaneVisible("chat", visible)
-                SplitView.preferredWidth: 360
+                SplitView.preferredWidth: layoutSettings.paneWidth("chat", 360)
                 SplitView.minimumWidth: 240
+                onWidthChanged: layoutSettings.setPaneWidth("chat", width)
 
                 DockGrip {
                     anchors.left: parent.left

@@ -344,14 +344,17 @@ qt_add_resources(ai-reader "icons"
         resources/icons/app-256.png
 )
 
-# CHANGELOG.md is loaded by qml/ChangelogDialog.qml via XMLHttpRequest
-# from qrc:/CHANGELOG.md. Embedding it into the binary's resource
-# system (rather than reading from disk) means a packaged install
-# always has the right version of the changelog -- the one that
-# shipped with the binary -- regardless of where it's installed.
+# CHANGELOG.md and its localized siblings (CHANGELOG.<locale>.md) are
+# loaded at runtime by LayoutSettings::readChangelog(localeCode).
+# Embedding into the resource system means every packaged install
+# carries the version of the changelog that matches the binary,
+# regardless of where it's installed. Add new languages here by
+# dropping CHANGELOG.<locale-code>.md alongside the English file.
 qt_add_resources(ai-reader "changelog"
     PREFIX "/"
-    FILES CHANGELOG.md
+    FILES
+        CHANGELOG.md
+        CHANGELOG.zh_CN.md
 )
 
 # Windows: embed multi-resolution .ico into the .exe and ship as a GUI

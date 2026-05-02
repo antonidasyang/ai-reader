@@ -18,13 +18,14 @@ Dialog {
     height: Math.min(parent ? parent.height - 80 : 520, 520)
 
     function loadChangelog() {
-        // Read via the C++ helper, which tries the Qt resource first
-        // and falls back to a filesystem copy beside the .exe. More
-        // robust than QML's XMLHttpRequest, which silently fails on
-        // qrc:/ when the resource didn't make it into the binary
-        // (e.g. an incremental build that skipped the
-        // qt_add_resources regeneration).
-        const txt = layoutSettings.readChangelog()
+        // Read via the C++ helper, which picks the localized
+        // CHANGELOG.<locale>.md when one is bundled (CN today; add
+        // more by dropping CHANGELOG.<locale>.md in the repo root
+        // and listing it in CMakeLists's qt_add_resources block)
+        // and falls back to plain CHANGELOG.md otherwise. Empty
+        // settings.uiLanguage tells the helper to follow
+        // QLocale::system().
+        const txt = layoutSettings.readChangelog(settings.uiLanguage)
         body.text = txt && txt.length > 0
                     ? txt
                     : qsTr("(changelog unavailable)")

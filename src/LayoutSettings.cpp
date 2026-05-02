@@ -2,6 +2,7 @@
 
 #include <QCoreApplication>
 #include <QFile>
+#include <QLocale>
 
 namespace {
 constexpr auto kKey               = "layout/paneOrder";
@@ -13,6 +14,10 @@ constexpr auto kLastSeenVersionKey = "changelog/lastSeenVersion";
 LayoutSettings::LayoutSettings(QObject *parent)
     : QObject(parent)
 {
+    m_widthSaveTimer.setSingleShot(true);
+    m_widthSaveTimer.setInterval(300);
+    connect(&m_widthSaveTimer, &QTimer::timeout,
+            this, &LayoutSettings::flushPendingWidths);
 }
 
 QString LayoutSettings::paneOrder() const
@@ -67,24 +72,40 @@ void LayoutSettings::setLastSeenVersion(const QString &v)
     m_qs.sync();
 }
 
-QString LayoutSettings::readChangelog() const
+QString LayoutSettings::readChangelog(const QString &localeCode) const
 {
-    // 1. Qt resource — the production path. CMake's qt_add_resources
-    //    bakes CHANGELOG.md into the binary at qrc:/CHANGELOG.md so
-    //    every install carries the version that matches the binary.
-    QFile fromResource(QStringLiteral(":/CHANGELOG.md"));
-    if (fromResource.open(QIODevice::ReadOnly | QIODevice::Text))
-        return QString::fromUtf8(fromResource.readAll());
+    // Build the candidate filename list in priority order. We try
+    // localized first, then fall back to plain CHANGELOG.md. Each
+    // name is checked against (a) the Qt resource and (b) a sibling
+    // file beside the executable, in that order.
+    QStringList names;
+    QString locale = localeCode.trimmed();
+    if (locale.isEmpty()) {
+        // Empty in Settings means "follow the system locale". Map a
+        // few common forms to the file basenames we ship.
+        locale = QLocale::system().name();
+    }
+    if (!locale.isEmpty()) {
+        names << QStringLiteral("CHANGELOG.%1.md").arg(locale);
+        // Generic-Chinese fallback — if we ship CHANGELOG.zh_CN.md
+        // we still want a zh_TW user to see Chinese rather than
+        // jumping straight to English.
+        if (locale.startsWith(QStringLiteral("zh"), Qt::CaseInsensitive)
+            && locale != QStringLiteral("zh_CN")) {
+            names << QStringLiteral("CHANGELOG.zh_CN.md");
+        }
+    }
+    names << QStringLiteral("CHANGELOG.md");
 
-    // 2. Filesystem fallback — handles dev runs from a build dir
-    //    that for some reason didn't include the resource (incremental
-    //    build skipped the qt_add_resources regeneration), and any
-    //    install whose installer dropped a sibling copy.
-    QFile fromDisk(QCoreApplication::applicationDirPath()
-                   + QStringLiteral("/CHANGELOG.md"));
-    if (fromDisk.open(QIODevice::ReadOnly | QIODevice::Text))
-        return QString::fromUtf8(fromDisk.readAll());
-
+    const QString exeDir = QCoreApplication::applicationDirPath();
+    for (const QString &name : std::as_const(names)) {
+        QFile fromResource(QStringLiteral(":/") + name);
+        if (fromResource.open(QIODevice::ReadOnly | QIODevice::Text))
+            return QString::fromUtf8(fromResource.readAll());
+        QFile fromDisk(exeDir + QChar('/') + name);
+        if (fromDisk.open(QIODevice::ReadOnly | QIODevice::Text))
+            return QString::fromUtf8(fromDisk.readAll());
+    }
     return {};
 }
 
@@ -103,4 +124,38 @@ void LayoutSettings::setPaneVisible(const QString &name, bool visible)
         && m_qs.contains(key)) return;  // skip the redundant write
     m_qs.setValue(key, visible);
     m_qs.sync();
+}
+
+int LayoutSettings::paneWidth(const QString &name, int defaultWidth) const
+{
+    if (name.isEmpty()) return defaultWidth;
+    return m_qs.value(QStringLiteral("panes/%1/width").arg(name),
+                      defaultWidth).toInt();
+}
+
+void LayoutSettings::setPaneWidth(const QString &name, int width)
+{
+    if (name.isEmpty()) return;
+    // Skip transient zeros that fire while a hidden pane is being
+    // re-laid-out. Saving 0 would resurrect the pane at zero width
+    // on the next launch.
+    if (width <= 0) return;
+
+    m_pendingWidths.insert(name, width);
+    if (!m_widthSaveTimer.isActive())
+        m_widthSaveTimer.start();
+}
+
+void LayoutSettings::flushPendingWidths()
+{
+    bool anyChange = false;
+    for (auto it = m_pendingWidths.cbegin(); it != m_pendingWidths.cend(); ++it) {
+        const QString key = QStringLiteral("panes/%1/width").arg(it.key());
+        if (m_qs.value(key).toInt() != it.value()) {
+            m_qs.setValue(key, it.value());
+            anyChange = true;
+        }
+    }
+    m_pendingWidths.clear();
+    if (anyChange) m_qs.sync();
 }
