@@ -44,9 +44,18 @@ TocService::~TocService() = default;
 
 void TocService::onPaperChanged()
 {
+    // blocksChanged fires both when a new paper loads and when the
+    // user splits/merges/deletes a paragraph on the current paper.
+    // Only the former is a real "paper changed" event for us; for
+    // the latter, leave the TOC alone -- the user explicitly does
+    // not want their generated TOC wiped by a small paragraph edit.
+    const QString newId = m_paper ? m_paper->paperId() : QString();
+    if (newId == m_lastPaperId) return;
+    m_lastPaperId = newId;
+
     cancel();
     clear();
-    m_cache.setPaperId(m_paper ? m_paper->paperId() : QString());
+    m_cache.setPaperId(newId);
     rehydrateFromCache();
 }
 

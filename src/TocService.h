@@ -72,5 +72,12 @@ private:
 
     QString m_buffer;
     Status m_status = Idle;
+
+    // Tracks which paper we last reset cache state for. blocksChanged
+    // fires on every paragraph mutation as well as on paper-load, but
+    // we only want to wipe + rehydrate the TOC when the user actually
+    // switches to a different paper — otherwise editing one paragraph
+    // would clear a generated TOC the user hasn't asked us to redo.
+    QString m_lastPaperId;
     QString m_lastError;
 };

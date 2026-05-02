@@ -67,4 +67,9 @@ private:
     QString m_paperTitle;
     QString m_lastError;
     Status m_status = Idle;
+
+    // See TocService::m_lastPaperId for the rationale -- guards
+    // against blocksChanged on a paragraph edit silently wiping a
+    // generated summary that the user wants to keep.
+    QString m_lastPaperId;
 };

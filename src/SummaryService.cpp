@@ -51,9 +51,18 @@ void SummaryService::setPaperTitle(const QString &title)
 
 void SummaryService::onPaperChanged()
 {
+    // Block-mutation events (split/merge/delete on a paragraph) come
+    // through the same blocksChanged signal as paper-load events.
+    // Skip the wipe + rehydrate when the paper id hasn't actually
+    // changed so a paragraph edit doesn't quietly clear a generated
+    // summary the user is still reading.
+    const QString newId = m_paper ? m_paper->paperId() : QString();
+    if (newId == m_lastPaperId) return;
+    m_lastPaperId = newId;
+
     cancel();
     clear();
-    m_cache.setPaperId(m_paper ? m_paper->paperId() : QString());
+    m_cache.setPaperId(newId);
     rehydrateFromCache();
 }
 
