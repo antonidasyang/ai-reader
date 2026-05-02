@@ -18,18 +18,16 @@ Dialog {
     height: Math.min(parent ? parent.height - 80 : 520, 520)
 
     function loadChangelog() {
-        // Synchronous XHR is fine here -- the resource is in-memory
-        // and the dialog hasn't rendered yet so there's no UI to
-        // freeze.
-        const xhr = new XMLHttpRequest()
-        try {
-            xhr.open("GET", "qrc:/CHANGELOG.md", false)
-            xhr.send()
-            body.text = xhr.responseText
-                || qsTr("(changelog unavailable)")
-        } catch (e) {
-            body.text = qsTr("(failed to load changelog: %1)").arg(e.toString())
-        }
+        // Read via the C++ helper, which tries the Qt resource first
+        // and falls back to a filesystem copy beside the .exe. More
+        // robust than QML's XMLHttpRequest, which silently fails on
+        // qrc:/ when the resource didn't make it into the binary
+        // (e.g. an incremental build that skipped the
+        // qt_add_resources regeneration).
+        const txt = layoutSettings.readChangelog()
+        body.text = txt && txt.length > 0
+                    ? txt
+                    : qsTr("(changelog unavailable)")
     }
 
     onAboutToShow: loadChangelog()

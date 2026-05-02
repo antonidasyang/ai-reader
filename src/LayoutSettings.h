@@ -40,6 +40,19 @@ public:
     Q_INVOKABLE QString lastSeenVersion() const;
     Q_INVOKABLE void setLastSeenVersion(const QString &v);
 
+    // Returns the bundled CHANGELOG.md text or an empty string if it
+    // can't be located. Tries the Qt resource (:/CHANGELOG.md) first,
+    // then a copy beside the executable -- so it works in dev runs
+    // from build/, in packaged installs, and in build configurations
+    // that for whatever reason didn't compile the resource in.
+    Q_INVOKABLE QString readChangelog() const;
+
+    // Per-pane visibility (folder / toc / chat / summary / ...).
+    // Each pane binds visible: layoutSettings.paneVisible("name", <default>)
+    // and persists with onVisibleChanged: setPaneVisible("name", visible).
+    Q_INVOKABLE bool paneVisible(const QString &name, bool defaultValue) const;
+    Q_INVOKABLE void setPaneVisible(const QString &name, bool visible);
+
 private:
     QSettings m_qs;
 };

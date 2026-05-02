@@ -533,7 +533,15 @@ ApplicationWindow {
             FolderPane {
                 id: folderPane
                 objectName: "folder"
-                visible: library.currentFolder.length > 0
+                // Default: visible iff the user has a folder open
+                // already (so a brand-new install with no library
+                // doesn't waste a column on an empty pane). Once
+                // the user toggles via the toolbar, the imperative
+                // assignment breaks the binding and the new value
+                // is persisted via onVisibleChanged below.
+                visible: layoutSettings.paneVisible("folder",
+                    library.currentFolder.length > 0)
+                onVisibleChanged: layoutSettings.setPaneVisible("folder", visible)
                 SplitView.preferredWidth: 240
                 SplitView.minimumWidth: 0
                 onPdfChosen: function(path) { tabs.openPaper(path) }
@@ -554,6 +562,8 @@ ApplicationWindow {
             TocSidebar {
                 id: tocSidebar
                 objectName: "toc"
+                visible: layoutSettings.paneVisible("toc", true)
+                onVisibleChanged: layoutSettings.setPaneVisible("toc", visible)
                 SplitView.preferredWidth: 220
                 SplitView.minimumWidth: 0
                 onSectionClicked: function(blockId, page) {
@@ -812,7 +822,8 @@ ApplicationWindow {
             SummaryPane {
                 id: summaryPane
                 objectName: "summary"
-                visible: false
+                visible: layoutSettings.paneVisible("summary", false)
+                onVisibleChanged: layoutSettings.setPaneVisible("summary", visible)
                 SplitView.preferredWidth: 360
                 SplitView.minimumWidth: 240
 
@@ -832,7 +843,8 @@ ApplicationWindow {
             ChatPane {
                 id: chatPane
                 objectName: "chat"
-                visible: false
+                visible: layoutSettings.paneVisible("chat", false)
+                onVisibleChanged: layoutSettings.setPaneVisible("chat", visible)
                 SplitView.preferredWidth: 360
                 SplitView.minimumWidth: 240
 
