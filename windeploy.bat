@@ -31,15 +31,24 @@ if errorlevel 1 (
 )
 
 echo [windeploy] Staging Qt runtime into %DIST%
-REM We deliberately keep d3d-compiler + the software OpenGL fallback so
-REM the binary still launches on machines whose GPU drivers reject
-REM ANGLE/D3D11 — those bytes are cheap insurance against "double-click,
-REM nothing happens". --no-translations stays on because we ship our
-REM own .qm files compiled into the binary.
+REM Flags worth knowing about:
+REM   --compiler-runtime     Pull vcruntime140.dll / vcruntime140_1.dll /
+REM                          msvcp140.dll out of MSVC's redist tree and copy
+REM                          them next to the .exe. Without this users on a
+REM                          stock Windows install hit "VCRUNTIME140_1.dll
+REM                          not found" because they've never installed the
+REM                          Visual C++ Redistributable. Bundling adds ~1MB
+REM                          and removes that dependency.
+REM   --no-translations      We ship our own .qm files compiled into the
+REM                          binary; skipping Qt's catalog saves ~30MB.
+REM   d3d-compiler + software OpenGL fallback are kept (default) so the
+REM   binary still launches on machines whose GPU drivers reject
+REM   ANGLE/D3D11 — cheap insurance against "double-click, nothing happens".
 windeployqt ^
     --release ^
     --qmldir "%ROOT%qml" ^
     --no-translations ^
+    --compiler-runtime ^
     "%DIST%\ai-reader.exe"
 
 if errorlevel 1 (
