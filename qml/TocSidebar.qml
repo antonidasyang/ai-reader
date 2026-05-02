@@ -80,13 +80,19 @@ Rectangle {
                             text: model.title
                             elide: Text.ElideRight
                             font.bold: model.level === 1
-                            font.pixelSize: model.level === 1 ? 13 : 12
+                            // Level-1 sections render +1 px so the
+                            // visual hierarchy survives a custom base
+                            // size from Settings.
+                            font.pixelSize: settings.tocFontSize
+                                          + (model.level === 1 ? 1 : 0)
                             color: model.level === 1 ? "#1a237e" : "#333"
                         }
                         Label {
                             text: qsTr("p.%1").arg(model.startPage + 1)
                             color: "#999"
-                            font.pixelSize: 10
+                            // Page badge stays small relative to the
+                            // section title (-2 px from the body).
+                            font.pixelSize: Math.max(8, settings.tocFontSize - 2)
                             Layout.rightMargin: 4
                         }
                     }

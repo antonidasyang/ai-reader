@@ -20,6 +20,7 @@ Rectangle {
             wrapMode: TextEdit.Wrap
             textFormat: TextEdit.RichText
             color: "#1d1d1d"
+            font.pixelSize: settings.chatFontSize
             text: parent.entry ? parent.entry.html : ""
             cursorVisible: false
             activeFocusOnPress: false
@@ -335,6 +336,7 @@ Rectangle {
                             selectByMouse: true
                             wrapMode: TextEdit.Wrap
                             color: "#1d1d1d"
+                            font.pixelSize: settings.chatFontSize
                             // PlainText for user messages; MarkdownText
                             // for streaming assistant replies (cheap,
                             // no per-chunk cmark walk). When the reply

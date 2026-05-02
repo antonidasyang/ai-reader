@@ -39,6 +39,10 @@ Dialog {
         autoCheckBox.checked    = settings.autoCheckUpdates
         manifestUrlField.text   = settings.updateManifestUrl
         crashOptInBox.checked   = settings.crashReportsOptIn
+        tocFontSizeField.value       = settings.tocFontSize
+        summaryFontSizeField.value   = settings.summaryFontSize
+        paragraphFontSizeField.value = settings.paragraphFontSize
+        chatFontSizeField.value      = settings.chatFontSize
         apiKeyField.forceActiveFocus()
     }
 
@@ -56,6 +60,10 @@ Dialog {
         settings.autoCheckUpdates  = autoCheckBox.checked
         settings.updateManifestUrl = manifestUrlField.text.trim()
         settings.crashReportsOptIn = crashOptInBox.checked
+        settings.tocFontSize        = tocFontSizeField.value
+        settings.summaryFontSize    = summaryFontSizeField.value
+        settings.paragraphFontSize  = paragraphFontSizeField.value
+        settings.chatFontSize       = chatFontSizeField.value
     }
 
     contentItem: ColumnLayout {
@@ -172,6 +180,58 @@ Dialog {
                 id: languageBox
                 Layout.fillWidth: true
                 model: dialog.languageLabels
+            }
+        }
+
+        // ── Font sizes ──────────────────────────────────────────────
+        // Per-pane body font size; headings/labels in each pane scale
+        // up relative to the value below. Range 8–32 px matches the
+        // qBound() guard in Settings.cpp.
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            Layout.topMargin: 4
+            color: "#e0e0e0"
+        }
+        Label {
+            text: qsTr("Font sizes (px)")
+            font.bold: true
+            font.pixelSize: 12
+            color: "#444"
+            Layout.topMargin: 4
+        }
+        GridLayout {
+            columns: 2
+            columnSpacing: 12
+            rowSpacing: 6
+            Layout.fillWidth: true
+
+            Label { text: qsTr("Chapter menu") }
+            SpinBox {
+                id: tocFontSizeField
+                Layout.fillWidth: true
+                from: 8; to: 32; stepSize: 1; editable: true
+            }
+
+            Label { text: qsTr("Interpretation") }
+            SpinBox {
+                id: summaryFontSizeField
+                Layout.fillWidth: true
+                from: 8; to: 32; stepSize: 1; editable: true
+            }
+
+            Label { text: qsTr("Paragraphs") }
+            SpinBox {
+                id: paragraphFontSizeField
+                Layout.fillWidth: true
+                from: 8; to: 32; stepSize: 1; editable: true
+            }
+
+            Label { text: qsTr("Chat") }
+            SpinBox {
+                id: chatFontSizeField
+                Layout.fillWidth: true
+                from: 8; to: 32; stepSize: 1; editable: true
             }
         }
 

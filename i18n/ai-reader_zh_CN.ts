@@ -389,6 +389,26 @@
         <source>You're on the latest version (v%1).</source>
         <translation>当前已是最新版本(v%1)。</translation>
     </message>
+    <message>
+        <source>Font sizes (px)</source>
+        <translation>字号(像素)</translation>
+    </message>
+    <message>
+        <source>Chapter menu</source>
+        <translation>章节目录</translation>
+    </message>
+    <message>
+        <source>Interpretation</source>
+        <translation>论文解读</translation>
+    </message>
+    <message>
+        <source>Paragraphs</source>
+        <translation>段落</translation>
+    </message>
+    <message>
+        <source>Chat</source>
+        <translation>对话</translation>
+    </message>
 </context>
 <context>
     <name>PasswordDialog</name>

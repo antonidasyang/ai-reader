@@ -81,7 +81,7 @@ Rectangle {
                                 ? qsTr("Failed: %1").arg(summary.lastError)
                                 : qsTr("Click Generate to interpret this paper.")))
                     color: "#1d1d1d"
-                    font.pixelSize: 13
+                    font.pixelSize: settings.summaryFontSize
                     leftPadding: 16
                     rightPadding: 16
                     topPadding: 12

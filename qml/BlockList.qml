@@ -283,11 +283,19 @@ Rectangle {
                             wrapMode: TextEdit.Wrap
                             textFormat: TextEdit.PlainText
                             color: "#5f6368"
-                            font.pixelSize: model.kindName === "heading" ? 14 : 12
+                            // Headings get +2 px so they remain
+                            // visually above the body even when the
+                            // user scales paragraphFontSize from
+                            // Settings.
+                            font.pixelSize: settings.paragraphFontSize
+                                          + (model.kindName === "heading" ? 2 : 0)
                             font.italic: model.kindName === "caption"
                         }
 
-                        // Translation — primary styling
+                        // Translation — primary styling. Renders at
+                        // +2 px from the source so the translated
+                        // line is the dominant element; headings
+                        // stack another +2 px on top.
                         Text {
                             visible: blockDelegate._showTrans
                             Layout.fillWidth: true
@@ -295,7 +303,8 @@ Rectangle {
                             wrapMode: Text.Wrap
                             textFormat: Text.PlainText
                             color: "#1d1d1d"
-                            font.pixelSize: model.kindName === "heading" ? 16 : 14
+                            font.pixelSize: settings.paragraphFontSize + 2
+                                          + (model.kindName === "heading" ? 2 : 0)
                             font.bold: model.kindName === "heading"
                         }
 

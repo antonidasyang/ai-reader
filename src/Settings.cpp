@@ -42,6 +42,10 @@ constexpr auto kKeyChatIncludePaperText = "chat/includePaperText";
 constexpr auto kKeyAutoCheckUpdates     = "updates/autoCheck";
 constexpr auto kKeyUpdateManifestUrl    = "updates/manifestUrl";
 constexpr auto kKeyCrashReportsOptIn    = "privacy/crashReportsOptIn";
+constexpr auto kKeyTocFontSize          = "fonts/toc";
+constexpr auto kKeySummaryFontSize      = "fonts/summary";
+constexpr auto kKeyParagraphFontSize    = "fonts/paragraph";
+constexpr auto kKeyChatFontSize         = "fonts/chat";
 
 QUrl defaultBaseUrlFor(const QString &providerLower)
 {
@@ -425,6 +429,10 @@ void Settings::load()
     m_autoCheckUpdates     = m_qs.value(kKeyAutoCheckUpdates,     true).toBool();
     m_updateManifestUrl    = m_qs.value(kKeyUpdateManifestUrl,    QString{}).toString();
     m_crashReportsOptIn    = m_qs.value(kKeyCrashReportsOptIn,    false).toBool();
+    m_tocFontSize          = qBound(8, m_qs.value(kKeyTocFontSize,       12).toInt(), 32);
+    m_summaryFontSize      = qBound(8, m_qs.value(kKeySummaryFontSize,   13).toInt(), 32);
+    m_paragraphFontSize    = qBound(8, m_qs.value(kKeyParagraphFontSize, 12).toInt(), 32);
+    m_chatFontSize         = qBound(8, m_qs.value(kKeyChatFontSize,      14).toInt(), 32);
 }
 
 void Settings::save()
@@ -448,6 +456,10 @@ void Settings::save()
     m_qs.setValue(kKeyAutoCheckUpdates,     m_autoCheckUpdates);
     m_qs.setValue(kKeyUpdateManifestUrl,    m_updateManifestUrl);
     m_qs.setValue(kKeyCrashReportsOptIn,    m_crashReportsOptIn);
+    m_qs.setValue(kKeyTocFontSize,          m_tocFontSize);
+    m_qs.setValue(kKeySummaryFontSize,      m_summaryFontSize);
+    m_qs.setValue(kKeyParagraphFontSize,    m_paragraphFontSize);
+    m_qs.setValue(kKeyChatFontSize,         m_chatFontSize);
     m_qs.sync();
 }
 
@@ -475,4 +487,40 @@ void Settings::setCrashReportsOptIn(bool v)
     m_crashReportsOptIn = v;
     save();
     emit crashReportsOptInChanged();
+}
+
+void Settings::setTocFontSize(int v)
+{
+    v = qBound(8, v, 32);
+    if (v == m_tocFontSize) return;
+    m_tocFontSize = v;
+    save();
+    emit tocFontSizeChanged();
+}
+
+void Settings::setSummaryFontSize(int v)
+{
+    v = qBound(8, v, 32);
+    if (v == m_summaryFontSize) return;
+    m_summaryFontSize = v;
+    save();
+    emit summaryFontSizeChanged();
+}
+
+void Settings::setParagraphFontSize(int v)
+{
+    v = qBound(8, v, 32);
+    if (v == m_paragraphFontSize) return;
+    m_paragraphFontSize = v;
+    save();
+    emit paragraphFontSizeChanged();
+}
+
+void Settings::setChatFontSize(int v)
+{
+    v = qBound(8, v, 32);
+    if (v == m_chatFontSize) return;
+    m_chatFontSize = v;
+    save();
+    emit chatFontSizeChanged();
 }

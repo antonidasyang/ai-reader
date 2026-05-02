@@ -38,6 +38,14 @@ class Settings : public QObject
     Q_PROPERTY(QString updateManifestUrl    READ updateManifestUrl    WRITE setUpdateManifestUrl    NOTIFY updateManifestUrlChanged)
     Q_PROPERTY(bool    crashReportsOptIn    READ crashReportsOptIn    WRITE setCrashReportsOptIn    NOTIFY crashReportsOptInChanged)
 
+    // Per-pane body font size (px). Each pane uses the value as the
+    // baseline; headings/labels in that pane scale up relative to
+    // it (typically +2 px) so the visual hierarchy stays intact.
+    Q_PROPERTY(int     tocFontSize          READ tocFontSize          WRITE setTocFontSize          NOTIFY tocFontSizeChanged)
+    Q_PROPERTY(int     summaryFontSize      READ summaryFontSize      WRITE setSummaryFontSize      NOTIFY summaryFontSizeChanged)
+    Q_PROPERTY(int     paragraphFontSize    READ paragraphFontSize    WRITE setParagraphFontSize    NOTIFY paragraphFontSizeChanged)
+    Q_PROPERTY(int     chatFontSize         READ chatFontSize         WRITE setChatFontSize         NOTIFY chatFontSizeChanged)
+
     Q_PROPERTY(QString summaryPrompt     READ summaryPrompt     WRITE setSummaryPrompt     NOTIFY summaryPromptChanged)
     Q_PROPERTY(QString translationPrompt READ translationPrompt WRITE setTranslationPrompt NOTIFY translationPromptChanged)
     Q_PROPERTY(QString tocPrompt         READ tocPrompt         WRITE setTocPrompt         NOTIFY tocPromptChanged)
@@ -76,6 +84,11 @@ public:
     QString updateManifestUrl() const { return m_updateManifestUrl; }
     bool    crashReportsOptIn() const { return m_crashReportsOptIn; }
 
+    int     tocFontSize()       const { return m_tocFontSize; }
+    int     summaryFontSize()   const { return m_summaryFontSize; }
+    int     paragraphFontSize() const { return m_paragraphFontSize; }
+    int     chatFontSize()      const { return m_chatFontSize; }
+
     QString summaryPrompt()     const { return m_summaryPrompt; }
     QString translationPrompt() const { return m_translationPrompt; }
     QString tocPrompt()         const { return m_tocPrompt; }
@@ -102,6 +115,11 @@ public:
     void setAutoCheckUpdates(bool v);
     void setUpdateManifestUrl(const QString &v);
     void setCrashReportsOptIn(bool v);
+
+    void setTocFontSize(int v);
+    void setSummaryFontSize(int v);
+    void setParagraphFontSize(int v);
+    void setChatFontSize(int v);
 
     // Supports variable {{lang}}. Empty ⇒ built-in default.
     void setSummaryPrompt(const QString &v);
@@ -140,6 +158,11 @@ signals:
     void updateManifestUrlChanged();
     void crashReportsOptInChanged();
 
+    void tocFontSizeChanged();
+    void summaryFontSizeChanged();
+    void paragraphFontSizeChanged();
+    void chatFontSizeChanged();
+
     void summaryPromptChanged();
     void translationPromptChanged();
     void tocPromptChanged();
@@ -177,6 +200,12 @@ private:
     bool    m_autoCheckUpdates = true;
     QString m_updateManifestUrl;
     bool    m_crashReportsOptIn = false;
+
+    // Defaults match the previously hard-coded values in each pane.
+    int     m_tocFontSize       = 12;
+    int     m_summaryFontSize   = 13;
+    int     m_paragraphFontSize = 12;
+    int     m_chatFontSize      = 14;
 
     QString m_summaryPrompt;
     QString m_translationPrompt;
