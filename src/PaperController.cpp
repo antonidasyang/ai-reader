@@ -88,7 +88,7 @@ void PaperController::clear()
     m_doc.close();
     m_model.clear();
     m_blockCache.setPaperId({});
-    m_source = {};
+    m_source = QUrl();
     m_password.clear();
     m_paperId.clear();
     m_qs.remove(kKeyLastUrl);

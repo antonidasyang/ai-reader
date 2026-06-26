@@ -369,6 +369,18 @@ if(WIN32)
     endif()
 endif()
 
+# macOS: build a relocatable .app bundle (CMake generates a default
+# Info.plist). macdeployqt copies the Qt frameworks/plugins in afterward.
+if(APPLE)
+    set_target_properties(ai-reader PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_BUNDLE_NAME "ai-reader"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.aireader.app"
+        MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+    )
+endif()
+
 target_link_libraries(ai-reader PRIVATE
     Qt6::Core
     Qt6::Gui
@@ -417,6 +429,24 @@ if(WIN32)
                 "${microtex_SOURCE_DIR}/res"
                 "${_aireader_dist_dir}/microtex_res"
         COMMENT "Staging MicroTeX res/ into ${_aireader_dist_dir}/microtex_res"
+        VERBATIM
+    )
+endif()
+
+# ── macOS packaging: stage MicroTeX res/ inside the .app bundle ─────
+# Same problem as Windows: AIREADER_MICROTEX_RES_DIR points into the
+# build tree and vanishes on another machine. Mirror res/ into the
+# bundle's Contents/Resources/microtex_res, which LatexRenderer probes
+# first on macOS (see its Q_OS_MACOS branch). installer/macos/make-dmg.sh
+# then carries the whole bundle — res included — into the signed
+# .app/.dmg. copy_directory preserves the hidden .clatexmath-res_root
+# marker MicroTeX needs.
+if(APPLE)
+    add_custom_command(TARGET ai-reader POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${microtex_SOURCE_DIR}/res"
+                "$<TARGET_BUNDLE_CONTENT_DIR:ai-reader>/Resources/microtex_res"
+        COMMENT "Staging MicroTeX res/ into ai-reader.app/Contents/Resources/microtex_res"
         VERBATIM
     )
 endif()

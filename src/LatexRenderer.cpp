@@ -4,9 +4,11 @@
 #include <QByteArray>
 #include <QCoreApplication>
 #include <QDebug>
+#include <QDir>
 #include <QFileInfo>
 #include <QPainter>
 #include <QString>
+#include <QStringList>
 
 // MicroTeX public headers. The library is pulled in via FetchContent
 // and exposes `src/` on the include path.
@@ -34,36 +36,49 @@ LatexRenderer &LatexRenderer::instance()
 
 LatexRenderer::LatexRenderer()
 {
-    // MicroTeX needs a directory of font/glyph definitions at startup.
-    // Two valid sources:
+    // MicroTeX needs its res/ tree (font + glyph definitions) at
+    // startup. Candidate locations, most-specific first:
     //
-    //   1. <exe-dir>/microtex_res — what packaged installs ship; the
-    //      Windows POST_BUILD step in CMakeLists.txt mirrors the
-    //      upstream res/ tree there, and AiReader.iss bundles it.
-    //   2. AIREADER_MICROTEX_RES_DIR — the absolute build-machine
-    //      path baked in by CMake. Only valid when running from the
-    //      developer's own checkout, but it's the only thing
-    //      available in early dev before D8 packaging exists.
+    //   1. macOS only: <bundle>/Contents/Resources/microtex_res —
+    //      staged by the APPLE POST_BUILD step in CMakeLists.txt and
+    //      carried into the signed .app/.dmg by installer/macos/make-dmg.sh.
+    //   2. <exe-dir>/microtex_res — what the Windows packaged install
+    //      ships (its own POST_BUILD mirrors res/ there; AiReader.iss
+    //      bundles it).
+    //   3. AIREADER_MICROTEX_RES_DIR — the absolute build-machine path
+    //      baked in by CMake; valid only from the developer checkout.
     //
-    // We pick the first one that contains the expected layout
-    // (TeXFonts/) so a stale build-machine path on a packaged install
-    // never overrides the relocatable copy.
-    const QString relocatable =
-        QCoreApplication::applicationDirPath() + QStringLiteral("/microtex_res");
-    const QString builtIn =
-        QString::fromUtf8(AIREADER_MICROTEX_RES_DIR);
+    // A directory counts as a res root iff it holds the
+    // ".clatexmath-res_root" marker MicroTeX itself looks for (see
+    // queryResourceLocation in microtex/src/latex.cpp). The previous
+    // "/TeXFonts" probe matched an older upstream layout that the
+    // pinned MicroTeX master no longer ships, which silently disabled
+    // math on every platform.
+    const auto isResDir = [](const QString &dir) {
+        return QFileInfo::exists(dir + QStringLiteral("/.clatexmath-res_root"));
+    };
+
+    const QString exeDir = QCoreApplication::applicationDirPath();
+    QStringList candidates;
+#ifdef Q_OS_MACOS
+    candidates << QDir::cleanPath(exeDir
+                   + QStringLiteral("/../Resources/microtex_res"));
+#endif
+    candidates << exeDir + QStringLiteral("/microtex_res");
+    candidates << QString::fromUtf8(AIREADER_MICROTEX_RES_DIR);
 
     QString resDir;
-    if (QFileInfo(relocatable + QStringLiteral("/TeXFonts")).isDir())
-        resDir = relocatable;
-    else if (QFileInfo(builtIn + QStringLiteral("/TeXFonts")).isDir())
-        resDir = builtIn;
+    for (const QString &candidate : candidates) {
+        if (isResDir(candidate)) {
+            resDir = candidate;
+            break;
+        }
+    }
 
     if (resDir.isEmpty()) {
-        qWarning("LatexRenderer: no MicroTeX res dir found "
-                 "(tried %s and %s); math will fall back to raw LaTeX.",
-                 qUtf8Printable(relocatable),
-                 qUtf8Printable(builtIn));
+        qWarning("LatexRenderer: no MicroTeX res dir found (tried %s); "
+                 "math will fall back to raw LaTeX.",
+                 qUtf8Printable(candidates.join(QStringLiteral(", "))));
         return;
     }
 
