@@ -7,6 +7,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { EventsModule } from './events/events.module';
 import { SyncModule } from './sync/sync.module';
 import { FilesModule } from './files/files.module';
+import { ExportModule } from './export/export.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { FilesModule } from './files/files.module';
     EventsModule,
     SyncModule,
     FilesModule,
+    ExportModule,
   ],
   controllers: [HealthController],
 })
