@@ -531,9 +531,19 @@ ApplicationWindow {
             }
         }
 
+        ProjectBar {
+            id: projectBar
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
+
         SplitView {
             id: split
-            anchors.fill: parent
+            anchors.top: projectBar.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
             orientation: Qt.Horizontal
 
             // ── Far left: folder browser (toggleable) ──────────────────

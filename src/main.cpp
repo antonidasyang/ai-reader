@@ -7,6 +7,7 @@
 #include "LibraryDb.h"
 #include "ApiClient.h"
 #include "AuthController.h"
+#include "ProjectController.h"
 #include "MarkdownRenderer.h"
 #include "PaperController.h"
 #include "Settings.h"
@@ -230,6 +231,7 @@ int main(int argc, char *argv[])
     LibraryDb libraryDb;
     ApiClient apiClient;
     AuthController auth(&apiClient);
+    ProjectController projectController(&apiClient, &auth, &libraryDb);
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
@@ -250,6 +252,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("updates", &updateChecker);
     engine.rootContext()->setContextProperty("libraryDb", &libraryDb);
     engine.rootContext()->setContextProperty("auth", &auth);
+    engine.rootContext()->setContextProperty("projects", &projectController);
 
     QObject::connect(
         &engine,

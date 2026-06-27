@@ -255,6 +255,8 @@ qt_add_executable(ai-reader
     src/ApiClient.cpp
     src/AuthController.h
     src/AuthController.cpp
+    src/ProjectController.h
+    src/ProjectController.cpp
 )
 
 target_compile_definitions(ai-reader PRIVATE
@@ -322,6 +324,8 @@ qt_add_qml_module(ai-reader
         qml/Theme.qml
         qml/Main.qml
         qml/LoginDialog.qml
+        qml/ProjectBar.qml
+        qml/MembersDialog.qml
         qml/PasswordDialog.qml
         qml/BlockList.qml
         qml/SettingsDialog.qml
