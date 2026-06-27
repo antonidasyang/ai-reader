@@ -11,11 +11,15 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { WsAdapter } from '@nestjs/platform-ws';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
+
+  // Raw ws (not socket.io) for the change-notification gateway.
+  app.useWebSocketAdapter(new WsAdapter(app));
 
   const origin = config.get<string>('CORS_ORIGIN', '*');
   app.enableCors({
