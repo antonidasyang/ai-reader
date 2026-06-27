@@ -1,0 +1,28 @@
+// ai-reader cloud backend schema.
+//
+// Every collaboratively-synced object carries: a global UUID id (not an
+// autoincrement, so clients can mint ids offline), the owning project_id, a
+// monotonic `version` (the project's logical clock at last change, the sync
+// cursor), a `deleted` soft-delete flag (sync must see tombstones), and
+// updated_at / updated_by for field-level last-write-wins conflict handling.
+//
+// More models (projects, items, sync objects) are added in later phases.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  displayName  String?  @map("display_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
