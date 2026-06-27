@@ -50,8 +50,31 @@ model Project {
 
   owner   User            @relation("OwnedProjects", fields: [ownerId], references: [id])
   members ProjectMember[]
+  objects SyncObject[]
 
   @@map("projects")
+}
+
+// One row per synced object of ANY type. The server is a pure sync substrate:
+// it never interprets `data` (that's the client's schema), so all object kinds
+// (item, attachment, collection, collection_item, tag, item_tag, ai_artifact,
+// annotation, note) live here, keyed by `type`. `version` is the owning
+// project's clock at the object's last change -- clients pull "everything with
+// version > lastSyncVersion". `deleted` rows are tombstones kept for sync.
+model SyncObject {
+  id        String   @id @db.Uuid           // client-minted, globally unique
+  projectId String   @map("project_id") @db.Uuid
+  type      String
+  data      Json
+  version   BigInt
+  deleted   Boolean  @default(false)
+  updatedAt DateTime @default(now()) @map("updated_at")
+  updatedBy String?  @map("updated_by") @db.Uuid
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, version])
+  @@map("sync_objects")
 }
 
 model ProjectMember {
