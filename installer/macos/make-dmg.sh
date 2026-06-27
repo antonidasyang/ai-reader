@@ -2,7 +2,7 @@
 # Build a distributable arm64 ai-reader DMG.
 #
 # If a "Developer ID Application" certificate AND a notarytool keychain profile
-# named $NOTARY_PROFILE (default: SafePackerNotary) are present, the .app + .dmg
+# named $NOTARY_PROFILE (default: YXCNotary) are present, the .app + .dmg
 # are signed with a hardened runtime, notarized, and stapled. Otherwise an
 # AD-HOC signed dmg is produced (Gatekeeper will warn; first launch needs
 # right-click -> Open). Ad-hoc is still required on Apple Silicon — unsigned
@@ -11,7 +11,7 @@
 # Prereqs (one-time, your Apple account) for the signed/notarized path:
 #   1) Create a "Developer ID Application" cert (Xcode > Settings > Accounts >
 #      Manage Certificates > + > Developer ID Application) — lands in login keychain.
-#   2) xcrun notarytool store-credentials SafePackerNotary \
+#   2) xcrun notarytool store-credentials YXCNotary \
 #        --apple-id <your-apple-id> --team-id 7S7PRTP374 --password <app-specific-pw>
 #
 # Prereq build (produces build/ai-reader.app with MicroTeX res staged in it):
@@ -27,7 +27,7 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 
 APP_SRC="$ROOT/build/ai-reader.app"
-NOTARY_PROFILE="${NOTARY_PROFILE:-SafePackerNotary}"
+NOTARY_PROFILE="${NOTARY_PROFILE:-YXCNotary}"
 TEAM_ID="${TEAM_ID:-7S7PRTP374}"
 
 # Version: prefer manifest.json's latestVersion, fall back to CMake project().
