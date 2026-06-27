@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { ProjectsModule } from './projects/projects.module';
 import { EventsModule } from './events/events.module';
 import { SyncModule } from './sync/sync.module';
+import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { SyncModule } from './sync/sync.module';
     ProjectsModule,
     EventsModule,
     SyncModule,
+    FilesModule,
   ],
   controllers: [HealthController],
 })
