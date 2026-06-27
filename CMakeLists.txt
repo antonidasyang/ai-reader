@@ -251,6 +251,10 @@ qt_add_executable(ai-reader
     # ── Library management (cloud sync + collaboration) ──
     src/LibraryDb.h
     src/LibraryDb.cpp
+    src/ApiClient.h
+    src/ApiClient.cpp
+    src/AuthController.h
+    src/AuthController.cpp
 )
 
 target_compile_definitions(ai-reader PRIVATE
@@ -317,6 +321,7 @@ qt_add_qml_module(ai-reader
     QML_FILES
         qml/Theme.qml
         qml/Main.qml
+        qml/LoginDialog.qml
         qml/PasswordDialog.qml
         qml/BlockList.qml
         qml/SettingsDialog.qml
