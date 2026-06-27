@@ -4,6 +4,7 @@
 #include "LayoutSettings.h"
 #include "UpdateChecker.h"
 #include "Library.h"
+#include "LibraryDb.h"
 #include "MarkdownRenderer.h"
 #include "PaperController.h"
 #include "Settings.h"
@@ -224,6 +225,7 @@ int main(int argc, char *argv[])
     LayoutSettings layoutSettings;
     Tabs tabs(&paperController);
     UpdateChecker updateChecker(&settings);
+    LibraryDb libraryDb;
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
@@ -242,6 +244,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("layoutSettings", &layoutSettings);
     engine.rootContext()->setContextProperty("tabs", &tabs);
     engine.rootContext()->setContextProperty("updates", &updateChecker);
+    engine.rootContext()->setContextProperty("libraryDb", &libraryDb);
 
     QObject::connect(
         &engine,

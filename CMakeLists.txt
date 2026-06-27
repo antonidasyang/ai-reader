@@ -9,6 +9,8 @@ set(_aireader_qt_components
     Core
     Gui
     Network
+    Sql           # local SQLite library store + FTS5 (cloud-sync feature)
+    WebSockets    # SyncEngine change-notification channel
     Qml
     Quick
     QuickControls2
@@ -246,6 +248,9 @@ qt_add_executable(ai-reader
     src/UpdateChecker.cpp
     src/CrashReporter.h
     src/CrashReporter.cpp
+    # ── Library management (cloud sync + collaboration) ──
+    src/LibraryDb.h
+    src/LibraryDb.cpp
 )
 
 target_compile_definitions(ai-reader PRIVATE
@@ -405,6 +410,8 @@ target_link_libraries(ai-reader PRIVATE
     Qt6::PdfQuick
     Qt6::Widgets
     Qt6::PrintSupport
+    Qt6::Sql
+    Qt6::WebSockets
     qt6keychain                          # qtkeychain static    (FetchContent)
     libcmark-gfm_static                  # cmark-gfm core       (FetchContent)
     libcmark-gfm-extensions_static       # cmark-gfm GFM exts   (FetchContent)
