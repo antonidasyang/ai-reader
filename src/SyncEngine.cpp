@@ -273,6 +273,8 @@ void SyncEngine::indexObject(const SyncObjectRow &row)
     const QJsonArray creators = row.data.value(QStringLiteral("creators")).toArray();
     for (const QJsonValue &c : creators)
         parts << c.toString();
+    for (const QJsonValue &t : row.data.value(QStringLiteral("tags")).toArray())
+        parts << t.toString();
     m_db->indexDoc(row.id, row.projectId, QStringLiteral("item"),
                    parts.join(QChar(' ')));
 }

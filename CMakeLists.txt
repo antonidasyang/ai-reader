@@ -263,6 +263,8 @@ qt_add_executable(ai-reader
     src/LibraryModel.cpp
     src/MetadataService.h
     src/MetadataService.cpp
+    src/SearchService.h
+    src/SearchService.cpp
 )
 
 target_compile_definitions(ai-reader PRIVATE

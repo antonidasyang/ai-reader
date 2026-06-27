@@ -30,6 +30,7 @@ Dialog {
         pubF.text = f.publication || ""
         doiF.text = f.doi || ""
         arxivF.text = f.arxivId || ""
+        tagsF.text = (f.tags || []).join(", ")
         const t = f.itemType || "journalArticle"
         const i = typeBox.model.indexOf(t)
         typeBox.currentIndex = i >= 0 ? i : 0
@@ -49,6 +50,9 @@ Dialog {
             publication: pubF.text,
             doi: doiF.text,
             arxivId: arxivF.text,
+            tags: tagsF.text.split(",")
+                  .map(function(s) { return s.trim() })
+                  .filter(function(s) { return s.length > 0 }),
             itemType: typeBox.currentText
         }
         const y = parseInt(yearF.text)
@@ -119,6 +123,12 @@ Dialog {
             TextField { id: doiF; Layout.fillWidth: true }
             Label { text: qsTr("arXiv"); color: Theme.dimText }
             TextField { id: arxivF; Layout.fillWidth: true }
+            Label { text: qsTr("Tags"); color: Theme.dimText }
+            TextField {
+                id: tagsF
+                Layout.fillWidth: true
+                placeholderText: qsTr("comma-separated")
+            }
         }
 
         Label {

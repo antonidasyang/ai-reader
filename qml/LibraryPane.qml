@@ -3,13 +3,20 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import AiReader
 
-// The current project's bibliographic items (synced library). Bound to the
-// libraryModel / projects / sync / auth context properties.
+// The current project's bibliographic items (synced library) + full-text
+// search. Bound to libraryModel / search / projects / sync / auth.
 Rectangle {
     id: root
     color: Theme.paneBg
 
     signal openRequested(string path)
+
+    property var searchResults: []
+    readonly property bool searching: searchField.text.trim().length > 0
+
+    function runSearch() {
+        searchResults = searching ? search.search(searchField.text) : []
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -50,8 +57,6 @@ Rectangle {
                                        paperController.fileName,
                                        paperController.paperId,
                                        paperController.pdfSource)
-                        // Try to auto-complete bibliographic fields from the
-                        // PDF's DOI/arXiv id (non-blocking; manual fill remains).
                         if (id && id.length > 0)
                             metadata.autoFill(id)
                     }
@@ -59,16 +64,33 @@ Rectangle {
             }
         }
 
+        // Search bar
+        TextField {
+            id: searchField
+            Layout.fillWidth: true
+            placeholderText: search.available
+                             ? qsTr("Search the project library…")
+                             : qsTr("Search unavailable (no FTS5)")
+            enabled: search.available && projects.currentId.length > 0
+            onTextChanged: searchDebounce.restart()
+        }
+        Timer {
+            id: searchDebounce
+            interval: 250
+            onTriggered: root.runSearch()
+        }
+
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
+            // ── Full library ──
             ListView {
-                id: list
+                id: libraryList
                 anchors.fill: parent
                 clip: true
                 model: libraryModel
-                visible: libraryModel.count > 0
+                visible: !root.searching && libraryModel.count > 0
                 ScrollBar.vertical: ScrollBar { active: true }
 
                 delegate: ItemDelegate {
@@ -76,7 +98,6 @@ Rectangle {
                     height: 52
                     onClicked: if (model.localPath && model.localPath.length > 0)
                                    root.openRequested(model.localPath)
-
                     background: Rectangle {
                         color: hovered ? Theme.hover : "transparent"
                     }
@@ -99,7 +120,6 @@ Rectangle {
                             Layout.fillWidth: true
                         }
                     }
-
                     TapHandler {
                         acceptedButtons: Qt.RightButton
                         onTapped: {
@@ -124,20 +144,69 @@ Rectangle {
                 }
             }
 
+            // ── Search results ──
+            ListView {
+                id: searchList
+                anchors.fill: parent
+                clip: true
+                model: root.searchResults
+                visible: root.searching
+                ScrollBar.vertical: ScrollBar { active: true }
+                delegate: ItemDelegate {
+                    width: ListView.view ? ListView.view.width : 0
+                    height: 54
+                    onClicked: {
+                        if (modelData.localPath && modelData.localPath.length > 0)
+                            root.openRequested(modelData.localPath)
+                        else
+                            metaDlg.openFor(modelData.itemId)
+                    }
+                    background: Rectangle {
+                        color: hovered ? Theme.hover : "transparent"
+                    }
+                    contentItem: ColumnLayout {
+                        spacing: 2
+                        Label {
+                            text: modelData.title || qsTr("(untitled)")
+                            color: Theme.text
+                            font.bold: true
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
+                        }
+                        Label {
+                            text: modelData.snippet || ""
+                            color: Theme.dimText
+                            font.pixelSize: 11
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
+                        }
+                    }
+                }
+            }
+
             Label {
                 anchors.centerIn: parent
-                visible: libraryModel.count === 0
-                color: Theme.dimText
+                width: parent.width - 32
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.Wrap
-                width: parent.width - 32
-                text: !auth.authenticated
-                      ? qsTr("Sign in to use the library.")
-                      : (projects.currentId.length === 0
-                         ? qsTr("Create or select a project.")
-                         : qsTr("No papers yet. Open a PDF, then click + Add."))
+                color: Theme.dimText
+                visible: root.searching ? root.searchResults.length === 0
+                                        : libraryModel.count === 0
+                text: root.searching
+                      ? qsTr("No matches.")
+                      : (!auth.authenticated
+                         ? qsTr("Sign in to use the library.")
+                         : (projects.currentId.length === 0
+                            ? qsTr("Create or select a project.")
+                            : qsTr("No papers yet. Open a PDF, then click + Add.")))
             }
         }
+    }
+
+    // Re-run search after a sync may have changed the index.
+    Connections {
+        target: sync
+        function onProjectSynced(pid) { if (root.searching) root.runSearch() }
     }
 
     MetadataDialog { id: metaDlg }
