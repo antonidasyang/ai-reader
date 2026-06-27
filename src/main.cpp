@@ -8,6 +8,7 @@
 #include "ApiClient.h"
 #include "AuthController.h"
 #include "ProjectController.h"
+#include "SyncEngine.h"
 #include "MarkdownRenderer.h"
 #include "PaperController.h"
 #include "Settings.h"
@@ -232,6 +233,7 @@ int main(int argc, char *argv[])
     ApiClient apiClient;
     AuthController auth(&apiClient);
     ProjectController projectController(&apiClient, &auth, &libraryDb);
+    SyncEngine syncEngine(&apiClient, &auth, &projectController, &libraryDb);
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
@@ -253,6 +255,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("libraryDb", &libraryDb);
     engine.rootContext()->setContextProperty("auth", &auth);
     engine.rootContext()->setContextProperty("projects", &projectController);
+    engine.rootContext()->setContextProperty("sync", &syncEngine);
 
     QObject::connect(
         &engine,

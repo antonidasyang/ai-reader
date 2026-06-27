@@ -257,6 +257,8 @@ qt_add_executable(ai-reader
     src/AuthController.cpp
     src/ProjectController.h
     src/ProjectController.cpp
+    src/SyncEngine.h
+    src/SyncEngine.cpp
 )
 
 target_compile_definitions(ai-reader PRIVATE

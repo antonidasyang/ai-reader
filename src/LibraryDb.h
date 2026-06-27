@@ -67,6 +67,7 @@ public:
                      bool deleted, const QString &authorId);
     bool getObject(const QString &projectId, const QString &id,
                    SyncObjectRow &out) const;
+    bool isDirty(const QString &projectId, const QString &id) const;
     QList<SyncObjectRow> dirtyObjects(const QString &projectId) const;
     // After a successful push: clear dirty, advance version/base_version.
     void markPushed(const QString &projectId, const QStringList &ids,

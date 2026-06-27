@@ -216,6 +216,16 @@ bool LibraryDb::getObject(const QString &projectId, const QString &id,
     return true;
 }
 
+bool LibraryDb::isDirty(const QString &projectId, const QString &id) const
+{
+    QSqlQuery q(database());
+    q.prepare(QStringLiteral(
+        "SELECT dirty FROM sync_objects WHERE project_id=? AND id=?"));
+    q.addBindValue(projectId);
+    q.addBindValue(id);
+    return q.exec() && q.next() && q.value(0).toInt() != 0;
+}
+
 QList<SyncObjectRow> LibraryDb::dirtyObjects(const QString &projectId) const
 {
     QList<SyncObjectRow> rows;
