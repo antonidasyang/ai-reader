@@ -448,6 +448,16 @@ ApplicationWindow {
                 onClicked: folderPane.visible = !folderPane.visible
             }
             ToolButton {
+                id: libToggleBtn
+                text: qsTr("Lib")
+                checkable: true
+                checked: libraryPane.visible
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("Cloud-synced literature library")
+                onClicked: libraryPane.visible = !libraryPane.visible
+            }
+            ToolButton {
                 id: tocToggleBtn
                 text: qsTr("TOC")
                 checkable: true
@@ -572,6 +582,29 @@ ApplicationWindow {
                     anchors.leftMargin: 4
                     anchors.topMargin: 7
                     pane: folderPane
+                    split: split
+                    marker: dropMarker
+                    onReordered: window.persistPaneOrder()
+                }
+            }
+
+            // ── Library pane (cloud-synced bibliography, toggleable) ───
+            LibraryPane {
+                id: libraryPane
+                objectName: "library"
+                visible: layoutSettings.paneVisible("library", false)
+                onVisibleChanged: layoutSettings.setPaneVisible("library", visible)
+                SplitView.preferredWidth: layoutSettings.paneWidth("library", 280)
+                SplitView.minimumWidth: 0
+                onWidthChanged: layoutSettings.setPaneWidth("library", width)
+                onOpenRequested: function(path) { tabs.openPaper(path) }
+
+                DockGrip {
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.leftMargin: 4
+                    anchors.topMargin: 7
+                    pane: libraryPane
                     split: split
                     marker: dropMarker
                     onReordered: window.persistPaneOrder()

@@ -259,6 +259,8 @@ qt_add_executable(ai-reader
     src/ProjectController.cpp
     src/SyncEngine.h
     src/SyncEngine.cpp
+    src/LibraryModel.h
+    src/LibraryModel.cpp
 )
 
 target_compile_definitions(ai-reader PRIVATE
@@ -328,6 +330,8 @@ qt_add_qml_module(ai-reader
         qml/LoginDialog.qml
         qml/ProjectBar.qml
         qml/MembersDialog.qml
+        qml/LibraryPane.qml
+        qml/MetadataDialog.qml
         qml/PasswordDialog.qml
         qml/BlockList.qml
         qml/SettingsDialog.qml
