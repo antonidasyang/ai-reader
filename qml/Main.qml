@@ -710,10 +710,38 @@ ApplicationWindow {
                         }
                     }
 
-                    Item {
+                    FocusScope {
+                        id: pdfViewport
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         clip: true
+
+                        // Click the PDF area to focus it, then use the arrow
+                        // keys to scroll the whole document. The TapHandler is
+                        // passive (DragThreshold) so it never steals a text-
+                        // selection or pan drag; it just puts this scope in the
+                        // focus chain. Arrow keys then reach this Keys handler
+                        // (directly, or bubbled up from pdfView's selection,
+                        // which ignores them) and scroll the inner flickable.
+                        TapHandler {
+                            acceptedButtons: Qt.LeftButton
+                            gesturePolicy: TapHandler.DragThreshold
+                            onTapped: pdfViewport.forceActiveFocus()
+                        }
+                        Keys.onPressed: function(event) {
+                            const f = pdfMouse._flick()
+                            const k = event.key
+                            const isArrow = k === Qt.Key_Up || k === Qt.Key_Down
+                                         || k === Qt.Key_Left || k === Qt.Key_Right
+                            if (!f || !isArrow) { event.accepted = false; return }
+                            const step = 60
+                            if (k === Qt.Key_Up)         f.contentY -= step
+                            else if (k === Qt.Key_Down)  f.contentY += step
+                            else if (k === Qt.Key_Left)  f.contentX -= step
+                            else                         f.contentX += step
+                            f.returnToBounds()
+                            event.accepted = true
+                        }
 
                         PdfMultiPageView {
                             id: pdfView
