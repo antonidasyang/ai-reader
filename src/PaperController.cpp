@@ -213,6 +213,20 @@ bool PaperController::exportExtractedText(const QUrl &dest)
     return f.write(bytes) == bytes.size();
 }
 
+QString PaperController::headText(int maxChars) const
+{
+    // First blocks' text, for identifier (DOI/arXiv) extraction.
+    QString out;
+    const QVector<Block> blocks = m_model.allBlocks();
+    for (const Block &b : blocks) {
+        out += b.text;
+        out += QChar('\n');
+        if (out.size() >= maxChars)
+            break;
+    }
+    return out.left(maxChars);
+}
+
 QImage PaperController::renderPage(int page, int targetWidthPx) const
 {
     if (m_status != Ready) return {};

@@ -10,6 +10,7 @@
 #include "ProjectController.h"
 #include "SyncEngine.h"
 #include "LibraryModel.h"
+#include "MetadataService.h"
 #include "MarkdownRenderer.h"
 #include "PaperController.h"
 #include "Settings.h"
@@ -236,6 +237,7 @@ int main(int argc, char *argv[])
     ProjectController projectController(&apiClient, &auth, &libraryDb);
     SyncEngine syncEngine(&apiClient, &auth, &projectController, &libraryDb);
     LibraryModel libraryModel(&libraryDb, &projectController, &syncEngine);
+    MetadataService metadataService(&libraryModel, &paperController);
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
@@ -259,6 +261,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("projects", &projectController);
     engine.rootContext()->setContextProperty("sync", &syncEngine);
     engine.rootContext()->setContextProperty("libraryModel", &libraryModel);
+    engine.rootContext()->setContextProperty("metadata", &metadataService);
 
     QObject::connect(
         &engine,

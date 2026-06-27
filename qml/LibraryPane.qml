@@ -45,10 +45,16 @@ Rectangle {
                     ToolTip.visible: hovered
                     ToolTip.delay: 400
                     ToolTip.text: qsTr("Add the current paper to this project")
-                    onClicked: libraryModel.addCurrentPaper(
-                                   paperController.fileName,
-                                   paperController.paperId,
-                                   paperController.pdfSource)
+                    onClicked: {
+                        const id = libraryModel.addCurrentPaper(
+                                       paperController.fileName,
+                                       paperController.paperId,
+                                       paperController.pdfSource)
+                        // Try to auto-complete bibliographic fields from the
+                        // PDF's DOI/arXiv id (non-blocking; manual fill remains).
+                        if (id && id.length > 0)
+                            metadata.autoFill(id)
+                    }
                 }
             }
         }

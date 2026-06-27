@@ -261,6 +261,8 @@ qt_add_executable(ai-reader
     src/SyncEngine.cpp
     src/LibraryModel.h
     src/LibraryModel.cpp
+    src/MetadataService.h
+    src/MetadataService.cpp
 )
 
 target_compile_definitions(ai-reader PRIVATE

@@ -62,6 +62,8 @@ public slots:
     // line bboxes, splitter stats, final blocks) to `dest`. Returns
     // true on success.
     Q_INVOKABLE bool exportExtractedText(const QUrl &dest);
+    // First blocks' text, used for DOI/arXiv identifier extraction.
+    Q_INVOKABLE QString headText(int maxChars = 6000) const;
 
     // Discard any saved (auto-extracted + manually-edited) paragraphs
     // for the current paper and re-run the clusterer. Use this when
