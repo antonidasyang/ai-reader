@@ -51,6 +51,21 @@ Rectangle {
                             summary.generate()
                     }
                 }
+                ToolButton {
+                    text: qsTr("Share")
+                    visible: aiArtifacts.canShare && summary.text.length > 0
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 400
+                    ToolTip.text: qsTr("Share this interpretation with the project")
+                    onClicked: aiArtifacts.publish("summary", summary.text,
+                                                   settings.model)
+                }
+                ToolButton {
+                    text: qsTr("Shared (%1)").arg(aiArtifacts.sharedCount)
+                    visible: auth.authenticated && projects.currentId.length > 0
+                    onClicked: sharedDlg.open()
+                }
+                SharedAiDialog { id: sharedDlg }
             }
         }
 

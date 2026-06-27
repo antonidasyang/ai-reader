@@ -265,6 +265,8 @@ qt_add_executable(ai-reader
     src/MetadataService.cpp
     src/SearchService.h
     src/SearchService.cpp
+    src/AiArtifactService.h
+    src/AiArtifactService.cpp
 )
 
 target_compile_definitions(ai-reader PRIVATE
@@ -336,6 +338,7 @@ qt_add_qml_module(ai-reader
         qml/MembersDialog.qml
         qml/LibraryPane.qml
         qml/MetadataDialog.qml
+        qml/SharedAiDialog.qml
         qml/PasswordDialog.qml
         qml/BlockList.qml
         qml/SettingsDialog.qml
