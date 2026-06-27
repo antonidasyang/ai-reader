@@ -5,7 +5,7 @@ import AiReader
 
 Rectangle {
     id: root
-    color: "#fafafa"
+    color: Theme.paneBg
 
     ColumnLayout {
         anchors.fill: parent
@@ -14,7 +14,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 32
-            color: "#ececec"
+            color: Theme.headerBg
             clip: true
 
             RowLayout {
@@ -57,8 +57,8 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            color: "#fafafa"
-            border.color: "#e0e0e0"
+            color: Theme.paneBg
+            border.color: Theme.border
 
             // A direct Flickable instead of ScrollView so we have a
             // first-class contentY / contentHeight to drive the
@@ -113,7 +113,7 @@ Rectangle {
                              : (summary.status === SummaryService.Failed
                                 ? qsTr("Failed: %1").arg(summary.lastError)
                                 : qsTr("Click Generate to interpret this paper.")))
-                    color: "#1d1d1d"
+                    color: Theme.text
                     font.pixelSize: settings.summaryFontSize
                     leftPadding: 16
                     rightPadding: 16

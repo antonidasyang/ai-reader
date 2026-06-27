@@ -5,7 +5,7 @@ import AiReader
 
 Rectangle {
     id: root
-    color: "#fafafa"
+    color: Theme.paneBg
 
     property var model: null
     property int paperStatus: PaperController.Empty
@@ -44,7 +44,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 32
-            color: "#ececec"
+            color: Theme.headerBg
 
             RowLayout {
                 anchors.fill: parent
@@ -62,13 +62,13 @@ Rectangle {
                     text: qsTr("translating %1/%2…")
                           .arg(translation.doneCount)
                           .arg(translation.totalCount)
-                    color: "#1565c0"
+                    color: Theme.accent
                     font.pixelSize: 11
                 }
                 Label {
                     visible: !translation.busy && translation.failedCount > 0
                     text: qsTr("%1 failed").arg(translation.failedCount)
-                    color: "#c62828"
+                    color: Theme.danger
                     font.pixelSize: 11
                 }
             }
@@ -107,7 +107,7 @@ Rectangle {
                 delegate: Rectangle {
                     id: blockDelegate
                     width: ListView.view ? ListView.view.width : 0
-                    color: ctxArea.containsMouse ? "#f0f3ff" : "transparent"
+                    color: ctxArea.containsMouse ? Theme.hover : "transparent"
                     implicitHeight: cell.implicitHeight + 16
 
                     // Captured by the right-click handler so the menu's
@@ -217,7 +217,7 @@ Rectangle {
                             Label {
                                 text: qsTr("p.%1 · %2").arg(model.page + 1).arg(model.kindName)
                                 font.pixelSize: 10
-                                color: "#999"
+                                color: Theme.dimText
                             }
 
                             // Show the chevrons only when there's a
@@ -282,7 +282,7 @@ Rectangle {
                             selectByMouse: true
                             wrapMode: TextEdit.Wrap
                             textFormat: TextEdit.PlainText
-                            color: "#5f6368"
+                            color: Theme.bodyText
                             // Headings get +2 px so they remain
                             // visually above the body even when the
                             // user scales paragraphFontSize from
@@ -302,7 +302,7 @@ Rectangle {
                             text: model.translation || ""
                             wrapMode: Text.Wrap
                             textFormat: Text.PlainText
-                            color: "#1d1d1d"
+                            color: Theme.text
                             font.pixelSize: settings.paragraphFontSize + 2
                                           + (model.kindName === "heading" ? 2 : 0)
                             font.bold: model.kindName === "heading"
@@ -316,7 +316,7 @@ Rectangle {
                             Layout.fillWidth: true
                             text: model.translationError || ""
                             wrapMode: Text.Wrap
-                            color: "#c62828"
+                            color: Theme.danger
                             font.pixelSize: 11
                         }
                     }
@@ -326,7 +326,7 @@ Rectangle {
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom
                         height: 1
-                        color: "#ececec"
+                        color: Theme.divider
                         visible: index < list.count - 1
                     }
                 }
@@ -336,7 +336,7 @@ Rectangle {
                 anchors.centerIn: parent
                 visible: !list.visible
                 horizontalAlignment: Text.AlignHCenter
-                color: "#888"
+                color: Theme.dimText
                 text: root.paperStatus === PaperController.Loading
                       ? qsTr("Extracting paragraphs…")
                       : root.paperStatus === PaperController.Error

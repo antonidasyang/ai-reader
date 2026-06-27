@@ -5,7 +5,7 @@ import AiReader
 
 Rectangle {
     id: root
-    color: "#f7f7fa"
+    color: Theme.paneBg
 
     signal sectionClicked(int blockId, int page)
 
@@ -16,7 +16,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 32
-            color: "#ececec"
+            color: Theme.headerBg
             clip: true
 
             RowLayout {
@@ -85,11 +85,11 @@ Rectangle {
                             // size from Settings.
                             font.pixelSize: settings.tocFontSize
                                           + (model.level === 1 ? 1 : 0)
-                            color: model.level === 1 ? "#1a237e" : "#333"
+                            color: model.level === 1 ? Theme.heading : Theme.text
                         }
                         Label {
                             text: qsTr("p.%1").arg(model.startPage + 1)
-                            color: "#999"
+                            color: Theme.dimText
                             // Page badge stays small relative to the
                             // section title (-2 px from the body).
                             font.pixelSize: Math.max(8, settings.tocFontSize - 2)
@@ -105,7 +105,7 @@ Rectangle {
                 anchors.centerIn: parent
                 visible: !list.visible
                 horizontalAlignment: Text.AlignHCenter
-                color: "#888"
+                color: Theme.dimText
                 wrapMode: Text.Wrap
                 width: parent.width - 32
                 text: {

@@ -6,7 +6,7 @@ import AiReader
 
 Rectangle {
     id: root
-    color: "#f7f7fa"
+    color: Theme.paneBg
 
     // Emitted when the user picks a PDF in the tree. Wired to
     // PaperController.openPdf in Main.qml so a single click loads it.
@@ -30,7 +30,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 32
-            color: "#ececec"
+            color: Theme.headerBg
             clip: true
 
             RowLayout {
@@ -65,7 +65,7 @@ Rectangle {
             visible: library.currentFolder.length > 0
             text: library.currentFolder
             elide: Text.ElideMiddle
-            color: "#666"
+            color: Theme.dimText
             font.pixelSize: 10
             leftPadding: 12
             rightPadding: 12
@@ -84,6 +84,10 @@ Rectangle {
                 id: tree
                 anchors.fill: parent
                 clip: true
+                // Recycled delegates were showing a sibling's name on the
+                // wrong folder row (a stale text binding survived reuse);
+                // disabling reuse keeps each row's label correct.
+                reuseItems: false
                 visible: library.currentFolder.length > 0
                 model: library.model
                 rootIndex: library.rootIndex()
@@ -117,8 +121,8 @@ Rectangle {
                     // — with a single uniform background plus a soft hover
                     // tint and a stronger highlight on the active PDF.
                     background: Rectangle {
-                        color: delegateRoot._isActiveFile ? "#d4e2f5"
-                             : delegateRoot.hovered       ? "#e8eaef"
+                        color: delegateRoot._isActiveFile ? Theme.activeRow
+                             : delegateRoot.hovered       ? Theme.hover
                                                           : "transparent"
                     }
 
@@ -134,7 +138,7 @@ Rectangle {
             Label {
                 anchors.centerIn: parent
                 visible: library.currentFolder.length === 0
-                color: "#888"
+                color: Theme.dimText
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.Wrap
                 width: parent.width - 32

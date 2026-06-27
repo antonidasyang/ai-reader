@@ -21,6 +21,11 @@ ApplicationWindow {
     readonly property real _zoomMin: 0.25
     readonly property real _zoomMax: 5.0
     readonly property real _zoomStep: 1.2
+
+    // Hand/pan tool: when on, dragging the PDF moves the page (hand
+    // cursor) instead of selecting text. Toggled from the toolbar.
+    property bool panMode: false
+
     function _setZoom(s) {
         pdfView.renderScale = Math.max(_zoomMin, Math.min(_zoomMax, s))
     }
@@ -408,6 +413,18 @@ ApplicationWindow {
                 ToolTip.text: qsTr("Zoom in")
                 onClicked: window.zoomIn()
             }
+            ToolButton {
+                id: panToggleBtn
+                text: "✋"
+                font.pixelSize: 15
+                checkable: true
+                checked: window.panMode
+                enabled: pdfDoc.status === PdfDocument.Ready
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("Hand tool: drag to move the page. Off = select text.")
+                onClicked: window.panMode = !window.panMode
+            }
             ToolSeparator {}
             ToolButton {
                 id: folderToggleBtn
@@ -448,7 +465,7 @@ ApplicationWindow {
                             .arg(pdfDoc.pageCount)
                             .arg(paperController.blockCount)
                       : ""
-                color: "#555"
+                color: Theme.dimText
                 Layout.leftMargin: 8
             }
             Item { Layout.fillWidth: true }
@@ -715,16 +732,68 @@ ApplicationWindow {
                             // handling. acceptedButtons=NoButton keeps clicks
                             // and drags (text selection) flowing to pdfView
                             // untouched; only Ctrl+wheel is consumed.
+                            // One overlay handles three things:
+                            //  • Ctrl+wheel zoom — checks pixelDelta too, since
+                            //    macOS trackpads report angleDelta == 0.
+                            //  • Hand/pan tool (window.panMode): left-drag
+                            //    scrolls the inner TableView; cursor turns into a
+                            //    hand. acceptedButtons stays NoButton when pan is
+                            //    off, so the page's own text-selection DragHandler
+                            //    keeps receiving clicks/drags untouched.
+                            //  • Cursor: arrow normally, open/closed hand in pan.
                             MouseArea {
+                                id: pdfMouse
                                 anchors.fill: parent
-                                acceptedButtons: Qt.NoButton
                                 z: 1
+                                hoverEnabled: true
+                                acceptedButtons: window.panMode ? Qt.LeftButton
+                                                                : Qt.NoButton
+                                preventStealing: window.panMode
+                                cursorShape: window.panMode
+                                    ? (pressed ? Qt.ClosedHandCursor
+                                               : Qt.OpenHandCursor)
+                                    : Qt.ArrowCursor
+
+                                // The scrollable inside PdfMultiPageView is a
+                                // private TableView (no public id); find it by
+                                // duck-typing pdfView's children for a Flickable.
+                                function _flick() {
+                                    const kids = pdfView.children
+                                    for (let i = 0; i < kids.length; ++i) {
+                                        const k = kids[i]
+                                        if (k && k.contentX !== undefined
+                                              && k.contentY !== undefined)
+                                            return k
+                                    }
+                                    return null
+                                }
+
+                                property real _sx: 0
+                                property real _sy: 0
+                                property real _scx: 0
+                                property real _scy: 0
+                                onPressed: function(mouse) {
+                                    if (!window.panMode) { mouse.accepted = false; return }
+                                    const f = _flick()
+                                    if (!f) { mouse.accepted = false; return }
+                                    _sx = mouse.x; _sy = mouse.y
+                                    _scx = f.contentX; _scy = f.contentY
+                                }
+                                onPositionChanged: function(mouse) {
+                                    if (!window.panMode || !pressed) return
+                                    const f = _flick()
+                                    if (!f) return
+                                    f.contentX = _scx - (mouse.x - _sx)
+                                    f.contentY = _scy - (mouse.y - _sy)
+                                    f.returnToBounds()
+                                }
                                 onWheel: function(wheel) {
                                     if (wheel.modifiers & Qt.ControlModifier) {
-                                        if (wheel.angleDelta.y > 0)
-                                            window.zoomIn()
-                                        else if (wheel.angleDelta.y < 0)
-                                            window.zoomOut()
+                                        const dy = wheel.angleDelta.y !== 0
+                                                   ? wheel.angleDelta.y
+                                                   : wheel.pixelDelta.y
+                                        if (dy > 0)      window.zoomIn()
+                                        else if (dy < 0) window.zoomOut()
                                         wheel.accepted = true
                                     } else {
                                         wheel.accepted = false

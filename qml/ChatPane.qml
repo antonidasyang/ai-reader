@@ -5,7 +5,7 @@ import AiReader
 
 Rectangle {
     id: root
-    color: "#fafafa"
+    color: Theme.paneBg
 
     // ── Typed-item delegate factories (file-root scope so the
     //     dynamically-loaded ColumnLayout in the message bubble can
@@ -19,7 +19,7 @@ Rectangle {
             selectByMouse: true
             wrapMode: TextEdit.Wrap
             textFormat: TextEdit.RichText
-            color: "#1d1d1d"
+            color: Theme.text
             font.pixelSize: settings.chatFontSize
             text: parent.entry ? parent.entry.html : ""
             cursorVisible: false
@@ -59,7 +59,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 30
-            color: "#e4e4e4"
+            color: Theme.headerBg
 
             RowLayout {
                 anchors.fill: parent
@@ -85,8 +85,8 @@ Rectangle {
                                 id: tab
                                 height: tabRow.height
                                 width: Math.min(180, Math.max(90, label.implicitWidth + 44))
-                                color: model.isActive ? "#fafafa" : "transparent"
-                                border.color: model.isActive ? "#d0d0d0" : "transparent"
+                                color: model.isActive ? Theme.paneBg : "transparent"
+                                border.color: model.isActive ? Theme.border : "transparent"
                                 border.width: 1
 
                                 // Active accent strip.
@@ -94,7 +94,7 @@ Rectangle {
                                     visible: model.isActive
                                     width: parent.width
                                     height: 2
-                                    color: "#4c8bf5"
+                                    color: Theme.accent
                                     anchors.bottom: parent.bottom
                                 }
 
@@ -129,7 +129,7 @@ Rectangle {
                                     anchors.rightMargin: 4
                                     elide: Text.ElideRight
                                     text: model.sessionName
-                                    color: model.isActive ? "#1d1d1d" : "#555"
+                                    color: model.isActive ? Theme.text : Theme.dimText
                                     font.pixelSize: 12
                                 }
 
@@ -144,8 +144,8 @@ Rectangle {
                                     selectByMouse: true
                                     font.pixelSize: 12
                                     background: Rectangle {
-                                        color: "#ffffff"
-                                        border.color: "#c0c0c0"
+                                        color: Theme.paneBg
+                                        border.color: Theme.border
                                         radius: 2
                                     }
                                     onAccepted: {
@@ -191,7 +191,7 @@ Rectangle {
                                     height: parent.height - 8
                                     anchors.right: parent.right
                                     anchors.verticalCenter: parent.verticalCenter
-                                    color: "#cfcfcf"
+                                    color: Theme.divider
                                 }
                             }
                         }
@@ -218,7 +218,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 32
-            color: "#ececec"
+            color: Theme.headerBg
 
             RowLayout {
                 anchors.fill: parent
@@ -319,8 +319,8 @@ Rectangle {
                     // this binding the bubble collapses to ~0 px and the
                     // TextEdit's caret/I-beam shows through as a stray cross.
                     height: bubbleContent.implicitHeight + 16
-                    color: msgDelegate.msgRole === "user" ? "#dee5ff" : "#ffffff"
-                    border.color: msgDelegate.msgStatus === 2 /*Failed*/ ? "#c62828" : "#dddddd"
+                    color: msgDelegate.msgRole === "user" ? Theme.bubbleUser : Theme.bubbleAssistant
+                    border.color: msgDelegate.msgStatus === 2 /*Failed*/ ? Theme.danger : Theme.border
                     border.width: 1
                     radius: 6
 
@@ -346,7 +346,7 @@ Rectangle {
                             text: msgDelegate.msgRole === "user" ? qsTr("You")
                                                                   : qsTr("Assistant")
                             font.pixelSize: 10
-                            color: "#888"
+                            color: Theme.dimText
                         }
 
                         // ── Streaming / user / failed: single TextEdit
@@ -419,7 +419,7 @@ Rectangle {
                         Label {
                             visible: msgDelegate.msgStatus === 2 /*Failed*/
                             text: qsTr("Error: %1").arg(msgDelegate.msgError)
-                            color: "#c62828"
+                            color: Theme.danger
                             font.pixelSize: 10
                             wrapMode: Text.Wrap
                             Layout.fillWidth: true
@@ -449,7 +449,7 @@ Rectangle {
             // which is unbounded and would push the input/Send button
             // off the visible pane when a long block is prefilled.
             Layout.preferredHeight: inputRow.rowHeight + 12
-            color: "#f0f0f0"
+            color: Theme.inputBg
 
             RowLayout {
                 id: inputRow

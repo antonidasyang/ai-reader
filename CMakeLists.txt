@@ -302,10 +302,15 @@ target_include_directories(ai-reader PRIVATE
     ${cmark_BINARY_DIR}/extensions
 )
 
+# Theme.qml is a QML singleton (pragma Singleton); the module system needs
+# it flagged so `Theme.xxx` resolves without instantiation.
+set_source_files_properties(qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+
 qt_add_qml_module(ai-reader
     URI AiReader
     VERSION 1.0
     QML_FILES
+        qml/Theme.qml
         qml/Main.qml
         qml/PasswordDialog.qml
         qml/BlockList.qml
