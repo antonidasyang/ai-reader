@@ -1,4 +1,13 @@
 import 'reflect-metadata';
+
+// Postgres BIGINT (the per-project sync clock) comes back as a JS bigint, which
+// JSON.stringify cannot serialize. Emit it as a string everywhere.
+(BigInt.prototype as unknown as { toJSON: () => string }).toJSON = function (
+  this: bigint,
+) {
+  return this.toString();
+};
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';

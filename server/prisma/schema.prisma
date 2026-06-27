@@ -24,5 +24,45 @@ model User {
   displayName  String?  @map("display_name")
   createdAt    DateTime @default(now()) @map("created_at")
 
+  ownedProjects Project[]       @relation("OwnedProjects")
+  memberships   ProjectMember[]
+
   @@map("users")
+}
+
+enum Role {
+  owner
+  editor
+  viewer
+}
+
+// A research project == one collaboratively-shared library. `version` is the
+// project's monotonic logical clock: every content-object write (items,
+// attachments, collections, tags, ai_artifacts, ...) bumps it and stamps the
+// object, so clients can pull "everything changed since version N".
+model Project {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  ownerId     String   @map("owner_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  version     BigInt   @default(0)
+
+  owner   User            @relation("OwnedProjects", fields: [ownerId], references: [id])
+  members ProjectMember[]
+
+  @@map("projects")
+}
+
+model ProjectMember {
+  projectId String   @map("project_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      Role     @default(viewer)
+  addedAt   DateTime @default(now()) @map("added_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@map("project_members")
 }
