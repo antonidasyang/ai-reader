@@ -378,12 +378,19 @@ endif()
 # macOS: build a relocatable .app bundle (CMake generates a default
 # Info.plist). macdeployqt copies the Qt frameworks/plugins in afterward.
 if(APPLE)
+    # Bundle the .icns and point Info.plist (CFBundleIconFile) at it so
+    # Finder/Dock show the real app icon instead of the generic file icon.
+    set(_aireader_icns "${CMAKE_SOURCE_DIR}/resources/icons/appicon.icns")
+    target_sources(ai-reader PRIVATE "${_aireader_icns}")
+    set_source_files_properties("${_aireader_icns}" PROPERTIES
+        MACOSX_PACKAGE_LOCATION "Resources")
     set_target_properties(ai-reader PROPERTIES
         MACOSX_BUNDLE TRUE
         MACOSX_BUNDLE_BUNDLE_NAME "ai-reader"
         MACOSX_BUNDLE_GUI_IDENTIFIER "com.aireader.app"
         MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_ICON_FILE "appicon.icns"
     )
 endif()
 

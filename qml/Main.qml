@@ -429,7 +429,11 @@ ApplicationWindow {
                 icon.source: "qrc:/icons/pan-hand.svg"
                 icon.width: 18
                 icon.height: 18
-                icon.color: panToggleBtn.checked ? Theme.accent : Theme.text
+                // transparent = keep the SVG's own colors (white hand + dark
+                // outline, like the OS grab cursor) instead of tinting it to a
+                // solid block. Active state shows via the button's checked
+                // highlight.
+                icon.color: "transparent"
                 ToolTip.visible: hovered
                 ToolTip.delay: 400
                 ToolTip.text: qsTr("Hand tool: drag to move the page. Off = select text.")
