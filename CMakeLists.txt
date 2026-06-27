@@ -341,6 +341,7 @@ qt_add_resources(ai-reader "icons"
     PREFIX "/icons"
     BASE "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons"
     FILES
+        resources/icons/pan-hand.svg
         resources/icons/app-16.png
         resources/icons/app-32.png
         resources/icons/app-48.png

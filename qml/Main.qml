@@ -26,6 +26,13 @@ ApplicationWindow {
     // cursor) instead of selecting text. Toggled from the toolbar.
     property bool panMode: false
 
+    // Wheel-zoom modifier. On macOS Qt maps Qt.ControlModifier to the ⌘
+    // Command key and Qt.MetaModifier to the physical Control key; the
+    // conventional gesture is physical Control + scroll, so pick per OS.
+    readonly property int _zoomModifier:
+        (Qt.platform.os === "osx" || Qt.platform.os === "macos")
+        ? Qt.MetaModifier : Qt.ControlModifier
+
     function _setZoom(s) {
         pdfView.renderScale = Math.max(_zoomMin, Math.min(_zoomMax, s))
     }
@@ -415,11 +422,14 @@ ApplicationWindow {
             }
             ToolButton {
                 id: panToggleBtn
-                text: "✋"
-                font.pixelSize: 15
                 checkable: true
                 checked: window.panMode
                 enabled: pdfDoc.status === PdfDocument.Ready
+                display: AbstractButton.IconOnly
+                icon.source: "qrc:/icons/pan-hand.svg"
+                icon.width: 18
+                icon.height: 18
+                icon.color: panToggleBtn.checked ? Theme.accent : Theme.text
                 ToolTip.visible: hovered
                 ToolTip.delay: 400
                 ToolTip.text: qsTr("Hand tool: drag to move the page. Off = select text.")
@@ -748,6 +758,15 @@ ApplicationWindow {
                             anchors.fill: parent
                             document: pdfDoc
                             visible: pdfDoc.status === PdfDocument.Ready
+                            // Turn off the inner TableView's own drag/flick (and
+                            // its wheel handling) so the page can't be dragged
+                            // around in arrow mode — only the hand tool, arrow
+                            // keys, the wheel handler below, and the scrollbar
+                            // move it. pdfMouse._flick() finds that TableView.
+                            Component.onCompleted: {
+                                const f = pdfMouse._flick()
+                                if (f) f.interactive = false
+                            }
                             // Mirror the user's PDF selection into the controller so
                             // the chat tool `get_user_selection` can read it.
                             onSelectedTextChanged: paperController.setCurrentSelection(
@@ -816,16 +835,28 @@ ApplicationWindow {
                                     f.returnToBounds()
                                 }
                                 onWheel: function(wheel) {
-                                    if (wheel.modifiers & Qt.ControlModifier) {
-                                        const dy = wheel.angleDelta.y !== 0
+                                    if (wheel.modifiers & window._zoomModifier) {
+                                        const dz = wheel.angleDelta.y !== 0
                                                    ? wheel.angleDelta.y
                                                    : wheel.pixelDelta.y
-                                        if (dy > 0)      window.zoomIn()
-                                        else if (dy < 0) window.zoomOut()
+                                        if (dz > 0)      window.zoomIn()
+                                        else if (dz < 0) window.zoomOut()
                                         wheel.accepted = true
-                                    } else {
-                                        wheel.accepted = false
+                                        return
                                     }
+                                    // Inner flickable is interactive:false (so a
+                                    // drag can't move the page), which also turns
+                                    // off its wheel scrolling — so do it here.
+                                    const f = _flick()
+                                    if (!f) { wheel.accepted = false; return }
+                                    const px = wheel.pixelDelta
+                                    const ad = wheel.angleDelta
+                                    const dx = px.x !== 0 ? px.x : ad.x / 120 * 100
+                                    const dy = px.y !== 0 ? px.y : ad.y / 120 * 100
+                                    f.contentX -= dx
+                                    f.contentY -= dy
+                                    f.returnToBounds()
+                                    wheel.accepted = true
                                 }
                             }
                         }
