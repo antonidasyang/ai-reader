@@ -57,8 +57,11 @@ Rectangle {
                                        paperController.fileName,
                                        paperController.paperId,
                                        paperController.pdfSource)
-                        if (id && id.length > 0)
+                        if (id && id.length > 0) {
                             metadata.autoFill(id)
+                            // Upload the PDF blob so collaborators can open it.
+                            fileSync.uploadPaper(id, paperController.pdfSource)
+                        }
                     }
                 }
             }
@@ -96,8 +99,7 @@ Rectangle {
                 delegate: ItemDelegate {
                     width: ListView.view ? ListView.view.width : 0
                     height: 52
-                    onClicked: if (model.localPath && model.localPath.length > 0)
-                                   root.openRequested(model.localPath)
+                    onClicked: fileSync.openItem(model.itemId, model.localPath)
                     background: Rectangle {
                         color: hovered ? Theme.hover : "transparent"
                     }
@@ -155,12 +157,8 @@ Rectangle {
                 delegate: ItemDelegate {
                     width: ListView.view ? ListView.view.width : 0
                     height: 54
-                    onClicked: {
-                        if (modelData.localPath && modelData.localPath.length > 0)
-                            root.openRequested(modelData.localPath)
-                        else
-                            metaDlg.openFor(modelData.itemId)
-                    }
+                    onClicked: fileSync.openItem(modelData.itemId,
+                                                 modelData.localPath)
                     background: Rectangle {
                         color: hovered ? Theme.hover : "transparent"
                     }
@@ -207,6 +205,11 @@ Rectangle {
     Connections {
         target: sync
         function onProjectSynced(pid) { if (root.searching) root.runSearch() }
+    }
+    // Open the resolved local/downloaded PDF (-> Main.qml tabs.openPaper).
+    Connections {
+        target: fileSync
+        function onOpenReady(path) { root.openRequested(path) }
     }
 
     MetadataDialog { id: metaDlg }

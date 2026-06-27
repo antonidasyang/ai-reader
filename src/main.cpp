@@ -13,6 +13,7 @@
 #include "MetadataService.h"
 #include "SearchService.h"
 #include "AiArtifactService.h"
+#include "FileSyncService.h"
 #include "MarkdownRenderer.h"
 #include "PaperController.h"
 #include "Settings.h"
@@ -243,6 +244,8 @@ int main(int argc, char *argv[])
     SearchService searchService(&libraryDb, &projectController);
     AiArtifactService aiArtifactService(&libraryDb, &projectController,
                                         &syncEngine, &auth, &paperController);
+    FileSyncService fileSync(&apiClient, &libraryDb, &projectController,
+                             &syncEngine);
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
@@ -269,6 +272,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("metadata", &metadataService);
     engine.rootContext()->setContextProperty("search", &searchService);
     engine.rootContext()->setContextProperty("aiArtifacts", &aiArtifactService);
+    engine.rootContext()->setContextProperty("fileSync", &fileSync);
 
     QObject::connect(
         &engine,

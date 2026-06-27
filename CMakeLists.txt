@@ -267,6 +267,8 @@ qt_add_executable(ai-reader
     src/SearchService.cpp
     src/AiArtifactService.h
     src/AiArtifactService.cpp
+    src/FileSyncService.h
+    src/FileSyncService.cpp
 )
 
 target_compile_definitions(ai-reader PRIVATE
