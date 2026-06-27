@@ -4,6 +4,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { HealthController } from './health/health.controller';
 import { AuthModule } from './auth/auth.module';
 import { ProjectsModule } from './projects/projects.module';
+import { EventsModule } from './events/events.module';
+import { SyncModule } from './sync/sync.module';
 
 @Module({
   imports: [
@@ -11,6 +13,8 @@ import { ProjectsModule } from './projects/projects.module';
     PrismaModule,
     AuthModule,
     ProjectsModule,
+    EventsModule,
+    SyncModule,
   ],
   controllers: [HealthController],
 })
