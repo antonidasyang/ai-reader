@@ -42,7 +42,11 @@ AuthController::AuthController(ApiClient *api, QObject *parent)
                       .toString();
     m_api->setBaseUrl(m_serverUrl);
     m_api->setRefreshFn([this](std::function<void(bool)> cb) { refresh(cb); });
-    readRefreshFromKeychain();
+    // Only touch the keychain on launch if a cloud session was previously
+    // established. Otherwise users who never sign in to the cloud would get a
+    // spurious keychain prompt every launch.
+    if (m_qs.value(QStringLiteral("server/sessionActive"), false).toBool())
+        readRefreshFromKeychain();
 }
 
 void AuthController::setServerUrl(const QString &url)
@@ -124,6 +128,7 @@ void AuthController::logout()
 {
     m_refreshToken.clear();
     m_api->setAccessToken(QString());
+    m_qs.setValue(QStringLiteral("server/sessionActive"), false);
     clearRefreshInKeychain();
     m_userId.clear();
     m_userEmail.clear();
@@ -141,6 +146,9 @@ void AuthController::applyAuthResult(const QJsonObject &obj)
     const QJsonObject user = obj.value(QStringLiteral("user")).toObject();
     m_userId = user.value(QStringLiteral("id")).toString();
     m_userEmail = user.value(QStringLiteral("email")).toString();
+    // Remember a session exists so the next launch may auto-login (and only
+    // then reads the keychain).
+    m_qs.setValue(QStringLiteral("server/sessionActive"), true);
     emit userChanged();
     setAuthenticated(true);
 }
