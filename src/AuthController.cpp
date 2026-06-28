@@ -38,7 +38,7 @@ AuthController::AuthController(ApiClient *api, QObject *parent)
     , m_api(api)
 {
     m_serverUrl = m_qs.value(QStringLiteral("server/url"),
-                             QStringLiteral("http://localhost:3000"))
+                             QStringLiteral("https://aireader.d2ssoft.com"))
                       .toString();
     m_api->setBaseUrl(m_serverUrl);
     m_api->setRefreshFn([this](std::function<void(bool)> cb) { refresh(cb); });
