@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestVersion": "0.2.0",
-  "releaseDate": "2026-05-02",
-  "releaseNotes": "first real release: multi-session chat, typed code/math rendering, per-row translate, in-app updates, signed Windows installer pipeline, persistent panel layout, MicroTeX in packaged installs.",
+  "latestVersion": "1.0.0",
+  "releaseDate": "2026-06-29",
+  "releaseNotes": "the cloud release: cloud-synced literature library, research-project sharing with member roles, auto-filled metadata + full-text search, shared AI interpretations, CAS single sign-on, and self-hosted auto-update.",
   "platforms": {
     "windows-x64": {
       "downloadUrl": "https://github.com/antonidasyang/ai-reader/releases/download/v0.2.0/AiReader-Setup-0.2.0.exe",
