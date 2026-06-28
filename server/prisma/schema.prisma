@@ -1,0 +1,92 @@
+// ai-reader cloud backend schema.
+//
+// Every collaboratively-synced object carries: a global UUID id (not an
+// autoincrement, so clients can mint ids offline), the owning project_id, a
+// monotonic `version` (the project's logical clock at last change, the sync
+// cursor), a `deleted` soft-delete flag (sync must see tombstones), and
+// updated_at / updated_by for field-level last-write-wins conflict handling.
+//
+// More models (projects, items, sync objects) are added in later phases.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  casUsername  String?  @unique @map("cas_username")
+  email        String?  @unique
+  passwordHash String?  @map("password_hash")
+  displayName  String?  @map("display_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  ownedProjects Project[]       @relation("OwnedProjects")
+  memberships   ProjectMember[]
+
+  @@map("users")
+}
+
+enum Role {
+  owner
+  editor
+  viewer
+}
+
+// A research project == one collaboratively-shared library. `version` is the
+// project's monotonic logical clock: every content-object write (items,
+// attachments, collections, tags, ai_artifacts, ...) bumps it and stamps the
+// object, so clients can pull "everything changed since version N".
+model Project {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  ownerId     String   @map("owner_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  version     BigInt   @default(0)
+
+  owner   User            @relation("OwnedProjects", fields: [ownerId], references: [id])
+  members ProjectMember[]
+  objects SyncObject[]
+
+  @@map("projects")
+}
+
+// One row per synced object of ANY type. The server is a pure sync substrate:
+// it never interprets `data` (that's the client's schema), so all object kinds
+// (item, attachment, collection, collection_item, tag, item_tag, ai_artifact,
+// annotation, note) live here, keyed by `type`. `version` is the owning
+// project's clock at the object's last change -- clients pull "everything with
+// version > lastSyncVersion". `deleted` rows are tombstones kept for sync.
+model SyncObject {
+  id        String   @id @db.Uuid           // client-minted, globally unique
+  projectId String   @map("project_id") @db.Uuid
+  type      String
+  data      Json
+  version   BigInt
+  deleted   Boolean  @default(false)
+  updatedAt DateTime @default(now()) @map("updated_at")
+  updatedBy String?  @map("updated_by") @db.Uuid
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, version])
+  @@map("sync_objects")
+}
+
+model ProjectMember {
+  projectId String   @map("project_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      Role     @default(viewer)
+  addedAt   DateTime @default(now()) @map("added_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@map("project_members")
+}

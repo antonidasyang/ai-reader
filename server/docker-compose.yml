@@ -1,0 +1,62 @@
+# Dev/prod stack: PostgreSQL + MinIO (S3) + the NestJS server.
+# For local dev you can also just `docker compose up postgres minio` and run the
+# server with `npm run start:dev`.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: aireader
+      POSTGRES_PASSWORD: aireader
+      POSTGRES_DB: aireader
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aireader"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      CORS_ORIGIN: "*"
+      DATABASE_URL: postgresql://aireader:aireader@postgres:5432/aireader?schema=public
+      JWT_ACCESS_SECRET: change-me-access
+      JWT_REFRESH_SECRET: change-me-refresh
+      JWT_ACCESS_TTL: "900"
+      JWT_REFRESH_TTL: "2592000"
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: ai-reader
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_FORCE_PATH_STYLE: "true"
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+  miniodata:

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 0.2.0 LANGUAGES CXX)
+project(ai-reader VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -9,6 +9,8 @@ set(_aireader_qt_components
     Core
     Gui
     Network
+    Sql           # local SQLite library store + FTS5 (cloud-sync feature)
+    WebSockets    # SyncEngine change-notification channel
     Qml
     Quick
     QuickControls2
@@ -246,6 +248,29 @@ qt_add_executable(ai-reader
     src/UpdateChecker.cpp
     src/CrashReporter.h
     src/CrashReporter.cpp
+    # ── Library management (cloud sync + collaboration) ──
+    src/LibraryDb.h
+    src/LibraryDb.cpp
+    src/ApiClient.h
+    src/ApiClient.cpp
+    src/AuthController.h
+    src/AuthController.cpp
+    src/LocalHttpServer.h
+    src/LocalHttpServer.cpp
+    src/ProjectController.h
+    src/ProjectController.cpp
+    src/SyncEngine.h
+    src/SyncEngine.cpp
+    src/LibraryModel.h
+    src/LibraryModel.cpp
+    src/MetadataService.h
+    src/MetadataService.cpp
+    src/SearchService.h
+    src/SearchService.cpp
+    src/AiArtifactService.h
+    src/AiArtifactService.cpp
+    src/FileSyncService.h
+    src/FileSyncService.cpp
 )
 
 target_compile_definitions(ai-reader PRIVATE
@@ -312,6 +337,10 @@ qt_add_qml_module(ai-reader
     QML_FILES
         qml/Theme.qml
         qml/Main.qml
+        qml/MembersDialog.qml
+        qml/LibraryPane.qml
+        qml/MetadataDialog.qml
+        qml/SharedAiDialog.qml
         qml/PasswordDialog.qml
         qml/BlockList.qml
         qml/SettingsDialog.qml
@@ -405,6 +434,8 @@ target_link_libraries(ai-reader PRIVATE
     Qt6::PdfQuick
     Qt6::Widgets
     Qt6::PrintSupport
+    Qt6::Sql
+    Qt6::WebSockets
     qt6keychain                          # qtkeychain static    (FetchContent)
     libcmark-gfm_static                  # cmark-gfm core       (FetchContent)
     libcmark-gfm-extensions_static       # cmark-gfm GFM exts   (FetchContent)
@@ -460,6 +491,21 @@ if(APPLE)
                 "${microtex_SOURCE_DIR}/res"
                 "$<TARGET_BUNDLE_CONTENT_DIR:ai-reader>/Resources/microtex_res"
         COMMENT "Staging MicroTeX res/ into ai-reader.app/Contents/Resources/microtex_res"
+        VERBATIM
+    )
+endif()
+
+# macOS: sign the dev .app with a local Developer ID (if present) so macOS
+# recognises it across rebuilds and the keychain "Always Allow" persists.
+# CMake otherwise ad-hoc signs, whose signature changes every build and
+# re-triggers the keychain prompt on every launch. No-op without an identity;
+# AIREADER_CODESIGN_ID overrides it (set to "-" to skip). Runs LAST so nothing
+# modifies the bundle after signing.
+if(APPLE)
+    add_custom_command(TARGET ai-reader POST_BUILD
+        COMMAND sh "${CMAKE_SOURCE_DIR}/installer/macos/sign-dev.sh"
+                "$<TARGET_BUNDLE_DIR:ai-reader>"
+        COMMENT "Code-signing dev ai-reader.app for a stable keychain identity"
         VERBATIM
     )
 endif()

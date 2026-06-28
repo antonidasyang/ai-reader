@@ -1,5 +1,43 @@
 # AI Reader changelog
 
+## v1.0.0 — 2026-06-29
+
+The cloud release. v0.2.0 made AI Reader survive real users on a
+single machine; v1.0.0 lets a team share one library across machines
+— AI Reader is now a collaborative literature workspace, not just a
+local reader.
+
+### Cloud literature library
+- **Research projects as shared libraries.** Organise papers by
+  research topic; each project is one cloud-synced library with its
+  own members.
+- **Add papers with auto-filled metadata.** Open a PDF and click
+  **+ Add**: title / authors / year / venue auto-fill from the DOI
+  or arXiv id, and the PDF uploads (content-addressed, so the same
+  file is stored once for the whole project).
+- **Full-text search** across the project library — title, abstract,
+  authors, tags.
+- **Offline-first sync.** Browse and edit offline; changes reconcile
+  automatically on reconnect (instant via WebSocket, polling as a
+  fallback), per-field last-write-wins.
+
+### Collaboration
+- **Multi-user projects** with owner / editor / viewer roles; invite
+  members by email.
+- **Shared AI interpretations.** Share an AI summary / interpretation
+  with the project so teammates see it under **Shared**.
+
+### Accounts & updates
+- **CAS single sign-on.** One-click sign-in through your browser; no
+  passwords stored in the app.
+- **Self-hosted auto-update.** The app checks a server manifest on
+  launch and offers a one-click download of the new build.
+
+### Interface
+- **The library bar folds into the main toolbar** — project picker,
+  members, and account no longer take a separate row.
+- **Chinese localization** for all of the above.
+
 ## v0.2.0 — 2026-05-02
 
 The polish and packaging release. v0.1.0 was the first thing that

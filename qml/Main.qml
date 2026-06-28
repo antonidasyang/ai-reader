@@ -136,6 +136,44 @@ ApplicationWindow {
         anchors.centerIn: Overlay.overlay
     }
 
+    // Cloud-library dialogs (the toolbar account/project group drives these).
+    MembersDialog { id: membersDialog }
+
+    Dialog {
+        id: createProjectDialog
+        title: qsTr("New project")
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        width: 360
+        padding: 14
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        background: Rectangle {
+            color: Theme.paneBg
+            border.color: Theme.border
+            radius: 6
+        }
+        onAccepted: {
+            if (newProjName.text.trim().length > 0)
+                projects.createProject(newProjName.text.trim(), newProjDesc.text)
+            newProjName.text = ""
+            newProjDesc.text = ""
+        }
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 8
+            TextField {
+                id: newProjName
+                Layout.fillWidth: true
+                placeholderText: qsTr("Project name")
+            }
+            TextField {
+                id: newProjDesc
+                Layout.fillWidth: true
+                placeholderText: qsTr("Description (optional)")
+            }
+        }
+    }
+
     // Steps are wired up after the toolbar buttons / panes have been
     // instantiated, so the spotlight target references resolve. The
     // wizard auto-opens on first run via the Component.onCompleted
@@ -448,6 +486,16 @@ ApplicationWindow {
                 onClicked: folderPane.visible = !folderPane.visible
             }
             ToolButton {
+                id: libToggleBtn
+                text: qsTr("Lib")
+                checkable: true
+                checked: libraryPane.visible
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("Cloud-synced literature library")
+                onClicked: libraryPane.visible = !libraryPane.visible
+            }
+            ToolButton {
                 id: tocToggleBtn
                 text: qsTr("TOC")
                 checkable: true
@@ -483,6 +531,70 @@ ApplicationWindow {
                 Layout.leftMargin: 8
             }
             Item { Layout.fillWidth: true }
+
+            // ── Cloud library: project picker + account (was the ProjectBar) ──
+            ToolButton {
+                text: qsTr("Sign in")
+                visible: !auth.authenticated
+                onClicked: auth.startCasLogin()
+            }
+            BusyIndicator {
+                running: auth.busy
+                visible: auth.busy
+                implicitWidth: 16
+                implicitHeight: 16
+            }
+            ComboBox {
+                id: projectCombo
+                visible: auth.authenticated && projects.list.length > 0
+                Layout.preferredWidth: 170
+                model: projects.list
+                textRole: "name"
+                function syncIndex() {
+                    for (let i = 0; i < projects.list.length; ++i) {
+                        if (projects.list[i].id === projects.currentId) {
+                            currentIndex = i
+                            return
+                        }
+                    }
+                    currentIndex = -1
+                }
+                onActivated: function(idx) {
+                    if (idx >= 0)
+                        projects.selectProject(projects.list[idx].id)
+                }
+                Component.onCompleted: syncIndex()
+                Connections {
+                    target: projects
+                    function onCurrentChanged() { projectCombo.syncIndex() }
+                    function onListChanged() { projectCombo.syncIndex() }
+                }
+            }
+            ToolButton {
+                text: qsTr("New project")
+                visible: auth.authenticated
+                onClicked: createProjectDialog.open()
+            }
+            ToolButton {
+                text: qsTr("Members")
+                visible: auth.authenticated && projects.currentId.length > 0
+                onClicked: {
+                    projects.refreshMembers()
+                    membersDialog.open()
+                }
+            }
+            ToolButton {
+                visible: auth.authenticated
+                text: (auth.userDisplayName.length > 0 ? auth.userDisplayName
+                                                       : auth.userEmail) + " ▾"
+                onClicked: accountMenu.popup()
+                Menu {
+                    id: accountMenu
+                    MenuItem { text: qsTr("Sign out"); onTriggered: auth.logout() }
+                }
+            }
+            ToolSeparator { visible: auth.authenticated }
+
             Label {
                 text: settings.isConfigured
                       ? qsTr("%1 · %2").arg(settings.provider).arg(settings.model)
@@ -562,6 +674,29 @@ ApplicationWindow {
                     anchors.leftMargin: 4
                     anchors.topMargin: 7
                     pane: folderPane
+                    split: split
+                    marker: dropMarker
+                    onReordered: window.persistPaneOrder()
+                }
+            }
+
+            // ── Library pane (cloud-synced bibliography, toggleable) ───
+            LibraryPane {
+                id: libraryPane
+                objectName: "library"
+                visible: layoutSettings.paneVisible("library", false)
+                onVisibleChanged: layoutSettings.setPaneVisible("library", visible)
+                SplitView.preferredWidth: layoutSettings.paneWidth("library", 280)
+                SplitView.minimumWidth: 0
+                onWidthChanged: layoutSettings.setPaneWidth("library", width)
+                onOpenRequested: function(path) { tabs.openPaper(path) }
+
+                DockGrip {
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.leftMargin: 4
+                    anchors.topMargin: 7
+                    pane: libraryPane
                     split: split
                     marker: dropMarker
                     onReordered: window.persistPaneOrder()

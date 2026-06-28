@@ -4,6 +4,16 @@
 #include "LayoutSettings.h"
 #include "UpdateChecker.h"
 #include "Library.h"
+#include "LibraryDb.h"
+#include "ApiClient.h"
+#include "AuthController.h"
+#include "ProjectController.h"
+#include "SyncEngine.h"
+#include "LibraryModel.h"
+#include "MetadataService.h"
+#include "SearchService.h"
+#include "AiArtifactService.h"
+#include "FileSyncService.h"
 #include "MarkdownRenderer.h"
 #include "PaperController.h"
 #include "Settings.h"
@@ -224,6 +234,18 @@ int main(int argc, char *argv[])
     LayoutSettings layoutSettings;
     Tabs tabs(&paperController);
     UpdateChecker updateChecker(&settings);
+    LibraryDb libraryDb;
+    ApiClient apiClient;
+    AuthController auth(&apiClient);
+    ProjectController projectController(&apiClient, &auth, &libraryDb);
+    SyncEngine syncEngine(&apiClient, &auth, &projectController, &libraryDb);
+    LibraryModel libraryModel(&libraryDb, &projectController, &syncEngine);
+    MetadataService metadataService(&libraryModel, &paperController);
+    SearchService searchService(&libraryDb, &projectController);
+    AiArtifactService aiArtifactService(&libraryDb, &projectController,
+                                        &syncEngine, &auth, &paperController);
+    FileSyncService fileSync(&apiClient, &libraryDb, &projectController,
+                             &syncEngine);
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
@@ -242,6 +264,15 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("layoutSettings", &layoutSettings);
     engine.rootContext()->setContextProperty("tabs", &tabs);
     engine.rootContext()->setContextProperty("updates", &updateChecker);
+    engine.rootContext()->setContextProperty("libraryDb", &libraryDb);
+    engine.rootContext()->setContextProperty("auth", &auth);
+    engine.rootContext()->setContextProperty("projects", &projectController);
+    engine.rootContext()->setContextProperty("sync", &syncEngine);
+    engine.rootContext()->setContextProperty("libraryModel", &libraryModel);
+    engine.rootContext()->setContextProperty("metadata", &metadataService);
+    engine.rootContext()->setContextProperty("search", &searchService);
+    engine.rootContext()->setContextProperty("aiArtifacts", &aiArtifactService);
+    engine.rootContext()->setContextProperty("fileSync", &fileSync);
 
     QObject::connect(
         &engine,
