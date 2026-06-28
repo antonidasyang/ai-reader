@@ -11,6 +11,7 @@ import {
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { CasService } from './cas.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { RefreshDto } from './dto/refresh.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AuthUser, CurrentUser } from './current-user.decorator';
@@ -35,6 +36,7 @@ export class AuthController {
   constructor(
     private readonly auth: AuthService,
     private readonly cas: CasService,
+    private readonly prisma: PrismaService,
   ) {}
 
   // Step 1: the desktop app opens this with its loopback ?port (+ ?state nonce).
@@ -90,7 +92,15 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  me(@CurrentUser() user: AuthUser) {
-    return user;
+  async me(@CurrentUser() user: AuthUser) {
+    const u = await this.prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { email: true, displayName: true },
+    });
+    return {
+      userId: user.userId,
+      email: u?.email ?? user.email,
+      displayName: u?.displayName ?? null,
+    };
   }
 }
