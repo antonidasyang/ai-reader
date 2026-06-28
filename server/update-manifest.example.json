@@ -1,0 +1,22 @@
+{
+  "latestVersion": "0.3.0",
+  "releaseNotes": "Describe what changed in this release.",
+  "releaseDate": "2026-06-28",
+  "platforms": {
+    "windows-x64": {
+      "key": "updates/ai-reader-0.3.0-setup.exe",
+      "filename": "ai-reader-0.3.0-setup.exe",
+      "contentType": "application/octet-stream"
+    },
+    "macos-arm64": {
+      "key": "updates/ai-reader-0.3.0-arm64.dmg",
+      "filename": "ai-reader-0.3.0-arm64.dmg",
+      "contentType": "application/x-apple-diskimage"
+    },
+    "macos-x64": {
+      "key": "updates/ai-reader-0.3.0-x64.dmg",
+      "filename": "ai-reader-0.3.0-x64.dmg",
+      "contentType": "application/x-apple-diskimage"
+    }
+  }
+}

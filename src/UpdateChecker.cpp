@@ -14,7 +14,7 @@
 namespace {
 
 constexpr auto kDefaultManifestUrl =
-    "https://raw.githubusercontent.com/antonidasyang/ai-reader/main/manifest.json";
+    "https://aireader.d2ssoft.com/update/manifest";
 
 } // namespace
 
