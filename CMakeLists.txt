@@ -397,6 +397,14 @@ qt_add_resources(ai-reader "changelog"
 # the console subsystem so launch failures become visible in cmd.
 if(WIN32)
     target_sources(ai-reader PRIVATE resources/icons/app.rc)
+    # Stamp the exe with a VERSIONINFO resource generated from project(VERSION)
+    # so Windows Properties -> Details shows the version AND AiReader.iss can
+    # read ProductVersion back out of the built exe. Single source of truth:
+    # the project(... VERSION ...) at the top of this file.
+    configure_file(
+        "${CMAKE_SOURCE_DIR}/resources/version.rc.in"
+        "${CMAKE_BINARY_DIR}/ai-reader-version.rc" @ONLY)
+    target_sources(ai-reader PRIVATE "${CMAKE_BINARY_DIR}/ai-reader-version.rc")
     if(AIREADER_CONSOLE)
         set_target_properties(ai-reader PROPERTIES WIN32_EXECUTABLE FALSE)
     else()

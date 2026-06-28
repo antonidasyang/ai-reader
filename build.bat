@@ -133,6 +133,8 @@ echo.
 echo [build] SUCCESS. Output: build\%BUILD_TYPE%\ai-reader.exe
 echo [build] CMake also staged dist\ai-reader.exe + dist\microtex_res.
 echo [build] Next, to make a runnable / installable build:
+echo     package.bat         windeploy + Inno Setup in one shot -^> installer\
+echo   or run the steps yourself:
 echo     windeploy.bat       stage the Qt runtime + MSVC DLLs into dist\
 echo     iscc AiReader.iss   build the Windows installer (needs Inno Setup)
 echo.

@@ -13,12 +13,22 @@
 ; Output:
 ;   installer\AiReader-Setup-<version>.exe   single-file installer.
 ;
-; Bump MyAppVersion below to match CMakeLists.txt's project(... VERSION).
+; The version is read from dist\ai-reader.exe's resource (CMake stamps it from
+; project(... VERSION ...)); there is nothing to bump in this file.
 
 #define MyAppName       "AI Reader"
-#define MyAppVersion    "0.2.0"
 #define MyAppPublisher  "AI Reader"
 #define MyAppExeName    "ai-reader.exe"
+
+; App version — SINGLE-SOURCED from the built exe's version resource, which
+; CMake fills from project(... VERSION ...) via resources\version.rc.in. So
+; AppVersion AND the setup filename (OutputBaseFilename below) both track
+; CMakeLists.txt with nothing to bump here. Build + windeploy first so
+; dist\ai-reader.exe exists. Override for a one-off build:
+;   iscc /DMyAppVersion=1.2.3 AiReader.iss
+#ifndef MyAppVersion
+  #define MyAppVersion GetStringFileInfo("dist\" + MyAppExeName, "ProductVersion")
+#endif
 
 [Setup]
 AppId={{6E0AF8DC-4F36-4A6B-9F38-9E91D9E32F9D}
