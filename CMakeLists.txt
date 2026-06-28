@@ -494,3 +494,18 @@ if(APPLE)
         VERBATIM
     )
 endif()
+
+# macOS: sign the dev .app with a local Developer ID (if present) so macOS
+# recognises it across rebuilds and the keychain "Always Allow" persists.
+# CMake otherwise ad-hoc signs, whose signature changes every build and
+# re-triggers the keychain prompt on every launch. No-op without an identity;
+# AIREADER_CODESIGN_ID overrides it (set to "-" to skip). Runs LAST so nothing
+# modifies the bundle after signing.
+if(APPLE)
+    add_custom_command(TARGET ai-reader POST_BUILD
+        COMMAND sh "${CMAKE_SOURCE_DIR}/installer/macos/sign-dev.sh"
+                "$<TARGET_BUNDLE_DIR:ai-reader>"
+        COMMENT "Code-signing dev ai-reader.app for a stable keychain identity"
+        VERBATIM
+    )
+endif()
