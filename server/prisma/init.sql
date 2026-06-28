@@ -7,8 +7,9 @@ CREATE TYPE "Role" AS ENUM ('owner', 'editor', 'viewer');
 -- CreateTable
 CREATE TABLE "users" (
     "id" UUID NOT NULL,
-    "email" TEXT NOT NULL,
-    "password_hash" TEXT NOT NULL,
+    "cas_username" TEXT,
+    "email" TEXT,
+    "password_hash" TEXT,
     "display_name" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -50,6 +51,9 @@ CREATE TABLE "project_members" (
 
     CONSTRAINT "project_members_pkey" PRIMARY KEY ("project_id","user_id")
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_cas_username_key" ON "users"("cas_username");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");

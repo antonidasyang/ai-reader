@@ -1,19 +1,17 @@
-import {
-  ConflictException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
 
-export interface AuthResult {
+export interface Tokens {
   accessToken: string;
   refreshToken: string;
-  user: { id: string; email: string; displayName: string | null };
+}
+
+export interface CasProfile {
+  casUsername: string;
+  displayName?: string;
+  email?: string;
 }
 
 @Injectable()
@@ -24,37 +22,53 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
-  async register(dto: RegisterDto): Promise<AuthResult> {
+  /** Find-or-create the local user for a CAS principal (JIT provisioning). */
+  async ensureCasUser(profile: CasProfile): Promise<string> {
     const existing = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+      where: { casUsername: profile.casUsername },
+      select: { id: true, displayName: true, email: true },
     });
-    if (existing) throw new ConflictException('email already registered');
-
-    const passwordHash = await argon2.hash(dto.password);
-    const user = await this.prisma.user.create({
+    if (existing) {
+      const patch: { displayName?: string; email?: string } = {};
+      if (!existing.displayName && profile.displayName)
+        patch.displayName = profile.displayName;
+      if (!existing.email && profile.email) patch.email = profile.email;
+      if (Object.keys(patch).length > 0) {
+        await this.prisma.user.update({
+          where: { id: existing.id },
+          data: patch,
+        });
+      }
+      return existing.id;
+    }
+    const created = await this.prisma.user.create({
       data: {
-        email: dto.email,
-        passwordHash,
-        displayName: dto.displayName ?? null,
+        casUsername: profile.casUsername,
+        displayName: profile.displayName ?? null,
+        email: profile.email ?? null,
       },
+      select: { id: true },
     });
-    return this.issueTokens(user.id, user.email, user.displayName);
+    return created.id;
   }
 
-  async login(dto: LoginDto): Promise<AuthResult> {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+  async issueTokens(userId: string, email: string | null): Promise<Tokens> {
+    const payload = { sub: userId, email: email ?? '' };
+    const accessToken = await this.jwt.signAsync(payload, {
+      secret: this.config.getOrThrow<string>('JWT_ACCESS_SECRET'),
+      expiresIn: Number(this.config.get<string>('JWT_ACCESS_TTL', '900')),
     });
-    if (!user) throw new UnauthorizedException('invalid credentials');
-
-    const ok = await argon2.verify(user.passwordHash, dto.password);
-    if (!ok) throw new UnauthorizedException('invalid credentials');
-
-    return this.issueTokens(user.id, user.email, user.displayName);
+    const refreshToken = await this.jwt.signAsync(payload, {
+      secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
+      expiresIn: Number(this.config.get<string>('JWT_REFRESH_TTL', '2592000')),
+    });
+    return { accessToken, refreshToken };
   }
 
-  async refresh(refreshToken: string): Promise<AuthResult> {
-    let payload: { sub: string; email: string };
+  async refresh(
+    refreshToken: string,
+  ): Promise<Tokens & { user: { id: string; email: string | null; displayName: string | null } }> {
+    let payload: { sub: string };
     try {
       payload = await this.jwt.verifyAsync(refreshToken, {
         secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
@@ -66,24 +80,10 @@ export class AuthService {
       where: { id: payload.sub },
     });
     if (!user) throw new UnauthorizedException('user not found');
-    // Rotation: a fresh access + refresh pair on every refresh.
-    return this.issueTokens(user.id, user.email, user.displayName);
-  }
-
-  private async issueTokens(
-    id: string,
-    email: string,
-    displayName: string | null,
-  ): Promise<AuthResult> {
-    const payload = { sub: id, email };
-    const accessToken = await this.jwt.signAsync(payload, {
-      secret: this.config.getOrThrow<string>('JWT_ACCESS_SECRET'),
-      expiresIn: Number(this.config.get<string>('JWT_ACCESS_TTL', '900')),
-    });
-    const refreshToken = await this.jwt.signAsync(payload, {
-      secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
-      expiresIn: Number(this.config.get<string>('JWT_REFRESH_TTL', '2592000')),
-    });
-    return { accessToken, refreshToken, user: { id, email, displayName } };
+    const tokens = await this.issueTokens(user.id, user.email);
+    return {
+      ...tokens,
+      user: { id: user.id, email: user.email, displayName: user.displayName },
+    };
   }
 }

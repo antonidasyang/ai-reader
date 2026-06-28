@@ -19,8 +19,9 @@ datasource db {
 
 model User {
   id           String   @id @default(uuid()) @db.Uuid
-  email        String   @unique
-  passwordHash String   @map("password_hash")
+  casUsername  String?  @unique @map("cas_username")
+  email        String?  @unique
+  passwordHash String?  @map("password_hash")
   displayName  String?  @map("display_name")
   createdAt    DateTime @default(now()) @map("created_at")
 
