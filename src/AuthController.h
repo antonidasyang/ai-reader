@@ -7,6 +7,7 @@
 #include <functional>
 
 class ApiClient;
+class LocalHttpServer;
 
 // Owns the user session: register / login / refresh against the cloud backend,
 // the server URL, and the current user. The refresh token persists in the OS
@@ -33,9 +34,10 @@ public:
     QString status() const { return m_status; }
     bool busy() const { return m_busy; }
 
-    Q_INVOKABLE void login(const QString &email, const QString &password);
-    Q_INVOKABLE void registerUser(const QString &email, const QString &password,
-                                  const QString &displayName);
+    // CAS sign-in: opens the system browser; the backend validates the ticket
+    // and redirects the JWTs back to our loopback (LocalHttpServer). CAS is the
+    // only login method.
+    Q_INVOKABLE void startCasLogin();
     Q_INVOKABLE void logout();
 
     // Obtain a fresh access token from the stored refresh token. Used both on
@@ -50,6 +52,9 @@ signals:
     void busyChanged();
 
 private:
+    void onCasResult(const QString &access, const QString &refresh,
+                     const QString &state, const QString &error);
+    void fetchMe();
     void applyAuthResult(const QJsonObject &obj);
     void setAuthenticated(bool v);
     void setStatus(const QString &s);
@@ -59,9 +64,11 @@ private:
     void clearRefreshInKeychain();
 
     ApiClient *m_api;
+    LocalHttpServer *m_loopback = nullptr;
     QSettings m_qs;
     QString m_serverUrl;
     QString m_refreshToken;
+    QString m_casState;
     QString m_userId;
     QString m_userEmail;
     bool m_authenticated = false;

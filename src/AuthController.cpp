@@ -1,9 +1,14 @@
 #include "AuthController.h"
 #include "ApiClient.h"
+#include "LocalHttpServer.h"
 
+#include <QDesktopServices>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QUrl>
+#include <QUrlQuery>
+#include <QUuid>
 
 // qtkeychain (same in-tree header the LLM API key uses).
 #include <keychain.h>
@@ -15,22 +20,6 @@ using QKeychain::WritePasswordJob;
 
 namespace {
 constexpr auto kRefreshKey = "server/refreshToken";
-
-QString errorMessage(const QJsonDocument &doc, int status)
-{
-    const QJsonObject o = doc.object();
-    const QJsonValue m = o.value(QStringLiteral("message"));
-    if (m.isString())
-        return m.toString();
-    if (m.isArray()) {
-        QStringList parts;
-        for (const QJsonValue &v : m.toArray())
-            parts << v.toString();
-        if (!parts.isEmpty())
-            return parts.join(QStringLiteral("; "));
-    }
-    return QObject::tr("Request failed (HTTP %1)").arg(status);
-}
 } // namespace
 
 AuthController::AuthController(ApiClient *api, QObject *parent)
@@ -60,43 +49,71 @@ void AuthController::setServerUrl(const QString &url)
     emit serverUrlChanged();
 }
 
-void AuthController::login(const QString &email, const QString &password)
+void AuthController::startCasLogin()
 {
     setStatus(QString());
+    if (!m_loopback) {
+        m_loopback = new LocalHttpServer(this);
+        connect(m_loopback, &LocalHttpServer::loginResult, this,
+                &AuthController::onCasResult);
+    }
+    if (!m_loopback->isListening() && !m_loopback->listen()) {
+        setStatus(tr("Could not start the local sign-in listener."));
+        return;
+    }
+    m_casState = QUuid::createUuid().toString(QUuid::WithoutBraces);
     setBusy(true);
-    QJsonObject body{{QStringLiteral("email"), email},
-                     {QStringLiteral("password"), password}};
-    m_api->post(QStringLiteral("/auth/login"), body,
-                [this](bool ok, int status, const QJsonDocument &doc) {
-                    setBusy(false);
-                    if (ok) {
-                        applyAuthResult(doc.object());
-                        setStatus(tr("Signed in."));
-                    } else {
-                        setStatus(errorMessage(doc, status));
-                    }
-                });
+
+    QUrl url(m_serverUrl + QStringLiteral("/auth/cas/login"));
+    QUrlQuery q;
+    q.addQueryItem(QStringLiteral("port"), QString::number(m_loopback->port()));
+    q.addQueryItem(QStringLiteral("state"), m_casState);
+    url.setQuery(q);
+
+    if (!QDesktopServices::openUrl(url)) {
+        setBusy(false);
+        setStatus(tr("Could not open a browser for CAS sign-in."));
+    } else {
+        setStatus(tr("Continue sign-in in your browser…"));
+    }
 }
 
-void AuthController::registerUser(const QString &email, const QString &password,
-                                  const QString &displayName)
+void AuthController::onCasResult(const QString &access, const QString &refresh,
+                                 const QString &state, const QString &error)
 {
-    setStatus(QString());
-    setBusy(true);
-    QJsonObject body{{QStringLiteral("email"), email},
-                     {QStringLiteral("password"), password}};
-    if (!displayName.isEmpty())
-        body.insert(QStringLiteral("displayName"), displayName);
-    m_api->post(QStringLiteral("/auth/register"), body,
-                [this](bool ok, int status, const QJsonDocument &doc) {
-                    setBusy(false);
-                    if (ok) {
-                        applyAuthResult(doc.object());
-                        setStatus(tr("Account created."));
-                    } else {
-                        setStatus(errorMessage(doc, status));
-                    }
-                });
+    setBusy(false);
+    if (state != m_casState) {
+        setStatus(tr("Sign-in rejected (state mismatch)."));
+        return;
+    }
+    if (!error.isEmpty()) {
+        setStatus(tr("CAS sign-in failed: %1").arg(error));
+        return;
+    }
+    if (access.isEmpty()) {
+        setStatus(tr("CAS sign-in returned no token."));
+        return;
+    }
+    m_api->setAccessToken(access);
+    m_refreshToken = refresh;
+    writeRefreshToKeychain(refresh);
+    m_qs.setValue(QStringLiteral("server/sessionActive"), true);
+    setAuthenticated(true);
+    setStatus(tr("Signed in."));
+    fetchMe();
+}
+
+void AuthController::fetchMe()
+{
+    m_api->get(QStringLiteral("/auth/me"),
+               [this](bool ok, int, const QJsonDocument &doc) {
+                   if (!ok)
+                       return;
+                   const QJsonObject o = doc.object();
+                   m_userId = o.value(QStringLiteral("userId")).toString();
+                   m_userEmail = o.value(QStringLiteral("email")).toString();
+                   emit userChanged();
+               });
 }
 
 void AuthController::refresh(std::function<void(bool)> cb)

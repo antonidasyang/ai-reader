@@ -255,6 +255,8 @@ qt_add_executable(ai-reader
     src/ApiClient.cpp
     src/AuthController.h
     src/AuthController.cpp
+    src/LocalHttpServer.h
+    src/LocalHttpServer.cpp
     src/ProjectController.h
     src/ProjectController.cpp
     src/SyncEngine.h
