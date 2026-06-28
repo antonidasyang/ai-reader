@@ -20,6 +20,7 @@ class AuthController : public QObject
     Q_PROPERTY(bool authenticated READ authenticated NOTIFY authenticatedChanged)
     Q_PROPERTY(QString userId READ userId NOTIFY userChanged)
     Q_PROPERTY(QString userEmail READ userEmail NOTIFY userChanged)
+    Q_PROPERTY(QString userDisplayName READ userDisplayName NOTIFY userChanged)
     Q_PROPERTY(QString status READ status NOTIFY statusChanged)
     Q_PROPERTY(bool busy READ busy NOTIFY busyChanged)
 
@@ -31,6 +32,7 @@ public:
     bool authenticated() const { return m_authenticated; }
     QString userId() const { return m_userId; }
     QString userEmail() const { return m_userEmail; }
+    QString userDisplayName() const { return m_userDisplayName; }
     QString status() const { return m_status; }
     bool busy() const { return m_busy; }
 
@@ -71,6 +73,7 @@ private:
     QString m_casState;
     QString m_userId;
     QString m_userEmail;
+    QString m_userDisplayName;
     bool m_authenticated = false;
     bool m_busy = false;
     QString m_status;

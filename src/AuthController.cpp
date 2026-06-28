@@ -112,6 +112,8 @@ void AuthController::fetchMe()
                    const QJsonObject o = doc.object();
                    m_userId = o.value(QStringLiteral("userId")).toString();
                    m_userEmail = o.value(QStringLiteral("email")).toString();
+                   m_userDisplayName =
+                       o.value(QStringLiteral("displayName")).toString();
                    emit userChanged();
                });
 }
@@ -149,6 +151,7 @@ void AuthController::logout()
     clearRefreshInKeychain();
     m_userId.clear();
     m_userEmail.clear();
+    m_userDisplayName.clear();
     emit userChanged();
     setAuthenticated(false);
     setStatus(tr("Signed out."));
@@ -163,6 +166,7 @@ void AuthController::applyAuthResult(const QJsonObject &obj)
     const QJsonObject user = obj.value(QStringLiteral("user")).toObject();
     m_userId = user.value(QStringLiteral("id")).toString();
     m_userEmail = user.value(QStringLiteral("email")).toString();
+    m_userDisplayName = user.value(QStringLiteral("displayName")).toString();
     // Remember a session exists so the next launch may auto-login (and only
     // then reads the keychain).
     m_qs.setValue(QStringLiteral("server/sessionActive"), true);

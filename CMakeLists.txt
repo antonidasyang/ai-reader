@@ -337,8 +337,6 @@ qt_add_qml_module(ai-reader
     QML_FILES
         qml/Theme.qml
         qml/Main.qml
-        qml/LoginDialog.qml
-        qml/ProjectBar.qml
         qml/MembersDialog.qml
         qml/LibraryPane.qml
         qml/MetadataDialog.qml
