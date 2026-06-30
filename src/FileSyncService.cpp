@@ -145,18 +145,26 @@ void FileSyncService::putBlob(const QString &uploadUrl, const QString &localPath
         setBusy(false);
         return;
     }
-    auto *file = new QFile(localPath);
-    if (!file->open(QIODevice::ReadOnly)) {
-        delete file;
-        setBusy(false);
-        setStatus(tr("Could not open the PDF."));
-        return;
+    // Read the PDF fully into memory, then upload from the bytes — rather than
+    // handing QNetworkAccessManager a QFile that stays open for the whole
+    // upload. Holding a second handle on the very file the viewer's
+    // QPdfDocument is displaying can make the open PDF blank out (file
+    // contention, seen on Windows especially when the upload to MinIO is slow).
+    // Open → read → close here, so no foreign handle lingers on the document.
+    QByteArray bytes;
+    {
+        QFile file(localPath);
+        if (!file.open(QIODevice::ReadOnly)) {
+            setBusy(false);
+            setStatus(tr("Could not open the PDF."));
+            return;
+        }
+        bytes = file.readAll();
     }
     QNetworkRequest req{QUrl(uploadUrl)};
     req.setHeader(QNetworkRequest::ContentTypeHeader,
                   QStringLiteral("application/pdf"));
-    QNetworkReply *reply = m_nam.put(req, file);
-    file->setParent(reply);
+    QNetworkReply *reply = m_nam.put(req, bytes);
     connect(reply, &QNetworkReply::finished, this, [this, reply] {
         const int s =
             reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
