@@ -59,8 +59,20 @@ if not defined ISCC if exist "%ProgramFiles%\Inno Setup 6\ISCC.exe" set "ISCC=%P
 if not defined ISCC goto :no_iscc
 echo [package] Using "!ISCC!"
 
-REM --- Build the installer (version read from dist\ai-reader.exe) -----------
-"!ISCC!" "%ROOT%AiReader.iss"
+REM --- Version: read straight from CMakeLists.txt's project(... VERSION ...)
+REM     and hand it to ISCC. This is the single source of truth and does NOT
+REM     depend on the exe carrying a readable VERSIONINFO resource. The .iss
+REM     still falls back to reading the exe if no /D is passed (manual iscc).
+set "VER="
+for /f "tokens=3" %%v in ('findstr /b /c:"project(ai-reader VERSION" "%ROOT%CMakeLists.txt"') do set "VER=%%v"
+if defined VER (
+    echo [package] Version from CMakeLists.txt: !VER!
+    "!ISCC!" /DMyAppVersion=!VER! "%ROOT%AiReader.iss"
+) else (
+    echo [package] WARNING: could not read version from CMakeLists.txt;
+    echo            falling back to the exe's embedded version.
+    "!ISCC!" "%ROOT%AiReader.iss"
+)
 if errorlevel 1 goto :iscc_failed
 
 echo.

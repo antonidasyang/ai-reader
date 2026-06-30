@@ -51,7 +51,7 @@ AppCopyright=Copyright © AI Reader contributors
 ; numeric tuple — anything else is rejected by the Windows resource
 ; compiler. MyAppVersion is the human-readable string shown in the
 ; wizard chrome, dialogs, and install registry entries.
-VersionInfoVersion={#GetVersionNumbersString("dist\" + MyAppExeName)}
+VersionInfoVersion={#MyAppVersion}.0
 VersionInfoProductName={#MyAppName}
 VersionInfoProductVersion={#MyAppVersion}
 VersionInfoCompany={#MyAppPublisher}
