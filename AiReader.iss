@@ -29,6 +29,11 @@
 #ifndef MyAppVersion
   #define MyAppVersion GetStringFileInfo("dist\" + MyAppExeName, "ProductVersion")
 #endif
+; A stale exe built before the VERSIONINFO resource existed returns "" here,
+; which would otherwise fail cryptically at VersionInfoVersion below. Fail loud.
+#if MyAppVersion == ""
+  #error dist\ai-reader.exe has no embedded version. Rebuild first (package.bat build); CMake stamps the version from project(... VERSION ...).
+#endif
 
 [Setup]
 AppId={{6E0AF8DC-4F36-4A6B-9F38-9E91D9E32F9D}
@@ -46,7 +51,7 @@ AppCopyright=Copyright © AI Reader contributors
 ; numeric tuple — anything else is rejected by the Windows resource
 ; compiler. MyAppVersion is the human-readable string shown in the
 ; wizard chrome, dialogs, and install registry entries.
-VersionInfoVersion={#MyAppVersion}.0
+VersionInfoVersion={#GetVersionNumbersString("dist\" + MyAppExeName)}
 VersionInfoProductName={#MyAppName}
 VersionInfoProductVersion={#MyAppVersion}
 VersionInfoCompany={#MyAppPublisher}
