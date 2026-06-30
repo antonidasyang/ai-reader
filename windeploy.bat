@@ -37,13 +37,11 @@ if defined WINDEPLOYQT (
     exit /b 1
 )
 
-REM 2. PATH lookup.
-for /f "delims=" %%p in ('where windeployqt 2^>nul') do (
-    set "WINDEPLOYQT=%%p"
-    goto :found
-)
-
-REM 3. Derive from CMakeCache.txt. Check, in order:
+REM 2. Derive from build\CMakeCache.txt FIRST -- this is the Qt the exe was
+REM    actually built against, so its windeployqt always matches the binary's
+REM    Qt major. A bare `where windeployqt` can otherwise hit an unrelated Qt5
+REM    kit on PATH (e.g. 5.15.2), which then rejects the Qt6 exe with "does not
+REM    seem to be a Qt executable". Cache locations checked, first hit wins:
 REM      a) %ROOT%\build\CMakeCache.txt                  (our default)
 REM      b) %ROOT%\build\<subdir>\CMakeCache.txt         (Qt Creator
 REM         nested layout, e.g. Desktop_Qt_6_11_0_MSVC2022_64bit-Release)
@@ -94,6 +92,17 @@ if defined QT_CMAKE_DIR (
     set "WINDEPLOYQT="
 )
 :no_cache
+
+REM 3. PATH lookup (fallback -- only reached if the build cache did not
+REM    resolve windeployqt). Skip a Qt5 kit on PATH (path contains "\5.") so we
+REM    never stage the wrong Qt major onto a Qt6 exe.
+for /f "delims=" %%p in ('where windeployqt 2^>nul') do (
+    if not defined WINDEPLOYQT (
+        echo.%%p| findstr /i /c:"\5." >nul 2>&1
+        if errorlevel 1 set "WINDEPLOYQT=%%p"
+    )
+)
+if defined WINDEPLOYQT goto :found
 
 REM 4. Hard-coded common install paths.
 for %%v in (6.11.0 6.10.0 6.9.0 6.8.0 6.7.0 6.6.0 6.5.0 6.4.0) do (
