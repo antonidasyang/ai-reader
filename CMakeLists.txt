@@ -185,6 +185,19 @@ endif()
 
 qt_standard_project_setup()
 
+# Opt into the modern Qt QML CMake policies so qt_add_qml_module stops emitting
+# the QTP0001 (':/qt/qml/' default resource prefix) and QTP0004 (qmldir per
+# extra dir) developer warnings. Each is guarded by its QT_KNOWN_POLICY_* flag
+# so a Qt that predates the policy simply skips it (and never warns either way).
+# Safe for our loader: main.cpp uses engine.loadFromModule("AiReader", "Main"),
+# which resolves the module regardless of the resource prefix.
+if(QT_KNOWN_POLICY_QTP0001)
+    qt_policy(SET QTP0001 NEW)
+endif()
+if(QT_KNOWN_POLICY_QTP0004)
+    qt_policy(SET QTP0004 NEW)
+endif()
+
 qt_add_executable(ai-reader
     src/main.cpp
     src/Block.h
