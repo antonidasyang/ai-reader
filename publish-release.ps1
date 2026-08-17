@@ -5,7 +5,7 @@
 #   2. Bump #define MyAppVersion in AiReader.iss to match
 #   3. cmake --build build --config Release
 #   4. windeploy.bat
-#   5. "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" AiReader.iss
+#   5. "C:\Program Files\Inno Setup 7\ISCC.exe" AiReader.iss
 #   6. .\sign-windows.ps1 -Pfx ...   (D9; optional but recommended)
 #   7. .\publish-release.ps1 -Version X.Y.Z -Notes "Changelog…"
 #

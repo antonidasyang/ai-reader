@@ -1,7 +1,7 @@
 ; ── Inno Setup script for AI Reader ────────────────────────────────
 ;
 ; Run with:
-;   "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" AiReader.iss
+;   "C:\Program Files\Inno Setup 7\ISCC.exe" AiReader.iss
 ;
 ; Inputs:
 ;   dist\         a fully-staged portable folder produced by:

@@ -20,8 +20,8 @@ REM      2. windeploy.bat               windeployqt + MSVC runtime DLLs into dis
 REM      3. ISCC AiReader.iss           pack dist\ into the single-file installer
 REM
 REM  Toolchain: build.bat's (cmake + Qt6 + Visual Studio) for the optional build,
-REM  plus Inno Setup 6 (ISCC.exe). It is found on PATH, else under
-REM  %ProgramFiles(x86)%\Inno Setup 6 or %ProgramFiles%\Inno Setup 6.
+REM  plus Inno Setup 7 (ISCC.exe). It is found on PATH, else under
+REM  %ProgramFiles%\Inno Setup 7 or %ProgramFiles(x86)%\Inno Setup 7.
 REM
 REM  ASCII-only: cmd.exe parses .bat in the system codepage (GBK on Chinese
 REM  Windows), not UTF-8. No parenthesised if/else with non-ASCII, no '>' in echo.
@@ -54,8 +54,8 @@ if errorlevel 1 goto :windeploy_failed
 REM --- Locate Inno Setup's ISCC.exe ----------------------------------------
 set "ISCC="
 for /f "delims=" %%p in ('where iscc 2^>nul') do if not defined ISCC set "ISCC=%%p"
-if not defined ISCC if exist "%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" set "ISCC=%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe"
-if not defined ISCC if exist "%ProgramFiles%\Inno Setup 6\ISCC.exe" set "ISCC=%ProgramFiles%\Inno Setup 6\ISCC.exe"
+if not defined ISCC if exist "%ProgramFiles%\Inno Setup 7\ISCC.exe" set "ISCC=%ProgramFiles%\Inno Setup 7\ISCC.exe"
+if not defined ISCC if exist "%ProgramFiles(x86)%\Inno Setup 7\ISCC.exe" set "ISCC=%ProgramFiles(x86)%\Inno Setup 7\ISCC.exe"
 if not defined ISCC goto :no_iscc
 echo [package] Using "!ISCC!"
 
@@ -90,7 +90,7 @@ exit /b 1
 :no_iscc
 echo.
 echo [package] ERROR: Inno Setup's ISCC.exe was not found.
-echo            Install Inno Setup 6 ^(https://jrsoftware.org/isdl.php^), or add
+echo            Install Inno Setup 7 ^(https://jrsoftware.org/isdl.php^), or add
 echo            ISCC.exe to PATH, then re-run.
 exit /b 1
 
