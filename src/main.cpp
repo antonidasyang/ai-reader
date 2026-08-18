@@ -262,6 +262,19 @@ int main(int argc, char *argv[])
                          pdfSelection.setParagraphs(
                              paperController.blocks()->allBlocks());
                      });
+    // The selection model's background builder opens its own document
+    // instance — keep it pointed at the current file + password.
+    auto syncSelectionSource = [&paperController, &pdfSelection]() {
+        const QUrl u = paperController.pdfSource();
+        pdfSelection.setSource(u.isLocalFile() ? u.toLocalFile()
+                                               : QString(),
+                               paperController.pdfPassword());
+    };
+    QObject::connect(&paperController, &PaperController::pdfSourceChanged,
+                     &pdfSelection, syncSelectionSource);
+    QObject::connect(&paperController, &PaperController::pdfPasswordChanged,
+                     &pdfSelection, syncSelectionSource);
+    syncSelectionSource();
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("paperController", &paperController);

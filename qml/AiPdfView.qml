@@ -154,12 +154,6 @@ Item {
             color: tableView.debug ? "beige" : "transparent"
             // The selection MouseArea reaches in for coordinate mapping.
             readonly property Item paperItem: paper
-            // Build the page's selection structures right after the
-            // delegate appears, so the first click doesn't pay for it.
-            Component.onCompleted: Qt.callLater(function() {
-                if (root.selectionModel)
-                    root.selectionModel.warmPage(pageHolder.index)
-            })
             Rectangle {
                 id: paper
                 width: image.width
@@ -411,7 +405,7 @@ Item {
                 root.selectionModel.clear()
                 return
             }
-            const link = root.selectionModel.linkAt(h.page, h.pos)
+            const link = root.selectionModel.linkAt(h.page, h.pos, true)
             if (link.found && clickCount === 1) {
                 // Click follows the link; selection is untouched until
                 // we know it wasn't a drag.

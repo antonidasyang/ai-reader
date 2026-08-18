@@ -1,18 +1,20 @@
 #pragma once
 
 #include "Block.h"
+#include "PdfVisualLines.h"
 
+#include <QFutureWatcher>
 #include <QHash>
 #include <QObject>
 #include <QPointF>
 #include <QPolygonF>
 #include <QRectF>
 #include <QString>
+#include <QUrl>
 #include <QVariantMap>
 #include <QVector>
 
 class QPdfDocument;
-class QPdfLinkModel;
 
 // Web-style text selection over a QPdfDocument: cross-page ranges,
 // word/paragraph snapping (double/triple click), hover hit-testing
@@ -53,12 +55,18 @@ public:
     Q_INVOKABLE QList<QPolygonF> polygonsOnPage(int page) const;
     Q_INVOKABLE void copyToClipboard() const;
     // {found, page, location, zoom, url}; page >= 0 = internal jump.
-    Q_INVOKABLE QVariantMap linkAt(int page, QPointF pagePos) const;
+    // Hover calls leave buildIfNeeded false (returns not-found until
+    // the background build reaches the page); press/activation calls
+    // pass true so links always resolve.
+    Q_INVOKABLE QVariantMap linkAt(int page, QPointF pagePos,
+                                   bool buildIfNeeded = false) const;
     // Test/diagnostic hook: the visual line rectangles hit-testing uses.
     Q_INVOKABLE QList<QRectF> debugLineRects(int page) const;
-    // Build a page's line structures ahead of the first click — the
-    // view calls this as page delegates instantiate.
-    Q_INVOKABLE void warmPage(int page) const;
+
+    // Where the document lives on disk — lets the background builder
+    // open its own instance. main.cpp forwards PaperController's
+    // source/password.
+    void setSource(const QString &localPath, const QString &password);
 
     // Paragraph rectangles from the app's block model (clusterer or
     // GROBID). Triple-click selects one of these, so it matches what
@@ -86,13 +94,35 @@ private:
     };
     struct PageData {
         bool loaded = false;
+        bool linksLoaded = false;
         QString text;
         QVector<LineInfo> lines;
+    };
+    struct LinkInfo {
+        QRectF rect;
+        int page = -1;
+        QPointF location;
+        qreal zoom = 0;
+        QUrl url;
+    };
+    // One background job's output: every page's text/lines/links.
+    struct PageBundle {
+        QString text;
+        QVector<PdfVisualLines::Line> lines;
+        QVector<LinkInfo> links;
     };
     enum Granularity { CharGrain, WordGrain, ParaGrain };
 
     bool docReady() const;
+    // Builds on demand (click paths). NEVER call from hover/scroll
+    // paths — building runs ~100+ PDFium calls that contend with page
+    // rendering for QtPdf's global lock; use pageDataIfReady there.
     PageData &pageData(int page) const;
+    const PageData *pageDataIfReady(int page) const;
+    void startBackgroundBuild();
+    void onBuildFinished();
+    const LineInfo *lineIn(const PageData &pd, QPointF pos,
+                           bool *inside) const;
     const LineInfo *lineAt(int page, QPointF pos, bool *inside) const;
     TextPos posAt(int page, QPointF pos, bool *insideText = nullptr) const;
     void wordRange(const TextPos &pos, TextPos &s, TextPos &e) const;
@@ -115,8 +145,13 @@ private:
 
     QPdfDocument *m_doc = nullptr;
     mutable QVector<PageData> m_pages;
-    mutable QHash<int, QPdfLinkModel *> m_links;
+    mutable QHash<int, QVector<LinkInfo>> m_pageLinks;
     QHash<int, QVector<QRectF>> m_paragraphs;   // page → block bboxes
+
+    QString m_srcPath;
+    QString m_srcPassword;
+    int m_buildGen = 0;   // invalidates in-flight background builds
+    QFutureWatcher<QVector<PageBundle>> m_buildWatcher;
 
     Granularity m_grain = CharGrain;
     TextPos m_anchorStart, m_anchorEnd;  // unit range at press

@@ -10,6 +10,7 @@
 #include <QPdfSelection>
 #include <QTextBoundaryFinder>
 #include <QUrl>
+#include <QtConcurrent>
 #include <algorithm>
 #include <limits>
 
@@ -111,13 +112,99 @@ PdfSelectionModel::PdfSelectionModel(QPdfDocument *doc, QObject *parent)
     : QObject(parent)
     , m_doc(doc)
 {
-    connect(m_doc, &QPdfDocument::statusChanged,
-            this, [this] { reset(); });
+    connect(m_doc, &QPdfDocument::statusChanged, this, [this] {
+        reset();
+        if (docReady())
+            startBackgroundBuild();
+    });
+    connect(&m_buildWatcher,
+            &QFutureWatcher<QVector<PageBundle>>::finished,
+            this, &PdfSelectionModel::onBuildFinished);
 }
 
-PdfSelectionModel::~PdfSelectionModel()
+PdfSelectionModel::~PdfSelectionModel() = default;
+
+void PdfSelectionModel::setSource(const QString &localPath,
+                                  const QString &password)
 {
-    qDeleteAll(m_links);
+    m_srcPath = localPath;
+    m_srcPassword = password;
+}
+
+// Build every page's selection structures (text, rendered lines, link
+// rects) in one worker job against a private QPdfDocument. All the
+// PDFium traffic happens off the GUI thread, so scrolling and page
+// rendering never stall behind it; the GUI-thread fallbacks in
+// pageData()/linkAt() only run for clicks that arrive before the
+// build reaches that page.
+void PdfSelectionModel::startBackgroundBuild()
+{
+    if (m_srcPath.isEmpty())
+        return;
+    const QString path = m_srcPath;
+    const QString pw = m_srcPassword;
+    m_buildWatcher.setFuture(QtConcurrent::run([path, pw]() {
+        QVector<PageBundle> out;
+        QPdfDocument doc;   // worker-owned: no shared state with the UI
+        doc.setPassword(pw);
+        if (doc.load(path) != QPdfDocument::Error::None)
+            return out;
+        const int n = doc.pageCount();
+        out.resize(n);
+        for (int p = 0; p < n; ++p) {
+            PageBundle &b = out[p];
+            b.lines = PdfVisualLines::extract(doc, p, &b.text,
+                                              PdfVisualLines::Precise);
+            QPdfLinkModel lm;
+            lm.setDocument(&doc);
+            lm.setPage(p);
+            const int rows = lm.rowCount(QModelIndex());
+            for (int r = 0; r < rows; ++r) {
+                const QPdfLink lk =
+                    lm.data(lm.index(r, 0),
+                            int(QPdfLinkModel::Role::Link))
+                        .value<QPdfLink>();
+                const QList<QRectF> rects = lk.rectangles();
+                for (const QRectF &rc : rects)
+                    b.links.append(LinkInfo{rc, lk.page(), lk.location(),
+                                            lk.zoom(), lk.url()});
+            }
+        }
+        return out;
+    }));
+}
+
+void PdfSelectionModel::onBuildFinished()
+{
+    if (!docReady())
+        return;
+    const QVector<PageBundle> bundles = m_buildWatcher.result();
+    if (m_pages.size() != m_doc->pageCount())
+        m_pages.resize(m_doc->pageCount());
+    // A build started for an older document would mismatch in page
+    // count more often than not, but the real guard is reset():
+    // it clears m_pages, and we only fill pages nothing else built.
+    const int n = qMin(int(bundles.size()), int(m_pages.size()));
+    for (int p = 0; p < n; ++p) {
+        PageData &pd = m_pages[p];
+        if (!pd.loaded) {
+            pd.text = bundles[p].text;
+            pd.lines.clear();
+            pd.lines.reserve(bundles[p].lines.size());
+            for (const PdfVisualLines::Line &vl : bundles[p].lines) {
+                LineInfo ln;
+                ln.start = vl.start;
+                ln.end = vl.end;
+                ln.bbox = vl.bbox;
+                pd.lines.append(ln);
+            }
+            pd.loaded = true;
+        }
+        if (!pd.linksLoaded) {
+            m_pageLinks[p] = bundles[p].links;
+            pd.linksLoaded = true;
+        }
+    }
 }
 
 bool PdfSelectionModel::docReady() const
@@ -128,8 +215,7 @@ bool PdfSelectionModel::docReady() const
 void PdfSelectionModel::reset()
 {
     m_pages.clear();
-    qDeleteAll(m_links);
-    m_links.clear();
+    m_pageLinks.clear();
     m_grain = CharGrain;
     m_anchorStart = m_anchorEnd = m_focusStart = m_focusEnd = TextPos();
     emit selectionChanged();
@@ -172,13 +258,22 @@ QList<QRectF> PdfSelectionModel::debugLineRects(int page) const
     return out;
 }
 
+const PdfSelectionModel::PageData *
+PdfSelectionModel::pageDataIfReady(int page) const
+{
+    if (m_pages.size() != m_doc->pageCount())
+        m_pages.resize(m_doc->pageCount());
+    const PageData &pd = m_pages[page];
+    return pd.loaded ? &pd : nullptr;
+}
+
 // Nearest text line to `pos`. Lines containing the point (with a small
 // margin) always win; otherwise vertical distance dominates, so a drag
 // through the margin selects the line beside it, like a browser.
 const PdfSelectionModel::LineInfo *
-PdfSelectionModel::lineAt(int page, QPointF pos, bool *inside) const
+PdfSelectionModel::lineIn(const PageData &pd, QPointF pos,
+                          bool *inside) const
 {
-    const PageData &pd = pageData(page);
     const LineInfo *best = nullptr;
     qreal bestScore = std::numeric_limits<qreal>::max();
     bool bestInside = false;
@@ -204,6 +299,12 @@ PdfSelectionModel::lineAt(int page, QPointF pos, bool *inside) const
     if (inside)
         *inside = bestInside;
     return best;
+}
+
+const PdfSelectionModel::LineInfo *
+PdfSelectionModel::lineAt(int page, QPointF pos, bool *inside) const
+{
+    return lineIn(pageData(page), pos, inside);
 }
 
 QRectF PdfSelectionModel::boxNear(int page, const LineInfo &ln, int i,
@@ -267,11 +368,6 @@ PdfSelectionModel::posAt(int page, QPointF pos, bool *insideText) const
     return p;
 }
 
-void PdfSelectionModel::warmPage(int page) const
-{
-    if (docReady() && page >= 0 && page < m_doc->pageCount())
-        pageData(page);
-}
 
 int PdfSelectionModel::lineIndexOf(const PageData &pd, int charIdx) const
 {
@@ -537,8 +633,15 @@ bool PdfSelectionModel::overText(int page, QPointF pagePos) const
 {
     if (!docReady() || page < 0 || page >= m_doc->pageCount())
         return false;
+    // Hover path: never build page structures here — this runs on
+    // every mouse move (and Qt synthesizes hover during scrolling).
+    // Until the background build reaches this page, report "no text";
+    // the cursor turns into an I-beam a moment later.
+    const PageData *pd = pageDataIfReady(page);
+    if (!pd)
+        return false;
     bool inside = false;
-    lineAt(page, pagePos, &inside);
+    lineIn(*pd, pagePos, &inside);
     return inside;
 }
 
@@ -611,26 +714,49 @@ void PdfSelectionModel::copyToClipboard() const
         QGuiApplication::clipboard()->setText(t);
 }
 
-QVariantMap PdfSelectionModel::linkAt(int page, QPointF pagePos) const
+QVariantMap PdfSelectionModel::linkAt(int page, QPointF pagePos,
+                                      bool buildIfNeeded) const
 {
     QVariantMap out;
     out.insert(QStringLiteral("found"), false);
     if (!docReady() || page < 0 || page >= m_doc->pageCount())
         return out;
-    QPdfLinkModel *lm = m_links.value(page);
-    if (!lm) {
-        lm = new QPdfLinkModel;
-        lm->setDocument(m_doc);
-        lm->setPage(page);
-        m_links.insert(page, lm);
+    if (m_pages.size() != m_doc->pageCount())
+        m_pages.resize(m_doc->pageCount());
+    PageData &pd = m_pages[page];
+    if (!pd.linksLoaded) {
+        // Hover calls (buildIfNeeded=false) never touch PDFium; the
+        // background build fills this in shortly. Click calls build
+        // synchronously so link activation always works.
+        if (!buildIfNeeded)
+            return out;
+        QPdfLinkModel lm;
+        lm.setDocument(m_doc);
+        lm.setPage(page);
+        QVector<LinkInfo> links;
+        const int rows = lm.rowCount(QModelIndex());
+        for (int r = 0; r < rows; ++r) {
+            const QPdfLink lk =
+                lm.data(lm.index(r, 0), int(QPdfLinkModel::Role::Link))
+                    .value<QPdfLink>();
+            const QList<QRectF> rects = lk.rectangles();
+            for (const QRectF &rc : rects)
+                links.append(LinkInfo{rc, lk.page(), lk.location(),
+                                      lk.zoom(), lk.url()});
+        }
+        m_pageLinks[page] = links;
+        pd.linksLoaded = true;
     }
-    const QPdfLink link = lm->linkAt(pagePos);
-    if (!link.isValid())
+    const QVector<LinkInfo> links = m_pageLinks.value(page);
+    for (const LinkInfo &lk : links) {
+        if (!lk.rect.adjusted(-1, -1, 1, 1).contains(pagePos))
+            continue;
+        out.insert(QStringLiteral("found"), true);
+        out.insert(QStringLiteral("page"), lk.page);
+        out.insert(QStringLiteral("location"), lk.location);
+        out.insert(QStringLiteral("zoom"), lk.zoom);
+        out.insert(QStringLiteral("url"), lk.url);
         return out;
-    out.insert(QStringLiteral("found"), true);
-    out.insert(QStringLiteral("page"), link.page());
-    out.insert(QStringLiteral("location"), link.location());
-    out.insert(QStringLiteral("zoom"), link.zoom());
-    out.insert(QStringLiteral("url"), link.url());
+    }
     return out;
 }
