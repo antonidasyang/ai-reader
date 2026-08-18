@@ -207,8 +207,18 @@ ApplicationWindow {
                 body: qsTr("Open the <b>Chat</b> pane and ask questions. The model can read pages, search the text, and view rendered figures with vision. Each paper keeps its own list of <b>chat sessions</b> in the tab strip on top — + to add, × to close, double-click to rename.")
             },
             {
+                target: auth.authenticated ? accountBtn : signInBtn,
+                title: qsTr("6 · Sign in to sync"),
+                body: qsTr("Click <b>Sign in</b> to log in through your organisation's CAS page in the browser — the app never stores your password. Signed in, your library lives in the cloud: papers, metadata and AI interpretations sync across devices and stay readable offline.")
+            },
+            {
+                target: libToggleBtn,
+                title: qsTr("7 · Share a project library"),
+                body: qsTr("The <b>Lib</b> pane organises papers by research project. Invite teammates by email as <b>owner / editor / viewer</b> — everyone shares the same library, full-text search included, and shared AI interpretations appear under <b>Shared</b>.")
+            },
+            {
                 target: settingsBtn,
-                title: qsTr("6 · Configure your LLM"),
+                title: qsTr("8 · Configure your LLM"),
                 body: qsTr("Open <b>Settings…</b> to add a model and API key (Anthropic Claude or any OpenAI-compatible endpoint). Use <b>Prompts…</b> to customise system prompts. Re-open this tour any time from the <b>?</b> button.")
             }
         ]
@@ -323,13 +333,11 @@ ApplicationWindow {
         // Wire spotlight targets now that the toolbar / panes exist.
         welcomeWizard.steps = buildWizardSteps()
 
-        // Three mutually-exclusive first-render popups, in priority
-        // order: brand-new user gets the welcome tour; returning
-        // user on a freshly-upgraded build gets the changelog;
-        // everyone else gets nothing. Both popups stamp the current
-        // version into layoutSettings.lastSeenVersion on close, so
-        // the changelog only fires once per release.
-        if (!layoutSettings.wizardSeen()) {
+        // First-render popups: the welcome tour replays on the first
+        // launch of EVERY new version (it also stamps
+        // lastSeenVersion, so the changelog dialog never stacks on
+        // top of it in the same session).
+        if (layoutSettings.wizardSeenVersion() !== settings.appVersion) {
             Qt.callLater(function() { welcomeWizard.start() })
         } else if (layoutSettings.lastSeenVersion() !== settings.appVersion) {
             Qt.callLater(function() { changelogDialog.open() })
@@ -534,6 +542,7 @@ ApplicationWindow {
 
             // ── Cloud library: project picker + account (was the ProjectBar) ──
             ToolButton {
+                id: signInBtn
                 text: qsTr("Sign in")
                 visible: !auth.authenticated
                 onClicked: auth.startCasLogin()
@@ -584,6 +593,7 @@ ApplicationWindow {
                 }
             }
             ToolButton {
+                id: accountBtn
                 visible: auth.authenticated
                 text: (auth.userDisplayName.length > 0 ? auth.userDisplayName
                                                        : auth.userEmail) + " ▾"

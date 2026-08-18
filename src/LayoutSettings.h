@@ -27,6 +27,10 @@ public:
     // welcome wizard. Reset by deleting the QSettings entry; the
     // toolbar Help button re-launches the wizard regardless of flag.
     Q_INVOKABLE bool wizardSeen() const;
+    // Version-stamped variant: the tour replays on the first launch
+    // of every new version (stores the version it last ran for).
+    Q_INVOKABLE QString wizardSeenVersion() const;
+    Q_INVOKABLE void setWizardSeenVersion(const QString &v);
     Q_INVOKABLE void setWizardSeen(bool seen);
 
     // Opaque QByteArray returned by SplitView.saveState() — encodes

@@ -81,6 +81,9 @@ Popup {
     function finish() {
         if (typeof layoutSettings !== "undefined") {
             layoutSettings.setWizardSeen(true)
+            // Stamp the version: the tour replays once per release.
+            if (typeof settings !== "undefined")
+                layoutSettings.setWizardSeenVersion(settings.appVersion)
             // Stamp the version too so the changelog dialog doesn't
             // pop immediately after the wizard on a brand-new
             // install. The user has effectively seen what's new --
@@ -104,7 +107,7 @@ Popup {
             text: ab.text
             font.pixelSize: 13
             font.weight: ab.primary ? Font.DemiBold : Font.Normal
-            color: ab.primary ? Theme.onAccent
+            color: ab.primary ? Theme.onPrimary
                    : ab.ghost ? (ab.hovered ? Theme.text : Theme.dimText)
                    : Theme.text
             horizontalAlignment: Text.AlignHCenter
@@ -216,7 +219,9 @@ Popup {
             y: Math.max(8, root.spotRect.y - height / 2)
             width: 28; height: 28
             radius: 14
-            color: Theme.accent
+            // primaryBg (Fluent blue) keeps the white number legible in
+            // both themes; accent is pale in dark mode.
+            color: Theme.primaryBg
             border.color: Theme.dialogBg
             border.width: 2
             Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
@@ -224,7 +229,7 @@ Popup {
             Label {
                 anchors.centerIn: parent
                 text: (root.stepIndex + 1).toString()
-                color: Theme.onAccent
+                color: Theme.onPrimary
                 font.bold: true
                 font.pixelSize: 13
             }

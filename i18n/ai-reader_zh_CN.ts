@@ -4,12 +4,12 @@
 <context>
     <name>AiPdfView</name>
     <message>
-        <location filename="../qml/AiPdfView.qml" line="479"/>
+        <location filename="../qml/AiPdfView.qml" line="546"/>
         <source>Copy</source>
         <translation>复制</translation>
     </message>
     <message>
-        <location filename="../qml/AiPdfView.qml" line="484"/>
+        <location filename="../qml/AiPdfView.qml" line="551"/>
         <source>Select All on Page</source>
         <translation>全选本页</translation>
     </message>
@@ -507,12 +507,12 @@
         <translation>打开 PDF</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="377"/>
+        <location filename="../qml/Main.qml" line="385"/>
         <source>Open…</source>
         <translation>打开…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="382"/>
+        <location filename="../qml/Main.qml" line="390"/>
         <source>Open folder…</source>
         <translation>打开文件夹…</translation>
     </message>
@@ -527,22 +527,22 @@
         <translation>导出提取的文本</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="386"/>
+        <location filename="../qml/Main.qml" line="394"/>
         <source>Export text…</source>
         <translation>导出文本…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="390"/>
+        <location filename="../qml/Main.qml" line="398"/>
         <source>Save the raw PDF text + per-line bboxes + detected paragraphs to a .txt file</source>
         <translation>将 PDF 原始文本、每行 bbox、识别出的段落保存为 .txt 文件</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="394"/>
+        <location filename="../qml/Main.qml" line="402"/>
         <source>Re-extract</source>
         <translation>重新分段</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="398"/>
+        <location filename="../qml/Main.qml" line="406"/>
         <source>Discard manual paragraph edits and re-run automatic extraction</source>
         <translation>丢弃手动段落编辑并重新自动分段</translation>
     </message>
@@ -552,144 +552,169 @@
         <translation>写入提取文本失败。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="483"/>
+        <location filename="../qml/Main.qml" line="490"/>
         <source>Folder</source>
         <translation>文件夹</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="404"/>
+        <location filename="../qml/Main.qml" line="412"/>
         <source>Translate</source>
         <translation>翻译</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="404"/>
+        <location filename="../qml/Main.qml" line="412"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="411"/>
+        <location filename="../qml/Main.qml" line="419"/>
         <source>Retry failed</source>
         <translation>重试失败项</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="416"/>
+        <location filename="../qml/Main.qml" line="424"/>
         <source>Interpret</source>
         <translation>解读</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="422"/>
+        <location filename="../qml/Main.qml" line="430"/>
         <source>Read page (vision)</source>
         <translation>视觉读页</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="266"/>
-        <location filename="../qml/Main.qml" line="507"/>
+        <location filename="../qml/Main.qml" line="276"/>
+        <location filename="../qml/Main.qml" line="514"/>
         <source>Chat</source>
         <translation>对话</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="254"/>
-        <location filename="../qml/Main.qml" line="500"/>
+        <location filename="../qml/Main.qml" line="264"/>
+        <location filename="../qml/Main.qml" line="507"/>
         <source>TOC</source>
         <translation>目录</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="458"/>
+        <location filename="../qml/Main.qml" line="466"/>
         <source>Zoom in</source>
         <translation>放大</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="438"/>
+        <location filename="../qml/Main.qml" line="446"/>
         <source>Zoom out</source>
         <translation>缩小</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="450"/>
+        <location filename="../qml/Main.qml" line="211"/>
+        <source>6 · Sign in to sync</source>
+        <translation>6 · 登录以同步</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="212"/>
+        <source>Click &lt;b&gt;Sign in&lt;/b&gt; to log in through your organisation&apos;s CAS page in the browser — the app never stores your password. Signed in, your library lives in the cloud: papers, metadata and AI interpretations sync across devices and stay readable offline.</source>
+        <translation>点击&lt;b&gt;登录&lt;/b&gt;，在浏览器中通过所在机构的 CAS 页面完成登录——应用不会保存你的密码。登录后，文库保存在云端：论文、元数据和 AI 解读跨设备同步，离线也可阅读。</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="216"/>
+        <source>7 · Share a project library</source>
+        <translation>7 · 共享课题文库</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="217"/>
+        <source>The &lt;b&gt;Lib&lt;/b&gt; pane organises papers by research project. Invite teammates by email as &lt;b&gt;owner / editor / viewer&lt;/b&gt; — everyone shares the same library, full-text search included, and shared AI interpretations appear under &lt;b&gt;Shared&lt;/b&gt;.</source>
+        <translation>&lt;b&gt;文库&lt;/b&gt;面板按课题组织文献。用邮箱邀请同事加入，角色分 &lt;b&gt;owner / editor / viewer&lt;/b&gt;——大家共用同一个文库（含全文检索），共享的 AI 解读会出现在&lt;b&gt;共享&lt;/b&gt;标签下。</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="221"/>
+        <source>8 · Configure your LLM</source>
+        <translation>8 · 配置你的大模型</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="458"/>
         <source>Reset zoom</source>
         <translation>重置缩放</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="513"/>
+        <location filename="../qml/Main.qml" line="520"/>
         <source>Quote → Chat</source>
         <translation>引用 → 对话</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="517"/>
+        <location filename="../qml/Main.qml" line="524"/>
         <source>Quote the highlighted PDF text into the chat input</source>
         <translation>将选中的 PDF 文字引用到对话输入框</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="526"/>
+        <location filename="../qml/Main.qml" line="533"/>
         <source>%1 pages · %2 paragraphs</source>
         <translation>%1 页 · %2 段</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="601"/>
+        <location filename="../qml/Main.qml" line="610"/>
         <source>%1 · %2</source>
         <translation>%1 · %2</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="602"/>
+        <location filename="../qml/Main.qml" line="611"/>
         <source>LLM not configured</source>
         <translation>未配置 LLM</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="608"/>
+        <location filename="../qml/Main.qml" line="617"/>
         <source>Prompts…</source>
         <translation>提示词…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="613"/>
+        <location filename="../qml/Main.qml" line="622"/>
         <source>Settings…</source>
         <translation>设置…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="621"/>
+        <location filename="../qml/Main.qml" line="630"/>
         <source>Show getting-started tour</source>
         <translation>显示新手向导</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1031"/>
+        <location filename="../qml/Main.qml" line="1066"/>
         <source>Drag a PDF here, or click Open…</source>
         <translation>将 PDF 拖到此处,或点击「打开…」</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1037"/>
+        <location filename="../qml/Main.qml" line="1072"/>
         <source>AI Reader — milestone 3.2 (TOC sidebar)</source>
         <translation>AI Reader — 里程碑 3.2(目录侧栏)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1159"/>
+        <location filename="../qml/Main.qml" line="1194"/>
         <source>Drop PDF to open</source>
         <translation>松开以打开 PDF</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="642"/>
+        <location filename="../qml/Main.qml" line="651"/>
         <source>Dropped file is not a PDF.</source>
         <translation>拖入的文件不是 PDF。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="220"/>
+        <location filename="../qml/Main.qml" line="230"/>
         <source>%1: %2</source>
         <translation>%1:%2</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="231"/>
+        <location filename="../qml/Main.qml" line="241"/>
         <source>PDF</source>
         <translation>PDF</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="241"/>
+        <location filename="../qml/Main.qml" line="251"/>
         <source>Translation</source>
         <translation>翻译</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="247"/>
+        <location filename="../qml/Main.qml" line="257"/>
         <source>Summary</source>
         <translation>解读</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="261"/>
+        <location filename="../qml/Main.qml" line="271"/>
         <source>Vision</source>
         <translation>视觉</translation>
     </message>
@@ -700,7 +725,7 @@
     </message>
     <message>
         <location filename="../qml/Main.qml" line="144"/>
-        <location filename="../qml/Main.qml" line="575"/>
+        <location filename="../qml/Main.qml" line="583"/>
         <source>New project</source>
         <translation>新建课题</translation>
     </message>
@@ -760,67 +785,66 @@
         <translation>打开 &lt;b&gt;对话&lt;/b&gt; 面板向 AI 提问。模型可读取页面、搜索文本,并通过视觉模型查看渲染后的图表。每篇论文在面板顶部的标签栏中维护自己的 &lt;b&gt;对话会话&lt;/b&gt; 列表——+ 新建,× 关闭,双击重命名。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="211"/>
         <source>6 · Configure your LLM</source>
-        <translation>6 · 配置你的大模型</translation>
+        <translation type="vanished">6 · 配置你的大模型</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="212"/>
+        <location filename="../qml/Main.qml" line="222"/>
         <source>Open &lt;b&gt;Settings…&lt;/b&gt; to add a model and API key (Anthropic Claude or any OpenAI-compatible endpoint). Use &lt;b&gt;Prompts…&lt;/b&gt; to customise system prompts. Re-open this tour any time from the &lt;b&gt;?&lt;/b&gt; button.</source>
         <translation>打开 &lt;b&gt;设置…&lt;/b&gt; 添加模型和 API 密钥(Anthropic Claude 或任意 OpenAI 兼容端点)。使用 &lt;b&gt;提示词…&lt;/b&gt; 自定义系统提示词。任何时候都可以从 &lt;b&gt;?&lt;/b&gt; 按钮重新打开本向导。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="477"/>
+        <location filename="../qml/Main.qml" line="484"/>
         <source>Hand tool: drag to move the page. Off = select text.</source>
         <translation>手形工具:拖动移动页面;关闭则为选择文字。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="490"/>
+        <location filename="../qml/Main.qml" line="497"/>
         <source>Lib</source>
         <translation>库</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="495"/>
+        <location filename="../qml/Main.qml" line="502"/>
         <source>Cloud-synced literature library</source>
         <translation>云端同步的文献库</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="529"/>
+        <location filename="../qml/Main.qml" line="536"/>
         <source> · GROBID…</source>
         <translation> · GROBID…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="538"/>
+        <location filename="../qml/Main.qml" line="546"/>
         <source>Sign in</source>
         <translation>登录</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="580"/>
+        <location filename="../qml/Main.qml" line="588"/>
         <source>Members</source>
         <translation>成员</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="594"/>
+        <location filename="../qml/Main.qml" line="603"/>
         <source>Sign out</source>
         <translation>退出登录</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1226"/>
+        <location filename="../qml/Main.qml" line="1261"/>
         <source>Update available: v%1</source>
         <translation>有可用更新:v%1</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1237"/>
+        <location filename="../qml/Main.qml" line="1272"/>
         <source>Download</source>
         <translation>下载</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1250"/>
+        <location filename="../qml/Main.qml" line="1285"/>
         <source>Dismiss</source>
         <translation>忽略</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1243"/>
+        <location filename="../qml/Main.qml" line="1278"/>
         <source>No download for this platform yet — check the website.</source>
         <translation>当前平台暂无下载——请到项目网站查看。</translation>
     </message>
@@ -979,27 +1003,27 @@
 <context>
     <name>PaperController</name>
     <message>
-        <location filename="../src/PaperController.cpp" line="182"/>
+        <location filename="../src/PaperController.cpp" line="184"/>
         <source>File not found.</source>
         <translation>文件未找到。</translation>
     </message>
     <message>
-        <location filename="../src/PaperController.cpp" line="185"/>
+        <location filename="../src/PaperController.cpp" line="187"/>
         <source>Invalid PDF format.</source>
         <translation>PDF 格式无效。</translation>
     </message>
     <message>
-        <location filename="../src/PaperController.cpp" line="188"/>
+        <location filename="../src/PaperController.cpp" line="190"/>
         <source>Unsupported PDF security scheme.</source>
         <translation>不支持的 PDF 加密方式。</translation>
     </message>
     <message>
-        <location filename="../src/PaperController.cpp" line="191"/>
+        <location filename="../src/PaperController.cpp" line="193"/>
         <source>PDF data not yet available.</source>
         <translation>PDF 数据尚不可用。</translation>
     </message>
     <message>
-        <location filename="../src/PaperController.cpp" line="195"/>
+        <location filename="../src/PaperController.cpp" line="197"/>
         <source>Failed to load PDF.</source>
         <translation>加载 PDF 失败。</translation>
     </message>
@@ -1117,87 +1141,87 @@
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="29"/>
         <source>No error</source>
-        <translation type="unfinished"></translation>
+        <translation>无错误</translation>
     </message>
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="31"/>
         <source>The specified item could not be found in the keychain</source>
-        <translation type="unfinished"></translation>
+        <translation>在钥匙串中找不到指定的项目</translation>
     </message>
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="33"/>
         <source>User canceled the operation</source>
-        <translation type="unfinished"></translation>
+        <translation>用户取消了操作</translation>
     </message>
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="35"/>
         <source>User interaction is not allowed</source>
-        <translation type="unfinished"></translation>
+        <translation>不允许用户交互</translation>
     </message>
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="37"/>
         <source>No keychain is available. You may need to restart your computer</source>
-        <translation type="unfinished"></translation>
+        <translation>没有可用的钥匙串，可能需要重新启动电脑</translation>
     </message>
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="39"/>
         <source>The user name or passphrase you entered is not correct</source>
-        <translation type="unfinished"></translation>
+        <translation>输入的用户名或密码不正确</translation>
     </message>
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="41"/>
         <source>A cryptographic verification failure has occurred</source>
-        <translation type="unfinished"></translation>
+        <translation>发生加密校验失败</translation>
     </message>
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="43"/>
         <source>Function or operation not implemented</source>
-        <translation type="unfinished"></translation>
+        <translation>功能或操作尚未实现</translation>
     </message>
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="45"/>
         <source>I/O error</source>
-        <translation type="unfinished"></translation>
+        <translation>I/O 错误</translation>
     </message>
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="47"/>
         <source>Already open with with write permission</source>
-        <translation type="unfinished"></translation>
+        <translation>已以写入权限打开</translation>
     </message>
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="49"/>
         <source>Invalid parameters passed to a function</source>
-        <translation type="unfinished"></translation>
+        <translation>传递给函数的参数无效</translation>
     </message>
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="51"/>
         <source>Failed to allocate memory</source>
-        <translation type="unfinished"></translation>
+        <translation>内存分配失败</translation>
     </message>
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="53"/>
         <source>Bad parameter or invalid state for operation</source>
-        <translation type="unfinished"></translation>
+        <translation>参数错误或操作状态无效</translation>
     </message>
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="55"/>
         <source>An internal component failed</source>
-        <translation type="unfinished"></translation>
+        <translation>内部组件出错</translation>
     </message>
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="57"/>
         <source>The specified item already exists in the keychain</source>
-        <translation type="unfinished"></translation>
+        <translation>指定的项目已存在于钥匙串中</translation>
     </message>
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="59"/>
         <source>Unable to decode the provided data</source>
-        <translation type="unfinished"></translation>
+        <translation>无法解码所提供的数据</translation>
     </message>
     <message>
         <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="62"/>
         <source>Unknown error</source>
-        <translation type="unfinished"></translation>
+        <translation>未知错误</translation>
     </message>
 </context>
 <context>
@@ -1773,27 +1797,27 @@
 <context>
     <name>WelcomeWizard</name>
     <message>
-        <location filename="../qml/WelcomeWizard.qml" line="339"/>
+        <location filename="../qml/WelcomeWizard.qml" line="344"/>
         <source>Skip</source>
         <translation>跳过</translation>
     </message>
     <message>
-        <location filename="../qml/WelcomeWizard.qml" line="346"/>
+        <location filename="../qml/WelcomeWizard.qml" line="351"/>
         <source>Back</source>
         <translation>上一步</translation>
     </message>
     <message>
-        <location filename="../qml/WelcomeWizard.qml" line="353"/>
+        <location filename="../qml/WelcomeWizard.qml" line="358"/>
         <source>Next</source>
         <translation>下一步</translation>
     </message>
     <message>
-        <location filename="../qml/WelcomeWizard.qml" line="352"/>
+        <location filename="../qml/WelcomeWizard.qml" line="357"/>
         <source>Got it!</source>
         <translation>明白了!</translation>
     </message>
     <message>
-        <location filename="../qml/WelcomeWizard.qml" line="295"/>
+        <location filename="../qml/WelcomeWizard.qml" line="300"/>
         <source>Step %1 of %2</source>
         <translation>第 %1 步,共 %2 步</translation>
     </message>

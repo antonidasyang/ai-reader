@@ -112,7 +112,7 @@ Dialog {
             text: ab.text
             font.pixelSize: 13
             font.weight: ab.primary ? Font.DemiBold : Font.Normal
-            color: ab.primary ? Theme.onAccent : Theme.text
+            color: ab.primary ? Theme.onPrimary : Theme.text
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight

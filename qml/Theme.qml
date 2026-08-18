@@ -48,10 +48,13 @@ QtObject {
     // ── Buttons (primary = filled, secondary = quiet) ──────────────────
     // Primary fill gets its own trio instead of raw `accent`: accent
     // (Material blue 800 in light mode) is tuned for links/focus rings
-    // and reads harsh as a large filled surface. Light = Fluent blue.
-    readonly property color primaryBg:      dark ? "#7aa7ff" : "#0078d4"
-    readonly property color primaryHover:   dark ? "#8db4ff" : "#106ebe"
-    readonly property color primaryPressed: dark ? "#6b95e8" : "#005a9e"
+    // and reads harsh as a large filled surface. Mainstream look in
+    // BOTH themes: Fluent blue fill + white text (the pale-blue fill
+    // with dark text we shipped first read as ugly in dark mode).
+    readonly property color primaryBg:      dark ? "#1180dc" : "#0078d4"
+    readonly property color primaryHover:   dark ? "#2b8fe4" : "#106ebe"
+    readonly property color primaryPressed: dark ? "#0d67b5" : "#005a9e"
+    readonly property color onPrimary:      "#ffffff"
     readonly property color onAccent:      dark ? "#10131a" : "#ffffff"
     readonly property color accentHover:   dark ? "#8db4ff" : "#1a70d6"
     readonly property color accentPressed: dark ? "#6b95e8" : "#11529c"

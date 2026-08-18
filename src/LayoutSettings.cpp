@@ -7,6 +7,7 @@
 namespace {
 constexpr auto kKey               = "layout/paneOrder";
 constexpr auto kWizardKey         = "wizard/seen";
+constexpr auto kWizardVersionKey  = "wizard/seenVersion";
 constexpr auto kSplitterStateKey  = "layout/splitterState";
 constexpr auto kLastSeenVersionKey = "changelog/lastSeenVersion";
 } // namespace
@@ -36,6 +37,19 @@ void LayoutSettings::setPaneOrder(const QString &csv)
 bool LayoutSettings::wizardSeen() const
 {
     return m_qs.value(kWizardKey, false).toBool();
+}
+
+QString LayoutSettings::wizardSeenVersion() const
+{
+    return m_qs.value(kWizardVersionKey, QString{}).toString();
+}
+
+void LayoutSettings::setWizardSeenVersion(const QString &v)
+{
+    if (m_qs.value(kWizardVersionKey).toString() == v)
+        return;
+    m_qs.setValue(kWizardVersionKey, v);
+    m_qs.sync();
 }
 
 void LayoutSettings::setWizardSeen(bool seen)

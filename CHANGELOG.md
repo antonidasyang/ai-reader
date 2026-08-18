@@ -1,5 +1,25 @@
 # AI Reader changelog
 
+## v1.1.3 — 2026-08-18
+
+### Onboarding
+- **The welcome tour now replays on the first launch of every new
+  version**, so each release's changes get a guided walk-through.
+- **Two new tour steps**: signing in through CAS to sync your library
+  across devices, and sharing a project library with teammates
+  (owner / editor / viewer roles, shared AI interpretations).
+
+### Interface
+- **Primary buttons now use the mainstream blue-fill + white-text
+  look in both themes** — the pale-blue/dark-text dark-mode variant
+  is gone.
+
+### Packaging (Windows)
+- Installer hardening against missing MSVC runtimes: refuses to
+  package without the CRT DLLs, bundles the official vc_redist for a
+  silent belt-and-braces install, and rejects Windows older than
+  10 (1809) at install time instead of crashing at launch.
+
 ## v1.1.2 — 2026-08-18
 
 The smoothness release: profiling on a 30-page paper.
