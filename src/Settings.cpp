@@ -432,7 +432,7 @@ void Settings::load()
     m_updateManifestUrl    = m_qs.value(kKeyUpdateManifestUrl,    QString{}).toString();
     m_grobidEnabled        = m_qs.value(kKeyGrobidEnabled,        true).toBool();
     m_grobidUrl            = m_qs.value(kKeyGrobidUrl,
-                                 QStringLiteral("http://localhost:8070")).toString();
+                                 QStringLiteral("https://aireader.d2ssoft.com/grobid")).toString();
     m_crashReportsOptIn    = m_qs.value(kKeyCrashReportsOptIn,    false).toBool();
     m_tocFontSize          = qBound(8, m_qs.value(kKeyTocFontSize,       12).toInt(), 32);
     m_summaryFontSize      = qBound(8, m_qs.value(kKeySummaryFontSize,   13).toInt(), 32);

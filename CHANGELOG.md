@@ -21,9 +21,9 @@ and paragraph features.
   redrawn with a solid white fill.
 
 ### GROBID
-- **GROBID service deployed for the team** — Settings → Paragraph
-  segmentation → Service URL: `http://10.6.2.50:8070` (company
-  intranet).
+- **GROBID service deployed and on by default** — new installs use
+  `https://aireader.d2ssoft.com/grobid` automatically; existing
+  installs can set it under Settings → Paragraph segmentation.
 
 ## v1.1.0 — 2026-08-18
 

@@ -32,8 +32,9 @@ class Settings : public QObject
     // default. Where templates support variables, the supported tokens
     // are listed in the docstring above each setter.
     // Auto-update + privacy. updateManifestUrl falls back to the
-    // canonical raw.githubusercontent.com path when blank so users
-    // never have to type a URL to opt back into update checks.
+    // server's /update/manifest endpoint (kDefaultManifestUrl in
+    // UpdateChecker.cpp) when blank so users never have to type a
+    // URL to opt back into update checks.
     Q_PROPERTY(bool    autoCheckUpdates     READ autoCheckUpdates     WRITE setAutoCheckUpdates     NOTIFY autoCheckUpdatesChanged)
     Q_PROPERTY(QString updateManifestUrl    READ updateManifestUrl    WRITE setUpdateManifestUrl    NOTIFY updateManifestUrlChanged)
     Q_PROPERTY(bool    crashReportsOptIn    READ crashReportsOptIn    WRITE setCrashReportsOptIn    NOTIFY crashReportsOptInChanged)

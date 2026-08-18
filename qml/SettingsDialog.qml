@@ -590,7 +590,7 @@ Dialog {
                         id: grobidUrlField
                         Layout.fillWidth: true
                         enabled: grobidEnabledBox.checked
-                        placeholderText: "http://localhost:8070"
+                        placeholderText: "https://aireader.d2ssoft.com/grobid"
                     }
                 }
             }
