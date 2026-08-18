@@ -1,5 +1,6 @@
 #include "ChatContent.h"
 #include "ChatService.h"
+#include "CursorUtil.h"
 #include "CrashReporter.h"
 #include "LayoutSettings.h"
 #include "UpdateChecker.h"
@@ -226,6 +227,7 @@ int main(int argc, char *argv[])
 
     PaperController paperController;
     PdfSelectionModel pdfSelection(paperController.document());
+    CursorUtil cursorUtil;
     StructureService structure(&settings, &paperController);
     TranslationService translation(&settings, &paperController);
     SummaryService summary(&settings, &paperController);
@@ -258,6 +260,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("paperController", &paperController);
     engine.rootContext()->setContextProperty("pdfSelection", &pdfSelection);
     engine.rootContext()->setContextProperty("structure", &structure);
+    engine.rootContext()->setContextProperty("cursorUtil", &cursorUtil);
     engine.rootContext()->setContextProperty("settings", &settings);
     engine.rootContext()->setContextProperty("translation", &translation);
     engine.rootContext()->setContextProperty("summary", &summary);

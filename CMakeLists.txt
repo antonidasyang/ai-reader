@@ -213,6 +213,8 @@ qt_add_executable(ai-reader
     src/PdfSelectionModel.cpp
     src/StructureService.h
     src/StructureService.cpp
+    src/CursorUtil.h
+    src/CursorUtil.cpp
     src/LlmClient.h
     src/LlmClient.cpp
     src/AnthropicClient.h
@@ -389,6 +391,8 @@ qt_add_resources(ai-reader "icons"
     BASE "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons"
     FILES
         resources/icons/pan-hand.svg
+        resources/icons/cursor-hand-open.svg
+        resources/icons/cursor-hand-grab.svg
         resources/icons/app-16.png
         resources/icons/app-32.png
         resources/icons/app-48.png

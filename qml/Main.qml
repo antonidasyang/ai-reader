@@ -467,11 +467,10 @@ ApplicationWindow {
                 icon.source: "qrc:/icons/pan-hand.svg"
                 icon.width: 18
                 icon.height: 18
-                // transparent = keep the SVG's own colors (white hand + dark
-                // outline, like the OS grab cursor) instead of tinting it to a
-                // solid block. Active state shows via the button's checked
-                // highlight.
-                icon.color: "transparent"
+                // Tint the single-stroke glyph with the theme's text color
+                // so it matches the neighboring toolbar labels; active
+                // state shows via the button's checked highlight.
+                icon.color: Theme.text
                 ToolTip.visible: hovered
                 ToolTip.delay: 400
                 ToolTip.text: qsTr("Hand tool: drag to move the page. Off = select text.")
@@ -995,8 +994,17 @@ ApplicationWindow {
                                 visible: window.panMode
                                 acceptedButtons: Qt.LeftButton
                                 preventStealing: true
-                                cursorShape: pressed ? Qt.ClosedHandCursor
-                                                     : Qt.OpenHandCursor
+                                // Custom artwork cursor (open hand, and the
+                                // short-fingered grab while dragging) — QML's
+                                // cursorShape can't take pixmap cursors, so
+                                // C++ sets it via QQuickItem::setCursor.
+                                onVisibleChanged: visible
+                                    ? cursorUtil.setPanCursor(pdfPan, pressed)
+                                    : cursorUtil.clearCursor(pdfPan)
+                                onPressedChanged: if (visible)
+                                    cursorUtil.setPanCursor(pdfPan, pressed)
+                                Component.onCompleted: if (visible)
+                                    cursorUtil.setPanCursor(pdfPan, pressed)
                                 property real _sx: 0
                                 property real _sy: 0
                                 property real _scx: 0
