@@ -1,5 +1,34 @@
 # AI Reader changelog
 
+## v1.1.0 — 2026-08-18
+
+The reading-experience release.
+
+### PDF text selection, rebuilt
+- **Browser-grade selection**: drag across page boundaries, double-click
+  to select a word, triple-click a paragraph, keep dragging to extend
+  by that unit; auto-scroll when dragging past the viewport edge.
+- **Cursors that talk**: I-beam over text, pointing hand over links
+  (click to follow), arrow elsewhere.
+- **Right-click menu** (Copy / Select All on Page) and Ctrl/Cmd+C,
+  Ctrl/Cmd+A in the PDF view.
+- **Clean copied text**: hyphenated line breaks merge back into whole
+  words and paragraphs reassemble — no more one-line fragments.
+
+### Smarter paragraph detection
+- **GROBID integration** (default-on, needs a reachable service):
+  freshly opened papers get real paragraphs — merged across columns
+  and pages — from GROBID's document model, with silent fallback to
+  the built-in splitter. Configure under Settings → Paragraph
+  segmentation; self-host with
+  `docker run -d -p 8070:8070 grobid/grobid:0.9.1-crf`.
+
+### Interface
+- **Every dialog redesigned** with one consistent visual language:
+  cleaner chrome, clear primary/secondary buttons, grouped sections
+  in Settings; dark-mode fixes in the changelog and welcome wizard.
+- New hand-tool icon.
+
 ## v1.0.0 — 2026-06-29
 
 The cloud release. v0.2.0 made AI Reader survive real users on a
