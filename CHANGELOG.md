@@ -1,5 +1,29 @@
 # AI Reader changelog
 
+## v1.1.2 — 2026-08-18
+
+The smoothness release: profiling on a 30-page paper.
+
+### Performance
+- **Open instantly, scroll smoothly.** Everything that touched
+  QtPdf's global PDFium lock on the UI path is gone: page sizes are
+  cached for layout, paragraph extraction and selection structures
+  build on paced worker threads after the first renders, and clicks
+  locate text by binary search instead of per-character scans.
+
+### Panning
+- **No more blank side margins.** Pages narrower than the window pan
+  vertically only; wider pages stop panning with the page edge flush
+  against the window edge. Wheel scrolling clamps the same way.
+
+### Fixes
+- Hand cursors get a true filled silhouette — page text no longer
+  shows through at the finger roots.
+- New installs default the GROBID service to the public
+  `https://aireader.d2ssoft.com/grobid` endpoint.
+- Product homepage now lives at https://aireader.d2ssoft.com (with
+  the Windows installer mirrored on our own server).
+
 ## v1.1.1 — 2026-08-18
 
 Fixes from the first round of user testing of v1.1.0's selection
