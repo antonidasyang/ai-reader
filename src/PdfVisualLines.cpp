@@ -15,7 +15,8 @@ QRectF boundsRect(const QPdfSelection &sel)
     return bb;
 }
 
-void appendLines(QPdfDocument &doc, int page, int start, int end,
+void appendLines(QPdfDocument &doc, int page, const QString &text,
+                 int start, int end, PdfVisualLines::Precision precision,
                  QVector<PdfVisualLines::Line> &out)
 {
     if (end <= start) {
@@ -42,48 +43,91 @@ void appendLines(QPdfDocument &doc, int page, int start, int end,
     for (const QPolygonF &p : polys)
         rects.append(p.boundingRect());
 
-    int g = 0;           // rect the current sub-line belongs to
-    int segStart = start;
-    for (int i = start; i < end; ++i) {
-        const QRectF bb = boundsRect(doc.getSelectionAtIndex(page, i, 1));
-        if (bb.isNull() || bb.height() <= 0)
-            continue;    // space / synthesized char: stays in current run
-        // Nearest rect at or after the current one — text order is
-        // monotonic through the rects, and a single range can span
-        // dozens of segments (poster-style pages), so no lookahead cap.
-        int bestJ = g;
-        qreal best = std::numeric_limits<qreal>::max();
-        for (int j = g; j < rects.size(); ++j) {
-            qreal d = qAbs(bb.center().y() - rects[j].center().y());
-            if (bb.center().x() < rects[j].left() - 5
-                || bb.center().x() > rects[j].right() + 5)
-                d += 50;
-            if (d < best) {
-                best = d;
-                bestJ = j;
+    // Split the range at estimated character boundaries: each rect's
+    // share of the total width maps to a share of the characters, and
+    // the estimate snaps to the nearest space/hyphen — line wraps
+    // happen at exactly those characters. Pure arithmetic: no extra
+    // PDFium calls (a per-character scan was ~40 s per dense paper,
+    // per-polygon hit tests were fast but imprecise).
+    qreal totalW = 0;
+    for (const QRectF &r : rects)
+        totalW += qMax<qreal>(1, r.width());
+
+    auto isBreakAfter = [&text](int p) {
+        const QChar c = text.at(p - 1);
+        const ushort u = c.unicode();
+        return c.isSpace() || u == 0x002D || u == 0x2010 || u == 0x2011
+            || u == 0x00AD;
+    };
+
+    QVector<int> boundaries;
+    boundaries.reserve(rects.size() + 1);
+    boundaries.append(start);
+    qreal cum = 0;
+    for (int j = 0; j + 1 < rects.size(); ++j) {
+        cum += qMax<qreal>(1, rects[j].width());
+        const int lo = boundaries.last() + 1;
+        const int hi = end - 1;
+        if (lo > hi) {
+            // More rects than remaining characters (stray marks):
+            // degenerate boundary, the empty segment is dropped below.
+            boundaries.append(boundaries.last());
+            continue;
+        }
+        int target = start + int(qRound((end - start) * cum / totalW));
+        target = qBound(lo, target, hi);
+        int best = target;
+        int bestDist = 9;   // snap window: ±8 chars
+        for (int d = 0; d <= 8; ++d) {
+            for (int cand : {target - d, target + d}) {
+                if (cand <= boundaries.last() || cand >= end)
+                    continue;
+                if (isBreakAfter(cand) && d < bestDist) {
+                    best = cand;
+                    bestDist = d;
+                }
             }
+            if (bestDist <= d)
+                break;
         }
-        if (bestJ != g && i > segStart) {
-            PdfVisualLines::Line ln;
-            ln.start = segStart;
-            ln.end = i;
-            ln.bbox = rects[g];
-            out.append(ln);
-            segStart = i;
+        if (precision == PdfVisualLines::Precise) {
+            // Ask PDFium where the next polygon's text actually starts
+            // and take it when it roughly agrees with the estimate —
+            // exact boundaries, with the estimate as a sanity net
+            // against tolerance mis-hits on dense pages.
+            const QRectF &r = rects[j + 1];
+            const QPdfSelection s = doc.getSelection(
+                page,
+                QPointF(r.left() + 0.5, r.center().y()),
+                QPointF(qMin(r.left() + 6.0, r.right() - 0.5),
+                        r.center().y()));
+            const int hitB = s.startIndex();
+            if (hitB > boundaries.last() && hitB < end
+                && qAbs(hitB - best) <= 12)
+                best = hitB;
         }
-        g = bestJ;
+        boundaries.append(best);
     }
-    PdfVisualLines::Line ln;
-    ln.start = segStart;
-    ln.end = end;
-    ln.bbox = rects[g];
-    out.append(ln);
+    boundaries.append(end);
+
+    for (int j = 0; j < rects.size(); ++j) {
+        const int s0 = boundaries[j];
+        const int s1 = boundaries[j + 1];
+        if (s1 <= s0)
+            continue;
+        PdfVisualLines::Line ln;
+        ln.start = s0;
+        ln.end = s1;
+        ln.bbox = rects[j];
+        out.append(ln);
+    }
 }
 
 } // namespace
 
 QVector<PdfVisualLines::Line>
-PdfVisualLines::extract(QPdfDocument &doc, int page, QString *pageText)
+PdfVisualLines::extract(QPdfDocument &doc, int page, QString *pageText,
+                        Precision precision)
 {
     QVector<Line> out;
     const QString text = doc.getAllText(page).text();
@@ -97,7 +141,7 @@ PdfVisualLines::extract(QPdfDocument &doc, int page, QString *pageText)
         int end = i;
         if (end > lineStart && text.at(end - 1) == QChar('\r'))
             --end;
-        appendLines(doc, page, lineStart, end, out);
+        appendLines(doc, page, text, lineStart, end, precision, out);
         lineStart = i + 1;
     }
 

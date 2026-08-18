@@ -147,7 +147,8 @@ PdfSelectionModel::PageData &PdfSelectionModel::pageData(int page) const
     // clusterer segments paragraphs with, so hit-testing and the
     // reading pane always agree on what "a line" is.
     const QVector<PdfVisualLines::Line> vls =
-        PdfVisualLines::extract(*m_doc, page, &pd.text);
+        PdfVisualLines::extract(*m_doc, page, &pd.text,
+                                PdfVisualLines::Precise);
     pd.lines.reserve(vls.size());
     for (const PdfVisualLines::Line &vl : vls) {
         LineInfo ln;
@@ -211,10 +212,19 @@ void PdfSelectionModel::ensureCarets(int page, const LineInfo &ln) const
         return;
     const int n = ln.end - ln.start;
     ln.carets.resize(n + 1);
+    const qreal h = qMax<qreal>(1, ln.bbox.height());
     qreal last = ln.bbox.left();
     for (int k = 0; k < n; ++k) {
-        const QRectF bb = boundsRect(
+        QRectF bb = boundsRect(
             m_doc->getSelectionAtIndex(page, ln.start + k, 1));
+        // Line ranges are approximate at split boundaries (width-
+        // proportional estimate): a char whose real box sits on a
+        // different baseline belongs to a neighboring line — treat it
+        // like a space so it can't attract clicks.
+        if (!bb.isNull()
+            && (bb.center().y() < ln.bbox.top() - h
+                || bb.center().y() > ln.bbox.bottom() + h))
+            bb = QRectF();
         if (!bb.isNull() && bb.width() > 0) {
             ln.carets[k] = bb.left();
             last = bb.right();

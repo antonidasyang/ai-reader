@@ -1,5 +1,30 @@
 # AI Reader changelog
 
+## v1.1.1 — 2026-08-18
+
+Fixes from the first round of user testing of v1.1.0's selection
+and paragraph features.
+
+### Selection & paragraphs
+- **Selection works everywhere**: on every page (not just the
+  first) and across pages; double-click no longer picks up words
+  from the neighboring line; triple-click selects the full
+  paragraph as shown in the reading pane.
+- **Rendered-line extraction rewritten** and shared between the
+  paragraph splitter and selection — PDFium's line breaks
+  under-report visual lines, and styled words (e.g. italics) no
+  longer fragment paragraphs. Papers opened earlier keep their
+  cached segmentation until re-extracted.
+
+### Cursors
+- I-beam / link / hand cursors now show correctly; hand cursors
+  redrawn with a solid white fill.
+
+### GROBID
+- **GROBID service deployed for the team** — Settings → Paragraph
+  segmentation → Service URL: `http://10.6.2.50:8070` (company
+  intranet).
+
 ## v1.1.0 — 2026-08-18
 
 The reading-experience release.
