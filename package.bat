@@ -51,6 +51,19 @@ echo [package] Staging runtime ^(windeploy.bat^) ...
 call "%ROOT%windeploy.bat"
 if errorlevel 1 goto :windeploy_failed
 
+REM --- Hard gate: never ship an installer without the MSVC runtime ---------
+REM copy-vc-runtime.ps1 only WARNS when Visual Studio's Redist tree is
+REM missing, so a machine without the C++ workload would otherwise
+REM produce an installer that crashes on user PCs with
+REM "VCRUNTIME140_1.dll not found". Verify the DLLs actually landed.
+REM Set AIREADER_SKIP_VCCHECK=1 only if you consciously ship without
+REM them (e.g. a portable build for machines with the redist).
+if defined AIREADER_SKIP_VCCHECK goto :vc_ok
+if not exist "%ROOT%dist\vcruntime140.dll"   goto :vc_missing
+if not exist "%ROOT%dist\vcruntime140_1.dll" goto :vc_missing
+if not exist "%ROOT%dist\msvcp140.dll"       goto :vc_missing
+:vc_ok
+
 REM --- Locate Inno Setup's ISCC.exe ----------------------------------------
 set "ISCC="
 for /f "delims=" %%p in ('where iscc 2^>nul') do if not defined ISCC set "ISCC=%%p"
@@ -104,4 +117,16 @@ exit /b 1
 
 :iscc_failed
 echo [package] Inno Setup ^(ISCC^) failed.
+exit /b 1
+
+:vc_missing
+echo.
+echo [package] ERROR: MSVC runtime DLLs are missing from dist\.
+echo            Expected vcruntime140.dll, vcruntime140_1.dll, msvcp140.dll.
+echo            copy-vc-runtime.ps1 could not find Visual Studio's Redist
+echo            tree - install the "C++ x64/x86 build tools" VS workload,
+echo            or stage the DLLs into dist\ manually, then re-run.
+echo            Shipping without them crashes on user PCs that lack the
+echo            VC++ Redistributable. Set AIREADER_SKIP_VCCHECK=1 to
+echo            override consciously.
 exit /b 1
