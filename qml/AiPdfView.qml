@@ -352,8 +352,12 @@ Item {
                                              : Qt.ArrowCursor
 
         // Viewport point → { page, pos (page points) }, or null.
+        // NB: cellAtPosition wants CONTENT-item coordinates (the
+        // deprecated cellAtPos was the viewport-coordinate variant);
+        // passing viewport coords silently resolves everything to the
+        // rows near the origin — i.e. selection stuck on page 1.
         function pageHit(x, y) {
-            const tp = selArea.mapToItem(tableView, x, y)
+            const tp = selArea.mapToItem(tableView.contentItem, x, y)
             const cell = tableView.cellAtPosition(tp.x, tp.y, true)
             if (cell.y < 0)
                 return null

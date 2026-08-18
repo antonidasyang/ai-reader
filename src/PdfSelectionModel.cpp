@@ -150,16 +150,94 @@ PdfSelectionModel::PageData &PdfSelectionModel::pageData(int page) const
         int end = i;
         if (end > lineStart && pd.text.at(end - 1) == QChar('\r'))
             --end;
-        LineInfo ln;
-        ln.start = lineStart;
-        ln.end = end;
-        if (end > lineStart)
-            ln.bbox = boundsRect(
-                m_doc->getSelectionAtIndex(page, lineStart, end - lineStart));
-        pd.lines.append(ln);
+        appendLines(page, lineStart, end, pd);
         lineStart = i + 1;
     }
     return pd;
+}
+
+// One '\r\n'-delimited range of page text is NOT guaranteed to be one
+// visual line: PDFium only inserts breaks where its heuristics fire,
+// so a range can span several rendered lines (or even a column jump).
+// bounds() gives one polygon per rendered baseline run — when there is
+// more than one, split the range into per-polygon sub-lines by
+// assigning each character to the nearest polygon. Getting this wrong
+// made hit-testing snap to the line above the click.
+void PdfSelectionModel::appendLines(int page, int start, int end,
+                                    PageData &pd) const
+{
+    if (end <= start) {
+        LineInfo ln;
+        ln.start = start;
+        ln.end = end;
+        pd.lines.append(ln);
+        return;
+    }
+    const QList<QPolygonF> polys =
+        m_doc->getSelectionAtIndex(page, start, end - start).bounds();
+    if (polys.size() <= 1) {
+        LineInfo ln;
+        ln.start = start;
+        ln.end = end;
+        if (!polys.isEmpty())
+            ln.bbox = polys.first().boundingRect();
+        pd.lines.append(ln);
+        return;
+    }
+
+    QVector<QRectF> rects;
+    rects.reserve(polys.size());
+    for (const QPolygonF &p : polys)
+        rects.append(p.boundingRect());
+
+    int g = 0;           // rect the current sub-line belongs to
+    int segStart = start;
+    for (int i = start; i < end; ++i) {
+        const QRectF bb = boundsRect(m_doc->getSelectionAtIndex(page, i, 1));
+        if (bb.isNull() || bb.height() <= 0)
+            continue;    // space / synthesized char: stays in current run
+        // Nearest rect at or after the current one — text order is
+        // monotonic through the rects, but a single range can span
+        // dozens of segments (poster-style pages), so no lookahead cap.
+        int bestJ = g;
+        qreal best = std::numeric_limits<qreal>::max();
+        for (int j = g; j < rects.size(); ++j) {
+            qreal d = qAbs(bb.center().y() - rects[j].center().y());
+            if (bb.center().x() < rects[j].left() - 5
+                || bb.center().x() > rects[j].right() + 5)
+                d += 50;
+            if (d < best) {
+                best = d;
+                bestJ = j;
+            }
+        }
+        if (bestJ != g && i > segStart) {
+            LineInfo ln;
+            ln.start = segStart;
+            ln.end = i;
+            ln.bbox = rects[g];
+            pd.lines.append(ln);
+            segStart = i;
+        }
+        g = bestJ;
+    }
+    LineInfo ln;
+    ln.start = segStart;
+    ln.end = end;
+    ln.bbox = rects[g];
+    pd.lines.append(ln);
+}
+
+QList<QRectF> PdfSelectionModel::debugLineRects(int page) const
+{
+    QList<QRectF> out;
+    if (!docReady() || page < 0 || page >= m_doc->pageCount())
+        return out;
+    const PageData &pd = pageData(page);
+    for (const LineInfo &ln : pd.lines)
+        if (!ln.bbox.isEmpty())
+            out.append(ln.bbox);
+    return out;
 }
 
 // Nearest text line to `pos`. Lines containing the point (with a small
@@ -264,7 +342,26 @@ void PdfSelectionModel::wordRange(const TextPos &pos,
     const PageData &pd = pageData(pos.page);
     if (pd.text.isEmpty())
         return;
-    const int i = qBound(0, pos.idx, pd.text.size() - 1);
+    int i = qBound(0, pos.idx, pd.text.size() - 1);
+    // Double-clicking the gap between words should select a word, not
+    // the invisible whitespace run: snap to the nearest non-space char,
+    // staying within the clicked line.
+    const int li = lineIndexOf(pd, i);
+    const int lo = li >= 0 ? pd.lines[li].start : 0;
+    const int hi = li >= 0 ? qMax(pd.lines[li].end - 1, lo)
+                           : int(pd.text.size()) - 1;
+    i = qBound(lo, i, hi);
+    if (pd.text.at(i).isSpace()) {
+        int j = i;
+        while (j > lo && pd.text.at(j).isSpace())
+            --j;
+        if (pd.text.at(j).isSpace()) {
+            j = i;
+            while (j < hi && pd.text.at(j).isSpace())
+                ++j;
+        }
+        i = j;
+    }
     QTextBoundaryFinder f(QTextBoundaryFinder::Word, pd.text);
     f.setPosition(i);
     if (!f.isAtBoundary())

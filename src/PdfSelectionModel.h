@@ -52,6 +52,8 @@ public:
     Q_INVOKABLE void copyToClipboard() const;
     // {found, page, location, zoom, url}; page >= 0 = internal jump.
     Q_INVOKABLE QVariantMap linkAt(int page, QPointF pagePos) const;
+    // Test/diagnostic hook: the visual line rectangles hit-testing uses.
+    Q_INVOKABLE QList<QRectF> debugLineRects(int page) const;
 
 signals:
     void selectionChanged();
@@ -82,6 +84,7 @@ private:
 
     bool docReady() const;
     PageData &pageData(int page) const;
+    void appendLines(int page, int start, int end, PageData &pd) const;
     const LineInfo *lineAt(int page, QPointF pos, bool *inside) const;
     TextPos posAt(int page, QPointF pos, bool *insideText = nullptr) const;
     void wordRange(const TextPos &pos, TextPos &s, TextPos &e) const;
