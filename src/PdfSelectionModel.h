@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Block.h"
+
 #include <QHash>
 #include <QObject>
 #include <QPointF>
@@ -55,6 +57,12 @@ public:
     // Test/diagnostic hook: the visual line rectangles hit-testing uses.
     Q_INVOKABLE QList<QRectF> debugLineRects(int page) const;
 
+    // Paragraph rectangles from the app's block model (clusterer or
+    // GROBID). Triple-click selects one of these, so it matches what
+    // the reading pane shows as a paragraph. main.cpp pushes them on
+    // every PaperController::blocksChanged.
+    void setParagraphs(const QVector<Block> &blocks);
+
 signals:
     void selectionChanged();
 
@@ -99,6 +107,7 @@ private:
     QPdfDocument *m_doc = nullptr;
     mutable QVector<PageData> m_pages;
     mutable QHash<int, QPdfLinkModel *> m_links;
+    QHash<int, QVector<QRectF>> m_paragraphs;   // page → block bboxes
 
     Granularity m_grain = CharGrain;
     TextPos m_anchorStart, m_anchorEnd;  // unit range at press

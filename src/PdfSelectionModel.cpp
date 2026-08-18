@@ -372,6 +372,14 @@ void PdfSelectionModel::wordRange(const TextPos &pos,
     e.idx = end < 0 ? pd.text.size() : end;
 }
 
+void PdfSelectionModel::setParagraphs(const QVector<Block> &blocks)
+{
+    m_paragraphs.clear();
+    for (const Block &b : blocks)
+        if (!b.bbox.isEmpty())
+            m_paragraphs[b.page].append(b.bbox);
+}
+
 void PdfSelectionModel::paraRange(const TextPos &pos,
                                   TextPos &s, TextPos &e) const
 {
@@ -380,20 +388,57 @@ void PdfSelectionModel::paraRange(const TextPos &pos,
     const int li = lineIndexOf(pd, pos.idx);
     if (li < 0)
         return;
+    const QRectF lineR = pd.lines[li].bbox;
 
-    // Adjacent lines belong to the same paragraph when they share a
-    // column, sit one leading apart, and don't jump in font size —
-    // the same signals BlockClusterer uses.
+    // Preferred: the app's own paragraph rectangles. Triple-click then
+    // selects exactly what the reading pane shows as one paragraph —
+    // far more reliable than line-gap heuristics on formula-heavy or
+    // unevenly-leaded text.
+    if (!lineR.isEmpty()) {
+        const QPointF c = lineR.center();
+        QRectF best;
+        const QVector<QRectF> paras = m_paragraphs.value(pos.page);
+        for (const QRectF &r : paras) {
+            if (!r.adjusted(-2, -2, 2, 2).contains(c))
+                continue;
+            if (best.isNull()
+                || r.width() * r.height() < best.width() * best.height())
+                best = r;
+        }
+        if (!best.isNull()) {
+            const QRectF probe = best.adjusted(-2, -2, 2, 2);
+            int a = -1, b = -1;
+            for (int i = 0; i < pd.lines.size(); ++i) {
+                const LineInfo &ln = pd.lines[i];
+                if (ln.bbox.isEmpty() || !probe.contains(ln.bbox.center()))
+                    continue;
+                if (a < 0)
+                    a = i;
+                b = i;
+            }
+            if (a >= 0 && li >= a && li <= b) {
+                s.idx = pd.lines[a].start;
+                e.idx = pd.lines[b].end;
+                return;
+            }
+        }
+    }
+
+    // Fallback (no block covers this line): join adjacent lines that
+    // share a column and sit one leading apart. Center-to-center
+    // distance is used instead of edge gaps — inline math inflates a
+    // line's bbox and made edge-gap checks split paragraphs mid-way.
     auto joinable = [](const LineInfo &above, const LineInfo &below) {
         if (above.end <= above.start || below.end <= below.start)
             return false;
         if (!sameColumn(above.bbox, below.bbox))
             return false;
-        const qreal h = qMax(above.bbox.height(), below.bbox.height());
-        if (qAbs(above.bbox.height() - below.bbox.height()) > 0.35 * h)
+        const qreal minH = qMin(above.bbox.height(), below.bbox.height());
+        const qreal maxH = qMax(above.bbox.height(), below.bbox.height());
+        if (maxH - minH > 0.6 * maxH)
             return false;
-        const qreal gap = below.bbox.top() - above.bbox.bottom();
-        return gap > -0.5 * h && gap < 0.8 * h;
+        const qreal dy = below.bbox.center().y() - above.bbox.center().y();
+        return dy > 0.2 * minH && dy < 1.9 * minH;
     };
 
     int a = li, b = li;

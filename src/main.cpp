@@ -255,6 +255,13 @@ int main(int argc, char *argv[])
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
+    // Triple-click paragraph selection follows the block model
+    // (clusterer or GROBID), so it always matches the reading pane.
+    QObject::connect(&paperController, &PaperController::blocksChanged,
+                     &pdfSelection, [&paperController, &pdfSelection]() {
+                         pdfSelection.setParagraphs(
+                             paperController.blocks()->allBlocks());
+                     });
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("paperController", &paperController);
