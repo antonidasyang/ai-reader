@@ -8,7 +8,9 @@ class QPdfDocument;
 
 namespace BlockClusterer {
 
-QVector<Block> extract(QPdfDocument &doc);
+// pacePerPageMs > 0 sleeps between pages — background callers use it
+// so the PDFium global lock stays mostly free for page rendering.
+QVector<Block> extract(QPdfDocument &doc, int pacePerPageMs = 0);
 
 // Diagnostic dump. Returns a UTF-8 text report covering, per page:
 // poly/raw-line counts, the raw text PDFium gave us, and every line we

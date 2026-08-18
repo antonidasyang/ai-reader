@@ -229,7 +229,9 @@ void PaperController::startAsyncExtraction()
         doc.setPassword(password);
         if (doc.load(path) != QPdfDocument::Error::None)
             return QVector<Block>();
-        return BlockClusterer::extract(doc);
+        // Paced so the PDFium global lock stays available to the
+        // first page renders of the freshly-opened document.
+        return BlockClusterer::extract(doc, 20);
     }));
 }
 

@@ -120,6 +120,7 @@ private:
     PageData &pageData(int page) const;
     const PageData *pageDataIfReady(int page) const;
     void startBackgroundBuild();
+    void launchBuild(const QString &path, const QString &pw);
     void onBuildFinished();
     const LineInfo *lineIn(const PageData &pd, QPointF pos,
                            bool *inside) const;

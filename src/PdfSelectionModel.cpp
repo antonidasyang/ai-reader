@@ -9,6 +9,8 @@
 #include <QPdfLinkModel>
 #include <QPdfSelection>
 #include <QTextBoundaryFinder>
+#include <QThread>
+#include <QTimer>
 #include <QUrl>
 #include <QtConcurrent>
 #include <algorithm>
@@ -143,6 +145,18 @@ void PdfSelectionModel::startBackgroundBuild()
         return;
     const QString path = m_srcPath;
     const QString pw = m_srcPassword;
+    // Give the first page renders a head start: PDFium is guarded by
+    // one global lock, so launching the build immediately makes the
+    // freshly-opened document paint its pages in slow motion.
+    QTimer::singleShot(1200, this, [this, path, pw]() {
+        if (path != m_srcPath || !docReady())
+            return;   // paper changed while we waited
+        launchBuild(path, pw);
+    });
+}
+
+void PdfSelectionModel::launchBuild(const QString &path, const QString &pw)
+{
     m_buildWatcher.setFuture(QtConcurrent::run([path, pw]() {
         QVector<PageBundle> out;
         QPdfDocument doc;   // worker-owned: no shared state with the UI
@@ -152,6 +166,10 @@ void PdfSelectionModel::startBackgroundBuild()
         const int n = doc.pageCount();
         out.resize(n);
         for (int p = 0; p < n; ++p) {
+            // Pace the lock churn: leave the global PDFium mutex free
+            // between pages so rendering and layout stay smooth.
+            if (p > 0)
+                QThread::msleep(25);
             PageBundle &b = out[p];
             b.lines = PdfVisualLines::extract(doc, p, &b.text,
                                               PdfVisualLines::Precise);

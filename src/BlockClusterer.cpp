@@ -9,6 +9,7 @@
 #include <QRegularExpression>
 #include <QSet>
 #include <QTextStream>
+#include <QThread>
 #include <algorithm>
 
 namespace {
@@ -183,12 +184,14 @@ bool endsParagraph(const QString &t)
 
 } // namespace
 
-QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
+QVector<Block> BlockClusterer::extract(QPdfDocument &doc, int pacePerPageMs)
 {
     QVector<Block> blocks;
     int nextId = 0;
 
     for (int p = 0; p < doc.pageCount(); ++p) {
+        if (pacePerPageMs > 0 && p > 0)
+            QThread::msleep(pacePerPageMs);
         const QVector<Line> lines = extractPageLines(doc, p);
         if (lines.isEmpty())
             continue;

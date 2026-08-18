@@ -109,6 +109,37 @@ Item {
     function searchBack() { --searchModel.currentResult }
     function searchForward() { ++searchModel.currentResult }
 
+    // ── Page-size cache ─────────────────────────────────────────────
+    // Layout (rowHeightProvider) reads page sizes constantly while
+    // scrolling, and every QPdfDocument.pagePointSize() call takes
+    // QtPdf's global PDFium lock — stalling the GUI thread behind the
+    // render/build workers. Query once per document instead.
+    property var _pageSizes: []
+    function pageSizeAt(i) {
+        const a = root._pageSizes
+        return i >= 0 && i < a.length ? a[i] : Qt.size(1, 1)
+    }
+    function _rebuildPageSizes() {
+        const ready = root.document
+                      && root.document.status === PdfDocument.Ready
+        const n = ready ? root.document.pageCount : 0
+        const a = new Array(n)
+        for (let i = 0; i < n; ++i)
+            a[i] = root.document.pagePointSize(i)
+        root._pageSizes = a
+        tableView.forceLayout()
+    }
+    Connections {
+        target: root.document
+        function onStatusChanged() { root._rebuildPageSizes() }
+    }
+    Component.onCompleted: _rebuildPageSizes()
+
+    // Rendered width of the widest page at the current zoom — the app
+    // uses it to clamp horizontal panning to the page edges.
+    readonly property real pageDisplayWidth:
+        (root.document ? root.document.maxPageWidth : 0) * root.renderScale
+
     LoggingCategory {
         id: lcMPV
         name: "qt.pdf.multipageview"
@@ -130,10 +161,10 @@ Item {
         onRot90Changed: forceLayout()
         onHeightChanged: forceLayout()
         onWidthChanged: forceLayout()
-        property size firstPagePointSize: root.document?.status === PdfDocument.Ready ? root.document.pagePointSize(0) : Qt.size(1, 1)
+        property size firstPagePointSize: root.pageSizeAt(0)
         property real pageHolderWidth: Math.max(root.width, ((rot90 ? root.document?.maxPageHeight : root.document?.maxPageWidth) ?? 0) * root.renderScale)
         columnWidthProvider: function(col) { return root.document ? pageHolderWidth + vscroll.width + 2 : 0 }
-        rowHeightProvider: function(row) { return (rot90 ? root.document.pagePointSize(row).width : root.document.pagePointSize(row).height) * root.renderScale }
+        rowHeightProvider: function(row) { const s = root.pageSizeAt(row); return (rot90 ? s.width : s.height) * root.renderScale }
 
         // delayed-jump feature in case the user called goToPage() or goToLocation() too early
         property int pendingRow: -1
@@ -160,7 +191,7 @@ Item {
                 height: image.height
                 rotation: root.pageRotation
                 anchors.centerIn: pinch.active ? undefined : parent
-                property size pagePointSize: root.document.pagePointSize(pageHolder.index)
+                property size pagePointSize: root.pageSizeAt(pageHolder.index)
                 property real pageScale: image.paintedWidth / pagePointSize.width
                 PdfPageImage {
                     id: image
@@ -519,7 +550,7 @@ Item {
             jumping = true
             if (current.zoom > 0)
                 root.renderScale = current.zoom
-            const pageSize = root.document.pagePointSize(current.page)
+            const pageSize = root.pageSizeAt(current.page)
             if (current.location.y < 0) {
                 // invalid to indicate that a specific location was not needed,
                 // so attempt to position the new page just as the current page is
