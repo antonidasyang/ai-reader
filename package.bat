@@ -64,6 +64,26 @@ if not exist "%ROOT%dist\vcruntime140_1.dll" goto :vc_missing
 if not exist "%ROOT%dist\msvcp140.dll"       goto :vc_missing
 :vc_ok
 
+REM --- Stage the official VC++ redistributable (belt and braces) -----------
+REM The installer runs it silently when present (idempotent; newer
+REM runtime on the system = no-op) which also covers UCRT corner
+REM cases the app-local DLLs cannot. Cached in installer\cache\
+REM (gitignored); .tmp + atomic rename so a truncated download can
+REM never poison later builds. Failure is non-fatal: app-local CRT
+REM DLLs above already cover stock Win10/11 machines.
+if not exist "%ROOT%installer\cache" mkdir "%ROOT%installer\cache"
+if exist "%ROOT%installer\cache\vc_redist.x64.exe" goto :redist_ok
+echo [package] Downloading vc_redist.x64.exe ^(one-time, cached^) ...
+curl -L -sS -o "%ROOT%installer\cache\vc_redist.x64.tmp" https://aka.ms/vs/17/release/vc_redist.x64.exe
+if errorlevel 1 goto :redist_warn
+move /y "%ROOT%installer\cache\vc_redist.x64.tmp" "%ROOT%installer\cache\vc_redist.x64.exe" >nul
+goto :redist_ok
+:redist_warn
+echo [package] WARNING: vc_redist.x64.exe download failed; the installer
+echo            will ship without it. App-local CRT DLLs are still included.
+del "%ROOT%installer\cache\vc_redist.x64.tmp" 2>nul
+:redist_ok
+
 REM --- Locate Inno Setup's ISCC.exe ----------------------------------------
 set "ISCC="
 for /f "delims=" %%p in ('where iscc 2^>nul') do if not defined ISCC set "ISCC=%%p"

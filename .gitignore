@@ -4,6 +4,7 @@ build_ninja/
 tmp/
 dist/
 installer/Output/
+installer/cache/
 *.user
 *.user.*
 .vscode/

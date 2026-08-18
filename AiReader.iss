@@ -69,6 +69,10 @@ PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
+; Qt 6.5+ requires Windows 10 1809; reject older systems at install
+; time instead of letting them install and crash on launch.
+; (SafePacker lesson: fail BEFORE install, not after.)
+MinVersion=10.0.17763
 WizardStyle=modern
 Compression=lzma2/max
 SolidCompression=yes
@@ -88,6 +92,13 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 ; + plugins + QML modules). recursesubdirs/createallsubdirs preserves
 ; the layout windeployqt produced.
 Source: "dist\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Belt and braces on top of the app-local CRT DLLs: run the official
+; VC++ redistributable silently when it was staged by package.bat
+; (installer\cache\, downloaded once and reused). Idempotent — a
+; newer runtime already on the system makes it a no-op. When the
+; cache is absent the installer still builds; the app-local DLLs
+; carry stock Win10/11 machines on their own.
+Source: "installer\cache\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall skipifsourcedoesntexist
 
 [Icons]
 Name: "{group}\{#MyAppName}";        Filename: "{app}\{#MyAppExeName}"
@@ -95,7 +106,14 @@ Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}";  Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
+Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; StatusMsg: "Installing Microsoft VC++ runtime..."; Flags: waituntilterminated; Check: VcRedistStaged
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+function VcRedistStaged: Boolean;
+begin
+  Result := FileExists(ExpandConstant('{tmp}\vc_redist.x64.exe'));
+end;
 
 [UninstallDelete]
 ; QSettings + cache live under %LOCALAPPDATA%; leave them alone so
