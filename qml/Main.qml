@@ -984,12 +984,10 @@ ApplicationWindow {
                                     const dy = px.y !== 0 ? px.y : ad.y / 120 * 100
                                     // Same clamping as the hand tool: no
                                     // horizontal blank margins.
-                                    const maxX = f.originX + Math.max(0,
-                                        pdfView.pageDisplayWidth - f.width)
                                     const maxY = f.originY + Math.max(0,
                                         f.contentHeight - f.height)
-                                    f.contentX = Math.max(f.originX,
-                                        Math.min(maxX, f.contentX - dx))
+                                    f.contentX = pdfView.clampedContentX(
+                                        f.contentX - dx)
                                     f.contentY = Math.max(f.originY,
                                         Math.min(maxY, f.contentY - dy))
                                     wheel.accepted = true
@@ -1035,12 +1033,10 @@ ApplicationWindow {
                                     // wider than the viewport, clamped so a
                                     // page edge stops at the window edge —
                                     // no dragging blank margins into view.
-                                    const maxX = f.originX + Math.max(0,
-                                        pdfView.pageDisplayWidth - f.width)
                                     const maxY = f.originY + Math.max(0,
                                         f.contentHeight - f.height)
-                                    f.contentX = Math.max(f.originX,
-                                        Math.min(maxX, _scx - (mouse.x - _sx)))
+                                    f.contentX = pdfView.clampedContentX(
+                                        _scx - (mouse.x - _sx))
                                     f.contentY = Math.max(f.originY,
                                         Math.min(maxY, _scy - (mouse.y - _sy)))
                                 }

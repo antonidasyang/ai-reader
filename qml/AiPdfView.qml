@@ -140,6 +140,33 @@ Item {
     readonly property real pageDisplayWidth:
         (root.document ? root.document.maxPageWidth : 0) * root.renderScale
 
+    // Clamp a prospective contentX so the page never detaches from the
+    // window edges: pages narrower than the viewport stay put, wider
+    // pages stop with their edge flush against the viewport edge.
+    // Anchored on a loaded delegate's REAL geometry — the column is
+    // wider than the page (scrollbar slack, centered paper) and the
+    // TableView origin drifts after zoom relayouts, so arithmetic
+    // against originX let one side pull out a blank margin.
+    function clampedContentX(nx) {
+        const f = tableView
+        const W = root.pageDisplayWidth
+        const w = f.width
+        let minX = f.originX
+        let maxX = f.originX + Math.max(0, f.contentWidth - w)
+        const cell = f.cellAtPos(w / 2, f.height / 2)
+        const item = cell.y >= 0 ? f.itemAtCell(cell) : null
+        if (item && W > 0) {
+            const pageLeft = item.x + (item.width - W) / 2
+            if (W <= w) {
+                minX = maxX = pageLeft - (w - W) / 2
+            } else {
+                minX = pageLeft
+                maxX = pageLeft + W - w
+            }
+        }
+        return Math.max(minX, Math.min(maxX, nx))
+    }
+
     LoggingCategory {
         id: lcMPV
         name: "qt.pdf.multipageview"
