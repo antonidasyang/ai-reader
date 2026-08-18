@@ -38,6 +38,13 @@ class Settings : public QObject
     Q_PROPERTY(QString updateManifestUrl    READ updateManifestUrl    WRITE setUpdateManifestUrl    NOTIFY updateManifestUrlChanged)
     Q_PROPERTY(bool    crashReportsOptIn    READ crashReportsOptIn    WRITE setCrashReportsOptIn    NOTIFY crashReportsOptInChanged)
 
+    // GROBID paragraph segmentation. When enabled and the service at
+    // grobidUrl answers, freshly-opened papers get their paragraphs
+    // from GROBID's document model instead of the geometric clusterer
+    // (StructureService). Falls back to the clusterer silently.
+    Q_PROPERTY(bool    grobidEnabled READ grobidEnabled WRITE setGrobidEnabled NOTIFY grobidEnabledChanged)
+    Q_PROPERTY(QString grobidUrl     READ grobidUrl     WRITE setGrobidUrl     NOTIFY grobidUrlChanged)
+
     // Per-pane body font size (px). Each pane uses the value as the
     // baseline; headings/labels in that pane scale up relative to
     // it (typically +2 px) so the visual hierarchy stays intact.
@@ -84,6 +91,9 @@ public:
     QString updateManifestUrl() const { return m_updateManifestUrl; }
     bool    crashReportsOptIn() const { return m_crashReportsOptIn; }
 
+    bool    grobidEnabled() const { return m_grobidEnabled; }
+    QString grobidUrl()     const { return m_grobidUrl; }
+
     int     tocFontSize()       const { return m_tocFontSize; }
     int     summaryFontSize()   const { return m_summaryFontSize; }
     int     paragraphFontSize() const { return m_paragraphFontSize; }
@@ -115,6 +125,8 @@ public:
     void setAutoCheckUpdates(bool v);
     void setUpdateManifestUrl(const QString &v);
     void setCrashReportsOptIn(bool v);
+    void setGrobidEnabled(bool v);
+    void setGrobidUrl(const QString &v);
 
     void setTocFontSize(int v);
     void setSummaryFontSize(int v);
@@ -157,6 +169,8 @@ signals:
     void autoCheckUpdatesChanged();
     void updateManifestUrlChanged();
     void crashReportsOptInChanged();
+    void grobidEnabledChanged();
+    void grobidUrlChanged();
 
     void tocFontSizeChanged();
     void summaryFontSizeChanged();
@@ -200,6 +214,8 @@ private:
     bool    m_autoCheckUpdates = true;
     QString m_updateManifestUrl;
     bool    m_crashReportsOptIn = false;
+    bool    m_grobidEnabled = true;
+    QString m_grobidUrl;
 
     // Defaults match the previously hard-coded values in each pane.
     int     m_tocFontSize       = 12;

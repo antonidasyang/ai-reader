@@ -41,6 +41,8 @@ constexpr auto kKeyChatPrompt           = "prompts/chat";
 constexpr auto kKeyChatIncludePaperText = "chat/includePaperText";
 constexpr auto kKeyAutoCheckUpdates     = "updates/autoCheck";
 constexpr auto kKeyUpdateManifestUrl    = "updates/manifestUrl";
+constexpr auto kKeyGrobidEnabled        = "grobid/enabled";
+constexpr auto kKeyGrobidUrl            = "grobid/url";
 constexpr auto kKeyCrashReportsOptIn    = "privacy/crashReportsOptIn";
 constexpr auto kKeyTocFontSize          = "fonts/toc";
 constexpr auto kKeySummaryFontSize      = "fonts/summary";
@@ -428,6 +430,9 @@ void Settings::load()
     m_chatIncludePaperText = m_qs.value(kKeyChatIncludePaperText, false).toBool();
     m_autoCheckUpdates     = m_qs.value(kKeyAutoCheckUpdates,     true).toBool();
     m_updateManifestUrl    = m_qs.value(kKeyUpdateManifestUrl,    QString{}).toString();
+    m_grobidEnabled        = m_qs.value(kKeyGrobidEnabled,        true).toBool();
+    m_grobidUrl            = m_qs.value(kKeyGrobidUrl,
+                                 QStringLiteral("http://localhost:8070")).toString();
     m_crashReportsOptIn    = m_qs.value(kKeyCrashReportsOptIn,    false).toBool();
     m_tocFontSize          = qBound(8, m_qs.value(kKeyTocFontSize,       12).toInt(), 32);
     m_summaryFontSize      = qBound(8, m_qs.value(kKeySummaryFontSize,   13).toInt(), 32);
@@ -455,6 +460,8 @@ void Settings::save()
     m_qs.setValue(kKeyChatIncludePaperText, m_chatIncludePaperText);
     m_qs.setValue(kKeyAutoCheckUpdates,     m_autoCheckUpdates);
     m_qs.setValue(kKeyUpdateManifestUrl,    m_updateManifestUrl);
+    m_qs.setValue(kKeyGrobidEnabled,        m_grobidEnabled);
+    m_qs.setValue(kKeyGrobidUrl,            m_grobidUrl);
     m_qs.setValue(kKeyCrashReportsOptIn,    m_crashReportsOptIn);
     m_qs.setValue(kKeyTocFontSize,          m_tocFontSize);
     m_qs.setValue(kKeySummaryFontSize,      m_summaryFontSize);
@@ -487,6 +494,22 @@ void Settings::setCrashReportsOptIn(bool v)
     m_crashReportsOptIn = v;
     save();
     emit crashReportsOptInChanged();
+}
+
+void Settings::setGrobidEnabled(bool v)
+{
+    if (v == m_grobidEnabled) return;
+    m_grobidEnabled = v;
+    save();
+    emit grobidEnabledChanged();
+}
+
+void Settings::setGrobidUrl(const QString &v)
+{
+    if (v == m_grobidUrl) return;
+    m_grobidUrl = v;
+    save();
+    emit grobidUrlChanged();
 }
 
 void Settings::setTocFontSize(int v)

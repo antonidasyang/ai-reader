@@ -35,6 +35,19 @@ services:
       timeout: 5s
       retries: 5
 
+  # GROBID paragraph/structure extraction for the desktop app
+  # (Settings → Paragraph segmentation → Service URL, port 8070).
+  # CRF-only image: ~500 MB, CPU-friendly. Swap for
+  # grobid/grobid:0.9.1-full (~8 GB) if you want the deep-learning
+  # models and have the RAM/GPU for them.
+  grobid:
+    image: grobid/grobid:0.9.1-crf
+    init: true
+    ulimits:
+      core: 0
+    ports:
+      - "8070:8070"
+
   server:
     build: .
     depends_on:

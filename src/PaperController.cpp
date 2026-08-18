@@ -36,7 +36,10 @@ PaperController::PaperController(QObject *parent)
     connect(&m_model, &BlockListModel::blocksMutated,
             this, &PaperController::blocksChanged);
     connect(&m_model, &BlockListModel::blocksMutated,
-            this, [this]() { m_blockCache.setBlocks(m_model.allBlocks()); });
+            this, [this]() {
+                m_blocksEdited = true;
+                m_blockCache.setBlocks(m_model.allBlocks());
+            });
     // Lighter signal — just per-block visibility flips. Goes only
     // to the cache (no blocksChanged emission) so TranslationService
     // doesn't see them and rehydrate / cancel translations.
@@ -155,15 +158,20 @@ void PaperController::reload()
         // future opens skip clustering and any later edits are
         // preserved.
         QVector<Block> blocks;
-        if (m_blockCache.hasBlocks()) {
-            blocks = m_blockCache.blocks();
-        } else {
+        const bool fresh = !m_blockCache.hasBlocks();
+        if (fresh) {
             blocks = BlockClusterer::extract(m_doc);
             m_blockCache.setBlocks(blocks);
+        } else {
+            blocks = m_blockCache.blocks();
         }
+        m_blocksEdited = false;
         m_model.setBlocks(std::move(blocks));
         emit blocksChanged();
         setStatus(Ready);
+        // After Ready so StructureService sees a fully-loaded paper.
+        if (fresh)
+            emit autoExtracted();
         break;
     }
     case QPdfDocument::Error::IncorrectPassword:
@@ -195,8 +203,28 @@ void PaperController::rebuildBlocks()
     m_blockCache.clear();
     QVector<Block> blocks = BlockClusterer::extract(m_doc);
     m_blockCache.setBlocks(blocks);
+    m_blocksEdited = false;
     m_model.setBlocks(std::move(blocks));
     emit blocksChanged();
+    emit autoExtracted();
+}
+
+bool PaperController::applyStructuredBlocks(const QString &paperId,
+                                            QVector<Block> blocks)
+{
+    if (m_status != Ready || paperId.isEmpty() || paperId != m_paperId
+        || m_blocksEdited)
+        return false;
+    // Any translation state (done, queued, even skipped) means the
+    // user already invested in the current segmentation — keep it.
+    const QVector<Block> current = m_model.allBlocks();
+    for (const Block &b : current)
+        if (b.translationStatus != Block::NotTranslated)
+            return false;
+    m_blockCache.setBlocks(blocks);
+    m_model.setBlocks(std::move(blocks));
+    emit blocksChanged();
+    return true;
 }
 
 bool PaperController::exportExtractedText(const QUrl &dest)

@@ -43,6 +43,8 @@ Dialog {
         autoCheckBox.checked    = settings.autoCheckUpdates
         manifestUrlField.text   = settings.updateManifestUrl
         crashOptInBox.checked   = settings.crashReportsOptIn
+        grobidEnabledBox.checked = settings.grobidEnabled
+        grobidUrlField.text      = settings.grobidUrl
         tocFontSizeField.value       = settings.tocFontSize
         summaryFontSizeField.value   = settings.summaryFontSize
         paragraphFontSizeField.value = settings.paragraphFontSize
@@ -64,6 +66,8 @@ Dialog {
         settings.autoCheckUpdates  = autoCheckBox.checked
         settings.updateManifestUrl = manifestUrlField.text.trim()
         settings.crashReportsOptIn = crashOptInBox.checked
+        settings.grobidEnabled     = grobidEnabledBox.checked
+        settings.grobidUrl         = grobidUrlField.text.trim()
         settings.tocFontSize        = tocFontSizeField.value
         settings.summaryFontSize    = summaryFontSizeField.value
         settings.paragraphFontSize  = paragraphFontSizeField.value
@@ -557,6 +561,43 @@ Dialog {
                         from: 8; to: 32; stepSize: 1
                     }
                 }
+            }
+
+            // ── Paragraph segmentation ──────────────────────────────
+            SectionLabel {
+                text: qsTr("Paragraph segmentation")
+                Layout.topMargin: Theme.spaceS
+            }
+            SectionCard {
+                implicitHeight: grobidGrid.implicitHeight + 2 * Theme.spaceL
+
+                GridLayout {
+                    id: grobidGrid
+                    anchors.fill: parent
+                    anchors.margins: Theme.spaceL
+                    columns: 2
+                    columnSpacing: Theme.spaceL
+                    rowSpacing: Theme.spaceS
+
+                    FormLabel { text: qsTr("GROBID service") }
+                    CheckBox {
+                        id: grobidEnabledBox
+                        text: qsTr("Use GROBID for paragraph detection (best for academic papers)")
+                    }
+
+                    FormLabel { text: qsTr("Service URL") }
+                    FieldText {
+                        id: grobidUrlField
+                        Layout.fillWidth: true
+                        enabled: grobidEnabledBox.checked
+                        placeholderText: "http://localhost:8070"
+                    }
+                }
+            }
+            HintLabel {
+                text: qsTr("Applied when a paper is opened for the first time; falls back "
+                           + "to the built-in splitter when the service is unreachable. "
+                           + "Self-host with: docker run -d -p 8070:8070 grobid/grobid:0.9.1-crf")
             }
 
             // ── Updates & privacy ───────────────────────────────────

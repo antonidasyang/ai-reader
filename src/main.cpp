@@ -18,6 +18,7 @@
 #include "PaperController.h"
 #include "PdfSelectionModel.h"
 #include "Settings.h"
+#include "StructureService.h"
 #include "SummaryService.h"
 #include "Tabs.h"
 #include "TocService.h"
@@ -225,6 +226,7 @@ int main(int argc, char *argv[])
 
     PaperController paperController;
     PdfSelectionModel pdfSelection(paperController.document());
+    StructureService structure(&settings, &paperController);
     TranslationService translation(&settings, &paperController);
     SummaryService summary(&settings, &paperController);
     TocService toc(&settings, &paperController);
@@ -255,6 +257,7 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("paperController", &paperController);
     engine.rootContext()->setContextProperty("pdfSelection", &pdfSelection);
+    engine.rootContext()->setContextProperty("structure", &structure);
     engine.rootContext()->setContextProperty("settings", &settings);
     engine.rootContext()->setContextProperty("translation", &translation);
     engine.rootContext()->setContextProperty("summary", &summary);

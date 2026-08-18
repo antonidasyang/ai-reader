@@ -74,6 +74,13 @@ public slots:
     // an improved splitter.
     Q_INVOKABLE void rebuildBlocks();
 
+    // Replace the block list with StructureService's GROBID result.
+    // Refused (returns false) when the paper changed since the request
+    // started, the user already split/merged/deleted a paragraph, or
+    // any translation exists — those must not be yanked away.
+    bool applyStructuredBlocks(const QString &paperId,
+                               QVector<Block> blocks);
+
 signals:
     void pdfSourceChanged();
     void pdfPasswordChanged();
@@ -81,6 +88,10 @@ signals:
     void statusChanged();
     void passwordRequired();
     void currentSelectionChanged();
+    // A fresh automatic extraction just ran (cache miss or explicit
+    // rebuild) — StructureService listens and tries to upgrade the
+    // segmentation via GROBID.
+    void autoExtracted();
 
 private:
     void reload();
@@ -94,6 +105,9 @@ private:
     QString m_paperId;
     QString m_currentSelection;
     int m_currentSelectionPage = -1;
+    // True once the user split/merged/deleted a paragraph in this
+    // paper — blocks applyStructuredBlocks from clobbering edits.
+    bool m_blocksEdited = false;
     Status m_status = Empty;
     QString m_errorString;
     QSettings m_qs;

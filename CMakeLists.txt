@@ -211,6 +211,8 @@ qt_add_executable(ai-reader
     src/PaperController.cpp
     src/PdfSelectionModel.h
     src/PdfSelectionModel.cpp
+    src/StructureService.h
+    src/StructureService.cpp
     src/LlmClient.h
     src/LlmClient.cpp
     src/AnthropicClient.h

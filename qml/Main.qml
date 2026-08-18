@@ -526,6 +526,7 @@ ApplicationWindow {
                       ? qsTr("%1 pages · %2 paragraphs")
                             .arg(pdfDoc.pageCount)
                             .arg(paperController.blockCount)
+                        + (structure.busy ? qsTr(" · GROBID…") : "")
                       : ""
                 color: Theme.dimText
                 Layout.leftMargin: 8
