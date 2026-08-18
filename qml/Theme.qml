@@ -33,4 +33,38 @@ QtObject {
     readonly property color accent:  dark ? "#7aa7ff" : "#1565c0"
     readonly property color danger:  dark ? "#ff6b6b" : "#c62828"
     readonly property color heading: dark ? "#9ab8ff" : "#1a237e"
+
+    // ── Dialog chrome (additive tokens — shared by the popup dialogs) ──
+    readonly property color dialogBg:     dark ? "#232529" : "#ffffff"  // elevated surface
+    readonly property color overlayDim:   dark ? "#99000000" : "#59000000"  // modal scrim
+    readonly property color dialogShadow: dark ? "#66000000" : "#26000000"  // soft drop hint
+    readonly property color cardBg:       dark ? "#282a2f" : "#f6f7f9"  // grouped section card
+
+    // ── Inputs (dialog form fields) ────────────────────────────────────
+    readonly property color fieldBg:     dark ? "#1c1d20" : "#f7f8fa"
+    readonly property color fieldBorder: dark ? "#44474d" : "#d7dade"
+    readonly property color focusRing:   Qt.alpha(accent, dark ? 0.35 : 0.22)
+
+    // ── Buttons (primary = accent-filled, secondary = quiet) ───────────
+    readonly property color onAccent:      dark ? "#10131a" : "#ffffff"
+    readonly property color accentHover:   dark ? "#8db4ff" : "#1a70d6"
+    readonly property color accentPressed: dark ? "#6b95e8" : "#11529c"
+    readonly property color buttonBg:      dark ? "#2d2f34" : "#f2f3f5"
+    readonly property color buttonHover:   dark ? "#36393f" : "#e9ebef"
+    readonly property color buttonPressed: dark ? "#3d4148" : "#dee1e6"
+
+    // ── Status ─────────────────────────────────────────────────────────
+    readonly property color success: dark ? "#7bc67e" : "#2e7d32"
+
+    // ── Metrics (shared spacing / radius scale for dialogs) ────────────
+    readonly property int radiusL: 12   // dialog corners
+    readonly property int radiusM: 8    // cards, popups
+    readonly property int radiusS: 6    // inputs, buttons
+    readonly property int spaceXs: 4
+    readonly property int spaceS: 8
+    readonly property int spaceM: 12
+    readonly property int spaceL: 16
+    readonly property int spaceXl: 24
+    readonly property int controlH: 32       // uniform input/button height
+    readonly property int dialogPadding: 20  // dialog body / header inset
 }

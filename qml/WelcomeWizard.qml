@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import AiReader
 
 // Coach-mark style first-run tour. Instead of a centered modal that
 // hides the UI it's trying to teach, we draw a four-rectangle dim
@@ -90,6 +91,42 @@ Popup {
         close()
     }
 
+    // Same button language as the dialogs' footers (see e.g.
+    // SettingsDialog): primary = accent-filled, ghost = quiet text.
+    component ActionButton: Button {
+        id: ab
+        property bool primary: false
+        property bool ghost: false
+        implicitHeight: Theme.controlH
+        leftPadding: Theme.spaceL
+        rightPadding: Theme.spaceL
+        contentItem: Text {
+            text: ab.text
+            font.pixelSize: 13
+            font.weight: ab.primary ? Font.DemiBold : Font.Normal
+            color: ab.primary ? Theme.onAccent
+                   : ab.ghost ? (ab.hovered ? Theme.text : Theme.dimText)
+                   : Theme.text
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideRight
+            opacity: ab.enabled ? 1 : 0.45
+            Behavior on color { ColorAnimation { duration: 120 } }
+        }
+        background: Rectangle {
+            radius: Theme.radiusS
+            color: ab.primary
+                   ? (ab.down ? Theme.accentPressed : ab.hovered ? Theme.accentHover : Theme.accent)
+                   : ab.ghost
+                     ? (ab.down ? Theme.buttonPressed : ab.hovered ? Theme.buttonHover : "transparent")
+                     : (ab.down ? Theme.buttonPressed : ab.hovered ? Theme.buttonHover : Theme.buttonBg)
+            border.width: ab.primary || ab.ghost ? 0 : 1
+            border.color: ab.visualFocus ? Theme.accent : Theme.border
+            opacity: ab.enabled ? 1 : 0.45
+            Behavior on color { ColorAnimation { duration: 120 } }
+        }
+    }
+
     contentItem: Item {
         id: content
 
@@ -150,9 +187,9 @@ Popup {
             width: root.spotRect.width + 8
             height: root.spotRect.height + 8
             color: "transparent"
-            border.color: "#664c8bf5"
+            border.color: Qt.alpha(Theme.accent, 0.4)
             border.width: 4
-            radius: 10
+            radius: Theme.radiusL
             Behavior on x      { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
             Behavior on y      { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
             Behavior on width  { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
@@ -164,9 +201,9 @@ Popup {
             width: root.spotRect.width
             height: root.spotRect.height
             color: "transparent"
-            border.color: "#4c8bf5"
+            border.color: Theme.accent
             border.width: 2
-            radius: 6
+            radius: Theme.radiusM
             Behavior on x      { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
             Behavior on y      { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
             Behavior on width  { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
@@ -179,15 +216,15 @@ Popup {
             y: Math.max(8, root.spotRect.y - height / 2)
             width: 28; height: 28
             radius: 14
-            color: "#4c8bf5"
-            border.color: "#ffffff"
+            color: Theme.accent
+            border.color: Theme.dialogBg
             border.width: 2
             Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
             Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
             Label {
                 anchors.centerIn: parent
                 text: (root.stepIndex + 1).toString()
-                color: "#ffffff"
+                color: Theme.onAccent
                 font.bold: true
                 font.pixelSize: 13
             }
@@ -199,10 +236,10 @@ Popup {
         Rectangle {
             id: callout
             width: 380
-            height: calloutBody.implicitHeight + 32
-            radius: 8
-            color: "#ffffff"
-            border.color: "#cccccc"
+            height: calloutBody.implicitHeight + 2 * Theme.dialogPadding
+            radius: Theme.radiusL
+            color: Theme.dialogBg
+            border.color: Theme.border
             border.width: 1
 
             readonly property real gap: 24
@@ -235,48 +272,52 @@ Popup {
             Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
             Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.InOutQuad } }
 
-            // Subtle shadow so the card lifts off the dim mask.
+            // Soft shadow so the card lifts off the dim mask.
             Rectangle {
-                anchors.fill: parent
-                anchors.margins: -1
                 z: -1
-                color: "transparent"
-                border.color: "#33000000"
-                border.width: 1
-                radius: 9
+                x: 0; y: 3
+                width: parent.width
+                height: parent.height
+                radius: parent.radius + 1
+                color: Theme.dialogShadow
             }
 
             ColumnLayout {
                 id: calloutBody
                 anchors.fill: parent
-                anchors.margins: 16
-                spacing: 10
+                anchors.margins: Theme.dialogPadding
+                spacing: Theme.spaceM
 
                 RowLayout {
                     Layout.fillWidth: true
+                    spacing: Theme.spaceXs + 2
                     Label {
                         text: qsTr("Step %1 of %2")
                               .arg(root.stepIndex + 1)
                               .arg(root.steps.length)
-                        color: "#888"
+                        color: Theme.dimText
                         font.pixelSize: 11
                     }
                     Item { Layout.fillWidth: true }
-                    // Step indicator dots.
+                    // Step indicator dots; the current one stretches to a pill.
                     Repeater {
                         model: root.steps.length
                         delegate: Rectangle {
-                            width: 8; height: 8; radius: 4
-                            color: index === root.stepIndex ? "#4c8bf5" : "#cfcfcf"
+                            width: index === root.stepIndex ? 18 : 7
+                            height: 7
+                            radius: 3.5
+                            color: index === root.stepIndex ? Theme.accent : Theme.fieldBorder
                             Behavior on color { ColorAnimation { duration: 120 } }
+                            Behavior on width { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
                         }
                     }
                 }
 
                 Label {
                     text: root.currentStep ? root.currentStep.title : ""
-                    font.bold: true
                     font.pixelSize: 16
+                    font.weight: Font.DemiBold
+                    color: Theme.text
                     Layout.fillWidth: true
                     wrapMode: Text.Wrap
                 }
@@ -284,30 +325,33 @@ Popup {
                     text: root.currentStep ? root.currentStep.body : ""
                     Layout.fillWidth: true
                     wrapMode: Text.Wrap
-                    color: "#444"
+                    color: Theme.bodyText
+                    font.pixelSize: 13
+                    lineHeight: 1.25
                     textFormat: Text.RichText
                 }
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 8
-                    Button {
+                    Layout.topMargin: Theme.spaceXs
+                    spacing: Theme.spaceS
+                    ActionButton {
                         text: qsTr("Skip")
-                        flat: true
+                        ghost: true
                         visible: root.stepIndex < root.steps.length - 1
                         onClicked: root.finish()
                     }
                     Item { Layout.fillWidth: true }
-                    Button {
+                    ActionButton {
                         text: qsTr("Back")
                         enabled: root.stepIndex > 0
                         onClicked: root.stepIndex = root.stepIndex - 1
                     }
-                    Button {
+                    ActionButton {
                         text: root.stepIndex === root.steps.length - 1
                               ? qsTr("Got it!")
                               : qsTr("Next")
-                        highlighted: true
+                        primary: true
                         onClicked: {
                             if (root.stepIndex === root.steps.length - 1)
                                 root.finish()
