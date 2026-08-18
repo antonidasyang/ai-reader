@@ -1,5 +1,10 @@
 # AI Reader changelog
 
+## v1.1.4 — 2026-08-19
+
+- **The zoom readout button changes behavior**: a single click fits
+  the page to the window width; a double-click returns to 100%.
+
 ## v1.1.3 — 2026-08-18
 
 ### Onboarding

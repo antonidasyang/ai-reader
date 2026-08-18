@@ -39,6 +39,13 @@ ApplicationWindow {
     function zoomIn()    { _setZoom(pdfView.renderScale * _zoomStep) }
     function zoomOut()   { _setZoom(pdfView.renderScale / _zoomStep) }
     function resetZoom() { _setZoom(1.0) }
+    function fitWidth()  {
+        // scaleToWidth clamps nothing itself; route the resulting
+        // scale through _setZoom's min/max like every other path.
+        const pageW = pdfView.document ? pdfView.document.maxPageWidth : 0
+        if (pageW > 0)
+            _setZoom(pdfView.width / pageW)
+    }
 
     Shortcut {
         sequences: [StandardKey.ZoomIn, "Ctrl+="]
@@ -447,16 +454,29 @@ ApplicationWindow {
                 onClicked: window.zoomOut()
             }
             ToolButton {
-                // Doubles as a "current zoom" readout and a reset button —
-                // saves a slot vs. a separate label + button.
+                // Doubles as a "current zoom" readout and a zoom action:
+                // click = fit the page to the window width, double-click
+                // = back to 100%. A short timer tells the two apart.
                 text: pdfDoc.status === PdfDocument.Ready
                       ? Math.round(pdfView.renderScale * 100) + "%"
                       : "—"
                 enabled: pdfDoc.status === PdfDocument.Ready
                 ToolTip.visible: hovered
                 ToolTip.delay: 400
-                ToolTip.text: qsTr("Reset zoom")
-                onClicked: window.resetZoom()
+                ToolTip.text: qsTr("Click: fit page width · double-click: 100%")
+                Timer {
+                    id: zoomClickTimer
+                    interval: 240
+                    onTriggered: window.fitWidth()
+                }
+                onClicked: {
+                    if (zoomClickTimer.running) {
+                        zoomClickTimer.stop()
+                        window.resetZoom()
+                    } else {
+                        zoomClickTimer.start()
+                    }
+                }
             }
             ToolButton {
                 text: "+"
