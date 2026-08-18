@@ -16,6 +16,7 @@
 #include "FileSyncService.h"
 #include "MarkdownRenderer.h"
 #include "PaperController.h"
+#include "PdfSelectionModel.h"
 #include "Settings.h"
 #include "SummaryService.h"
 #include "Tabs.h"
@@ -223,6 +224,7 @@ int main(int argc, char *argv[])
     applyLanguage(settings.uiLanguage());
 
     PaperController paperController;
+    PdfSelectionModel pdfSelection(paperController.document());
     TranslationService translation(&settings, &paperController);
     SummaryService summary(&settings, &paperController);
     TocService toc(&settings, &paperController);
@@ -252,6 +254,7 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("paperController", &paperController);
+    engine.rootContext()->setContextProperty("pdfSelection", &pdfSelection);
     engine.rootContext()->setContextProperty("settings", &settings);
     engine.rootContext()->setContextProperty("translation", &translation);
     engine.rootContext()->setContextProperty("summary", &summary);

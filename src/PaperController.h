@@ -39,6 +39,9 @@ public:
     Status status() const { return m_status; }
     QString errorString() const { return m_errorString; }
     int pageCount() const { return m_doc.pageCount(); }
+    // The loaded document — PdfSelectionModel drives text selection
+    // hit-testing off it (C++-side only, not exposed to QML).
+    QPdfDocument *document() { return &m_doc; }
     QString paperId() const { return m_paperId; }
     QString currentSelection() const { return m_currentSelection; }
     int currentSelectionPage() const { return m_currentSelectionPage; }

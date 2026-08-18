@@ -878,6 +878,16 @@ ApplicationWindow {
                             onTapped: pdfViewport.forceActiveFocus()
                         }
                         Keys.onPressed: function(event) {
+                            if (event.matches(StandardKey.Copy)) {
+                                pdfSelection.copyToClipboard()
+                                event.accepted = true
+                                return
+                            }
+                            if (event.matches(StandardKey.SelectAll)) {
+                                pdfSelection.selectAllOnPage(pdfView.currentPage)
+                                event.accepted = true
+                                return
+                            }
                             const f = pdfMouse._flick()
                             const k = event.key
                             const isArrow = k === Qt.Key_Up || k === Qt.Key_Down
@@ -892,11 +902,15 @@ ApplicationWindow {
                             event.accepted = true
                         }
 
-                        PdfMultiPageView {
+                        AiPdfView {
                             id: pdfView
                             anchors.fill: parent
                             document: pdfDoc
                             visible: pdfDoc.status === PdfDocument.Ready
+                            // C++ selection model: cross-page ranges, word/
+                            // paragraph snapping, I-beam hover, link hits.
+                            selectionModel: pdfSelection
+                            selectionEnabled: !window.panMode
                             // Turn off the inner TableView's own drag/flick (and
                             // its wheel handling) so the page can't be dragged
                             // around in arrow mode — only the hand tool, arrow
@@ -909,39 +923,29 @@ ApplicationWindow {
                             // Mirror the user's PDF selection into the controller so
                             // the chat tool `get_user_selection` can read it.
                             onSelectedTextChanged: paperController.setCurrentSelection(
-                                selectedText, currentPage)
+                                selectedText,
+                                pdfSelection.startPage >= 0 ? pdfSelection.startPage
+                                                            : currentPage)
 
                             // Wheel router as a *child* of pdfView so it sits in
                             // the event chain ABOVE the inner Flickable but
                             // INSIDE the pdfView item, which means a non-accepted
                             // wheel cleanly bubbles up to pdfView's own scroll
-                            // handling. acceptedButtons=NoButton keeps clicks
-                            // and drags (text selection) flowing to pdfView
-                            // untouched; only Ctrl+wheel is consumed.
-                            // One overlay handles three things:
+                            // handling. acceptedButtons=NoButton keeps clicks and
+                            // drags flowing to the selection layer untouched, and
+                            // it must NOT set cursorShape or hoverEnabled — a
+                            // cursor here would sit above the selection layer's
+                            // I-beam/pointing-hand and override it.
                             //  • Ctrl+wheel zoom — checks pixelDelta too, since
                             //    macOS trackpads report angleDelta == 0.
-                            //  • Hand/pan tool (window.panMode): left-drag
-                            //    scrolls the inner TableView; cursor turns into a
-                            //    hand. acceptedButtons stays NoButton when pan is
-                            //    off, so the page's own text-selection DragHandler
-                            //    keeps receiving clicks/drags untouched.
-                            //  • Cursor: arrow normally, open/closed hand in pan.
                             MouseArea {
                                 id: pdfMouse
                                 anchors.fill: parent
-                                z: 1
-                                hoverEnabled: true
-                                acceptedButtons: window.panMode ? Qt.LeftButton
-                                                                : Qt.NoButton
-                                preventStealing: window.panMode
-                                cursorShape: window.panMode
-                                    ? (pressed ? Qt.ClosedHandCursor
-                                               : Qt.OpenHandCursor)
-                                    : Qt.ArrowCursor
+                                z: 2
+                                acceptedButtons: Qt.NoButton
 
-                                // The scrollable inside PdfMultiPageView is a
-                                // private TableView (no public id); find it by
+                                // The scrollable inside AiPdfView is a private
+                                // TableView (no public id); find it by
                                 // duck-typing pdfView's children for a Flickable.
                                 function _flick() {
                                     const kids = pdfView.children
@@ -954,25 +958,6 @@ ApplicationWindow {
                                     return null
                                 }
 
-                                property real _sx: 0
-                                property real _sy: 0
-                                property real _scx: 0
-                                property real _scy: 0
-                                onPressed: function(mouse) {
-                                    if (!window.panMode) { mouse.accepted = false; return }
-                                    const f = _flick()
-                                    if (!f) { mouse.accepted = false; return }
-                                    _sx = mouse.x; _sy = mouse.y
-                                    _scx = f.contentX; _scy = f.contentY
-                                }
-                                onPositionChanged: function(mouse) {
-                                    if (!window.panMode || !pressed) return
-                                    const f = _flick()
-                                    if (!f) return
-                                    f.contentX = _scx - (mouse.x - _sx)
-                                    f.contentY = _scy - (mouse.y - _sy)
-                                    f.returnToBounds()
-                                }
                                 onWheel: function(wheel) {
                                     if (wheel.modifiers & window._zoomModifier) {
                                         const dz = wheel.angleDelta.y !== 0
@@ -996,6 +981,38 @@ ApplicationWindow {
                                     f.contentY -= dy
                                     f.returnToBounds()
                                     wheel.accepted = true
+                                }
+                            }
+
+                            // Hand/pan tool overlay. Only instantiated while
+                            // panMode is on, so its hand cursor can never mask
+                            // the selection layer's I-beam.
+                            MouseArea {
+                                id: pdfPan
+                                anchors.fill: parent
+                                z: 3
+                                visible: window.panMode
+                                acceptedButtons: Qt.LeftButton
+                                preventStealing: true
+                                cursorShape: pressed ? Qt.ClosedHandCursor
+                                                     : Qt.OpenHandCursor
+                                property real _sx: 0
+                                property real _sy: 0
+                                property real _scx: 0
+                                property real _scy: 0
+                                onPressed: function(mouse) {
+                                    const f = pdfMouse._flick()
+                                    if (!f) { mouse.accepted = false; return }
+                                    _sx = mouse.x; _sy = mouse.y
+                                    _scx = f.contentX; _scy = f.contentY
+                                }
+                                onPositionChanged: function(mouse) {
+                                    if (!pressed) return
+                                    const f = pdfMouse._flick()
+                                    if (!f) return
+                                    f.contentX = _scx - (mouse.x - _sx)
+                                    f.contentY = _scy - (mouse.y - _sy)
+                                    f.returnToBounds()
                                 }
                             }
                         }

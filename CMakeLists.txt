@@ -209,6 +209,8 @@ qt_add_executable(ai-reader
     src/BlockCache.cpp
     src/PaperController.h
     src/PaperController.cpp
+    src/PdfSelectionModel.h
+    src/PdfSelectionModel.cpp
     src/LlmClient.h
     src/LlmClient.cpp
     src/AnthropicClient.h
@@ -350,6 +352,7 @@ qt_add_qml_module(ai-reader
     QML_FILES
         qml/Theme.qml
         qml/Main.qml
+        qml/AiPdfView.qml
         qml/MembersDialog.qml
         qml/LibraryPane.qml
         qml/MetadataDialog.qml
