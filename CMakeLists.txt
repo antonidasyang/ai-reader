@@ -203,6 +203,8 @@ qt_add_executable(ai-reader
     src/Block.h
     src/BlockClusterer.h
     src/BlockClusterer.cpp
+    src/PdfVisualLines.h
+    src/PdfVisualLines.cpp
     src/BlockListModel.h
     src/BlockListModel.cpp
     src/BlockCache.h

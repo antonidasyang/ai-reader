@@ -941,7 +941,12 @@ ApplicationWindow {
                             MouseArea {
                                 id: pdfMouse
                                 anchors.fill: parent
-                                z: 2
+                                // Below the view's selection layer (z 1):
+                                // anything stacked above it can block hover
+                                // delivery and kill the I-beam. Wheel still
+                                // arrives here — the inner TableView is
+                                // interactive:false and never accepts it.
+                                z: 0
                                 acceptedButtons: Qt.NoButton
 
                                 // The scrollable inside AiPdfView is a private

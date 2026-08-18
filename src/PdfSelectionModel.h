@@ -92,11 +92,11 @@ private:
 
     bool docReady() const;
     PageData &pageData(int page) const;
-    void appendLines(int page, int start, int end, PageData &pd) const;
     const LineInfo *lineAt(int page, QPointF pos, bool *inside) const;
     TextPos posAt(int page, QPointF pos, bool *insideText = nullptr) const;
     void wordRange(const TextPos &pos, TextPos &s, TextPos &e) const;
-    void paraRange(const TextPos &pos, TextPos &s, TextPos &e) const;
+    void paraRange(const TextPos &pos, QPointF pagePos,
+                   TextPos &s, TextPos &e) const;
     int lineIndexOf(const PageData &pd, int charIdx) const;
     void ensureCarets(int page, const LineInfo &ln) const;
     TextPos selStart() const;

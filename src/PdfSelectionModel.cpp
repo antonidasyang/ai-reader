@@ -1,5 +1,7 @@
 #include "PdfSelectionModel.h"
 
+#include "PdfVisualLines.h"
+
 #include <QClipboard>
 #include <QGuiApplication>
 #include <QPdfDocument>
@@ -141,91 +143,20 @@ PdfSelectionModel::PageData &PdfSelectionModel::pageData(int page) const
     if (pd.loaded)
         return pd;
     pd.loaded = true;
-    pd.text = m_doc->getAllText(page).text();
-    const int n = pd.text.size();
-    int lineStart = 0;
-    for (int i = 0; i <= n; ++i) {
-        if (i < n && pd.text.at(i) != QChar('\n'))
-            continue;
-        int end = i;
-        if (end > lineStart && pd.text.at(end - 1) == QChar('\r'))
-            --end;
-        appendLines(page, lineStart, end, pd);
-        lineStart = i + 1;
+    // Shared rendered-line extraction — the same splitting the
+    // clusterer segments paragraphs with, so hit-testing and the
+    // reading pane always agree on what "a line" is.
+    const QVector<PdfVisualLines::Line> vls =
+        PdfVisualLines::extract(*m_doc, page, &pd.text);
+    pd.lines.reserve(vls.size());
+    for (const PdfVisualLines::Line &vl : vls) {
+        LineInfo ln;
+        ln.start = vl.start;
+        ln.end = vl.end;
+        ln.bbox = vl.bbox;
+        pd.lines.append(ln);
     }
     return pd;
-}
-
-// One '\r\n'-delimited range of page text is NOT guaranteed to be one
-// visual line: PDFium only inserts breaks where its heuristics fire,
-// so a range can span several rendered lines (or even a column jump).
-// bounds() gives one polygon per rendered baseline run — when there is
-// more than one, split the range into per-polygon sub-lines by
-// assigning each character to the nearest polygon. Getting this wrong
-// made hit-testing snap to the line above the click.
-void PdfSelectionModel::appendLines(int page, int start, int end,
-                                    PageData &pd) const
-{
-    if (end <= start) {
-        LineInfo ln;
-        ln.start = start;
-        ln.end = end;
-        pd.lines.append(ln);
-        return;
-    }
-    const QList<QPolygonF> polys =
-        m_doc->getSelectionAtIndex(page, start, end - start).bounds();
-    if (polys.size() <= 1) {
-        LineInfo ln;
-        ln.start = start;
-        ln.end = end;
-        if (!polys.isEmpty())
-            ln.bbox = polys.first().boundingRect();
-        pd.lines.append(ln);
-        return;
-    }
-
-    QVector<QRectF> rects;
-    rects.reserve(polys.size());
-    for (const QPolygonF &p : polys)
-        rects.append(p.boundingRect());
-
-    int g = 0;           // rect the current sub-line belongs to
-    int segStart = start;
-    for (int i = start; i < end; ++i) {
-        const QRectF bb = boundsRect(m_doc->getSelectionAtIndex(page, i, 1));
-        if (bb.isNull() || bb.height() <= 0)
-            continue;    // space / synthesized char: stays in current run
-        // Nearest rect at or after the current one — text order is
-        // monotonic through the rects, but a single range can span
-        // dozens of segments (poster-style pages), so no lookahead cap.
-        int bestJ = g;
-        qreal best = std::numeric_limits<qreal>::max();
-        for (int j = g; j < rects.size(); ++j) {
-            qreal d = qAbs(bb.center().y() - rects[j].center().y());
-            if (bb.center().x() < rects[j].left() - 5
-                || bb.center().x() > rects[j].right() + 5)
-                d += 50;
-            if (d < best) {
-                best = d;
-                bestJ = j;
-            }
-        }
-        if (bestJ != g && i > segStart) {
-            LineInfo ln;
-            ln.start = segStart;
-            ln.end = i;
-            ln.bbox = rects[g];
-            pd.lines.append(ln);
-            segStart = i;
-        }
-        g = bestJ;
-    }
-    LineInfo ln;
-    ln.start = segStart;
-    ln.end = end;
-    ln.bbox = rects[g];
-    pd.lines.append(ln);
 }
 
 QList<QRectF> PdfSelectionModel::debugLineRects(int page) const
@@ -327,6 +258,16 @@ PdfSelectionModel::posAt(int page, QPointF pos, bool *insideText) const
 
 int PdfSelectionModel::lineIndexOf(const PageData &pd, int charIdx) const
 {
+    // Strict containment first: sub-lines split from one PDFium range
+    // share their boundary index (A.end == B.start), and the inclusive
+    // scan used to resolve B's first character to A — which sits on a
+    // different visual line, often in another column.
+    for (int i = 0; i < pd.lines.size(); ++i) {
+        const LineInfo &ln = pd.lines[i];
+        if (charIdx >= ln.start && charIdx < ln.end)
+            return i;
+    }
+    // Caret exactly at a line end (e.g. selection endpoints).
     for (int i = 0; i < pd.lines.size(); ++i) {
         const LineInfo &ln = pd.lines[i];
         if (charIdx >= ln.start && charIdx <= ln.end)
@@ -380,7 +321,7 @@ void PdfSelectionModel::setParagraphs(const QVector<Block> &blocks)
             m_paragraphs[b.page].append(b.bbox);
 }
 
-void PdfSelectionModel::paraRange(const TextPos &pos,
+void PdfSelectionModel::paraRange(const TextPos &pos, QPointF pagePos,
                                   TextPos &s, TextPos &e) const
 {
     s = e = pos;
@@ -394,16 +335,63 @@ void PdfSelectionModel::paraRange(const TextPos &pos,
     // selects exactly what the reading pane shows as one paragraph —
     // far more reliable than line-gap heuristics on formula-heavy or
     // unevenly-leaded text.
-    if (!lineR.isEmpty()) {
-        const QPointF c = lineR.center();
-        QRectF best;
+    //
+    // The CLICK point picks the block (so clicking the blank space
+    // beside a short heading line still lands in its block), and
+    // vertically-nearest wins among overlapping candidates — adjacent
+    // blocks' bboxes overlap when tall math lines inflate them, and
+    // smallest-area picked the wrong one.
+    {
+        auto endsPara = [&pd](const LineInfo &ln) {
+            return PdfVisualLines::endsParagraph(
+                pd.text.mid(ln.start, ln.end - ln.start).trimmed());
+        };
+
+        QVector<QRectF> cands;
         const QVector<QRectF> paras = m_paragraphs.value(pos.page);
-        for (const QRectF &r : paras) {
-            if (!r.adjusted(-2, -2, 2, 2).contains(c))
+        for (int attempt = 0; attempt < 2 && cands.isEmpty(); ++attempt) {
+            const QPointF c = attempt == 0
+                ? pagePos
+                : (lineR.isEmpty() ? QPointF() : lineR.center());
+            if (c.isNull())
                 continue;
-            if (best.isNull()
-                || r.width() * r.height() < best.width() * best.height())
+            for (const QRectF &r : paras)
+                if (r.adjusted(-2, -2, 2, 2).contains(c))
+                    cands.append(r);
+        }
+
+        // Adjacent blocks' bboxes overlap vertically (tall math or
+        // citation-dense lines) and top-edge clicks sit inside both.
+        // The text disambiguates: if the previous line terminates a
+        // paragraph (or is another column / blank), the clicked line
+        // STARTS one — drop candidates that also hold the previous
+        // line, and vice versa.
+        if (cands.size() > 1 && li > 0) {
+            const LineInfo &prevLn = pd.lines[li - 1];
+            const bool prevEnds = prevLn.end <= prevLn.start
+                || prevLn.bbox.isEmpty()
+                || !sameColumn(prevLn.bbox, pd.lines[li].bbox)
+                || endsPara(prevLn);
+            QVector<QRectF> filtered;
+            for (const QRectF &r : cands) {
+                const bool holdsPrev = !prevLn.bbox.isEmpty()
+                    && r.adjusted(-2, -2, 2, 2).contains(prevLn.bbox.center());
+                if (prevEnds ? !holdsPrev : holdsPrev)
+                    filtered.append(r);
+            }
+            if (!filtered.isEmpty())
+                cands = filtered;
+        }
+
+        QRectF best;
+        qreal bestDy = std::numeric_limits<qreal>::max();
+        const QPointF refPt = lineR.isEmpty() ? pagePos : lineR.center();
+        for (const QRectF &r : cands) {
+            const qreal dy = qAbs(refPt.y() - r.center().y());
+            if (dy < bestDy) {
+                bestDy = dy;
                 best = r;
+            }
         }
         if (!best.isNull()) {
             const QRectF probe = best.adjusted(-2, -2, 2, 2);
@@ -441,10 +429,19 @@ void PdfSelectionModel::paraRange(const TextPos &pos,
         return dy > 0.2 * minH && dy < 1.9 * minH;
     };
 
+    // A line whose visible text ends with sentence-final punctuation
+    // terminates the paragraph — same rule the clusterer applies.
+    auto endsPara = [&pd](const LineInfo &ln) {
+        return PdfVisualLines::endsParagraph(
+            pd.text.mid(ln.start, ln.end - ln.start).trimmed());
+    };
+
     int a = li, b = li;
-    while (a > 0 && joinable(pd.lines[a - 1], pd.lines[a]))
+    while (a > 0 && joinable(pd.lines[a - 1], pd.lines[a])
+           && !endsPara(pd.lines[a - 1]))
         --a;
-    while (b + 1 < pd.lines.size() && joinable(pd.lines[b], pd.lines[b + 1]))
+    while (b + 1 < pd.lines.size() && joinable(pd.lines[b], pd.lines[b + 1])
+           && !endsPara(pd.lines[b]))
         ++b;
     s.idx = pd.lines[a].start;
     e.idx = pd.lines[b].end;
@@ -462,13 +459,17 @@ void PdfSelectionModel::beginAt(int page, QPointF pagePos, int clickCount)
     bool inside = false;
     const TextPos p = posAt(page, pagePos, &inside);
     TextPos s = p, e = p;
-    if (m_grain != CharGrain && inside) {
-        if (m_grain == WordGrain)
+    if (m_grain == WordGrain) {
+        if (inside)
             wordRange(p, s, e);
         else
-            paraRange(p, s, e);
-    } else if (m_grain != CharGrain) {
-        m_grain = CharGrain;   // multi-click in empty space: caret only
+            m_grain = CharGrain;   // double-click in empty space: caret
+    } else if (m_grain == ParaGrain) {
+        // The block under the click decides — clicking the blank space
+        // beside a short line inside a paragraph still selects it.
+        paraRange(p, pagePos, s, e);
+        if (s == e)
+            m_grain = CharGrain;
     }
     m_anchorStart = s;
     m_anchorEnd = e;
@@ -487,8 +488,8 @@ void PdfSelectionModel::extendTo(int page, QPointF pagePos)
     TextPos s = p, e = p;
     if (m_grain == WordGrain && inside)
         wordRange(p, s, e);
-    else if (m_grain == ParaGrain && inside)
-        paraRange(p, s, e);
+    else if (m_grain == ParaGrain)
+        paraRange(p, pagePos, s, e);
     if (s == m_focusStart && e == m_focusEnd)
         return;
     m_focusStart = s;

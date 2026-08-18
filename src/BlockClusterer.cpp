@@ -1,5 +1,7 @@
 #include "BlockClusterer.h"
 
+#include "PdfVisualLines.h"
+
 #include <QPdfDocument>
 #include <QPdfSelection>
 #include <QPolygonF>
@@ -133,47 +135,21 @@ Line preprocessLine(QString raw, const QRectF &bbox)
 
 // ─── Page → lines ─────────────────────────────────────────────────────────
 
-QVector<Line> extractPageLines(const QPdfSelection &sel)
+// PdfVisualLines handles the hard part: PDFium's \r\n breaks don't
+// match rendered lines (one range can span several baselines), which
+// used to defeat the poly/line count alignment here and drop whole
+// pages into bbox-less text-only mode — the source of mega-blocks and
+// half-paragraph triple-click selections.
+QVector<Line> extractPageLines(QPdfDocument &doc, int page)
 {
+    QString pageText;
+    const QVector<PdfVisualLines::Line> vls =
+        PdfVisualLines::extract(doc, page, &pageText);
     QVector<Line> out;
-    const QString text = sel.text();
-    if (text.isEmpty())
-        return out;
-
-    const QStringList rawLines =
-        text.split(QChar('\n'), Qt::KeepEmptyParts);
-    const QList<QPolygonF> polys = sel.bounds();
-
-    // QPdfSelection::bounds() returns one polygon per *visible* line, but
-    // sel.text() typically ends with a trailing '\n' (so split produces
-    // one extra empty entry) and blank vertical space can also produce
-    // empty rawLines without a matching poly. Strict count-match used to
-    // drop the whole page to text-only mode in those cases — which is
-    // why pages came out as one mega-block. Align polys with the non-
-    // empty raw lines instead: each non-empty rawLine[i] gets polys[k++],
-    // empty rawLines stay bbox-less. Falls through to text-only only
-    // when the *non-empty* counts still don't match.
-    QVector<int> nonEmptyIdx;
-    nonEmptyIdx.reserve(rawLines.size());
-    for (int i = 0; i < rawLines.size(); ++i)
-        if (!rawLines[i].trimmed().isEmpty())
-            nonEmptyIdx.append(i);
-
-    out.reserve(rawLines.size());
-    if (!polys.isEmpty() && polys.size() == nonEmptyIdx.size()) {
-        int p = 0;
-        for (int i = 0; i < rawLines.size(); ++i) {
-            QRectF bbox;
-            if (p < nonEmptyIdx.size() && i == nonEmptyIdx[p]) {
-                bbox = polys[p].boundingRect();
-                ++p;
-            }
-            out.append(preprocessLine(rawLines[i], bbox));
-        }
-    } else {
-        for (const QString &raw : rawLines)
-            out.append(preprocessLine(raw, QRectF()));
-    }
+    out.reserve(vls.size());
+    for (const PdfVisualLines::Line &vl : vls)
+        out.append(preprocessLine(
+            pageText.mid(vl.start, vl.end - vl.start), vl.bbox));
     return out;
 }
 
@@ -196,29 +172,13 @@ bool sameColumn(const QRectF &a, const QRectF &b)
 }
 
 // Paragraph-terminating rule: did this line end with sentence-final
-// punctuation? Trailing closing brackets/quotes are skipped first
-// (so `…end.")` still counts). Gap-threshold heuristics didn't work
-// reliably across PDFs; this is intentionally simple — over-merges
-// can be fixed manually from the UI.
+// punctuation? Shared with PdfSelectionModel's triple-click fallback
+// so both agree on where a paragraph stops. Gap-threshold heuristics
+// didn't work reliably across PDFs; this is intentionally simple —
+// over-merges can be fixed manually from the UI.
 bool endsParagraph(const QString &t)
 {
-    int i = t.size() - 1;
-    while (i >= 0) {
-        const ushort u = t.at(i).unicode();
-        const bool isCloser =
-            u == ')' || u == ']' || u == '}' ||
-            u == '"' || u == '\'' ||
-            u == 0x201D /* ” */ || u == 0x2019 /* ’ */ ||
-            u == 0xFF09 /* ） */ || u == 0xFF3D /* ］ */;
-        if (!isCloser) break;
-        --i;
-    }
-    if (i < 0) return false;
-    const ushort u = t.at(i).unicode();
-    return u == '.' || u == '?' || u == '!'
-        || u == 0x3002 /* 。 */
-        || u == 0xFF1F /* ？ */
-        || u == 0xFF01 /* ！ */;
+    return PdfVisualLines::endsParagraph(t);
 }
 
 } // namespace
@@ -229,8 +189,7 @@ QVector<Block> BlockClusterer::extract(QPdfDocument &doc)
     int nextId = 0;
 
     for (int p = 0; p < doc.pageCount(); ++p) {
-        QPdfSelection sel = doc.getAllText(p);
-        const QVector<Line> lines = extractPageLines(sel);
+        const QVector<Line> lines = extractPageLines(doc, p);
         if (lines.isEmpty())
             continue;
 
@@ -330,22 +289,17 @@ QString BlockClusterer::dumpDebug(QPdfDocument &doc)
     QTextStream ts(&out);
 
     for (int p = 0; p < doc.pageCount(); ++p) {
-        QPdfSelection sel = doc.getAllText(p);
-        const QString rawText = sel.text();
-        const QStringList rawLines =
-            rawText.split(QChar('\n'), Qt::KeepEmptyParts);
-        const QList<QPolygonF> polys = sel.bounds();
+        const QString rawText = doc.getAllText(p).text();
 
         ts << "================================================================\n";
-        ts << "Page " << p << "  rawLines=" << rawLines.size()
-           << " polys=" << polys.size() << "\n";
+        ts << "Page " << p << "\n";
         ts << "================================================================\n";
         ts << "--- Raw text from QPdfSelection.text() ---\n";
         ts << rawText;
         if (!rawText.endsWith(QChar('\n'))) ts << "\n";
         ts << "--- end raw text ---\n\n";
 
-        const QVector<Line> lines = extractPageLines(sel);
+        const QVector<Line> lines = extractPageLines(doc, p);
         ts << "--- Lines after preprocess + poly alignment ---\n";
         ts << "  ¶ marks lines that end a paragraph; ¬ marks hyphenated.\n";
         for (int i = 0; i < lines.size(); ++i) {

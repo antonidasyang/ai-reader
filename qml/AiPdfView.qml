@@ -331,11 +331,11 @@ Item {
         anchors.bottomMargin: hscroll.visible ? hscroll.height : 0
         z: 1
         visible: root.selectionEnabled && !!root.selectionModel
-        // Hover (I-beam / pointing hand) lives on the HoverHandler
-        // below: handler hover delivery is never blocked by the
-        // overlapping wheel-router MouseArea the app stacks above
-        // this view, while MouseArea hover can be.
-        hoverEnabled: false
+        // NOTE: nothing may be stacked above this item over the page
+        // area — an overlapping MouseArea (even acceptedButtons:
+        // NoButton) can block hover delivery and kill the I-beam.
+        // The app keeps its wheel router at z 0 for that reason.
+        hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         preventStealing: true
 
@@ -351,23 +351,9 @@ Item {
         property bool overText: false
         property bool overLink: false
 
-        HoverHandler {
-            id: hoverProbe
-            onPointChanged: {
-                if (selArea.pressed)
-                    return
-                const h = selArea.pageHit(point.position.x, point.position.y)
-                selArea.overText = h && root.selectionModel
-                    ? root.selectionModel.overText(h.page, h.pos) : false
-                selArea.overLink = h && root.selectionModel
-                    ? root.selectionModel.linkAt(h.page, h.pos).found : false
-            }
-            cursorShape: selArea.overLink && !selArea.selecting
-                         ? Qt.PointingHandCursor
-                         : (selArea.overText || selArea.selecting)
-                           ? Qt.IBeamCursor
-                           : Qt.ArrowCursor
-        }
+        cursorShape: overLink && !selecting ? Qt.PointingHandCursor
+                   : (overText || selecting) ? Qt.IBeamCursor
+                                             : Qt.ArrowCursor
 
         // Viewport point → { page, pos (page points) }, or null.
         // NB: cellAtPosition wants CONTENT-item coordinates (the
@@ -450,7 +436,14 @@ Item {
                 autoScroll.vy = vy
                 autoScroll.running = vy !== 0
                 extendAt(mouse.x, mouse.y)
+                return
             }
+            // Hover: drive the cursor.
+            const h = pageHit(mouse.x, mouse.y)
+            overText = h && root.selectionModel
+                ? root.selectionModel.overText(h.page, h.pos) : false
+            overLink = h && root.selectionModel
+                ? root.selectionModel.linkAt(h.page, h.pos).found : false
         }
 
         onReleased: function(mouse) {
