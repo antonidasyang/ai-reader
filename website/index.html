@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Reader · LLM 驱动的论文阅读器</title>
+<meta name="description" content="AI Reader 是一款桌面论文阅读器：选中即译、段落对照、全文解读、随文对话，课题文献库云端协作。">
+<link rel="icon" href="/dl/app-64.png">
+<style>
+:root{
+  --ink:#1c2b3a;
+  --muted:#5d6e80;
+  --ground:#edf1f5;
+  --paper:#ffffff;
+  --accent:#0b6bcb;
+  --accent-deep:#095aa9;
+  --select:rgba(11,107,203,.16);
+  --deep:#14212e;
+  --line:#dbe3ea;
+  --radius:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+  color:var(--ink);background:var(--ground);
+  line-height:1.7;font-size:16px;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+/* ── Nav ─────────────────────────────────────────────── */
+nav{padding:20px 0}
+.nav-row{display:flex;align-items:center;gap:12px}
+.nav-row img{width:32px;height:32px;border-radius:7px}
+.wordmark{font-weight:700;font-size:18px;letter-spacing:.01em}
+.nav-links{margin-left:auto;display:flex;align-items:center;gap:20px;font-size:14px}
+.nav-links a{color:var(--muted)}
+.nav-links a.btn-s{color:#fff}
+
+/* ── Buttons ─────────────────────────────────────────── */
+.btn{
+  display:inline-block;background:var(--accent);color:#fff;
+  padding:12px 26px;border-radius:9px;font-weight:600;font-size:15px;
+  transition:background .12s ease;
+}
+.btn:hover{background:var(--accent-deep);text-decoration:none}
+.btn-s{background:var(--accent);color:#fff;padding:7px 16px;border-radius:7px;font-weight:600}
+.btn-s:hover{background:var(--accent-deep);text-decoration:none}
+
+/* ── Hero ────────────────────────────────────────────── */
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;padding:56px 0 72px}
+.hero h1{font-size:44px;line-height:1.25;font-weight:800;letter-spacing:-.01em}
+.hero .sub{margin-top:18px;font-size:17px;color:var(--muted);max-width:26em}
+.hero .cta{margin-top:30px;display:flex;align-items:center;gap:18px}
+.cta .alt{font-size:14px;color:var(--muted)}
+.byok{margin-top:22px;font-size:13px;color:var(--muted)}
+.byok b{color:var(--ink);font-weight:600}
+
+/* ── 仿论文页（签名元素）────────────────────────────── */
+.stage{position:relative;min-height:430px}
+.paperpage{
+  background:var(--paper);border-radius:6px;
+  box-shadow:0 2px 6px rgba(28,43,58,.08),0 18px 44px rgba(28,43,58,.14);
+  padding:30px 30px 36px;
+  font-family:Georgia,"Times New Roman",serif;
+  color:#2a2f36;
+}
+.paperpage .phead{
+  display:flex;justify-content:space-between;
+  font-size:9px;letter-spacing:.08em;color:#9aa4ad;
+  border-bottom:1px solid #e7ebee;padding-bottom:8px;margin-bottom:14px;
+  font-family:inherit;
+}
+.paperpage .ptitle{font-size:15px;text-align:center;margin-bottom:4px;font-weight:700}
+.paperpage .pauth{font-size:9.5px;text-align:center;color:#7b858e;margin-bottom:14px}
+.pcols{columns:2;column-gap:18px;font-size:9.5px;line-height:1.65;text-align:justify;hyphens:auto}
+.pcols p{margin-bottom:8px}
+.pcols .sec{font-weight:700;font-size:10px;margin:6px 0 4px;column-span:none}
+.hl{
+  background-image:linear-gradient(var(--select),var(--select));
+  background-repeat:no-repeat;background-size:100% 100%;
+  border-radius:2px;
+}
+/* 译文卡：应用翻译栏的悬浮复刻 */
+.transcard{
+  position:absolute;right:-14px;bottom:-26px;width:min(340px,86%);
+  background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:0 20px 48px rgba(28,43,58,.22);
+  overflow:hidden;
+}
+.transcard .tchead{
+  display:flex;align-items:center;gap:8px;
+  font-size:12px;color:var(--muted);
+  padding:9px 14px;border-bottom:1px solid var(--line);background:#f7fafc;
+}
+.tchead .dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.transcard .tcbody{padding:13px 16px;font-size:13.5px;line-height:1.8}
+
+/* 扫选高亮 + 卡片浮现（仅在允许动效时） */
+@media (prefers-reduced-motion: no-preference){
+  .hl{background-size:0% 100%;animation:sweep .9s ease-out .5s forwards}
+  .transcard{opacity:0;transform:translateY(14px);animation:rise .5s ease-out 1.5s forwards}
+  @keyframes sweep{to{background-size:100% 100%}}
+  @keyframes rise{to{opacity:1;transform:none}}
+}
+
+/* ── 四窗格 ──────────────────────────────────────────── */
+.panes{padding:26px 0 8px}
+.eyebrow{font-size:13px;letter-spacing:.22em;color:var(--accent);font-weight:700;margin-bottom:10px}
+h2{font-size:30px;font-weight:800;margin-bottom:34px;letter-spacing:-.01em}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.card{
+  background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+  padding:24px 26px;
+}
+.card h3{font-size:18px;margin:14px 0 8px}
+.card p{font-size:14.5px;color:var(--muted)}
+/* 骨架小插画：统一的灰条语言 */
+.sk{height:64px;display:flex;gap:10px;align-items:stretch}
+.sk .col{flex:1;display:flex;flex-direction:column;gap:6px;justify-content:center}
+.bar{height:7px;border-radius:4px;background:#e3e9ee}
+.bar.w60{width:60%}.bar.w80{width:80%}.bar.w45{width:45%}
+.bar.acc{background:var(--select)}
+.bar.blue{background:var(--accent);opacity:.85}
+.sk .bubble{border-radius:10px;background:#e3e9ee;height:18px;width:70%}
+.sk .bubble.me{background:var(--select);align-self:flex-end;width:55%}
+
+/* ── 三条小特性 ─────────────────────────────────────── */
+.strip{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;padding:34px 0 60px}
+.strip .item{font-size:14px;color:var(--muted)}
+.strip b{display:block;color:var(--ink);font-size:15px;margin-bottom:4px}
+
+/* ── 云端协作深色带 ─────────────────────────────────── */
+.cloud{background:var(--deep);color:#dbe5ee;padding:64px 0}
+.cloud .eyebrow{color:#7fb4e8}
+.cloud h2{color:#fff}
+.cloud .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:26px;margin-top:6px}
+.cloud h4{font-size:16px;color:#fff;margin-bottom:6px}
+.cloud p{font-size:14px;color:#9fb0c0}
+
+/* ── 下载 ────────────────────────────────────────────── */
+.download{padding:72px 0}
+.dl-card{
+  background:var(--paper);border:1px solid var(--line);border-radius:16px;
+  padding:40px 44px;display:flex;align-items:center;gap:36px;flex-wrap:wrap;
+  box-shadow:0 10px 30px rgba(28,43,58,.07);
+}
+.dl-card img{width:64px;height:64px;border-radius:14px}
+.dl-main{flex:1;min-width:240px}
+.dl-main h3{font-size:22px;margin-bottom:4px}
+.dl-main p{font-size:14px;color:var(--muted)}
+.dl-side{text-align:right}
+.dl-side .meta{font-size:13px;color:var(--muted);margin-top:10px}
+
+/* ── Footer ──────────────────────────────────────────── */
+footer{padding:34px 0 44px;font-size:13px;color:var(--muted);display:flex;gap:18px;flex-wrap:wrap}
+footer .spacer{flex:1}
+
+/* ── 响应式 ─────────────────────────────────────────── */
+@media (max-width:920px){
+  .hero{grid-template-columns:1fr;padding-bottom:96px}
+  .stage{min-height:0;margin-top:8px}
+  .transcard{right:8px;bottom:-30px}
+  .grid{grid-template-columns:1fr}
+  .strip{grid-template-columns:1fr;gap:16px}
+  .cloud .grid4{grid-template-columns:1fr 1fr}
+  .hero h1{font-size:34px}
+  .dl-side{text-align:left}
+}
+</style>
+</head>
+<body>
+
+<nav class="wrap">
+  <div class="nav-row">
+    <img src="/dl/app-256.png" alt="">
+    <span class="wordmark">AI Reader</span>
+    <div class="nav-links">
+      <a href="https://github.com/antonidasyang/ai-reader">GitHub</a>
+      <a class="btn-s" href="#download">下载</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <div>
+    <h1>论文，读得更快，<br>也读得更深。</h1>
+    <p class="sub">AI Reader 是一款桌面阅读器：选中即译、段落对照、全文解读、随文对话。翻译和解读贴着原文走，不打断你的阅读。</p>
+    <div class="cta">
+      <a class="btn" href="#download">下载 Windows 版</a>
+      <span class="alt">macOS 版内测中</span>
+    </div>
+    <p class="byok"><b>用你自己的模型。</b>支持 Anthropic / OpenAI / DeepSeek 及任意兼容端点，API Key 存在本机系统钥匙串里。</p>
+  </div>
+
+  <div class="stage" aria-hidden="true">
+    <div class="paperpage">
+      <div class="phead"><span>J. RES. READING · VOL. 12</span><span>147</span></div>
+      <div class="ptitle">Attention and the Craft of Reading Research</div>
+      <div class="pauth">L. Chen &nbsp;·&nbsp; M. Okada &nbsp;·&nbsp; School of Information Science</div>
+      <div class="pcols">
+        <p class="sec">1&nbsp;&nbsp;INTRODUCTION</p>
+        <p>Researchers spend a large share of their working hours with the literature, yet the craft of reading itself is rarely taught. A paper is not a linear text: its argument lives in the abstract, its truth in the tables, and its caveats in the margins.</p>
+        <p><span class="hl">A structured reading proceeds in passes: a first pass for the shape of the argument, a second for its evidence, and a third for the details that resist summary. Most time is lost not in reading, but in re-reading without a map.</span></p>
+        <p class="sec">2&nbsp;&nbsp;METHOD</p>
+        <p>We observed sixty graduate students across three cohorts as they worked through an unfamiliar corpus, recording where attention settled and where it slipped. Sections were annotated against a taxonomy of reading intents.</p>
+        <p>The resulting traces suggest that comprehension follows structure: readers who recovered the outline of a paper first retained more of its argument, at every level of expertise we measured.</p>
+      </div>
+    </div>
+    <div class="transcard">
+      <div class="tchead"><span class="dot"></span>段落对照 · 已翻译</div>
+      <div class="tcbody">结构化的阅读分几轮进行：第一轮看论证的骨架，第二轮看证据，第三轮才处理那些无法被摘要的细节。大多数时间不是浪费在阅读上，而是浪费在没有地图的重读上。</div>
+    </div>
+  </div>
+</header>
+
+<section class="panes wrap">
+  <div class="eyebrow">四个窗格</div>
+  <h2>一篇论文需要的，都在一屏里</h2>
+  <div class="grid">
+    <div class="card">
+      <div class="sk">
+        <div class="col"><span class="bar"></span><span class="bar w80"></span><span class="bar w60"></span></div>
+        <div class="col"><span class="bar acc"></span><span class="bar acc w80"></span><span class="bar acc w45"></span></div>
+      </div>
+      <h3>段落对照翻译</h3>
+      <p>智能分段（内置 GROBID 支持），跨栏、跨页的段落也完整对照。整篇翻译，或只翻你选中的那段。</p>
+    </div>
+    <div class="card">
+      <div class="sk">
+        <div class="col">
+          <span class="bar w60"></span>
+          <span class="bar blue w45" style="margin-left:14px"></span>
+          <span class="bar w45" style="margin-left:14px"></span>
+          <span class="bar w60"></span>
+        </div>
+      </div>
+      <h3>章节目录</h3>
+      <p>自动生成结构化目录，点击直达对应章节，长论文不再迷路。</p>
+    </div>
+    <div class="card">
+      <div class="sk">
+        <div class="col"><span class="bar acc"></span><span class="bar acc w80"></span></div>
+        <div class="col"><span class="bar"></span><span class="bar w80"></span><span class="bar w60"></span></div>
+      </div>
+      <h3>论文解读</h3>
+      <p>打开即有全文摘要——问题、方法、结论一屏读完，再决定要不要精读。</p>
+    </div>
+    <div class="card">
+      <div class="sk">
+        <div class="col"><span class="bubble"></span><span class="bubble me"></span><span class="bubble" style="width:55%"></span></div>
+      </div>
+      <h3>随文对话</h3>
+      <p>基于全文的 AI 问答；PDF 里选中的原文一键引用进对话，公式用 LaTeX 原样渲染。</p>
+    </div>
+  </div>
+
+  <div class="strip">
+    <div class="item"><b>浏览器级的文本选择</b>跨页拖选、双击选词、三击选段，复制出的是拼好的完整段落。</div>
+    <div class="item"><b>数学公式渲染</b>正文与对话中的公式经 MicroTeX 排版，不再是乱码。</div>
+    <div class="item"><b>自动更新</b>新版本发布后应用内提示，一键升级。</div>
+  </div>
+</section>
+
+<section class="cloud">
+  <div class="wrap">
+    <div class="eyebrow">课题协作</div>
+    <h2>一个课题，一个共享文献库</h2>
+    <div class="grid4">
+      <div><h4>云端文献库</h4><p>按课题组织文献，题录自动补全（DOI / arXiv），全文检索。</p></div>
+      <div><h4>成员与角色</h4><p>owner / editor / viewer 三种角色，按邮箱邀请成员。</p></div>
+      <div><h4>CAS 单点登录</h4><p>浏览器一键登录，应用内不保存密码。</p></div>
+      <div><h4>离线优先</h4><p>断网照常读写，联网自动同步，AI 解读可共享给课题成员。</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="download wrap" id="download">
+  <div class="eyebrow">下载</div>
+  <h2>现在开始读</h2>
+  <div class="dl-card">
+    <img src="/dl/app-256.png" alt="AI Reader 图标">
+    <div class="dl-main">
+      <h3>AI Reader for Windows</h3>
+      <p>Windows 10 / 11 · 64 位 · 28.8 MB · 安装后自动检查更新</p>
+    </div>
+    <div class="dl-side">
+      <a class="btn" href="/dl/AiReader-Setup-0.2.0.exe">下载安装包</a>
+      <div class="meta">v0.2.0 · macOS 版内测中</div>
+    </div>
+  </div>
+</section>
+
+<footer class="wrap">
+  <span>© 2026 d2ssoft · AI Reader</span>
+  <span class="spacer"></span>
+  <a href="https://github.com/antonidasyang/ai-reader">源代码</a>
+  <a href="https://aireader.d2ssoft.com/health">服务状态</a>
+</footer>
+
+</body>
+</html>
