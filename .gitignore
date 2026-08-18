@@ -1,6 +1,7 @@
 build/
 build-*/
 build_ninja/
+tmp/
 dist/
 installer/Output/
 *.user

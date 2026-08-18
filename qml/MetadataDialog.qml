@@ -161,7 +161,7 @@ Dialog {
         background: Rectangle {
             radius: Theme.radiusS
             color: ab.primary
-                   ? (ab.down ? Theme.accentPressed : ab.hovered ? Theme.accentHover : Theme.accent)
+                   ? (ab.down ? Theme.primaryPressed : ab.hovered ? Theme.primaryHover : Theme.primaryBg)
                    : (ab.down ? Theme.buttonPressed : ab.hovered ? Theme.buttonHover : Theme.buttonBg)
             border.width: ab.primary ? 0 : 1
             border.color: ab.visualFocus ? Theme.accent : Theme.border

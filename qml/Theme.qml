@@ -45,7 +45,13 @@ QtObject {
     readonly property color fieldBorder: dark ? "#44474d" : "#d7dade"
     readonly property color focusRing:   Qt.alpha(accent, dark ? 0.35 : 0.22)
 
-    // ── Buttons (primary = accent-filled, secondary = quiet) ───────────
+    // ── Buttons (primary = filled, secondary = quiet) ──────────────────
+    // Primary fill gets its own trio instead of raw `accent`: accent
+    // (Material blue 800 in light mode) is tuned for links/focus rings
+    // and reads harsh as a large filled surface. Light = Fluent blue.
+    readonly property color primaryBg:      dark ? "#7aa7ff" : "#0078d4"
+    readonly property color primaryHover:   dark ? "#8db4ff" : "#106ebe"
+    readonly property color primaryPressed: dark ? "#6b95e8" : "#005a9e"
     readonly property color onAccent:      dark ? "#10131a" : "#ffffff"
     readonly property color accentHover:   dark ? "#8db4ff" : "#1a70d6"
     readonly property color accentPressed: dark ? "#6b95e8" : "#11529c"

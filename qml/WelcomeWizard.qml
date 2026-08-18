@@ -116,7 +116,7 @@ Popup {
         background: Rectangle {
             radius: Theme.radiusS
             color: ab.primary
-                   ? (ab.down ? Theme.accentPressed : ab.hovered ? Theme.accentHover : Theme.accent)
+                   ? (ab.down ? Theme.primaryPressed : ab.hovered ? Theme.primaryHover : Theme.primaryBg)
                    : ab.ghost
                      ? (ab.down ? Theme.buttonPressed : ab.hovered ? Theme.buttonHover : "transparent")
                      : (ab.down ? Theme.buttonPressed : ab.hovered ? Theme.buttonHover : Theme.buttonBg)
