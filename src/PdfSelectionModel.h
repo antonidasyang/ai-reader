@@ -56,6 +56,9 @@ public:
     Q_INVOKABLE QVariantMap linkAt(int page, QPointF pagePos) const;
     // Test/diagnostic hook: the visual line rectangles hit-testing uses.
     Q_INVOKABLE QList<QRectF> debugLineRects(int page) const;
+    // Build a page's line structures ahead of the first click — the
+    // view calls this as page delegates instantiate.
+    Q_INVOKABLE void warmPage(int page) const;
 
     // Paragraph rectangles from the app's block model (clusterer or
     // GROBID). Triple-click selects one of these, so it matches what
@@ -80,8 +83,6 @@ private:
         int start = 0;                 // first char (page-text index)
         int end = 0;                   // one past last char (excl. \r\n)
         QRectF bbox;
-        // Lazy caret x-positions: end-start+1 monotonic boundaries.
-        mutable QVector<qreal> carets;
     };
     struct PageData {
         bool loaded = false;
@@ -98,7 +99,15 @@ private:
     void paraRange(const TextPos &pos, QPointF pagePos,
                    TextPos &s, TextPos &e) const;
     int lineIndexOf(const PageData &pd, int charIdx) const;
-    void ensureCarets(int page, const LineInfo &ln) const;
+    // First valid glyph box at or shortly after char i (skips spaces
+    // and off-baseline strays); *at receives the char it belongs to.
+    QRectF boxNear(int page, const LineInfo &ln, int i, int cap,
+                   int *at) const;
+    // Caret index for a click at x — binary search over glyph boxes
+    // (~8 PDFium calls) instead of materializing every caret in the
+    // line (~100 calls, each contending with page rendering for
+    // QtPdf's global PDFium lock — the source of click lag).
+    int caretIndexAt(int page, const LineInfo &ln, qreal x) const;
     TextPos selStart() const;
     TextPos selEnd() const;
     bool pageRange(int page, int *from, int *to) const;

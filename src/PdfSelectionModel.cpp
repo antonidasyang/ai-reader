@@ -206,38 +206,49 @@ PdfSelectionModel::lineAt(int page, QPointF pos, bool *inside) const
     return best;
 }
 
-void PdfSelectionModel::ensureCarets(int page, const LineInfo &ln) const
+QRectF PdfSelectionModel::boxNear(int page, const LineInfo &ln, int i,
+                                  int cap, int *at) const
 {
-    if (!ln.carets.isEmpty() || ln.end <= ln.start)
-        return;
-    const int n = ln.end - ln.start;
-    ln.carets.resize(n + 1);
     const qreal h = qMax<qreal>(1, ln.bbox.height());
-    qreal last = ln.bbox.left();
-    for (int k = 0; k < n; ++k) {
-        QRectF bb = boundsRect(
-            m_doc->getSelectionAtIndex(page, ln.start + k, 1));
-        // Line ranges are approximate at split boundaries (width-
-        // proportional estimate): a char whose real box sits on a
-        // different baseline belongs to a neighboring line — treat it
-        // like a space so it can't attract clicks.
-        if (!bb.isNull()
-            && (bb.center().y() < ln.bbox.top() - h
-                || bb.center().y() > ln.bbox.bottom() + h))
-            bb = QRectF();
-        if (!bb.isNull() && bb.width() > 0) {
-            ln.carets[k] = bb.left();
-            last = bb.right();
+    const int stop = qMin(cap, i + 6);
+    for (int j = i; j < stop; ++j) {
+        const QRectF bb = boundsRect(m_doc->getSelectionAtIndex(page, j, 1));
+        if (bb.isNull() || bb.width() <= 0)
+            continue;   // space / synthesized char
+        // Line ranges are approximate at split boundaries: a char
+        // whose real box sits on another baseline belongs to a
+        // neighboring line — skip it so it can't attract clicks.
+        if (bb.center().y() < ln.bbox.top() - h
+            || bb.center().y() > ln.bbox.bottom() + h)
+            continue;
+        *at = j;
+        return bb;
+    }
+    return QRectF();
+}
+
+int PdfSelectionModel::caretIndexAt(int page, const LineInfo &ln,
+                                    qreal x) const
+{
+    int lo = ln.start;
+    int hi = ln.end;
+    while (lo < hi) {
+        const int mid = lo + (hi - lo) / 2;
+        int at = mid;
+        const QRectF b = boxNear(page, ln, mid, hi, &at);
+        if (b.isNull()) {
+            // Only spaces between mid and hi: the caret is not past
+            // them.
+            hi = mid;
+        } else if (x < b.left()) {
+            hi = at;   // boxNear caps at < hi, so this always narrows
+        } else if (x > b.right()) {
+            lo = at + 1;
         } else {
-            // Space / synthesized char without a glyph box: continue
-            // from the previous char's right edge.
-            ln.carets[k] = last;
+            return x - b.left() <= b.right() - x ? at : at + 1;
         }
     }
-    ln.carets[n] = last;
-    for (int k = 1; k <= n; ++k)
-        if (ln.carets[k] < ln.carets[k - 1])
-            ln.carets[k] = ln.carets[k - 1];
+    return lo;
 }
 
 PdfSelectionModel::TextPos
@@ -248,22 +259,18 @@ PdfSelectionModel::posAt(int page, QPointF pos, bool *insideText) const
     p.idx = 0;
     bool inside = false;
     const LineInfo *ln = lineAt(page, pos, &inside);
-    if (ln) {
-        ensureCarets(page, *ln);
-        // Nearest caret boundary to pos.x — carets[] is monotonic.
-        const int n = ln->end - ln->start;
-        int k = int(std::lower_bound(ln->carets.begin(), ln->carets.end(),
-                                     pos.x())
-                    - ln->carets.begin());
-        if (k > 0 && (k > n
-                      || pos.x() - ln->carets[k - 1]
-                         < ln->carets[qMin(k, n)] - pos.x()))
-            --k;
-        p.idx = ln->start + qBound(0, k, n);
-    }
+    if (ln)
+        p.idx = qBound(ln->start, caretIndexAt(page, *ln, pos.x()),
+                       ln->end);
     if (insideText)
         *insideText = inside;
     return p;
+}
+
+void PdfSelectionModel::warmPage(int page) const
+{
+    if (docReady() && page >= 0 && page < m_doc->pageCount())
+        pageData(page);
 }
 
 int PdfSelectionModel::lineIndexOf(const PageData &pd, int charIdx) const

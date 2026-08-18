@@ -7,6 +7,7 @@ set(CMAKE_AUTOMOC ON)
 
 set(_aireader_qt_components
     Core
+    Concurrent    # async paragraph extraction off the GUI thread
     Gui
     Network
     Sql           # local SQLite library store + FTS5 (cloud-sync feature)
@@ -457,6 +458,7 @@ endif()
 
 target_link_libraries(ai-reader PRIVATE
     Qt6::Core
+    Qt6::Concurrent
     Qt6::Gui
     Qt6::Network
     Qt6::Qml

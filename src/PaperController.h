@@ -3,6 +3,7 @@
 #include "BlockCache.h"
 #include "BlockListModel.h"
 
+#include <QFutureWatcher>
 #include <QImage>
 #include <QObject>
 #include <QPdfDocument>
@@ -96,6 +97,12 @@ signals:
 private:
     void reload();
     void setStatus(Status s, const QString &err = {});
+    // Paragraph extraction runs on a worker thread with its OWN
+    // QPdfDocument: extraction and page rendering both funnel through
+    // QtPdf's global PDFium lock, so doing it on the GUI thread froze
+    // the window for seconds while the first pages rendered.
+    void startAsyncExtraction();
+    void onExtractionFinished();
 
     QPdfDocument m_doc;
     BlockListModel m_model;
@@ -108,6 +115,8 @@ private:
     // True once the user split/merged/deleted a paragraph in this
     // paper — blocks applyStructuredBlocks from clobbering edits.
     bool m_blocksEdited = false;
+    QFutureWatcher<QVector<Block>> m_extractWatcher;
+    QString m_extractPaperId;   // which paper the running job is for
     Status m_status = Empty;
     QString m_errorString;
     QSettings m_qs;

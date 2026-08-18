@@ -6,6 +6,7 @@
 #include <QFileInfo>
 #include <QSize>
 #include <QSizeF>
+#include <QtConcurrent>
 
 namespace {
 constexpr auto kKeyLastUrl = "paper/lastUrl";
@@ -45,6 +46,8 @@ PaperController::PaperController(QObject *parent)
     // doesn't see them and rehydrate / cancel translations.
     connect(&m_model, &BlockListModel::blockMetaChanged,
             this, [this]() { m_blockCache.setBlocks(m_model.allBlocks()); });
+    connect(&m_extractWatcher, &QFutureWatcher<QVector<Block>>::finished,
+            this, &PaperController::onExtractionFinished);
 }
 
 QString PaperController::fileName() const
@@ -157,21 +160,20 @@ void PaperController::reload()
         // otherwise run automatic extraction and seed the cache so
         // future opens skip clustering and any later edits are
         // preserved.
-        QVector<Block> blocks;
-        const bool fresh = !m_blockCache.hasBlocks();
-        if (fresh) {
-            blocks = BlockClusterer::extract(m_doc);
-            m_blockCache.setBlocks(blocks);
-        } else {
-            blocks = m_blockCache.blocks();
-        }
         m_blocksEdited = false;
-        m_model.setBlocks(std::move(blocks));
-        emit blocksChanged();
-        setStatus(Ready);
-        // After Ready so StructureService sees a fully-loaded paper.
-        if (fresh)
-            emit autoExtracted();
+        if (m_blockCache.hasBlocks()) {
+            m_model.setBlocks(m_blockCache.blocks());
+            emit blocksChanged();
+            setStatus(Ready);
+        } else {
+            // Show the paper immediately; paragraphs stream in when
+            // the extraction worker finishes (autoExtracted → GROBID
+            // then chains off that result as before).
+            m_model.clear();
+            emit blocksChanged();
+            setStatus(Ready);
+            startAsyncExtraction();
+        }
         break;
     }
     case QPdfDocument::Error::IncorrectPassword:
@@ -201,9 +203,48 @@ void PaperController::rebuildBlocks()
 {
     if (m_status != Ready) return;
     m_blockCache.clear();
-    QVector<Block> blocks = BlockClusterer::extract(m_doc);
-    m_blockCache.setBlocks(blocks);
     m_blocksEdited = false;
+    m_model.clear();
+    emit blocksChanged();
+    startAsyncExtraction();
+}
+
+void PaperController::startAsyncExtraction()
+{
+    if (!m_source.isLocalFile()) {
+        // Remote sources are already fully loaded into m_doc; the
+        // (rare) synchronous path is acceptable there.
+        QVector<Block> blocks = BlockClusterer::extract(m_doc);
+        m_blockCache.setBlocks(blocks);
+        m_model.setBlocks(std::move(blocks));
+        emit blocksChanged();
+        emit autoExtracted();
+        return;
+    }
+    const QString path = m_source.toLocalFile();
+    const QString password = m_password;
+    m_extractPaperId = m_paperId;
+    m_extractWatcher.setFuture(QtConcurrent::run([path, password]() {
+        QPdfDocument doc;   // worker-owned: no shared state with the UI
+        doc.setPassword(password);
+        if (doc.load(path) != QPdfDocument::Error::None)
+            return QVector<Block>();
+        return BlockClusterer::extract(doc);
+    }));
+}
+
+void PaperController::onExtractionFinished()
+{
+    // Stale results (paper switched mid-extraction) and anything the
+    // user already touched are dropped, same rules as GROBID swaps.
+    if (m_status != Ready || m_extractPaperId != m_paperId)
+        return;
+    if (m_blocksEdited || m_model.blockCount() > 0)
+        return;
+    QVector<Block> blocks = m_extractWatcher.result();
+    if (blocks.isEmpty())
+        return;
+    m_blockCache.setBlocks(blocks);
     m_model.setBlocks(std::move(blocks));
     emit blocksChanged();
     emit autoExtracted();
