@@ -18,6 +18,12 @@ Q_LOGGING_CATEGORY(lcStructure, "aireader.structure")
 
 namespace {
 
+// Same semantics as the update-manifest URL: an empty Settings value
+// falls through to the canonical public endpoint (the dialog's
+// placeholder shows it), so clearing the field never silently turns
+// GROBID off — the checkbox is the on/off switch.
+constexpr auto kDefaultGrobidUrl = "https://aireader.d2ssoft.com/grobid";
+
 // coords="1,53.4,150.6,247.2,10.7;1,53.4,163.6,..." — 1-based page,
 // x/y of the upper-left corner, w, h, in PDF points (same space QtPdf
 // uses). Page of the block = page of the first box; bbox = union of
@@ -227,8 +233,7 @@ void StructureService::onAutoExtracted()
 {
     if (!m_settings || !m_paper)
         return;
-    if (!m_settings->grobidEnabled()
-        || m_settings->grobidUrl().trimmed().isEmpty())
+    if (!m_settings->grobidEnabled())
         return;
     const QUrl src = m_paper->pdfSource();
     if (!src.isLocalFile())
@@ -255,6 +260,8 @@ void StructureService::startRequest(const QString &pdfPath,
     }
 
     QString base = m_settings->grobidUrl().trimmed();
+    if (base.isEmpty())
+        base = QString::fromLatin1(kDefaultGrobidUrl);
     while (base.endsWith(QLatin1Char('/')))
         base.chop(1);
     const QUrl endpoint(base + QStringLiteral("/api/processFulltextDocument"));
