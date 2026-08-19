@@ -226,7 +226,12 @@ ApplicationWindow {
                 body: qsTr("Open the <b>Chat</b> pane and ask questions. The model can read pages, search the text, and view rendered figures with vision. Each paper keeps its own list of <b>chat sessions</b> in the tab strip on top — + to add, × to close, double-click to rename.")
             },
             {
-                target: auth.authenticated ? accountBtn : signInBtn,
+                // Both buttons: exactly one is visible at a time
+                // (signed out vs in), the spotlight skips the hidden
+                // one, and it tracks auth changes live — a ternary
+                // evaluated at build time went stale once the CAS
+                // session finished restoring.
+                target: [signInBtn, accountBtn],
                 title: qsTr("6 · Sign in to sync"),
                 body: qsTr("Click <b>Sign in</b> to log in through your organisation's CAS page in the browser — the app never stores your password. Signed in, your library lives in the cloud: papers, metadata and AI interpretations sync across devices and stay readable offline.")
             },

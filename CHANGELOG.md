@@ -1,5 +1,11 @@
 # AI Reader changelog
 
+## v1.1.8 — 2026-08-19
+
+- Tour step 6's spotlight no longer drifts to screen center when the
+  CAS session finishes restoring — it now tracks whichever of the
+  Sign in / account buttons is visible.
+
 ## v1.1.7 — 2026-08-19
 
 ### One-click updates
