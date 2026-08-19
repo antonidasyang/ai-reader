@@ -106,45 +106,50 @@ void FileSyncService::uploadPaper(const QString &itemId,
     setBusy(true);
     setStatus(tr("Uploading PDF…"));
 
-    QJsonObject body{{QStringLiteral("sha256"), sha},
-                     {QStringLiteral("contentType"), QStringLiteral("application/pdf")},
-                     {QStringLiteral("byteSize"), static_cast<double>(size)}};
     // We need the item's paperId for the attachment link.
     SyncObjectRow item;
     m_db->getObject(m_projects->currentId(), itemId, item);
     const QString paperId = item.data.value(QStringLiteral("paperId")).toString();
 
-    m_api->post(
+    // Ask first: identical content is stored once for everyone, so a
+    // paper someone else already added needs no upload at all. Going
+    // through ApiClient also refreshes an expired token before the
+    // transfer below, which uses the bearer token directly.
+    m_api->get(
         QStringLiteral("/projects/") + m_projects->currentId()
-            + QStringLiteral("/attachments/upload-url"),
-        body,
+            + QStringLiteral("/attachments/blob-status?sha256=") + sha,
         [this, itemId, paperId, sha, size, path](bool ok, int status,
                                                  const QJsonDocument &doc) {
             if (!ok) {
                 setBusy(false);
-                setStatus(tr("Upload-url failed (HTTP %1)").arg(status));
+                setStatus(tr("Upload check failed (HTTP %1)").arg(status));
                 return;
             }
             const QJsonObject o = doc.object();
-            const QString key = o.value(QStringLiteral("storageKey")).toString().isEmpty()
-                                    ? o.value(QStringLiteral("key")).toString()
-                                    : o.value(QStringLiteral("storageKey")).toString();
-            createAttachment(itemId, paperId, sha, key, size);
+            createAttachment(itemId, paperId, sha,
+                             o.value(QStringLiteral("key")).toString(), size);
             if (o.value(QStringLiteral("exists")).toBool()) {
                 setBusy(false);
                 setStatus(tr("PDF already in storage (deduped)."));
                 return;
             }
-            putBlob(o.value(QStringLiteral("uploadUrl")).toString(), path);
+            putBlob(sha, path);
         });
 }
 
-void FileSyncService::putBlob(const QString &uploadUrl, const QString &localPath)
+QNetworkRequest FileSyncService::blobRequest(const QString &path) const
 {
-    if (uploadUrl.isEmpty()) {
-        setBusy(false);
-        return;
-    }
+    QNetworkRequest req{QUrl(m_api->baseUrl() + path)};
+    req.setRawHeader("Authorization",
+                     "Bearer " + m_api->accessToken().toUtf8());
+    // PDFs are big and the link may be slow; the default 30 s transfer
+    // timeout would abort perfectly healthy uploads.
+    req.setTransferTimeout(600000);
+    return req;
+}
+
+void FileSyncService::putBlob(const QString &sha256, const QString &localPath)
+{
     // Read the PDF fully into memory, then upload from the bytes — rather than
     // handing QNetworkAccessManager a QFile that stays open for the whole
     // upload. Holding a second handle on the very file the viewer's
@@ -161,7 +166,9 @@ void FileSyncService::putBlob(const QString &uploadUrl, const QString &localPath
         }
         bytes = file.readAll();
     }
-    QNetworkRequest req{QUrl(uploadUrl)};
+    QNetworkRequest req = blobRequest(
+        QStringLiteral("/projects/") + m_projects->currentId()
+        + QStringLiteral("/attachments/blob?sha256=") + sha256);
     req.setHeader(QNetworkRequest::ContentTypeHeader,
                   QStringLiteral("application/pdf"));
     QNetworkReply *reply = m_nam.put(req, bytes);
@@ -199,18 +206,27 @@ void FileSyncService::downloadBlob(const QString &key, const QString &sha256)
 {
     setBusy(true);
     setStatus(tr("Downloading PDF…"));
+    // Cheap authenticated probe first: confirms the blob is really
+    // there (a clearer error than a failed transfer) and gives
+    // ApiClient the chance to refresh an expired token before the
+    // bearer-token transfer below.
     m_api->get(
         QStringLiteral("/projects/") + m_projects->currentId()
-            + QStringLiteral("/attachments/download-url?key=") + key,
-        [this, sha256](bool ok, int status, const QJsonDocument &doc) {
+            + QStringLiteral("/attachments/blob-status?sha256=") + sha256,
+        [this, key, sha256](bool ok, int status, const QJsonDocument &doc) {
             if (!ok) {
                 setBusy(false);
-                setStatus(tr("Download-url failed (HTTP %1)").arg(status));
+                setStatus(tr("Download failed (HTTP %1)").arg(status));
                 return;
             }
-            const QString url =
-                doc.object().value(QStringLiteral("downloadUrl")).toString();
-            QNetworkReply *reply = m_nam.get(QNetworkRequest{QUrl(url)});
+            if (!doc.object().value(QStringLiteral("exists")).toBool()) {
+                setBusy(false);
+                setStatus(tr("This paper's PDF isn't in storage yet."));
+                return;
+            }
+            QNetworkReply *reply = m_nam.get(blobRequest(
+                QStringLiteral("/projects/") + m_projects->currentId()
+                + QStringLiteral("/attachments/blob?key=") + key));
             connect(reply, &QNetworkReply::finished, this, [this, reply, sha256] {
                 const QByteArray bytes = reply->readAll();
                 const int s = reply->attribute(

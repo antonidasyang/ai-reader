@@ -404,57 +404,70 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation>正在上传 PDF…</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="125"/>
         <source>Upload-url failed (HTTP %1)</source>
-        <translation>获取上传地址失败(HTTP %1)</translation>
+        <translation type="vanished">获取上传地址失败(HTTP %1)</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="135"/>
+        <location filename="../src/FileSyncService.cpp" line="125"/>
+        <source>Upload check failed (HTTP %1)</source>
+        <translation>上传前检查失败(HTTP %1)</translation>
+    </message>
+    <message>
+        <location filename="../src/FileSyncService.cpp" line="133"/>
         <source>PDF already in storage (deduped).</source>
         <translation>PDF 已在存储中(已去重)。</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="159"/>
+        <location filename="../src/FileSyncService.cpp" line="164"/>
         <source>Could not open the PDF.</source>
         <translation>无法打开 PDF。</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="173"/>
+        <location filename="../src/FileSyncService.cpp" line="180"/>
         <source>PDF uploaded.</source>
         <translation>PDF 已上传。</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="174"/>
+        <location filename="../src/FileSyncService.cpp" line="181"/>
         <source>PDF upload failed (HTTP %1)</source>
         <translation>PDF 上传失败(HTTP %1)</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="187"/>
+        <location filename="../src/FileSyncService.cpp" line="194"/>
         <source>This paper&apos;s PDF isn&apos;t available yet.</source>
         <translation>这篇文献的 PDF 还不可用。</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="201"/>
+        <location filename="../src/FileSyncService.cpp" line="208"/>
         <source>Downloading PDF…</source>
         <translation>正在下载 PDF…</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="208"/>
-        <source>Download-url failed (HTTP %1)</source>
-        <translation>获取下载地址失败(HTTP %1)</translation>
+        <location filename="../src/FileSyncService.cpp" line="219"/>
+        <source>Download failed (HTTP %1)</source>
+        <translation>下载失败(HTTP %1)</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="221"/>
+        <location filename="../src/FileSyncService.cpp" line="224"/>
+        <source>This paper&apos;s PDF isn&apos;t in storage yet.</source>
+        <translation>这篇论文的 PDF 尚未上传到云端。</translation>
+    </message>
+    <message>
+        <source>Download-url failed (HTTP %1)</source>
+        <translation type="vanished">获取下载地址失败(HTTP %1)</translation>
+    </message>
+    <message>
+        <location filename="../src/FileSyncService.cpp" line="237"/>
         <source>PDF download failed (HTTP %1)</source>
         <translation>PDF 下载失败(HTTP %1)</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="228"/>
+        <location filename="../src/FileSyncService.cpp" line="244"/>
         <source>PDF downloaded.</source>
         <translation>PDF 已下载。</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="231"/>
+        <location filename="../src/FileSyncService.cpp" line="247"/>
         <source>Could not save the downloaded PDF.</source>
         <translation>无法保存下载的 PDF。</translation>
     </message>

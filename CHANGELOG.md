@@ -1,5 +1,18 @@
 # AI Reader changelog
 
+## v1.1.12 — 2026-08-20
+
+### Library PDFs sync outside the office network
+- **PDF uploads and downloads now go through the API host** instead of
+  straight to object storage. The old route handed the client a
+  presigned URL pointing at an internal address, so adding a paper —
+  or opening a colleague's paper on another machine — only worked on
+  the office network and failed silently everywhere else. Bytes now
+  travel over the same host as everything else, with the same login;
+  storage is no longer exposed to clients at all. Uploads are still
+  deduplicated by content hash, so a paper someone else already added
+  uploads nothing.
+
 ## v1.1.11 — 2026-08-20
 
 ### Projects can be renamed and deleted

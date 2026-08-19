@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   CreateBucketCommand,
+  DeleteObjectCommand,
   GetObjectCommand,
   HeadBucketCommand,
   HeadObjectCommand,
@@ -63,6 +64,42 @@ export class S3Service implements OnModuleInit {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Stream bytes straight into object storage. Used by the attachment
+   * upload route so clients never talk to the storage endpoint
+   * themselves — the same reason update downloads are proxied.
+   * contentLength is required: without it the SDK would have to buffer
+   * the whole body in memory to compute it.
+   */
+  async putObject(
+    key: string,
+    body: Readable,
+    contentLength: number,
+    contentType?: string,
+  ): Promise<void> {
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: body,
+        ContentLength: contentLength,
+        ContentType: contentType,
+      }),
+    );
+  }
+
+  /**
+   * Only for undoing a bad write (e.g. a body whose sha256 didn't match
+   * the key it was uploaded under). Blobs are content-addressed and
+   * shared across projects, so nothing else may delete them without
+   * refcounting first.
+   */
+  async deleteObject(key: string): Promise<void> {
+    await this.client.send(
+      new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
+    );
   }
 
   presignUpload(key: string, contentType?: string): Promise<string> {

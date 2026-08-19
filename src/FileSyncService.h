@@ -11,11 +11,16 @@ class ProjectController;
 class SyncEngine;
 
 // Syncs the actual PDF bytes (not just metadata). On add, the file is hashed
-// (sha256), uploaded to content-addressed object storage via a presigned URL
-// (deduped server-side), and an "attachment" object links the item to the blob.
-// On open, if the local file is gone (e.g. another machine) the blob is fetched
-// to a local cache and opened. Direct S3 transfers use this class's own NAM;
-// presign requests go through ApiClient.
+// (sha256), uploaded to content-addressed object storage (deduped server-side),
+// and an "attachment" object links the item to the blob. On open, if the local
+// file is gone (e.g. another machine) the blob is fetched to a local cache and
+// opened.
+//
+// Bytes travel through the API host, not straight to object storage: the
+// storage endpoint is internal, so the older presigned-URL route only worked
+// on the office network. Transfers use this class's own NAM (ApiClient is
+// JSON-only) with the same bearer token; every transfer is preceded by a
+// small ApiClient call so an expired token is refreshed before the big one.
 class FileSyncService : public QObject
 {
     Q_OBJECT
@@ -45,7 +50,10 @@ private:
                           const QString &sha256, const QString &key,
                           qint64 byteSize);
     bool findAttachment(const QString &itemId, QString &key, QString &sha256) const;
-    void putBlob(const QString &uploadUrl, const QString &localPath);
+    // Authenticated request against the API host, for the byte transfers
+    // ApiClient's JSON interface can't carry.
+    QNetworkRequest blobRequest(const QString &path) const;
+    void putBlob(const QString &sha256, const QString &localPath);
     void downloadBlob(const QString &key, const QString &sha256);
     void setStatus(const QString &s);
     void setBusy(bool v);
