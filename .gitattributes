@@ -1,0 +1,9 @@
+# Windows-consumed scripts must materialize with CRLF endings on
+# checkout: cmd.exe's batch parser mis-splits lines in LF-only files
+# (it "works" until a byte-offset shift makes it eat characters —
+# which broke windeploy.bat once already). eol=crlf makes every
+# checkout CRLF regardless of core.autocrlf, on every platform.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.iss text eol=crlf
+*.ps1 text eol=crlf

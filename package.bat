@@ -64,7 +64,7 @@ if not exist "%ROOT%dist\vcruntime140_1.dll" goto :vc_missing
 if not exist "%ROOT%dist\msvcp140.dll"       goto :vc_missing
 :vc_ok
 
-REM --- Hard gate: Qt's own translation catalogs must be deployed -----------
+REM --- Hard gate: Qt's own translation catalogs must be in dist ------------
 REM Standard dialog buttons (OK/Cancel/Close) come from Qt's catalogs,
 REM not our app .qm. windeploy.bat deploys them via --translations;
 REM if this file is missing, packaged builds silently show English

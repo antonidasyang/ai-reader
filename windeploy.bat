@@ -138,7 +138,7 @@ REM                        not found" because they have never installed
 REM                        the Visual C++ Redistributable. Adds about 1MB.
 REM   --translations       Deploy Qt's OWN catalogs (qt_zh_CN.qm etc.)
 REM                        to dist\translations. Our compiled-in .qm
-REM                        files cover only the app's strings — the
+REM                        files cover only the app's strings - the
 REM                        standard dialog buttons (OK/Cancel/Close)
 REM                        come from Qt's catalogs, and without them
 REM                        packaged builds show English buttons on
