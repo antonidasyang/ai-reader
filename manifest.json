@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "latestVersion": "1.1.10",
+  "latestVersion": "1.1.14",
   "releaseDate": "2026-08-20",
-  "releaseNotes": "重新分段真正可用(带进度提示);弹窗标准按钮恢复中文;自动更新完成后自动打开新版本。",
+  "releaseNotes": "修复从文献库打开论文显示空白;PDF 确实存进云端后才记账,并新增「检查 PDF」补传;文献库显示传输状态。",
   "platforms": {
     "windows-x64": {
-      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.10.exe",
-      "sha256": "075d9c681c0ee6a04d15e9a714b30e45540e76b42b651b9850b5f1ec0e68b962"
+      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.14.exe",
+      "sha256": "346f8c2eb1cce7edebb569ba1ebba54f8418a59b4cd5e7c2b1f3c360feb0ef10"
     }
   }
 }
