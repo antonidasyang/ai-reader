@@ -25,6 +25,10 @@ class PaperController : public QObject
     Q_PROPERTY(QString paperId READ paperId NOTIFY blocksChanged)
     Q_PROPERTY(QString currentSelection READ currentSelection NOTIFY currentSelectionChanged)
     Q_PROPERTY(int currentSelectionPage READ currentSelectionPage NOTIFY currentSelectionChanged)
+    // True while the background paragraph extraction runs (initial
+    // open on a cache miss, or an explicit re-segment). Status stays
+    // Ready the whole time — this is the property UI feedback binds to.
+    Q_PROPERTY(bool extracting READ extracting NOTIFY extractingChanged)
 
 public:
     enum Status { Empty, Loading, Ready, Error };
@@ -38,6 +42,7 @@ public:
     BlockListModel *blocks() { return &m_model; }
     int blockCount() const { return m_model.blockCount(); }
     Status status() const { return m_status; }
+    bool extracting() const { return m_extracting; }
     QString errorString() const { return m_errorString; }
     int pageCount() const { return m_doc.pageCount(); }
     // The loaded document — PdfSelectionModel drives text selection
@@ -89,6 +94,7 @@ signals:
     void statusChanged();
     void passwordRequired();
     void currentSelectionChanged();
+    void extractingChanged();
     // A fresh automatic extraction just ran (cache miss or explicit
     // rebuild) — StructureService listens and tries to upgrade the
     // segmentation via GROBID.
@@ -115,6 +121,13 @@ private:
     // True once the user split/merged/deleted a paragraph in this
     // paper — blocks applyStructuredBlocks from clobbering edits.
     bool m_blocksEdited = false;
+    // Set by rebuildBlocks(): the user explicitly asked for a fresh
+    // segmentation, so the finished extraction and the GROBID upgrade
+    // that follows must apply even where the automatic path would
+    // yield (existing blocks, cached translations). Consumed by the
+    // next applyStructuredBlocks(); reset on paper switch.
+    bool m_forceExtract = false;
+    bool m_extracting = false;
     QFutureWatcher<QVector<Block>> m_extractWatcher;
     QString m_extractPaperId;   // which paper the running job is for
     Status m_status = Empty;

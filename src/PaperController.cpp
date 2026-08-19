@@ -155,6 +155,7 @@ void PaperController::reload()
             m_paperId = computePaperId(m_source.toLocalFile());
         else
             m_paperId.clear();
+        m_forceExtract = false;   // a force never outlives its paper
         m_blockCache.setPaperId(m_paperId);
         // Use the user's saved/edited paragraph list when one exists;
         // otherwise run automatic extraction and seed the cache so
@@ -202,8 +203,10 @@ void PaperController::reload()
 void PaperController::rebuildBlocks()
 {
     if (m_status != Ready) return;
+    if (m_extractWatcher.isRunning()) return;   // one rebuild at a time
     m_blockCache.clear();
     m_blocksEdited = false;
+    m_forceExtract = true;
     m_model.clear();
     emit blocksChanged();
     startAsyncExtraction();
@@ -224,6 +227,10 @@ void PaperController::startAsyncExtraction()
     const QString path = m_source.toLocalFile();
     const QString password = m_password;
     m_extractPaperId = m_paperId;
+    if (!m_extracting) {
+        m_extracting = true;
+        emit extractingChanged();
+    }
     m_extractWatcher.setFuture(QtConcurrent::run([path, password]() {
         QPdfDocument doc;   // worker-owned: no shared state with the UI
         doc.setPassword(password);
@@ -237,11 +244,19 @@ void PaperController::startAsyncExtraction()
 
 void PaperController::onExtractionFinished()
 {
+    if (m_extracting) {
+        m_extracting = false;
+        emit extractingChanged();
+    }
     // Stale results (paper switched mid-extraction) and anything the
     // user already touched are dropped, same rules as GROBID swaps.
+    // An explicit re-segment (m_forceExtract) skips the second guard:
+    // the model may have been repopulated meanwhile (e.g. by a stale
+    // GROBID reply from the previous cycle) and the user asked for a
+    // fresh result regardless.
     if (m_status != Ready || m_extractPaperId != m_paperId)
         return;
-    if (m_blocksEdited || m_model.blockCount() > 0)
+    if (!m_forceExtract && (m_blocksEdited || m_model.blockCount() > 0))
         return;
     QVector<Block> blocks = m_extractWatcher.result();
     if (blocks.isEmpty())
@@ -258,12 +273,24 @@ bool PaperController::applyStructuredBlocks(const QString &paperId,
     if (m_status != Ready || paperId.isEmpty() || paperId != m_paperId
         || m_blocksEdited)
         return false;
+    // A rebuild is racing us: this reply was made from the OLD
+    // segmentation and must not resurrect it — the fresh extraction
+    // will trigger its own GROBID request when it lands.
+    if (m_extractWatcher.isRunning())
+        return false;
     // Any translation state (done, queued, even skipped) means the
     // user already invested in the current segmentation — keep it.
-    const QVector<Block> current = m_model.allBlocks();
-    for (const Block &b : current)
-        if (b.translationStatus != Block::NotTranslated)
-            return false;
+    // Exception: the user explicitly re-segmented; cached
+    // translations were made for the old paragraphs and re-stamping
+    // them must not block the structural upgrade they asked for.
+    const bool forced = m_forceExtract;
+    m_forceExtract = false;
+    if (!forced) {
+        const QVector<Block> current = m_model.allBlocks();
+        for (const Block &b : current)
+            if (b.translationStatus != Block::NotTranslated)
+                return false;
+    }
     m_blockCache.setBlocks(blocks);
     m_model.setBlocks(std::move(blocks));
     emit blocksChanged();

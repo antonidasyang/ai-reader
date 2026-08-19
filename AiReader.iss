@@ -113,11 +113,12 @@ Name: "{autodesktop}\{#MyAppName}";  Filename: "{app}\{#MyAppExeName}"; Tasks: d
 [Run]
 Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; StatusMsg: "Installing Microsoft VC++ runtime..."; Flags: waituntilterminated; Check: VcRedistStaged
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
-; Silent installs come from the in-app auto-updater: it closed the app
-; via CloseApplications, and RestartApplications never fires in silent
-; mode (and needs a Restart Manager registration Qt doesn't do) — so
-; relaunch explicitly. runasoriginaluser keeps the app de-elevated if
-; the update needed a UAC prompt.
+; Silent installs come from the in-app auto-updater (the app exits
+; right after launching us, per the official self-update pattern), so
+; relaunch the new version explicitly. RestartApplications can't do
+; it: it relies on RegisterApplicationRestart, which Qt apps don't
+; call. runasoriginaluser keeps the app de-elevated if the update
+; ever needed a UAC prompt (harmless when Setup ran non-elevated).
 Filename: "{app}\{#MyAppExeName}"; Flags: nowait skipifnotsilent runasoriginaluser
 
 [Code]

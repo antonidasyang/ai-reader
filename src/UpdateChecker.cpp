@@ -2,8 +2,10 @@
 
 #include "Settings.h"
 
+#include <QCoreApplication>
 #include <QDesktopServices>
 #include <QFile>
+#include <QTimer>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QNetworkAccessManager>
@@ -240,15 +242,24 @@ void UpdateChecker::onDownloadFinished()
         return;
     }
 
-    // Hand over to the installer. Inno Setup's CloseApplications +
-    // RestartApplications close this process via the Windows Restart
-    // Manager, swap the files, and relaunch the app — we just start
-    // it detached and keep running until the installer stops us.
+    // Hand over to the installer, then EXIT IMMEDIATELY — the
+    // official Inno self-update pattern ("After starting Setup.exe,
+    // exit your application as soon as possible"). Keeping the app
+    // alive made the installer force-close us mid-replace via the
+    // Restart Manager, and the silent [Run] relaunch entry could then
+    // fail invisibly (per-entry exceptions are swallowed under
+    // /SUPPRESSMSGBOXES). /FORCECLOSEAPPLICATIONS stays as a safety
+    // net; /LOG makes the next failure diagnosable from AppData.
     m_installing = true;
     emit downloadStateChanged();
+    const QString installLog =
+        QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+        + QStringLiteral("/update-install.log");
     QProcess::startDetached(path,
                             {QStringLiteral("/VERYSILENT"),
                              QStringLiteral("/SUPPRESSMSGBOXES"),
                              QStringLiteral("/NORESTART"),
-                             QStringLiteral("/FORCECLOSEAPPLICATIONS")});
+                             QStringLiteral("/FORCECLOSEAPPLICATIONS"),
+                             QStringLiteral("/LOG=") + installLog});
+    QTimer::singleShot(400, qApp, &QCoreApplication::quit);
 }

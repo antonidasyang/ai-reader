@@ -1,5 +1,41 @@
 # AI Reader changelog
 
+## v1.1.10 — 2026-08-20
+
+Fixes for the five issues from v1.1.9 field testing.
+
+### Re-segment actually works now
+- **Clicking Re-extract no longer looks (or is) dead.** Three stacked
+  problems fixed: no feedback at all during the tens-of-seconds
+  extraction (now: button disables, the status bar shows
+  "Segmenting…", the paragraph pane spins); a late GROBID reply from
+  the previous cycle could swallow the fresh result entirely; and on
+  any paper you had ever translated, the GROBID upgrade was refused
+  forever by the keep-your-translations guard. An explicit re-segment
+  now always wins, verified by a headless regression test.
+
+### Auto-update relaunch, take two
+- **The app now exits immediately after starting the installer** —
+  the officially documented Inno self-update pattern — instead of
+  waiting to be force-closed mid-file-swap, which could silently
+  break the relaunch step. The installer also writes a log to
+  AppData\update-install.log so any future failure is diagnosable.
+  (Takes effect updating FROM this version; the 1.1.9 → 1.1.10 hop
+  may still need one manual reopen.)
+
+### Standard buttons finally speak Chinese
+- **Packaged Windows builds now ship Qt's own translation catalogs**
+  (OK/Cancel/Close and friends). The deploy script had been passing
+  --no-translations all along, so the catalogs the 1.1.5 loader fix
+  was looking for never existed on user machines.
+
+### Server side (no update needed)
+- **The sync WebSocket reconnect storm is gone**: the product
+  homepage rule on the server was swallowing the WebSocket handshake
+  at the domain root, so every client retried every 5 seconds
+  forever (sync silently ran on polling only). Real-time sync is
+  back for all versions.
+
 ## v1.1.9 — 2026-08-20
 
 - **Segmentation and the TOC are one operation now**: every applied

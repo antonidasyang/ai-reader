@@ -425,6 +425,7 @@ ApplicationWindow {
             ToolButton {
                 text: qsTr("Re-extract")
                 enabled: paperController.status === PaperController.Ready
+                         && !paperController.extracting
                 ToolTip.visible: hovered
                 ToolTip.delay: 400
                 ToolTip.text: qsTr("Discard manual paragraph edits and re-run automatic extraction")
@@ -570,7 +571,8 @@ ApplicationWindow {
                       ? qsTr("%1 pages · %2 paragraphs")
                             .arg(pdfDoc.pageCount)
                             .arg(paperController.blockCount)
-                        + (structure.busy ? qsTr(" · GROBID…") : "")
+                        + (paperController.extracting ? qsTr(" · Segmenting…")
+                           : structure.busy ? qsTr(" · GROBID…") : "")
                       : ""
                 color: Theme.dimText
                 Layout.leftMargin: 8
@@ -1131,6 +1133,8 @@ ApplicationWindow {
                             anchors.centerIn: parent
                             running: paperController.status === PaperController.Loading
                                      || pdfDoc.status === PdfDocument.Loading
+                                     || (paperController.extracting
+                                         && paperController.blockCount === 0)
                             visible: running
                         }
                     }

@@ -136,15 +136,21 @@ REM                        them next to the .exe. Without this, users on a
 REM                        stock Windows install hit "VCRUNTIME140_1.dll
 REM                        not found" because they have never installed
 REM                        the Visual C++ Redistributable. Adds about 1MB.
-REM   --no-translations    We ship our own .qm files compiled into the
-REM                        binary; skipping Qt's catalog saves ~30MB.
+REM   --translations       Deploy Qt's OWN catalogs (qt_zh_CN.qm etc.)
+REM                        to dist\translations. Our compiled-in .qm
+REM                        files cover only the app's strings — the
+REM                        standard dialog buttons (OK/Cancel/Close)
+REM                        come from Qt's catalogs, and without them
+REM                        packaged builds show English buttons on
+REM                        Chinese systems. Limiting to zh_CN+en keeps
+REM                        it to a few hundred KB instead of ~30MB.
 REM   d3d-compiler + software OpenGL fallback are kept (default) so the
 REM   binary still launches on machines whose GPU drivers reject
 REM   ANGLE/D3D11.
 "!WINDEPLOYQT!" ^
     --release ^
     --qmldir "%ROOT%qml" ^
-    --no-translations ^
+    --translations zh_CN,en ^
     "%DIST%\ai-reader.exe"
 
 if errorlevel 1 (
