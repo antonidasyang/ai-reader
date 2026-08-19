@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "latestVersion": "1.1.9",
+  "latestVersion": "1.1.10",
   "releaseDate": "2026-08-20",
-  "releaseNotes": "分段与目录合并为一个操作(重新分段自动刷新目录);自动更新完成后自动打开新版本。",
+  "releaseNotes": "重新分段真正可用(带进度提示);弹窗标准按钮恢复中文;自动更新完成后自动打开新版本。",
   "platforms": {
     "windows-x64": {
-      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.9.exe",
-      "sha256": "5b71a4cb58dc53f1196d7b9fa1e6e71ac39f93083206293b8bce4fe577b3cf9f"
+      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.10.exe",
+      "sha256": "075d9c681c0ee6a04d15e9a714b30e45540e76b42b651b9850b5f1ec0e68b962"
     }
   }
 }
