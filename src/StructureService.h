@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Block.h"
+#include "Section.h"
 
 #include <QNetworkAccessManager>
 #include <QObject>
@@ -38,14 +39,37 @@ public:
     bool busy() const { return m_reply != nullptr; }
     QString lastError() const { return m_lastError; }
 
+    // One entry of the section outline recovered from TEI <head>
+    // elements — everything the parser can tell about a heading
+    // beyond the Block it emits. `y` is the top edge of the heading's
+    // box on `page` in PDF points (-1 when GROBID sent no
+    // coordinates); it is captured for future precise jumps but the
+    // TOC pipeline currently navigates by page only.
+    struct OutlineEntry {
+        QString title;        // heading text, numbering stripped
+        QString numbering;    // e.g. "2.1"; empty for unnumbered heads
+        int     level = 1;    // dot depth of numbering; 1 if unnumbered
+        int     page = 0;     // 0-based, same convention as Block::page
+        qreal   y = -1.0;
+        int     blockId = -1; // id of the matching Heading block
+    };
+
     // Parse a GROBID TEI document into blocks. Exposed for testing.
-    static QVector<Block> parseTei(const QByteArray &tei);
+    // When `outline` is non-null it receives the section outline of
+    // the document (left empty when the document was rejected).
+    static QVector<Block> parseTei(const QByteArray &tei,
+                                   QVector<OutlineEntry> *outline = nullptr);
 
 signals:
     void busyChanged();
     void lastErrorChanged();
     // Emitted when a GROBID result actually replaced the block list.
     void upgraded();
+    // Emitted right after upgraded() when the applied TEI also
+    // carried a usable outline (>= 2 headings), converted to the
+    // Section model the TOC pipeline speaks. Never emitted when the
+    // blocks were rejected as stale.
+    void outlineExtracted(const QVector<Section> &sections);
 
 private:
     void onAutoExtracted();

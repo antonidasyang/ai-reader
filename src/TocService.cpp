@@ -7,11 +7,21 @@
 #include "Settings.h"
 
 #include <QAbstractItemModel>
+#include <QDebug>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 
 namespace {
+
+// Reserved (model, promptHash) cache key for TOCs derived
+// structurally from GROBID's TEI outline. Same TocCache entry shape
+// as LLM results, but a key no real LLM configuration can produce:
+// on rehydrate the entry for the user's actual model + prompt is
+// tried first, so an LLM-generated TOC always beats the structural
+// one, and a later LLM run never collides with it.
+constexpr auto kGrobidCacheModel  = "grobid";
+constexpr auto kGrobidCachePrompt = "tei-outline";
 
 // Extracts the substring between the first '{' and the last '}', so we can
 // tolerate ```json fences or stray prose around the JSON body.
@@ -64,8 +74,14 @@ void TocService::rehydrateFromCache()
     if (!m_settings || !m_blocks) return;
     if (m_cache.paperId().isEmpty()) return;
 
-    const QVector<Section> cached = m_cache.lookup(
+    QVector<Section> cached = m_cache.lookup(
         m_settings->model(), TocCache::sha(systemPrompt()));
+    if (cached.isEmpty()) {
+        // No LLM result for the current model/prompt — fall back to a
+        // structurally derived (GROBID) TOC if one was cached.
+        cached = m_cache.lookup(QString::fromLatin1(kGrobidCacheModel),
+                                QString::fromLatin1(kGrobidCachePrompt));
+    }
     if (cached.isEmpty()) return;
 
     // Rebuild blockId → page map so any UI that resolves start_block back
@@ -79,6 +95,41 @@ void TocService::rehydrateFromCache()
     m_model.setSections(QVector<Section>(cached));
     emit sectionsChanged();
     setStatus(Done);
+}
+
+void TocService::adoptStructuredOutline(const QVector<Section> &sections)
+{
+    // GROBID handed us the section structure for free. Adopt it only
+    // when the TOC pane holds nothing yet — an existing TOC (LLM
+    // generated live or rehydrated from cache) or an LLM run the user
+    // explicitly started always wins, mirroring the "never clobber
+    // what the user already has" rule of applyStructuredBlocks.
+    if (sections.size() < 2)
+        return;                    // unusable outline — leave TOC alone
+    if (m_status == Generating)
+        return;                    // explicit LLM generation wins
+    if (m_model.sectionCount() > 0)
+        return;                    // user already sees a TOC
+
+    // Keep blockId → page resolvable, same as after a generate().
+    m_blockIdToPage.clear();
+    if (m_blocks) {
+        for (int row = 0; row < m_blocks->blockCount(); ++row) {
+            const Block *b = m_blocks->blockAt(row);
+            if (b) m_blockIdToPage.insert(b->id, b->page);
+        }
+    }
+
+    if (!m_cache.paperId().isEmpty()) {
+        m_cache.store(QString::fromLatin1(kGrobidCacheModel),
+                      QString::fromLatin1(kGrobidCachePrompt),
+                      sections);
+    }
+    m_model.setSections(QVector<Section>(sections));
+    emit sectionsChanged();
+    setStatus(Done);
+    qInfo().noquote() << "TOC: adopted GROBID outline,"
+                      << sections.size() << "sections";
 }
 
 void TocService::clear()

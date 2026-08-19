@@ -279,6 +279,12 @@ int main(int argc, char *argv[])
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
+    // GROBID → TOC wiring: when StructureService successfully applies
+    // a TEI segmentation it also extracts the section outline; hand it
+    // to the TOC pipeline, which adopts it only when the user doesn't
+    // already have a TOC (LLM stays the fallback / explicit action).
+    QObject::connect(&structure, &StructureService::outlineExtracted,
+                     &toc, &TocService::adoptStructuredOutline);
     // Triple-click paragraph selection follows the block model
     // (clusterer or GROBID), so it always matches the reading pane.
     QObject::connect(&paperController, &PaperController::blocksChanged,

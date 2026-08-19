@@ -3,9 +3,12 @@
 #include "PaperController.h"
 #include "Settings.h"
 
+#include <QCryptographicHash>
+#include <QDateTime>
 #include <QFile>
 #include <QFileInfo>
 #include <QHttpMultiPart>
+#include <QMessageAuthenticationCode>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QRectF>
@@ -13,6 +16,8 @@
 #include <QUrl>
 #include <QXmlStreamReader>
 #include <QLoggingCategory>
+
+#include <utility>
 
 Q_LOGGING_CATEGORY(lcStructure, "aireader.structure")
 
@@ -23,6 +28,32 @@ namespace {
 // placeholder shows it), so clearing the field never silently turns
 // GROBID off — the checkbox is the on/off switch.
 constexpr auto kDefaultGrobidUrl = "https://aireader.d2ssoft.com/grobid";
+
+// TOTP gate on the public GROBID route (RFC 6238: HMAC-SHA1, 30 s
+// step, 6 digits). The shared secret is an anti-abuse measure against
+// anonymous internet scanners, not a user credential — it must match
+// ~/.grobid-otp-secret on the server; rotate both together.
+// Self-hosted GROBID instances simply ignore the extra header.
+constexpr auto kGrobidOtpSecret = "7e93a24caab359c81523491966a8bccab79fa5a0";
+
+QByteArray grobidOtp()
+{
+    const quint64 step =
+        quint64(QDateTime::currentSecsSinceEpoch() / 30);
+    QByteArray counter(8, '\0');
+    for (int i = 0; i < 8; ++i)
+        counter[7 - i] = char((step >> (8 * i)) & 0xff);
+    const QByteArray h = QMessageAuthenticationCode::hash(
+        counter, QByteArray(kGrobidOtpSecret),
+        QCryptographicHash::Sha1);
+    const int o = h.at(h.size() - 1) & 0xf;
+    const quint32 code =
+        ((quint32(quint8(h.at(o))) & 0x7f) << 24
+         | quint32(quint8(h.at(o + 1))) << 16
+         | quint32(quint8(h.at(o + 2))) << 8
+         | quint32(quint8(h.at(o + 3)))) % 1000000;
+    return QByteArray::number(code).rightJustified(6, '0');
+}
 
 // coords="1,53.4,150.6,247.2,10.7;1,53.4,163.6,..." — 1-based page,
 // x/y of the upper-left corner, w, h, in PDF points (same space QtPdf
@@ -54,12 +85,14 @@ struct TeiCollector {
     QVector<Block> blocks;
     int lastPage = 0;
 
-    void add(Block::Kind kind, const QString &text, int page,
-             const QRectF &bbox)
+    // Returns the id of the added block, or -1 when the text was
+    // empty and nothing was added.
+    int add(Block::Kind kind, const QString &text, int page,
+            const QRectF &bbox)
     {
         const QString t = text.simplified();
         if (t.isEmpty())
-            return;
+            return -1;
         Block b;
         b.id = blocks.size();
         b.ord = blocks.size();
@@ -75,15 +108,54 @@ struct TeiCollector {
         }
         b.bbox = bbox;
         blocks.append(b);
+        return b.id;
     }
 };
 
+// Hierarchy depth from GROBID's @n numbering: "2" → 1, "2.1" → 2,
+// "A.1.3" → 3. Trailing dots ("1.") don't count; empty → 1.
+int levelFromNumbering(const QString &numbering)
+{
+    QString s = numbering;
+    while (s.endsWith(QLatin1Char('.')))
+        s.chop(1);
+    if (s.isEmpty())
+        return 1;
+    return qBound(1, int(s.count(QLatin1Char('.'))) + 1, 6);
+}
+
 } // namespace
 
-QVector<Block> StructureService::parseTei(const QByteArray &tei)
+QVector<Block> StructureService::parseTei(const QByteArray &tei,
+                                          QVector<OutlineEntry> *outline)
 {
+    if (outline)
+        outline->clear();
+
     QXmlStreamReader xml(tei);
     TeiCollector out;
+    QVector<OutlineEntry> toc;
+
+    // Record an outline entry for a heading block that was just
+    // added. The block's stored page already includes the
+    // last-known-page fallback, so read it back rather than using the
+    // raw coords page.
+    auto addOutline = [&out, &toc](int blockId, const QString &title,
+                                   const QString &numbering,
+                                   int coordsPage, const QRectF &bbox) {
+        if (blockId < 0)
+            return;
+        OutlineEntry e;
+        e.title = title.simplified();
+        if (e.title.isEmpty())
+            e.title = out.blocks.at(blockId).text;
+        e.numbering = numbering;
+        e.level = levelFromNumbering(numbering);
+        e.page = out.blocks.at(blockId).page;
+        e.y = (coordsPage >= 0 && !bbox.isNull()) ? bbox.top() : -1.0;
+        e.blockId = blockId;
+        toc.append(e);
+    };
 
     int inHeader = 0, inAbstract = 0, inBody = 0, inBack = 0, inFigure = 0;
     bool sawAbstractHeading = false;
@@ -121,8 +193,11 @@ QVector<Block> StructureService::parseTei(const QByteArray &tei)
             }
             if (inAbstract && name == QLatin1String("p")) {
                 if (!sawAbstractHeading) {
-                    out.add(Block::Heading, QStringLiteral("Abstract"),
-                            page, QRectF());
+                    const int blockId =
+                        out.add(Block::Heading, QStringLiteral("Abstract"),
+                                page, QRectF());
+                    addOutline(blockId, QStringLiteral("Abstract"),
+                               QString(), -1, QRectF());
                     sawAbstractHeading = true;
                 }
                 out.add(Block::Paragraph,
@@ -146,12 +221,16 @@ QVector<Block> StructureService::parseTei(const QByteArray &tei)
                     // back so headings read "3.2 Method" not "Method".
                     const QString n = xml.attributes()
                                           .value(QLatin1String("n"))
-                                          .toString();
-                    QString t = xml.readElementText(
+                                          .toString()
+                                          .simplified();
+                    const QString clean = xml.readElementText(
                         QXmlStreamReader::IncludeChildElements);
+                    QString t = clean;
                     if (!n.isEmpty())
                         t = n + QLatin1Char(' ') + t;
-                    out.add(Block::Heading, t, page, bbox);
+                    const int blockId =
+                        out.add(Block::Heading, t, page, bbox);
+                    addOutline(blockId, clean, n, page, bbox);
                     continue;
                 }
                 if (name == QLatin1String("p")
@@ -175,8 +254,12 @@ QVector<Block> StructureService::parseTei(const QByteArray &tei)
                 && xml.attributes().value(QLatin1String("type"))
                        == QLatin1String("raw_reference")) {
                 if (!sawReferencesHeading) {
-                    out.add(Block::Heading, QStringLiteral("References"),
-                            page, QRectF());
+                    const int blockId =
+                        out.add(Block::Heading,
+                                QStringLiteral("References"),
+                                page, QRectF());
+                    addOutline(blockId, QStringLiteral("References"),
+                               QString(), -1, QRectF());
                     sawReferencesHeading = true;
                 }
                 out.add(Block::Paragraph,
@@ -215,6 +298,8 @@ QVector<Block> StructureService::parseTei(const QByteArray &tei)
             << substantial << "substantial paragraphs) — rejected";
         return {};
     }
+    if (outline)
+        *outline = std::move(toc);
     return out.blocks;
 }
 
@@ -296,6 +381,7 @@ void StructureService::startRequest(const QString &pdfPath,
 
     QNetworkRequest req(endpoint);
     req.setRawHeader("Accept", "application/xml");
+    req.setRawHeader("X-Grobid-Otp", grobidOtp());
     req.setTransferTimeout(120000);
 
     m_reply = m_nam.post(req, multi);
@@ -351,7 +437,8 @@ void StructureService::onFinished(QNetworkReply *reply,
         return;
     }
 
-    QVector<Block> blocks = parseTei(reply->readAll());
+    QVector<OutlineEntry> outline;
+    QVector<Block> blocks = parseTei(reply->readAll(), &outline);
     if (blocks.isEmpty()) {
         setLastError(tr("GROBID returned an unusable document structure."));
         return;
@@ -362,6 +449,30 @@ void StructureService::onFinished(QNetworkReply *reply,
         setLastError({});
         qCInfo(lcStructure) << "GROBID segmentation applied";
         emit upgraded();
+        // The outline only leaves this service when the blocks it
+        // refers to were actually applied — a stale/rejected result
+        // must never reach the TOC pipeline. Fewer than 2 headings is
+        // no outline worth showing.
+        if (outline.size() >= 2) {
+            QVector<Section> sections;
+            sections.reserve(outline.size());
+            for (const OutlineEntry &e : std::as_const(outline)) {
+                Section s;
+                s.id = QStringLiteral("g%1").arg(sections.size() + 1);
+                s.level = e.level;
+                s.title = e.title;
+                s.startBlockId = e.blockId;
+                s.startPage = e.page;
+                sections.append(s);
+            }
+            qCInfo(lcStructure) << "GROBID outline:" << sections.size()
+                                << "sections";
+            emit outlineExtracted(sections);
+        } else {
+            qCInfo(lcStructure)
+                << "GROBID outline too thin (" << outline.size()
+                << "headings) — TOC pipeline left alone";
+        }
     } else {
         qCInfo(lcStructure)
             << "GROBID result dropped (paper changed, edits or "

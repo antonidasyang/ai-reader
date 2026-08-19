@@ -2,6 +2,24 @@
 
 ## v1.1.8 — 2026-08-19
 
+### Table of contents, straight from the paper
+- **The TOC now comes from GROBID's structural analysis** — the same
+  service that segments paragraphs also yields the section hierarchy
+  (numbering-aware levels, per-section pages), so a proper outline
+  appears automatically with no LLM call. The Generate button still
+  runs the LLM path, and an LLM-generated TOC always wins over the
+  structural one.
+
+### Hardened GROBID endpoint
+- **The public segmentation service now requires a rotating
+  verification code** (RFC 6238 one-time password) sent automatically
+  by the app — anonymous scanners hitting the endpoint get 401.
+  Older releases fall back to the built-in splitter until updated.
+- **Clearing the GROBID URL in Settings falls back to the default
+  public endpoint** (matching how the update-manifest URL behaves) —
+  the checkbox is the only on/off switch.
+
+### Fixes
 - Tour step 6's spotlight no longer drifts to screen center when the
   CAS session finishes restoring — it now tracks whichever of the
   Sign in / account buttons is visible.

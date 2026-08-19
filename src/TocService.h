@@ -44,6 +44,14 @@ public slots:
     void cancel();
     void clear();
 
+    // Adopt a TOC derived structurally from GROBID's TEI outline
+    // (wired to StructureService::outlineExtracted in main.cpp).
+    // Only fills the model when the user doesn't already have a TOC:
+    // an LLM result — live, in flight, or rehydrated from cache —
+    // always wins. Adopted outlines are cached under a reserved key
+    // so they survive reopening the paper.
+    void adoptStructuredOutline(const QVector<Section> &sections);
+
 signals:
     void statusChanged();
     void sectionsChanged();
