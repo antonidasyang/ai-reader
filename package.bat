@@ -64,6 +64,18 @@ if not exist "%ROOT%dist\vcruntime140_1.dll" goto :vc_missing
 if not exist "%ROOT%dist\msvcp140.dll"       goto :vc_missing
 :vc_ok
 
+REM --- Hard gate: Qt's own translation catalogs must be deployed -----------
+REM Standard dialog buttons (OK/Cancel/Close) come from Qt's catalogs,
+REM not our app .qm. windeploy.bat deploys them via --translations;
+REM if this file is missing, packaged builds silently show English
+REM buttons on Chinese systems (the v1.1.5..v1.1.9 regression).
+if not exist "%ROOT%dist\translations\qt_zh_CN.qm" (
+    echo ERROR: dist\translations\qt_zh_CN.qm is missing - Qt's own
+    echo catalogs were not deployed. Re-run windeploy.bat ^(it must
+    echo pass --translations zh_CN,en^) before packaging.
+    exit /b 1
+)
+
 REM --- Stage the official VC++ redistributable (belt and braces) -----------
 REM The installer runs it silently when present (idempotent; newer
 REM runtime on the system = no-op) which also covers UCRT corner
