@@ -8,13 +8,13 @@ class QNetworkAccessManager;
 class QNetworkReply;
 class Settings;
 
-// Pulls a tiny manifest.json off the network and surfaces a single
-// "is there a newer version?" boolean to QML, plus the download URL
-// the user can click. The actual update is handled out-of-process by
-// the OS-native installer (the manifest's downloadUrl points at the
-// signed Inno Setup .exe) — we deliberately don't run the installer
-// from the running app since that would race with the in-place
-// upgrade and surprise the user.
+// Pulls a tiny manifest off the network and surfaces a single
+// "is there a newer version?" boolean to QML, plus one-click
+// updating: downloadAndInstall() streams the installer to a temp
+// file and (on Windows) launches it silently — Inno Setup's
+// CloseApplications/RestartApplications then swaps the files and
+// relaunches the app via the Restart Manager, so the whole upgrade
+// is a single click. Elsewhere it falls back to the browser.
 //
 // Settings owns the auto-check flag and the manifest URL; this class
 // just consumes them. Auto-check fires once per process at startup
@@ -33,6 +33,9 @@ class UpdateChecker : public QObject
     Q_PROPERTY(bool    updateAvailable  READ updateAvailable  NOTIFY checkFinished)
     Q_PROPERTY(bool    dismissed        READ dismissed        NOTIFY dismissedChanged)
     Q_PROPERTY(QString lastError        READ lastError        NOTIFY checkFinished)
+    Q_PROPERTY(bool    downloading      READ downloading      NOTIFY downloadStateChanged)
+    Q_PROPERTY(double  downloadProgress READ downloadProgress NOTIFY downloadStateChanged)
+    Q_PROPERTY(bool    installing       READ installing       NOTIFY downloadStateChanged)
 
 public:
     UpdateChecker(Settings *settings, QObject *parent = nullptr);
@@ -47,6 +50,9 @@ public:
     bool    updateAvailable() const;
     bool    dismissed()       const { return m_dismissed; }
     QString lastError()       const { return m_lastError; }
+    bool    downloading()       const { return m_dlReply != nullptr; }
+    double  downloadProgress()  const { return m_dlProgress; }
+    bool    installing()        const { return m_installing; }
 
 public slots:
     // Triggers a fetch even if auto-check is off. No-op while a
@@ -55,18 +61,23 @@ public slots:
     // Hides the "update available" banner for the rest of this
     // process. Re-evaluated on the next checkNow() / restart.
     void dismiss();
-    // Opens downloadUrl in the user's default browser. Deliberately
-    // does not download or run the installer in-process — the user
-    // controls when to upgrade.
+    // Opens downloadUrl in the user's default browser (fallback path
+    // and non-Windows platforms).
     void openDownload();
+    // One-click update: download the installer with progress, then
+    // (Windows) run it silently — the installer closes and relaunches
+    // the app itself. No-op while a download is already running.
+    void downloadAndInstall();
 
 signals:
     void checkingChanged();
     void checkFinished();
     void dismissedChanged();
+    void downloadStateChanged();
 
 private:
     void onReplyFinished();
+    void onDownloadFinished();
     static int compareVersions(const QString &a, const QString &b);
     static QString platformKey();
     QString effectiveManifestUrl() const;
@@ -74,6 +85,10 @@ private:
     QPointer<Settings>             m_settings;
     QNetworkAccessManager         *m_nam = nullptr;
     QPointer<QNetworkReply>        m_reply;
+    QPointer<QNetworkReply>        m_dlReply;
+    class QFile                   *m_dlFile = nullptr;
+    double  m_dlProgress = 0;
+    bool    m_installing = false;
 
     QString m_latestVersion;
     QString m_downloadUrl;

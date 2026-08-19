@@ -1,5 +1,22 @@
 # AI Reader changelog
 
+## v1.1.7 — 2026-08-19
+
+### One-click updates
+- **"Update now" downloads and installs by itself** — progress in the
+  button, silent install, automatic app restart. No more browser
+  round-trips (Windows; other platforms still open the download).
+
+### Global polish sweep
+- **Every color-contrast bug from a full audit fixed**: the unreadable
+  dark-banner buttons, chat-bubble text in dark mode, paragraph status
+  badges, splitter handles, drag-grips, code-block controls, and more —
+  all verified against both themes.
+- **Full i18n audit**: file-dialog filters, member roles, metadata
+  types, paragraph kind/status labels and other raw codes now display
+  translated; two hard-coded English strings in the chat/RPC layer
+  wrapped; catalog 100% translated.
+
 ## v1.1.6 — 2026-08-19
 
 - **The update check answers where you clicked**: the result row in

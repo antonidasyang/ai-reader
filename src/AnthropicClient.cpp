@@ -91,7 +91,7 @@ void parseSseEvent(const QByteArray &payload,
     } else if (type == QLatin1String("error")) {
         const QJsonObject err = obj.value(QStringLiteral("error")).toObject();
         reply->setError(err.value(QStringLiteral("message")).toString(
-            QStringLiteral("Anthropic error")));
+            AnthropicClient::tr("Anthropic error")));
     }
 }
 

@@ -18,6 +18,10 @@ Item {
                     ? mathImage.implicitHeight + 16
                     : fallback.implicitHeight + 16
 
+    // Intentionally theme-independent: LatexRenderer (C++) draws the
+    // formula PNG with fixed near-black ink (#1d1d1d), so this card must
+    // stay light in BOTH themes or the glyphs disappear in dark mode.
+    // Everything inside uses explicit dark-on-light colors.
     Rectangle {
         anchors.fill: parent
         color: "#fafafa"
@@ -68,7 +72,7 @@ Item {
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
         anchors.margins: 8
-        color: "#fff8d6"
+        color: "#fff8d6"  // fixed pale yellow — self-contained warning tint (~9:1 with the ink)
         radius: 3
         implicitHeight: fallbackText.implicitHeight + 12
 
@@ -79,7 +83,9 @@ Item {
             readOnly: true
             selectByMouse: true
             wrapMode: TextEdit.Wrap
-            color: "#5a3e00"
+            color: "#5a3e00"          // fixed dark amber on the fixed light box
+            selectionColor: "#b6d7ff" // fixed light selection: ambient dark palette must not leak in
+            selectedTextColor: "#1d1d1d"
             font.family: "monospace"
             text: "$$" + root.latex + "$$"
         }

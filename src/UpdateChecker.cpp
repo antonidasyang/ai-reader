@@ -3,11 +3,14 @@
 #include "Settings.h"
 
 #include <QDesktopServices>
+#include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QProcess>
+#include <QStandardPaths>
 #include <QStringList>
 #include <QUrl>
 
@@ -166,4 +169,86 @@ void UpdateChecker::openDownload()
 {
     if (m_downloadUrl.isEmpty()) return;
     QDesktopServices::openUrl(QUrl(m_downloadUrl));
+}
+
+void UpdateChecker::downloadAndInstall()
+{
+    if (m_dlReply || m_installing || m_downloadUrl.isEmpty())
+        return;
+#ifndef Q_OS_WIN
+    // Only the Windows pipeline ships an installer we can run
+    // silently; elsewhere hand off to the browser.
+    openDownload();
+    return;
+#else
+    const QString dir =
+        QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+    const QString path = dir + QStringLiteral("/AiReader-Setup-")
+                         + m_latestVersion + QStringLiteral(".exe");
+    auto *file = new QFile(path, this);
+    if (!file->open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        m_lastError = tr("Cannot write the update to %1").arg(path);
+        file->deleteLater();
+        emit checkFinished();
+        return;
+    }
+    m_dlFile = file;
+    m_dlProgress = 0;
+
+    QNetworkRequest req{QUrl(m_downloadUrl)};
+    req.setTransferTimeout(10 * 60 * 1000);   // large file, slow links
+    m_dlReply = m_nam->get(req);
+    connect(m_dlReply, &QNetworkReply::readyRead, this, [this]() {
+        if (m_dlFile && m_dlReply)
+            m_dlFile->write(m_dlReply->readAll());
+    });
+    connect(m_dlReply, &QNetworkReply::downloadProgress, this,
+            [this](qint64 received, qint64 total) {
+                m_dlProgress = total > 0 ? double(received) / double(total)
+                                         : 0;
+                emit downloadStateChanged();
+            });
+    connect(m_dlReply, &QNetworkReply::finished,
+            this, &UpdateChecker::onDownloadFinished);
+    emit downloadStateChanged();
+#endif
+}
+
+void UpdateChecker::onDownloadFinished()
+{
+    QNetworkReply *reply = m_dlReply;
+    m_dlReply.clear();
+    if (!reply || !m_dlFile) {
+        emit downloadStateChanged();
+        return;
+    }
+    m_dlFile->write(reply->readAll());
+    m_dlFile->close();
+    const QString path = m_dlFile->fileName();
+    const bool ok = reply->error() == QNetworkReply::NoError
+                    && m_dlFile->size() > 0;
+    const QString netErr = reply->errorString();
+    reply->deleteLater();
+    m_dlFile->deleteLater();
+    m_dlFile = nullptr;
+
+    if (!ok) {
+        QFile::remove(path);
+        m_lastError = tr("Update download failed: %1").arg(netErr);
+        emit checkFinished();
+        emit downloadStateChanged();
+        return;
+    }
+
+    // Hand over to the installer. Inno Setup's CloseApplications +
+    // RestartApplications close this process via the Windows Restart
+    // Manager, swap the files, and relaunch the app — we just start
+    // it detached and keep running until the installer stops us.
+    m_installing = true;
+    emit downloadStateChanged();
+    QProcess::startDetached(path,
+                            {QStringLiteral("/VERYSILENT"),
+                             QStringLiteral("/SUPPRESSMSGBOXES"),
+                             QStringLiteral("/NORESTART"),
+                             QStringLiteral("/FORCECLOSEAPPLICATIONS")});
 }

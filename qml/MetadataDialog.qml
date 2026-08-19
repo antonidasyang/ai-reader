@@ -16,6 +16,17 @@ Dialog {
 
     property string itemId: ""
 
+    // Parallel arrays — the Zotero-style code is what gets persisted to
+    // the library; the combo shows the translated label.
+    readonly property var itemTypeCodes:
+        ["journalArticle", "conferencePaper", "preprint", "book",
+         "bookSection", "thesis", "report", "webpage"]
+    readonly property var itemTypeLabels: [
+        qsTr("Journal article"), qsTr("Conference paper"), qsTr("Preprint"),
+        qsTr("Book"), qsTr("Book section"), qsTr("Thesis"), qsTr("Report"),
+        qsTr("Webpage")
+    ]
+
     function loadFields() {
         const f = libraryModel.itemFields(itemId)
         titleF.text = f.title || ""
@@ -26,7 +37,7 @@ Dialog {
         arxivF.text = f.arxivId || ""
         tagsF.text = (f.tags || []).join(", ")
         const t = f.itemType || "journalArticle"
-        const i = typeBox.model.indexOf(t)
+        const i = dlg.itemTypeCodes.indexOf(t)
         typeBox.currentIndex = i >= 0 ? i : 0
     }
     function openFor(id) {
@@ -47,7 +58,7 @@ Dialog {
             tags: tagsF.text.split(",")
                   .map(function(s) { return s.trim() })
                   .filter(function(s) { return s.length > 0 }),
-            itemType: typeBox.currentText
+            itemType: dlg.itemTypeCodes[typeBox.currentIndex]
         }
         const y = parseInt(yearF.text)
         if (!isNaN(y))
@@ -327,8 +338,7 @@ Dialog {
             FieldCombo {
                 id: typeBox
                 Layout.fillWidth: true
-                model: ["journalArticle", "conferencePaper", "preprint", "book",
-                    "bookSection", "thesis", "report", "webpage"]
+                model: dlg.itemTypeLabels
             }
             FormLabel { text: qsTr("Title") }
             FieldText { id: titleF; Layout.fillWidth: true }

@@ -73,6 +73,11 @@ ArchitecturesInstallIn64BitMode=x64compatible
 ; time instead of letting them install and crash on launch.
 ; (SafePacker lesson: fail BEFORE install, not after.)
 MinVersion=10.0.17763
+; One-click in-app updates: the running app launches this installer
+; silently; the Restart Manager closes the app, files get swapped,
+; and the app relaunches automatically.
+CloseApplications=yes
+RestartApplications=yes
 WizardStyle=modern
 Compression=lzma2/max
 SolidCompression=yes

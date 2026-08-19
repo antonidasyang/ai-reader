@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import AiReader
 
 // Drag handle that lives in the top-left corner of a SplitView pane.
 // Press-and-drag horizontally to move the pane to a new position in
@@ -27,17 +28,21 @@ Rectangle {
     width: 18
     height: 18
     radius: 3
+    // Theme-aware: the old fixed light-gray hover chip and #444 dots
+    // vanished (or glared) on dark panes. Pressed uses the filled
+    // primary pair so the dots stay legible on the blue fill.
     color: ma.pressed
-           ? "#5b8def"
-           : (ma.containsMouse ? "#cfd8dc" : "#00000000")
-    border.color: ma.containsMouse ? "#9aa0a6" : "transparent"
+           ? Theme.primaryBg
+           : (ma.containsMouse ? Theme.buttonHover : "transparent")
+    border.color: ma.containsMouse && !ma.pressed ? Theme.border : "transparent"
     border.width: 1
     z: 100
 
     Text {
         anchors.centerIn: parent
         text: "⋮⋮"   // two vertical ellipses → grip-dots
-        color: ma.pressed ? "white" : "#444"
+        color: ma.pressed ? Theme.onPrimary
+             : ma.containsMouse ? Theme.text : Theme.dimText
         font.pixelSize: 11
         font.bold: true
     }

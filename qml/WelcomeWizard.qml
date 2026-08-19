@@ -145,6 +145,8 @@ Popup {
         }
 
         // ── 4-piece dim mask leaving a cut-out around spotRect ──────
+        // Fixed #a0000000 scrim in BOTH themes (like Theme.overlayDim,
+        // but heavier so the spotlight reads over light content too).
         Rectangle {  // top
             x: 0; y: 0
             width: parent.width

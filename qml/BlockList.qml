@@ -26,14 +26,42 @@ Rectangle {
         Qt.callLater(function() { root.syncEnabled = true })
     }
 
+    // Badge tint + label color per translation status. Routed through
+    // Theme so each color has a light/dark pair — the old fixed Material
+    // 800 values (green/blue/purple/red) sank into the dark background.
     function statusColor(name) {
         switch (name) {
-        case "translated":  return "#2e7d32"
-        case "translating": return "#1565c0"
-        case "queued":      return "#6a1b9a"
-        case "failed":      return "#c62828"
-        case "skipped":     return "#888888"
-        default:            return "#bdbdbd"
+        case "translated":  return Theme.success
+        case "translating": return Theme.accent
+        // Purple has no shared Theme role; inline light/dark pair.
+        case "queued":      return Theme.dark ? "#ce93d8" : "#6a1b9a"
+        case "failed":      return Theme.danger
+        case "skipped":     return Theme.dimText
+        default:            return Theme.dimText
+        }
+    }
+
+    // Display labels for the model's internal enum-name strings. The
+    // raw names stay untranslated in the model roles (they drive the
+    // colors and menu logic above); only the visible text is mapped.
+    function kindLabel(name) {
+        switch (name) {
+        case "heading":   return qsTr("heading")
+        case "caption":   return qsTr("caption")
+        case "list":      return qsTr("list item")
+        case "equation":  return qsTr("equation")
+        case "paragraph": return qsTr("paragraph")
+        default:          return name
+        }
+    }
+    function statusLabel(name) {
+        switch (name) {
+        case "translated":  return qsTr("translated")
+        case "translating": return qsTr("translating")
+        case "queued":      return qsTr("queued")
+        case "failed":      return qsTr("failed")
+        case "skipped":     return qsTr("skipped")
+        default:            return name
         }
     }
 
@@ -215,7 +243,8 @@ Rectangle {
                             Layout.fillWidth: true
 
                             Label {
-                                text: qsTr("p.%1 · %2").arg(model.page + 1).arg(model.kindName)
+                                text: qsTr("p.%1 · %2").arg(model.page + 1)
+                                                       .arg(root.kindLabel(model.kindName))
                                 font.pixelSize: 10
                                 color: Theme.dimText
                             }
@@ -263,7 +292,7 @@ Rectangle {
                                 Label {
                                     id: statusLabel
                                     anchors.centerIn: parent
-                                    text: model.translationStatusName
+                                    text: root.statusLabel(model.translationStatusName)
                                     font.pixelSize: 10
                                     color: root.statusColor(model.translationStatusName)
                                 }

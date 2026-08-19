@@ -88,7 +88,7 @@ ApplicationWindow {
     FileDialog {
         id: fileDialog
         title: qsTr("Open PDF")
-        nameFilters: ["PDF files (*.pdf)", "All files (*)"]
+        nameFilters: [qsTr("PDF files (*.pdf)"), qsTr("All files (*)")]
         onAccepted: tabs.openPaper(selectedFile)
     }
 
@@ -97,7 +97,7 @@ ApplicationWindow {
         title: qsTr("Export extracted text")
         fileMode: FileDialog.SaveFile
         defaultSuffix: "txt"
-        nameFilters: ["Text files (*.txt)", "All files (*)"]
+        nameFilters: [qsTr("Text files (*.txt)"), qsTr("All files (*)")]
         onAccepted: {
             const ok = paperController.exportExtractedText(selectedFile)
             if (!ok) {
@@ -154,6 +154,18 @@ ApplicationWindow {
         width: 360
         padding: 14
         standardButtons: Dialog.Ok | Dialog.Cancel
+        // Pin the palette to Theme tokens like the other dialogs, so the
+        // stock buttons/fields inside can never fall back to a palette
+        // that disagrees with the themed background.
+        palette.window: Theme.paneBg
+        palette.windowText: Theme.text
+        palette.base: Theme.fieldBg
+        palette.text: Theme.text
+        palette.button: Theme.buttonBg
+        palette.buttonText: Theme.text
+        palette.highlight: Theme.accent
+        palette.highlightedText: Theme.onAccent
+        palette.placeholderText: Theme.dimText
         background: Rectangle {
             color: Theme.paneBg
             border.color: Theme.border
@@ -629,7 +641,9 @@ ApplicationWindow {
                 text: settings.isConfigured
                       ? qsTr("%1 · %2").arg(settings.provider).arg(settings.model)
                       : qsTr("LLM not configured")
-                color: settings.isConfigured ? "#3949AB" : "#c62828"
+                // Theme tokens, not hardcoded hex: the old indigo/red pair
+                // was unreadable against the dark toolbar in dark mode.
+                color: settings.isConfigured ? Theme.accent : Theme.danger
                 font.pixelSize: 11
                 Layout.rightMargin: 8
             }
@@ -785,6 +799,11 @@ ApplicationWindow {
                         Layout.fillWidth: true
                         Layout.preferredHeight: tabs.count > 0 ? 30 : 0
                         visible: tabs.count > 0
+                        // Intentionally theme-independent: fixed VS Code-style
+                        // dark chrome in BOTH themes (it frames the PDF
+                        // viewport, whose empty state is the same fixed dark).
+                        // Every foreground inside is explicit light-on-dark;
+                        // never place a stock (palette-following) control here.
                         color: "#2d2d30"
 
                         Flickable {
@@ -1078,6 +1097,9 @@ ApplicationWindow {
                             visible: paperController.status === PaperController.Empty
                                      || (paperController.status === PaperController.Error
                                          && paperController.pdfSource.toString().length === 0)
+                            // Intentionally theme-independent: fixed dark hero
+                            // matching the dark tab strip above. Foregrounds
+                            // are explicit light-on-dark values.
                             color: "#1e1f22"
                             ColumnLayout {
                                 anchors.centerIn: parent
@@ -1090,7 +1112,10 @@ ApplicationWindow {
                                 }
                                 Label {
                                     text: qsTr("AI Reader — milestone 3.2 (TOC sidebar)")
-                                    color: "#666666"
+                                    // #666666 failed contrast (~2.9:1) even on
+                                    // this fixed dark surface; lifted to match
+                                    // the dark-mode dimText gray (~6.3:1).
+                                    color: "#9aa0a6"
                                     font.pixelSize: 12
                                     Layout.alignment: Qt.AlignHCenter
                                 }
@@ -1186,8 +1211,12 @@ ApplicationWindow {
 
             handle: Rectangle {
                 implicitWidth: 4
+                // Idle/hover follow the theme (the old fixed light grays
+                // glowed against the dark UI); pressed keeps the same
+                // fixed drag-accent blue as the DockGrip/dropMarker,
+                // which reads on both themes.
                 color: SplitHandle.pressed ? "#5b8def"
-                       : SplitHandle.hovered ? "#bbbbbb" : "#dddddd"
+                       : SplitHandle.hovered ? Theme.dimText : Theme.border
             }
         }
 
@@ -1206,14 +1235,25 @@ ApplicationWindow {
         Rectangle {
             anchors.fill: parent
             visible: dropArea.containsDrag
+            // Translucent wash over arbitrary content — intentionally
+            // theme-independent. The caption sits on its own opaque dark
+            // chip: white-on-wash alone disappeared over light PDF pages.
             color: "#332b6cff"
             border.color: "#5b8def"
             border.width: 2
-            Label {
+            Rectangle {
                 anchors.centerIn: parent
-                text: qsTr("Drop PDF to open")
-                color: "white"
-                font.pixelSize: 20
+                width: dropHintLabel.implicitWidth + 32
+                height: dropHintLabel.implicitHeight + 16
+                radius: Theme.radiusM
+                color: "#d91f3a5a"
+                Label {
+                    id: dropHintLabel
+                    anchors.centerIn: parent
+                    text: qsTr("Drop PDF to open")
+                    color: "#ffffff"
+                    font.pixelSize: 20
+                }
             }
         }
     }
@@ -1226,6 +1266,10 @@ ApplicationWindow {
         anchors.bottom: parent.bottom
         height: visible ? 36 : 0
         visible: false
+        // Intentionally theme-independent: a fixed dark-red alert surface
+        // in BOTH themes. Every child must set its foreground explicitly —
+        // stock controls here inherit the app palette (black text in light
+        // mode) and become unreadable on this dark fill.
         color: "#5a1f1f"
 
         RowLayout {
@@ -1234,12 +1278,25 @@ ApplicationWindow {
             anchors.rightMargin: 8
             Label {
                 id: errorLabel
-                color: "white"
+                color: "#ffffff"
                 Layout.fillWidth: true
                 elide: Text.ElideRight
             }
             ToolButton {
+                id: errorCloseBtn
                 text: "✕"
+                contentItem: Text {
+                    text: errorCloseBtn.text
+                    color: "#ffffff"
+                    font: errorCloseBtn.font
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                background: Rectangle {
+                    radius: Theme.radiusS
+                    color: errorCloseBtn.pressed ? "#59ffffff"
+                         : errorCloseBtn.hovered ? "#33ffffff" : "transparent"
+                }
                 onClicked: {
                     errorBanner.visible = false
                     bannerHideTimer.stop()
@@ -1268,6 +1325,10 @@ ApplicationWindow {
         anchors.bottom: errorBanner.visible ? errorBanner.top : parent.bottom
         height: visible ? 38 : 0
         visible: updates.updateAvailable && !updates.dismissed
+        // Intentionally theme-independent: a fixed dark-blue notice surface
+        // in BOTH themes. Nothing inside may rely on the inherited palette —
+        // stock controls would draw black text here in light mode. Every
+        // foreground below is set explicitly (white / near-white).
         color: "#1f3a5a"
 
         RowLayout {
@@ -1277,32 +1338,70 @@ ApplicationWindow {
             spacing: 12
 
             Label {
-                color: "white"
+                color: "#ffffff"
                 text: qsTr("Update available: v%1").arg(updates.latestVersion)
                 font.bold: true
             }
             Label {
                 visible: updates.releaseDate.length > 0
-                color: "#aac6ff"
+                color: "#c6d9ff"
                 font.pixelSize: 11
                 text: "(" + updates.releaseDate + ")"
             }
             Item { Layout.fillWidth: true }
-            ToolButton {
-                text: qsTr("Download")
+            Button {
+                id: updateDownloadBtn
+                text: updates.installing
+                      ? qsTr("Restarting…")
+                      : updates.downloading
+                        ? qsTr("Downloading… %1%")
+                              .arg(Math.round(updates.downloadProgress * 100))
+                        : qsTr("Update now")
                 enabled: updates.downloadUrl.length > 0
+                         && !updates.downloading && !updates.installing
                 ToolTip.visible: hovered
                 ToolTip.delay: 400
                 ToolTip.text: updates.downloadUrl.length > 0
-                              ? updates.downloadUrl
+                              ? qsTr("Downloads and installs automatically, then restarts the app.")
                               : qsTr("No download for this platform yet — check the website.")
-                onClicked: updates.openDownload()
+                // Filled primary: Fluent blue + white, explicit so the
+                // banner never inherits palette colors.
+                contentItem: Text {
+                    text: updateDownloadBtn.text
+                    color: updateDownloadBtn.enabled
+                           ? Theme.onPrimary : "#a6b8cc"
+                    font: updateDownloadBtn.font
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                background: Rectangle {
+                    implicitHeight: 28
+                    radius: Theme.radiusS
+                    color: !updateDownloadBtn.enabled ? "#33ffffff"
+                         : updateDownloadBtn.pressed ? Theme.primaryPressed
+                         : updateDownloadBtn.hovered ? Theme.primaryHover
+                         : Theme.primaryBg
+                }
+                onClicked: updates.downloadAndInstall()
             }
             ToolButton {
+                id: updateDismissBtn
                 text: "✕"
                 ToolTip.visible: hovered
                 ToolTip.delay: 400
                 ToolTip.text: qsTr("Dismiss")
+                contentItem: Text {
+                    text: updateDismissBtn.text
+                    color: "#ffffff"
+                    font: updateDismissBtn.font
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                background: Rectangle {
+                    radius: Theme.radiusS
+                    color: updateDismissBtn.pressed ? "#59ffffff"
+                         : updateDismissBtn.hovered ? "#33ffffff" : "transparent"
+                }
                 onClicked: updates.dismiss()
             }
         }

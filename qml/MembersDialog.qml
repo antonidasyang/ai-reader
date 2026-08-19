@@ -16,6 +16,16 @@ Dialog {
 
     readonly property bool owner: projects.currentRole === "owner"
 
+    // Parallel arrays — the API role code is what gets sent to the
+    // server; the combos show the translated label. The invite combo
+    // uses a different order (editor first) so keep two code lists.
+    readonly property var roleCodes: ["owner", "editor", "viewer"]
+    readonly property var roleLabels:
+        [qsTr("Owner"), qsTr("Editor"), qsTr("Viewer")]
+    readonly property var inviteRoleCodes: ["editor", "viewer", "owner"]
+    readonly property var inviteRoleLabels:
+        [qsTr("Editor"), qsTr("Viewer"), qsTr("Owner")]
+
     // ── Shared dialog chrome ────────────────────────────────────────
     palette.window: Theme.dialogBg
     palette.windowText: Theme.text
@@ -270,12 +280,12 @@ Dialog {
                         }
                         FieldCombo {
                             enabled: dlg.owner
-                            model: ["owner", "editor", "viewer"]
-                            currentIndex: model.indexOf(modelData.role)
+                            model: dlg.roleLabels
+                            currentIndex: dlg.roleCodes.indexOf(modelData.role)
                             Layout.preferredWidth: 110
                             opacity: enabled ? 1 : 0.6
                             onActivated: function(i) {
-                                projects.updateMemberRole(modelData.userId, model[i])
+                                projects.updateMemberRole(modelData.userId, dlg.roleCodes[i])
                             }
                         }
                         ToolButton {
@@ -317,7 +327,7 @@ Dialog {
             }
             FieldCombo {
                 id: roleC
-                model: ["editor", "viewer", "owner"]
+                model: dlg.inviteRoleLabels
                 Layout.preferredWidth: 110
             }
             ActionButton {
@@ -325,7 +335,8 @@ Dialog {
                 primary: true
                 enabled: emailF.text.length > 0
                 onClicked: {
-                    projects.addMember(emailF.text, roleC.currentText)
+                    projects.addMember(emailF.text,
+                                       dlg.inviteRoleCodes[roleC.currentIndex])
                     emailF.text = ""
                 }
             }

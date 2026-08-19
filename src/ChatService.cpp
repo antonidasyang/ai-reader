@@ -399,8 +399,8 @@ void ChatService::runTurn()
     const int budget = m_settings ? m_settings->toolBudget() : 30;
     if (m_iterations >= budget) {
         m_messages.appendChunkToLast(
-            QStringLiteral("\n\n_[Tool budget exhausted (%1 iterations). "
-                           "Raise it in Settings if needed.]_")
+            tr("\n\n_[Tool budget exhausted (%1 iterations). "
+               "Raise it in Settings if needed.]_")
                 .arg(budget));
         m_messages.setLastStatus(ChatMessage::Done);
         cleanupAfterFinal();

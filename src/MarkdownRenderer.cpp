@@ -44,7 +44,7 @@ void highlightCodeBlocks(cmark_node *root)
         const QString colored = CodeHighlighter::highlight(src, lang);
 
         QString html = QStringLiteral(
-            "<pre style=\"background:#f6f8fa;"
+            "<pre style=\"background:#f6f8fa;color:#1d1d1d;"
             "padding:8px;border-radius:4px;font-family:monospace;"
             "white-space:pre-wrap;\">");
         if (!lang.isEmpty())

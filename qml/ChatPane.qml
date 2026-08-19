@@ -357,7 +357,10 @@ Rectangle {
                             readOnly: true
                             selectByMouse: true
                             wrapMode: TextEdit.Wrap
-                            color: "#1d1d1d"
+                            // Theme token, not hardcoded near-black: the
+                            // bubbles are dark in dark mode, where #1d1d1d
+                            // text was unreadable.
+                            color: Theme.text
                             font.pixelSize: settings.chatFontSize
                             // PlainText for user messages; MarkdownText
                             // for streaming assistant replies (cheap,
@@ -432,7 +435,7 @@ Rectangle {
             Label {
                 anchors.centerIn: parent
                 visible: list.count === 0
-                color: "#888"
+                color: Theme.dimText
                 wrapMode: Text.Wrap
                 width: parent.width - 32
                 horizontalAlignment: Text.AlignHCenter

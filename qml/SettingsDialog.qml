@@ -419,12 +419,12 @@ Dialog {
                         id: baseUrlField
                         Layout.fillWidth: true
                         placeholderText: providerBox.currentText === "anthropic"
-                                         ? "https://api.anthropic.com (default)"
+                                         ? qsTr("https://api.anthropic.com (default)")
                                          : providerBox.currentText === "deepseek"
                                            ? "https://api.deepseek.com"
                                            : providerBox.currentText === "openai-compatible"
                                              ? "http://localhost:8080"
-                                             : "https://api.openai.com (default)"
+                                             : qsTr("https://api.openai.com (default)")
                     }
 
                     FormLabel { text: qsTr("API key") }
@@ -672,9 +672,15 @@ Dialog {
                 ActionButton {
                     visible: updates.updateAvailable
                              && updates.lastError.length === 0
+                    enabled: !updates.downloading && !updates.installing
                     primary: true
-                    text: qsTr("Download v%1").arg(updates.latestVersion)
-                    onClicked: Qt.openUrlExternally(updates.downloadUrl)
+                    text: updates.installing
+                          ? qsTr("Restarting…")
+                          : updates.downloading
+                            ? qsTr("Downloading… %1%")
+                                  .arg(Math.round(updates.downloadProgress * 100))
+                            : qsTr("Update to v%1").arg(updates.latestVersion)
+                    onClicked: updates.downloadAndInstall()
                 }
             }
 

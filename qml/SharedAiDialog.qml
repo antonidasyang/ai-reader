@@ -18,6 +18,12 @@ Dialog {
     function refresh() { items = aiArtifacts.sharedForCurrent() }
     onAboutToShow: refresh()
 
+    // Artifact-type codes come from the server; map the known ones to
+    // a translated pill label and fall back to the raw code.
+    function typeLabel(t) {
+        return t === "summary" ? qsTr("interpretation") : (t || "")
+    }
+
     // ── Shared dialog chrome ────────────────────────────────────────
     palette.window: Theme.dialogBg
     palette.windowText: Theme.text
@@ -188,7 +194,7 @@ Dialog {
                             elide: Text.ElideRight
                             Layout.fillWidth: true
                         }
-                        MetaPill { label: modelData.type }
+                        MetaPill { label: dlg.typeLabel(modelData.type) }
                         MetaPill { label: modelData.model }
                     }
                     Label {

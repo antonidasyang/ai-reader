@@ -16,6 +16,11 @@ Rectangle {
 
     Layout.fillWidth: true
     implicitHeight: column.implicitHeight + 4
+    // Intentionally theme-independent: CodeHighlighter (C++) bakes a
+    // GitHub-light span palette into the HTML, so the card keeps its
+    // light surface in BOTH themes. Every foreground inside must be an
+    // explicit dark-on-light color — the ambient palette turns light in
+    // dark mode and would paint white text on this card.
     color: "#f6f8fa"
     border.color: "#e1e4e8"
     border.width: 1
@@ -52,15 +57,32 @@ Rectangle {
                 Label {
                     text: root.language.length > 0 ? root.language : qsTr("code")
                     font.pixelSize: 10
-                    color: "#666"
+                    color: "#666666"  // fixed: dark caption on the fixed light strip
                 }
                 Item { Layout.fillWidth: true }
                 ToolButton {
+                    id: copyBtn
                     text: qsTr("Copy")
                     flat: true
                     font.pixelSize: 10
                     padding: 2
                     Layout.preferredHeight: 18
+                    // Explicit dark-on-light styling: a stock flat button
+                    // takes its text color from the app palette, which is
+                    // near-white in dark mode — invisible on this fixed
+                    // light strip.
+                    contentItem: Text {
+                        text: copyBtn.text
+                        font: copyBtn.font
+                        color: "#444444"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        radius: 3
+                        color: copyBtn.pressed ? "#d0d7de"
+                             : copyBtn.hovered ? "#dde2e8" : "transparent"
+                    }
                     ToolTip.visible: hovered
                     ToolTip.delay: 400
                     ToolTip.text: qsTr("Copy code to clipboard")
@@ -92,7 +114,9 @@ Rectangle {
             textFormat: TextEdit.RichText
             font.family: "monospace"
             font.pixelSize: 12
-            color: "#1d1d1d"
+            color: "#1d1d1d"          // fixed: dark ink on the fixed light card
+            selectionColor: "#b6d7ff" // fixed light-blue selection, dark text stays readable
+            selectedTextColor: "#1d1d1d"
             text: root.html
             cursorVisible: false
             activeFocusOnPress: false
