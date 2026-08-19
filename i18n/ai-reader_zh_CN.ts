@@ -4,12 +4,12 @@
 <context>
     <name>AiPdfView</name>
     <message>
-        <location filename="../qml/AiPdfView.qml" line="566"/>
+        <location filename="../qml/AiPdfView.qml" line="570"/>
         <source>Copy</source>
         <translation>复制</translation>
     </message>
     <message>
-        <location filename="../qml/AiPdfView.qml" line="571"/>
+        <location filename="../qml/AiPdfView.qml" line="575"/>
         <source>Select All on Page</source>
         <translation>全选本页</translation>
     </message>
@@ -571,12 +571,12 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation>打开 PDF</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="409"/>
+        <location filename="../qml/Main.qml" line="410"/>
         <source>Open…</source>
         <translation>打开…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="414"/>
+        <location filename="../qml/Main.qml" line="415"/>
         <source>Open folder…</source>
         <translation>打开文件夹…</translation>
     </message>
@@ -591,22 +591,22 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation>导出提取的文本</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="418"/>
+        <location filename="../qml/Main.qml" line="419"/>
         <source>Export text…</source>
         <translation>导出文本…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="422"/>
+        <location filename="../qml/Main.qml" line="423"/>
         <source>Save the raw PDF text + per-line bboxes + detected paragraphs to a .txt file</source>
         <translation>将 PDF 原始文本、每行 bbox、识别出的段落保存为 .txt 文件</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="426"/>
+        <location filename="../qml/Main.qml" line="427"/>
         <source>Re-extract</source>
         <translation>重新分段</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="431"/>
+        <location filename="../qml/Main.qml" line="432"/>
         <source>Discard manual paragraph edits and re-run automatic extraction</source>
         <translation>丢弃手动段落编辑并重新自动分段</translation>
     </message>
@@ -616,79 +616,79 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation>写入提取文本失败。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="528"/>
+        <location filename="../qml/Main.qml" line="529"/>
         <source>Folder</source>
         <translation>文件夹</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="437"/>
+        <location filename="../qml/Main.qml" line="438"/>
         <source>Translate</source>
         <translation>翻译</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="437"/>
+        <location filename="../qml/Main.qml" line="438"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="444"/>
+        <location filename="../qml/Main.qml" line="445"/>
         <source>Retry failed</source>
         <translation>重试失败项</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="449"/>
+        <location filename="../qml/Main.qml" line="450"/>
         <source>Interpret</source>
         <translation>解读</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="455"/>
+        <location filename="../qml/Main.qml" line="456"/>
         <source>Read page (vision)</source>
         <translation>视觉读页</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="300"/>
-        <location filename="../qml/Main.qml" line="552"/>
+        <location filename="../qml/Main.qml" line="301"/>
+        <location filename="../qml/Main.qml" line="553"/>
         <source>Chat</source>
         <translation>对话</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="288"/>
-        <location filename="../qml/Main.qml" line="545"/>
+        <location filename="../qml/Main.qml" line="289"/>
+        <location filename="../qml/Main.qml" line="546"/>
         <source>TOC</source>
         <translation>目录</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="504"/>
+        <location filename="../qml/Main.qml" line="505"/>
         <source>Zoom in</source>
         <translation>放大</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="471"/>
+        <location filename="../qml/Main.qml" line="472"/>
         <source>Zoom out</source>
         <translation>缩小</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="235"/>
+        <location filename="../qml/Main.qml" line="236"/>
         <source>6 · Sign in to sync</source>
         <translation>6 · 登录以同步</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="236"/>
+        <location filename="../qml/Main.qml" line="237"/>
         <source>Click &lt;b&gt;Sign in&lt;/b&gt; to log in through your organisation&apos;s CAS page in the browser — the app never stores your password. Signed in, your library lives in the cloud: papers, metadata and AI interpretations sync across devices and stay readable offline.</source>
         <translation>点击&lt;b&gt;登录&lt;/b&gt;，在浏览器中通过所在机构的 CAS 页面完成登录——应用不会保存你的密码。登录后，文库保存在云端：论文、元数据和 AI 解读跨设备同步，离线也可阅读。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="240"/>
+        <location filename="../qml/Main.qml" line="241"/>
         <source>7 · Share a project library</source>
         <translation>7 · 共享课题文库</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="241"/>
+        <location filename="../qml/Main.qml" line="242"/>
         <source>The &lt;b&gt;Lib&lt;/b&gt; pane organises papers by research project. Invite teammates by email as &lt;b&gt;owner / editor / viewer&lt;/b&gt; — everyone shares the same library, full-text search included, and shared AI interpretations appear under &lt;b&gt;Shared&lt;/b&gt;.</source>
         <translation>&lt;b&gt;文库&lt;/b&gt;面板按课题组织文献。用邮箱邀请同事加入，角色分&lt;b&gt;所有者 / 编辑者 / 查看者&lt;/b&gt;——大家共用同一个文库（含全文检索），共享的 AI 解读会出现在&lt;b&gt;共享&lt;/b&gt;标签下。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="245"/>
+        <location filename="../qml/Main.qml" line="246"/>
         <source>8 · Configure your LLM</source>
         <translation>8 · 配置你的大模型</translation>
     </message>
@@ -697,92 +697,92 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation type="vanished">重置缩放</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="558"/>
+        <location filename="../qml/Main.qml" line="559"/>
         <source>Quote → Chat</source>
         <translation>引用 → 对话</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="562"/>
+        <location filename="../qml/Main.qml" line="563"/>
         <source>Quote the highlighted PDF text into the chat input</source>
         <translation>将选中的 PDF 文字引用到对话输入框</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="571"/>
+        <location filename="../qml/Main.qml" line="572"/>
         <source>%1 pages · %2 paragraphs</source>
         <translation>%1 页 · %2 段</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="649"/>
+        <location filename="../qml/Main.qml" line="658"/>
         <source>%1 · %2</source>
         <translation>%1 · %2</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="650"/>
+        <location filename="../qml/Main.qml" line="659"/>
         <source>LLM not configured</source>
         <translation>未配置 LLM</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="658"/>
+        <location filename="../qml/Main.qml" line="667"/>
         <source>Prompts…</source>
         <translation>提示词…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="663"/>
+        <location filename="../qml/Main.qml" line="672"/>
         <source>Settings…</source>
         <translation>设置…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="671"/>
+        <location filename="../qml/Main.qml" line="680"/>
         <source>Show getting-started tour</source>
         <translation>显示新手向导</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1121"/>
+        <location filename="../qml/Main.qml" line="1130"/>
         <source>Drag a PDF here, or click Open…</source>
         <translation>将 PDF 拖到此处,或点击「打开…」</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1127"/>
+        <location filename="../qml/Main.qml" line="1136"/>
         <source>AI Reader — milestone 3.2 (TOC sidebar)</source>
         <translation>AI Reader — 里程碑 3.2(目录侧栏)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1268"/>
+        <location filename="../qml/Main.qml" line="1277"/>
         <source>Drop PDF to open</source>
         <translation>松开以打开 PDF</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="692"/>
+        <location filename="../qml/Main.qml" line="701"/>
         <source>Dropped file is not a PDF.</source>
         <translation>拖入的文件不是 PDF。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="254"/>
+        <location filename="../qml/Main.qml" line="255"/>
         <source>%1: %2</source>
         <translation>%1:%2</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="265"/>
+        <location filename="../qml/Main.qml" line="266"/>
         <source>PDF</source>
         <translation>PDF</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="275"/>
+        <location filename="../qml/Main.qml" line="276"/>
         <source>Translation</source>
         <translation>翻译</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="281"/>
+        <location filename="../qml/Main.qml" line="282"/>
         <source>Summary</source>
         <translation>解读</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="295"/>
+        <location filename="../qml/Main.qml" line="296"/>
         <source>Vision</source>
         <translation>视觉</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="205"/>
+        <location filename="../qml/Main.qml" line="206"/>
         <source>1 · Open a paper</source>
         <translation>1 · 打开论文</translation>
     </message>
@@ -803,88 +803,98 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation>文本文件 (*.txt)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="151"/>
-        <location filename="../qml/Main.qml" line="622"/>
+        <location filename="../qml/Main.qml" line="152"/>
+        <location filename="../qml/Main.qml" line="623"/>
         <source>New project</source>
         <translation>新建课题</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="186"/>
+        <location filename="../qml/Main.qml" line="187"/>
         <source>Project name</source>
         <translation>课题名称</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="191"/>
+        <location filename="../qml/Main.qml" line="192"/>
         <source>Description (optional)</source>
         <translation>描述(可选)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="206"/>
+        <location filename="../qml/Main.qml" line="207"/>
         <source>Click &lt;b&gt;Open…&lt;/b&gt; to load a single PDF, or &lt;b&gt;Open folder…&lt;/b&gt; to browse a whole library. You can also drag a .pdf into the window. Each paper opens in its own tab.</source>
         <translation>点击 &lt;b&gt;打开…&lt;/b&gt; 加载单个 PDF,或 &lt;b&gt;打开文件夹…&lt;/b&gt; 浏览整个库。也可以将 .pdf 拖入窗口。每个论文会在单独的标签页中打开。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="210"/>
+        <location filename="../qml/Main.qml" line="211"/>
         <source>2 · Toggle panels</source>
         <translation>2 · 切换面板</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="211"/>
+        <location filename="../qml/Main.qml" line="212"/>
         <source>Use the toolbar&apos;s &lt;b&gt;Folder / TOC / Chat&lt;/b&gt; buttons to show or hide each pane.</source>
         <translation>使用工具栏的 &lt;b&gt;文件夹 / 目录 / 对话&lt;/b&gt; 按钮显示或隐藏对应面板。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="215"/>
+        <location filename="../qml/Main.qml" line="216"/>
         <source>3 · Move panels</source>
         <translation>3 · 移动面板</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="216"/>
+        <location filename="../qml/Main.qml" line="217"/>
         <source>Each pane has a small &lt;b&gt;⋮⋮ grip&lt;/b&gt; in its top-left corner. Press and drag a grip horizontally to slide that pane to a new slot in the layout — a vertical marker shows where it will land. The arrangement is remembered between launches.</source>
         <translation>每个面板左上角都有 &lt;b&gt;⋮⋮ 拖柄&lt;/b&gt;。按住并水平拖动拖柄,可以把该面板移到布局中的新位置——会出现一条竖线标记落点。下次启动时会保留你的布局。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="220"/>
+        <location filename="../qml/Main.qml" line="221"/>
         <source>4 · Translate paragraphs</source>
         <translation>4 · 段落翻译</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="221"/>
+        <location filename="../qml/Main.qml" line="222"/>
         <source>Click &lt;b&gt;Translate&lt;/b&gt; to translate every paragraph at once. Or right-click a single paragraph to translate, split, merge, delete, or quote it into the chat.</source>
         <translation>点击 &lt;b&gt;翻译&lt;/b&gt; 一键翻译所有段落。也可以右键单个段落,执行翻译、拆分、合并、删除,或将其引用到对话中。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="225"/>
+        <location filename="../qml/Main.qml" line="226"/>
         <source>5 · Chat with the paper</source>
         <translation>5 · 与论文对话</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="226"/>
+        <location filename="../qml/Main.qml" line="227"/>
         <source>Open the &lt;b&gt;Chat&lt;/b&gt; pane and ask questions. The model can read pages, search the text, and view rendered figures with vision. Each paper keeps its own list of &lt;b&gt;chat sessions&lt;/b&gt; in the tab strip on top — + to add, × to close, double-click to rename.</source>
         <translation>打开 &lt;b&gt;对话&lt;/b&gt; 面板向 AI 提问。模型可读取页面、搜索文本,并通过视觉模型查看渲染后的图表。每篇论文在面板顶部的标签栏中维护自己的 &lt;b&gt;对话会话&lt;/b&gt; 列表——+ 新建,× 关闭,双击重命名。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="574"/>
+        <location filename="../qml/Main.qml" line="575"/>
         <source> · Segmenting…</source>
         <translation> · 分段中…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1370"/>
+        <location filename="../qml/Main.qml" line="628"/>
+        <source>Edit project</source>
+        <translation>编辑课题</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="632"/>
+        <source>Rename this project, or delete it</source>
+        <translation>重命名或删除该课题</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1379"/>
         <source>Restarting…</source>
         <translation>即将重启…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1372"/>
+        <location filename="../qml/Main.qml" line="1381"/>
         <source>Downloading… %1%</source>
         <translation>下载中… %1%</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1374"/>
+        <location filename="../qml/Main.qml" line="1383"/>
         <source>Update now</source>
         <translation>立即更新</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1380"/>
+        <location filename="../qml/Main.qml" line="1389"/>
         <source>Downloads and installs automatically, then restarts the app.</source>
         <translation>自动下载并安装，随后自动重启应用。</translation>
     </message>
@@ -893,52 +903,52 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation type="vanished">6 · 配置你的大模型</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="246"/>
+        <location filename="../qml/Main.qml" line="247"/>
         <source>Open &lt;b&gt;Settings…&lt;/b&gt; to add a model and API key (Anthropic Claude or any OpenAI-compatible endpoint). Use &lt;b&gt;Prompts…&lt;/b&gt; to customise system prompts. Re-open this tour any time from the &lt;b&gt;?&lt;/b&gt; button.</source>
         <translation>打开 &lt;b&gt;设置…&lt;/b&gt; 添加模型和 API 密钥(Anthropic Claude 或任意 OpenAI 兼容端点)。使用 &lt;b&gt;提示词…&lt;/b&gt; 自定义系统提示词。任何时候都可以从 &lt;b&gt;?&lt;/b&gt; 按钮重新打开本向导。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="484"/>
+        <location filename="../qml/Main.qml" line="485"/>
         <source>Click: fit page width · double-click: 100%</source>
         <translation>单击：适应页宽 · 双击：恢复 100%</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="522"/>
+        <location filename="../qml/Main.qml" line="523"/>
         <source>Hand tool: drag to move the page. Off = select text.</source>
         <translation>手形工具:拖动移动页面;关闭则为选择文字。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="535"/>
+        <location filename="../qml/Main.qml" line="536"/>
         <source>Lib</source>
         <translation>库</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="540"/>
+        <location filename="../qml/Main.qml" line="541"/>
         <source>Cloud-synced literature library</source>
         <translation>云端同步的文献库</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="575"/>
+        <location filename="../qml/Main.qml" line="576"/>
         <source> · GROBID…</source>
         <translation> · GROBID…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="585"/>
+        <location filename="../qml/Main.qml" line="586"/>
         <source>Sign in</source>
         <translation>登录</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="627"/>
+        <location filename="../qml/Main.qml" line="636"/>
         <source>Members</source>
         <translation>成员</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="642"/>
+        <location filename="../qml/Main.qml" line="651"/>
         <source>Sign out</source>
         <translation>退出登录</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1357"/>
+        <location filename="../qml/Main.qml" line="1366"/>
         <source>Update available: v%1</source>
         <translation>有可用更新:v%1</translation>
     </message>
@@ -947,12 +957,12 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation type="vanished">下载</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1407"/>
+        <location filename="../qml/Main.qml" line="1416"/>
         <source>Dismiss</source>
         <translation>忽略</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1381"/>
+        <location filename="../qml/Main.qml" line="1390"/>
         <source>No download for this platform yet — check the website.</source>
         <translation>当前平台暂无下载——请到项目网站查看。</translation>
     </message>
@@ -1220,14 +1230,127 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation>创建失败(HTTP %1)</translation>
     </message>
     <message>
-        <location filename="../src/ProjectController.cpp" line="148"/>
+        <location filename="../src/ProjectController.cpp" line="154"/>
+        <source>You don&apos;t have permission to edit this project.</source>
+        <translation>你没有编辑该课题的权限。</translation>
+    </message>
+    <message>
+        <location filename="../src/ProjectController.cpp" line="156"/>
+        <source>Save failed (HTTP %1)</source>
+        <translation>保存失败(HTTP %1)</translation>
+    </message>
+    <message>
+        <location filename="../src/ProjectController.cpp" line="159"/>
+        <source>Project updated.</source>
+        <translation>课题已更新。</translation>
+    </message>
+    <message>
+        <location filename="../src/ProjectController.cpp" line="187"/>
+        <source>Only the project owner can delete it.</source>
+        <translation>只有课题所有者才能删除课题。</translation>
+    </message>
+    <message>
+        <location filename="../src/ProjectController.cpp" line="189"/>
         <source>Delete failed (HTTP %1)</source>
         <translation>删除失败(HTTP %1)</translation>
     </message>
     <message>
-        <location filename="../src/ProjectController.cpp" line="196"/>
+        <location filename="../src/ProjectController.cpp" line="203"/>
+        <source>Project deleted.</source>
+        <translation>课题已删除。</translation>
+    </message>
+    <message>
+        <location filename="../src/ProjectController.cpp" line="249"/>
         <source>Invite failed (HTTP %1)</source>
         <translation>邀请失败(HTTP %1)</translation>
+    </message>
+</context>
+<context>
+    <name>ProjectSettingsDialog</name>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="12"/>
+        <source>Project settings</source>
+        <translation>课题设置</translation>
+    </message>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="50"/>
+        <source>Name</source>
+        <translation>名称</translation>
+    </message>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="57"/>
+        <source>Project name</source>
+        <translation type="unfinished">课题名称</translation>
+    </message>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="63"/>
+        <source>Description</source>
+        <translation>描述</translation>
+    </message>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="70"/>
+        <source>Description (optional)</source>
+        <translation type="unfinished">描述(可选)</translation>
+    </message>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="79"/>
+        <source>You have view-only access to this project, so its details can&apos;t be changed.</source>
+        <translation>你对该课题只有查看权限,无法修改其信息。</translation>
+    </message>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="88"/>
+        <source>Close</source>
+        <translation type="unfinished">关闭</translation>
+    </message>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="93"/>
+        <source>Save</source>
+        <translation>保存</translation>
+    </message>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="142"/>
+        <source>Delete this project</source>
+        <translation>删除该课题</translation>
+    </message>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="150"/>
+        <source>Everything in it — papers, notes, annotations and AI results — is deleted for you and for every member. This can&apos;t be undone.</source>
+        <translation>其中的一切 —— 文献、笔记、批注和 AI 结果 —— 都会为你和所有成员一并删除,且无法恢复。</translation>
+    </message>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="156"/>
+        <source>Delete project…</source>
+        <translation>删除课题…</translation>
+    </message>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="171"/>
+        <source>Delete project?</source>
+        <translation>确认删除课题?</translation>
+    </message>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="204"/>
+        <source>&quot;%1&quot; and everything in it will be permanently deleted, for every member of the project.</source>
+        <translation>「%1」及其中的全部内容将被永久删除,课题的每一位成员都会失去这些数据。</translation>
+    </message>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="213"/>
+        <source>%1 local change(s) have not been synced yet and will be lost.</source>
+        <translation>有 %1 处本地修改尚未同步,将一并丢失。</translation>
+    </message>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="220"/>
+        <source>Type the project name to confirm.</source>
+        <translation>请输入课题名称以确认。</translation>
+    </message>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="232"/>
+        <source>Cancel</source>
+        <translation type="unfinished">取消</translation>
+    </message>
+    <message>
+        <location filename="../qml/ProjectSettingsDialog.qml" line="237"/>
+        <source>Delete</source>
+        <translation>删除</translation>
     </message>
 </context>
 <context>

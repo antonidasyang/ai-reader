@@ -41,7 +41,18 @@ public:
     Q_INVOKABLE void selectProject(const QString &id);
     Q_INVOKABLE void createProject(const QString &name,
                                    const QString &description);
+    // Rename / re-describe. Server-side this needs editor or owner
+    // (assertWriter), which `canWrite` already mirrors.
+    Q_INVOKABLE void updateProject(const QString &id, const QString &name,
+                                   const QString &description);
+    // Owner-only server-side, and irreversible: the server cascades
+    // every item, annotation and note in the project, for every
+    // member. Callers must confirm first — see unsyncedCount().
     Q_INVOKABLE void deleteProject(const QString &id);
+    // Local changes for `id` that have not reached the server yet.
+    // Deleting a project throws them away, so the confirmation says so.
+    Q_INVOKABLE int unsyncedCount(const QString &id) const;
+    Q_INVOKABLE QString descriptionOf(const QString &id) const;
 
     Q_INVOKABLE void refreshMembers();
     Q_INVOKABLE void addMember(const QString &email, const QString &role);

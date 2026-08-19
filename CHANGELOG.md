@@ -1,5 +1,29 @@
 # AI Reader changelog
 
+## v1.1.11 — 2026-08-20
+
+### Projects can be renamed and deleted
+- **New "Edit project" button** next to the project picker: rename a
+  project or change its description (needs editor or owner access),
+  and — for owners — delete it. Deletion asks you to type the project
+  name first and tells you how many unsynced local changes would be
+  lost, because it removes the papers, notes, annotations and AI
+  results for every member, permanently. Deleting also purges the
+  project's local objects, sync cursor and search index, which used
+  to linger forever as unreachable rows.
+
+### PDF scrollbars are back
+- **The PDF pane now shows real scrollbars** whenever there's
+  something to scroll, and you can drag them. They existed before but
+  were invisible in practice: the app pans by moving the view
+  directly, which never triggered the auto-hide scrollbar's fade-in.
+
+### The TOC says where it came from
+- The table of contents is now labelled **"from paper structure"** or
+  **"by AI"**, and the button reads **"Rebuild with AI"** instead of
+  "Refresh" — it discards the structural outline and spends a model
+  request, which the old wording hid.
+
 ## v1.1.10 — 2026-08-20
 
 Fixes for the five issues from v1.1.9 field testing.

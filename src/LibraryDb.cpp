@@ -348,6 +348,30 @@ QList<ProjectRow> LibraryDb::projects() const
     return rows;
 }
 
+void LibraryDb::purgeProject(const QString &projectId)
+{
+    if (projectId.isEmpty())
+        return;
+    QSqlDatabase db = database();
+    db.transaction();
+    QSqlQuery q(db);
+    for (const auto &sql : {
+             QStringLiteral("DELETE FROM sync_objects WHERE project_id=?"),
+             QStringLiteral("DELETE FROM sync_state WHERE project_id=?"),
+         }) {
+        q.prepare(sql);
+        q.addBindValue(projectId);
+        if (!q.exec())
+            qWarning() << "LibraryDb: purgeProject:" << q.lastError().text();
+    }
+    if (m_ftsAvailable) {
+        q.prepare(QStringLiteral("DELETE FROM fts_docs WHERE project_id=?"));
+        q.addBindValue(projectId);
+        q.exec();
+    }
+    db.commit();
+}
+
 void LibraryDb::indexDoc(const QString &objectId, const QString &projectId,
                          const QString &kind, const QString &content)
 {

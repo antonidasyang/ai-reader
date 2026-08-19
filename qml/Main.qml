@@ -145,6 +145,7 @@ ApplicationWindow {
 
     // Cloud-library dialogs (the toolbar account/project group drives these).
     MembersDialog { id: membersDialog }
+    ProjectSettingsDialog { id: projectSettingsDialog }
 
     Dialog {
         id: createProjectDialog
@@ -622,6 +623,14 @@ ApplicationWindow {
                 text: qsTr("New project")
                 visible: auth.authenticated
                 onClicked: createProjectDialog.open()
+            }
+            ToolButton {
+                text: qsTr("Edit project")
+                visible: auth.authenticated && projects.currentId.length > 0
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("Rename this project, or delete it")
+                onClicked: projectSettingsDialog.open()
             }
             ToolButton {
                 text: qsTr("Members")

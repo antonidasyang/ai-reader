@@ -79,6 +79,12 @@ public:
     // ── projects cache (offline list) ─────────────────────────────────
     void replaceProjects(const QList<ProjectRow> &projects);
     QList<ProjectRow> projects() const;
+    // Drop every local trace of a project (objects, sync cursor, search
+    // index). The server cascades its side on delete; without this the
+    // rows would linger forever as unreachable orphans, since every
+    // query is scoped by the current project id and a deleted project
+    // can never be current again.
+    void purgeProject(const QString &projectId);
 
     // ── full-text index ───────────────────────────────────────────────
     void indexDoc(const QString &objectId, const QString &projectId,

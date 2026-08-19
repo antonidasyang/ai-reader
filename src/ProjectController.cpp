@@ -140,14 +140,67 @@ void ProjectController::createProject(const QString &name,
                 });
 }
 
+void ProjectController::updateProject(const QString &id, const QString &name,
+                                      const QString &description)
+{
+    if (id.isEmpty())
+        return;
+    QJsonObject body{{QStringLiteral("name"), name},
+                     {QStringLiteral("description"), description}};
+    m_api->patch(QStringLiteral("/projects/") + id, body,
+                 [this](bool ok, int status, const QJsonDocument &) {
+                     if (!ok) {
+                         setStatus(status == 403
+                                       ? tr("You don't have permission to "
+                                            "edit this project.")
+                                       : tr("Save failed (HTTP %1)").arg(status));
+                         return;
+                     }
+                     setStatus(tr("Project updated."));
+                     refresh();
+                 });
+}
+
+int ProjectController::unsyncedCount(const QString &id) const
+{
+    if (id.isEmpty() || !m_db)
+        return 0;
+    return int(m_db->dirtyObjects(id).size());
+}
+
+QString ProjectController::descriptionOf(const QString &id) const
+{
+    for (const ProjectRow &p : m_projects)
+        if (p.id == id)
+            return p.description;
+    return {};
+}
+
 void ProjectController::deleteProject(const QString &id)
 {
+    if (id.isEmpty())
+        return;
     m_api->del(QStringLiteral("/projects/") + id,
-               [this](bool ok, int status, const QJsonDocument &) {
+               [this, id](bool ok, int status, const QJsonDocument &) {
                    if (!ok) {
-                       setStatus(tr("Delete failed (HTTP %1)").arg(status));
+                       setStatus(status == 403
+                                     ? tr("Only the project owner can delete "
+                                          "it.")
+                                     : tr("Delete failed (HTTP %1)").arg(status));
                        return;
                    }
+                   // The server cascaded its side; drop ours too, or the
+                   // rows sit in the local DB forever — unreachable
+                   // (every query is scoped by the current project) yet
+                   // still counted, indexed and searched.
+                   if (m_db)
+                       m_db->purgeProject(id);
+                   if (m_currentId == id) {
+                       m_currentId.clear();
+                       m_qs.remove(QStringLiteral("project/currentId"));
+                       emit currentChanged();
+                   }
+                   setStatus(tr("Project deleted."));
                    refresh();
                });
 }
