@@ -1409,12 +1409,22 @@
         <translation>在论文首次打开时生效；服务不可达时自动回退到内置切分器。自建服务：docker run -d -p 8070:8070 grobid/grobid:0.9.1-crf</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="681"/>
+        <location filename="../qml/SettingsDialog.qml" line="668"/>
+        <source>v%1 is available.</source>
+        <translation>v%1 已发布。</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsDialog.qml" line="676"/>
+        <source>Download v%1</source>
+        <translation>下载 v%1</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsDialog.qml" line="696"/>
         <source>AI Reader</source>
         <translation>AI Reader</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="693"/>
+        <location filename="../qml/SettingsDialog.qml" line="708"/>
         <source>github.com/antonidasyang/ai-reader</source>
         <translation>github.com/antonidasyang/ai-reader</translation>
     </message>
@@ -1459,17 +1469,16 @@
         <translation>发送匿名崩溃报告(默认关闭)</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="657"/>
+        <location filename="../qml/SettingsDialog.qml" line="665"/>
         <source>Update check failed: %1</source>
         <translation>检查更新失败:%1</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="660"/>
         <source>v%1 is available — see the banner at the bottom of the window.</source>
-        <translation>v%1 已发布——请查看窗口底部的提示横幅。</translation>
+        <translation type="vanished">v%1 已发布——请查看窗口底部的提示横幅。</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="662"/>
+        <location filename="../qml/SettingsDialog.qml" line="669"/>
         <source>You&apos;re on the latest version (v%1).</source>
         <translation>当前已是最新版本(v%1)。</translation>
     </message>

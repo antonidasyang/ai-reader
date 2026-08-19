@@ -647,20 +647,35 @@ Dialog {
                 }
             }
 
-            Label {
+            // Check-result row. The download action lives HERE: the
+            // window-bottom banner is dimmed behind this modal dialog,
+            // so "see the banner" looked like the check did nothing.
+            RowLayout {
                 Layout.fillWidth: true
-                wrapMode: Text.Wrap
-                color: updates.lastError.length > 0 ? Theme.danger : Theme.dimText
-                font.pixelSize: 11
-                visible: text.length > 0
-                text: updates.lastError.length > 0
-                      ? qsTr("Update check failed: %1").arg(updates.lastError)
-                      : (updates.latestVersion.length > 0
-                         ? (updates.updateAvailable
-                            ? qsTr("v%1 is available — see the banner at the bottom of the window.")
-                                  .arg(updates.latestVersion)
-                            : qsTr("You're on the latest version (v%1).").arg(updates.latestVersion))
-                         : "")
+                spacing: Theme.spaceM
+                visible: statusLabel.text.length > 0
+                Label {
+                    id: statusLabel
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    color: updates.lastError.length > 0 ? Theme.danger
+                                                        : Theme.dimText
+                    font.pixelSize: 11
+                    text: updates.lastError.length > 0
+                          ? qsTr("Update check failed: %1").arg(updates.lastError)
+                          : (updates.latestVersion.length > 0
+                             ? (updates.updateAvailable
+                                ? qsTr("v%1 is available.").arg(updates.latestVersion)
+                                : qsTr("You're on the latest version (v%1).").arg(updates.latestVersion))
+                             : "")
+                }
+                ActionButton {
+                    visible: updates.updateAvailable
+                             && updates.lastError.length === 0
+                    primary: true
+                    text: qsTr("Download v%1").arg(updates.latestVersion)
+                    onClicked: Qt.openUrlExternally(updates.downloadUrl)
+                }
             }
 
             // ── Version footer ──────────────────────────────────────

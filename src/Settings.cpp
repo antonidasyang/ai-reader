@@ -430,6 +430,16 @@ void Settings::load()
     m_chatIncludePaperText = m_qs.value(kKeyChatIncludePaperText, false).toBool();
     m_autoCheckUpdates     = m_qs.value(kKeyAutoCheckUpdates,     true).toBool();
     m_updateManifestUrl    = m_qs.value(kKeyUpdateManifestUrl,    QString{}).toString();
+    // Migration: old installs saved the retired GitHub manifest URL
+    // (raw.githubusercontent is unreachable for most users in China,
+    // so update checks silently never worked). Clear it so the value
+    // falls through to UpdateChecker's server-side default.
+    if (m_updateManifestUrl.contains(
+            QLatin1String("raw.githubusercontent.com"))) {
+        m_updateManifestUrl.clear();
+        m_qs.setValue(kKeyUpdateManifestUrl, QString());
+        m_qs.sync();
+    }
     m_grobidEnabled        = m_qs.value(kKeyGrobidEnabled,        true).toBool();
     m_grobidUrl            = m_qs.value(kKeyGrobidUrl,
                                  QStringLiteral("https://aireader.d2ssoft.com/grobid")).toString();

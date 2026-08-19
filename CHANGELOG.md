@@ -1,5 +1,16 @@
 # AI Reader changelog
 
+## v1.1.6 — 2026-08-19
+
+- **The update check answers where you clicked**: the result row in
+  Settings now carries a Download button — the window-bottom banner
+  was hidden behind the modal dialog, so a successful check looked
+  like nothing happened.
+- **Stale update URLs migrate automatically**: old installs that
+  saved the retired raw.githubusercontent manifest address (silently
+  unreachable for most users) are reset to the server default on
+  launch.
+
 ## v1.1.5 — 2026-08-19
 
 - **Standard buttons now follow the system language in packaged
