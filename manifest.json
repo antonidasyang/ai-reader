@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "latestVersion": "1.1.5",
+  "latestVersion": "1.1.7",
   "releaseDate": "2026-08-19",
-  "releaseNotes": "修复:打包版标准按钮跟随系统语言(中文系统显示中文);更新检查地址提示修正。",
+  "releaseNotes": "一键自动更新(下载-安装-重启全自动);全局配色与中英文修复;向导新增登录与文库共享说明。",
   "platforms": {
     "windows-x64": {
-      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.5.exe",
-      "sha256": "0d4fd9aeb269fda6cd949963036da67137248b886dfc069ef19055e2da014325"
+      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.7.exe",
+      "sha256": "9901b25fe47822157e6c54e9ecc7d5e999038889066f99f851f24233100dcc85"
     }
   }
 }
