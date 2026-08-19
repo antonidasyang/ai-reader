@@ -18,6 +18,14 @@ Dialog {
 
     readonly property bool owner: projects.currentRole === "owner"
 
+    // One size for every button in this dialog. The primary/danger
+    // buttons carry a custom background, which sizes itself from its
+    // own implicit size rather than the control's padding, so without
+    // a shared figure they end up taller and narrower than the plain
+    // ones sitting next to them.
+    readonly property int btnH: 30
+    readonly property int btnW: 88
+
     palette.window: Theme.paneBg
     palette.windowText: Theme.text
     palette.base: Theme.fieldBg
@@ -86,11 +94,15 @@ Dialog {
             Item { Layout.fillWidth: true }
             Button {
                 text: qsTr("Close")
+                Layout.preferredWidth: root.btnW
+                Layout.preferredHeight: root.btnH
                 onClicked: root.close()
             }
             Button {
                 id: saveBtn
                 text: qsTr("Save")
+                Layout.preferredWidth: root.btnW
+                Layout.preferredHeight: root.btnH
                 enabled: projects.canWrite
                          && nameField.text.trim().length > 0
                          && (nameField.text.trim() !== projects.currentName
@@ -104,8 +116,8 @@ Dialog {
                     verticalAlignment: Text.AlignVCenter
                 }
                 background: Rectangle {
-                    implicitWidth: 76
-                    implicitHeight: 30
+                    implicitWidth: root.btnW
+                    implicitHeight: root.btnH
                     radius: 4
                     color: !saveBtn.enabled ? Theme.buttonBg
                          : saveBtn.pressed  ? Theme.primaryPressed
@@ -154,6 +166,7 @@ Dialog {
                 }
                 Button {
                     text: qsTr("Delete project…")
+                    Layout.preferredHeight: root.btnH
                     onClicked: {
                         confirmDelete.pending = projects.currentId
                         confirmDelete.pendingName = projects.currentName
@@ -230,11 +243,15 @@ Dialog {
                 Item { Layout.fillWidth: true }
                 Button {
                     text: qsTr("Cancel")
+                    Layout.preferredWidth: root.btnW
+                    Layout.preferredHeight: root.btnH
                     onClicked: confirmDelete.close()
                 }
                 Button {
                     id: reallyDeleteBtn
                     text: qsTr("Delete")
+                    Layout.preferredWidth: root.btnW
+                    Layout.preferredHeight: root.btnH
                     enabled: confirmField.text.trim()
                              === confirmDelete.pendingName
                     contentItem: Label {
@@ -245,8 +262,8 @@ Dialog {
                         verticalAlignment: Text.AlignVCenter
                     }
                     background: Rectangle {
-                        implicitWidth: 76
-                        implicitHeight: 30
+                        implicitWidth: root.btnW
+                        implicitHeight: root.btnH
                         radius: 4
                         color: !reallyDeleteBtn.enabled ? Theme.buttonBg
                              : reallyDeleteBtn.pressed  ? Qt.darker(Theme.danger, 1.3)

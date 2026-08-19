@@ -394,12 +394,12 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
 <context>
     <name>FileSyncService</name>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="102"/>
+        <location filename="../src/FileSyncService.cpp" line="117"/>
         <source>Could not read the PDF to upload.</source>
         <translation>无法读取要上传的 PDF。</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="107"/>
+        <location filename="../src/FileSyncService.cpp" line="98"/>
         <source>Uploading PDF…</source>
         <translation>正在上传 PDF…</translation>
     </message>
@@ -408,47 +408,67 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation type="vanished">获取上传地址失败(HTTP %1)</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="125"/>
+        <location filename="../src/FileSyncService.cpp" line="138"/>
         <source>Upload check failed (HTTP %1)</source>
         <translation>上传前检查失败(HTTP %1)</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="133"/>
+        <location filename="../src/FileSyncService.cpp" line="103"/>
         <source>PDF already in storage (deduped).</source>
         <translation>PDF 已在存储中(已去重)。</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="164"/>
+        <location filename="../src/FileSyncService.cpp" line="186"/>
         <source>Could not open the PDF.</source>
         <translation>无法打开 PDF。</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="180"/>
+        <location filename="../src/FileSyncService.cpp" line="104"/>
         <source>PDF uploaded.</source>
         <translation>PDF 已上传。</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="181"/>
+        <location filename="../src/FileSyncService.cpp" line="204"/>
         <source>PDF upload failed (HTTP %1)</source>
         <translation>PDF 上传失败(HTTP %1)</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="194"/>
+        <location filename="../src/FileSyncService.cpp" line="215"/>
+        <source>Open a project first.</source>
+        <translation>请先打开一个课题。</translation>
+    </message>
+    <message>
+        <location filename="../src/FileSyncService.cpp" line="231"/>
+        <source>No PDFs to check in this project.</source>
+        <translation>本课题没有需要检查的 PDF。</translation>
+    </message>
+    <message>
+        <location filename="../src/FileSyncService.cpp" line="242"/>
+        <source>Checked %1 PDF(s): %2 already in storage, %3 re-uploaded, %4 unavailable, %5 failed.</source>
+        <translation>已检查 %1 篇:%2 篇云端已有,%3 篇已补传,%4 篇找不到文件,%5 篇失败。</translation>
+    </message>
+    <message>
+        <location filename="../src/FileSyncService.cpp" line="253"/>
+        <source>Checking PDFs… (%1 left)</source>
+        <translation>正在检查 PDF…(还剩 %1 篇)</translation>
+    </message>
+    <message>
+        <location filename="../src/FileSyncService.cpp" line="303"/>
         <source>This paper&apos;s PDF isn&apos;t available yet.</source>
         <translation>这篇文献的 PDF 还不可用。</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="208"/>
+        <location filename="../src/FileSyncService.cpp" line="317"/>
         <source>Downloading PDF…</source>
         <translation>正在下载 PDF…</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="219"/>
+        <location filename="../src/FileSyncService.cpp" line="328"/>
         <source>Download failed (HTTP %1)</source>
         <translation>下载失败(HTTP %1)</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="224"/>
+        <location filename="../src/FileSyncService.cpp" line="333"/>
         <source>This paper&apos;s PDF isn&apos;t in storage yet.</source>
         <translation>这篇论文的 PDF 尚未上传到云端。</translation>
     </message>
@@ -457,17 +477,17 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation type="vanished">获取下载地址失败(HTTP %1)</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="237"/>
+        <location filename="../src/FileSyncService.cpp" line="346"/>
         <source>PDF download failed (HTTP %1)</source>
         <translation>PDF 下载失败(HTTP %1)</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="244"/>
+        <location filename="../src/FileSyncService.cpp" line="353"/>
         <source>PDF downloaded.</source>
         <translation>PDF 已下载。</translation>
     </message>
     <message>
-        <location filename="../src/FileSyncService.cpp" line="247"/>
+        <location filename="../src/FileSyncService.cpp" line="356"/>
         <source>Could not save the downloaded PDF.</source>
         <translation>无法保存下载的 PDF。</translation>
     </message>
@@ -517,56 +537,66 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
     </message>
     <message>
         <location filename="../qml/LibraryPane.qml" line="49"/>
+        <source>Check PDFs</source>
+        <translation>检查 PDF</translation>
+    </message>
+    <message>
+        <location filename="../qml/LibraryPane.qml" line="54"/>
+        <source>Check that every paper&apos;s PDF is really in the cloud, and re-upload the ones missing from it</source>
+        <translation>检查每篇论文的 PDF 是否真的在云端,并补传缺失的</translation>
+    </message>
+    <message>
+        <location filename="../qml/LibraryPane.qml" line="58"/>
         <source>+ Add</source>
         <translation>+ 添加</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="54"/>
+        <location filename="../qml/LibraryPane.qml" line="63"/>
         <source>Add the current paper to this project</source>
         <translation>把当前文献加入此课题</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="75"/>
+        <location filename="../qml/LibraryPane.qml" line="84"/>
         <source>Search the project library…</source>
         <translation>搜索课题文献库…</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="76"/>
+        <location filename="../qml/LibraryPane.qml" line="85"/>
         <source>Search unavailable (no FTS5)</source>
         <translation>搜索不可用(无 FTS5)</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="138"/>
+        <location filename="../qml/LibraryPane.qml" line="147"/>
         <source>Edit metadata</source>
         <translation>编辑题录</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="142"/>
+        <location filename="../qml/LibraryPane.qml" line="151"/>
         <source>Remove from library</source>
         <translation>从库中移除</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="168"/>
+        <location filename="../qml/LibraryPane.qml" line="177"/>
         <source>(untitled)</source>
         <translation>(无标题)</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="194"/>
+        <location filename="../qml/LibraryPane.qml" line="203"/>
         <source>No matches.</source>
         <translation>无匹配结果。</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="196"/>
+        <location filename="../qml/LibraryPane.qml" line="205"/>
         <source>Sign in to use the library.</source>
         <translation>登录后使用文献库。</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="198"/>
+        <location filename="../qml/LibraryPane.qml" line="207"/>
         <source>Create or select a project.</source>
         <translation>请创建或选择一个课题。</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="199"/>
+        <location filename="../qml/LibraryPane.qml" line="208"/>
         <source>No papers yet. Open a PDF, then click + Add.</source>
         <translation>还没有文献。打开一个 PDF,然后点「+ 添加」。</translation>
     </message>
@@ -1192,27 +1222,27 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
 <context>
     <name>PaperController</name>
     <message>
-        <location filename="../src/PaperController.cpp" line="185"/>
+        <location filename="../src/PaperController.cpp" line="200"/>
         <source>File not found.</source>
         <translation>文件未找到。</translation>
     </message>
     <message>
-        <location filename="../src/PaperController.cpp" line="188"/>
+        <location filename="../src/PaperController.cpp" line="203"/>
         <source>Invalid PDF format.</source>
         <translation>PDF 格式无效。</translation>
     </message>
     <message>
-        <location filename="../src/PaperController.cpp" line="191"/>
+        <location filename="../src/PaperController.cpp" line="206"/>
         <source>Unsupported PDF security scheme.</source>
         <translation>不支持的 PDF 加密方式。</translation>
     </message>
     <message>
-        <location filename="../src/PaperController.cpp" line="194"/>
+        <location filename="../src/PaperController.cpp" line="209"/>
         <source>PDF data not yet available.</source>
         <translation>PDF 数据尚不可用。</translation>
     </message>
     <message>
-        <location filename="../src/PaperController.cpp" line="198"/>
+        <location filename="../src/PaperController.cpp" line="213"/>
         <source>Failed to load PDF.</source>
         <translation>加载 PDF 失败。</translation>
     </message>

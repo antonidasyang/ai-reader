@@ -46,6 +46,15 @@ Rectangle {
                     Layout.preferredHeight: 16
                 }
                 ToolButton {
+                    text: qsTr("Check PDFs")
+                    enabled: auth.authenticated && projects.canWrite
+                             && !fileSync.busy
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 400
+                    ToolTip.text: qsTr("Check that every paper's PDF is really in the cloud, and re-upload the ones missing from it")
+                    onClicked: fileSync.repairAttachments()
+                }
+                ToolButton {
                     text: qsTr("+ Add")
                     enabled: auth.authenticated && projects.canWrite
                              && paperController.status === PaperController.Ready
@@ -197,6 +206,41 @@ Rectangle {
                          : (projects.currentId.length === 0
                             ? qsTr("Create or select a project.")
                             : qsTr("No papers yet. Open a PDF, then click + Add.")))
+            }
+        }
+
+        // File-transfer feedback. Uploads, downloads and the PDF check
+        // all report through fileSync.status, which until now had
+        // nowhere to appear — a failed upload looked exactly like a
+        // successful one.
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: fileSync.status.length > 0 ? 26 : 0
+            visible: fileSync.status.length > 0
+            color: Theme.headerBg
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 10
+                anchors.rightMargin: 8
+                spacing: 6
+                BusyIndicator {
+                    running: fileSync.busy
+                    visible: running
+                    Layout.preferredWidth: 14
+                    Layout.preferredHeight: 14
+                }
+                Label {
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                    text: fileSync.status
+                    color: Theme.dimText
+                    font.pixelSize: 11
+                    elide: Text.ElideRight
+                    ToolTip.visible: hovered && truncated
+                    ToolTip.text: fileSync.status
+                    HoverHandler { id: statusHover }
+                    property bool hovered: statusHover.hovered
+                }
             }
         }
     }

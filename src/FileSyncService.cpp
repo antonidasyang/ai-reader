@@ -94,17 +94,31 @@ bool FileSyncService::findAttachment(const QString &itemId, QString &key,
 void FileSyncService::uploadPaper(const QString &itemId,
                                   const QString &localPath)
 {
-    const QString path = toLocalPath(localPath);
-    if (m_projects->currentId().isEmpty() || path.isEmpty())
+    setBusy(true);
+    setStatus(tr("Uploading PDF…"));
+    uploadOne(itemId, toLocalPath(localPath), [this](bool ok, bool deduped) {
+        setBusy(false);
+        if (!ok)
+            return;   // uploadOne already set a specific message
+        setStatus(deduped ? tr("PDF already in storage (deduped).")
+                          : tr("PDF uploaded."));
+    });
+}
+
+void FileSyncService::uploadOne(const QString &itemId, const QString &path,
+                                UploadDone done)
+{
+    if (m_projects->currentId().isEmpty() || path.isEmpty()) {
+        done(false, false);
         return;
+    }
     const QString sha = sha256File(path);
     if (sha.isEmpty()) {
         setStatus(tr("Could not read the PDF to upload."));
+        done(false, false);
         return;
     }
     const qint64 size = QFileInfo(path).size();
-    setBusy(true);
-    setStatus(tr("Uploading PDF…"));
 
     // We need the item's paperId for the attachment link.
     SyncObjectRow item;
@@ -118,22 +132,30 @@ void FileSyncService::uploadPaper(const QString &itemId,
     m_api->get(
         QStringLiteral("/projects/") + m_projects->currentId()
             + QStringLiteral("/attachments/blob-status?sha256=") + sha,
-        [this, itemId, paperId, sha, size, path](bool ok, int status,
-                                                 const QJsonDocument &doc) {
+        [this, itemId, paperId, sha, size, path, done](
+            bool ok, int status, const QJsonDocument &doc) {
             if (!ok) {
-                setBusy(false);
                 setStatus(tr("Upload check failed (HTTP %1)").arg(status));
+                done(false, false);
                 return;
             }
             const QJsonObject o = doc.object();
-            createAttachment(itemId, paperId, sha,
-                             o.value(QStringLiteral("key")).toString(), size);
+            const QString key = o.value(QStringLiteral("key")).toString();
             if (o.value(QStringLiteral("exists")).toBool()) {
-                setBusy(false);
-                setStatus(tr("PDF already in storage (deduped)."));
+                createAttachment(itemId, paperId, sha, key, size);
+                done(true, true);
                 return;
             }
-            putBlob(sha, path);
+            // The attachment record is written only once the bytes are
+            // actually in storage. Recording it up front (as this did)
+            // left a record claiming a blob that a failed upload never
+            // produced — and other machines then tried to download it.
+            putBlob(sha, path,
+                    [this, itemId, paperId, sha, key, size, done](bool sent) {
+                        if (sent)
+                            createAttachment(itemId, paperId, sha, key, size);
+                        done(sent, false);
+                    });
         });
 }
 
@@ -148,7 +170,8 @@ QNetworkRequest FileSyncService::blobRequest(const QString &path) const
     return req;
 }
 
-void FileSyncService::putBlob(const QString &sha256, const QString &localPath)
+void FileSyncService::putBlob(const QString &sha256, const QString &localPath,
+                              std::function<void(bool)> done)
 {
     // Read the PDF fully into memory, then upload from the bytes — rather than
     // handing QNetworkAccessManager a QFile that stays open for the whole
@@ -160,8 +183,8 @@ void FileSyncService::putBlob(const QString &sha256, const QString &localPath)
     {
         QFile file(localPath);
         if (!file.open(QIODevice::ReadOnly)) {
-            setBusy(false);
             setStatus(tr("Could not open the PDF."));
+            done(false);
             return;
         }
         bytes = file.readAll();
@@ -172,14 +195,100 @@ void FileSyncService::putBlob(const QString &sha256, const QString &localPath)
     req.setHeader(QNetworkRequest::ContentTypeHeader,
                   QStringLiteral("application/pdf"));
     QNetworkReply *reply = m_nam.put(req, bytes);
-    connect(reply, &QNetworkReply::finished, this, [this, reply] {
+    connect(reply, &QNetworkReply::finished, this, [this, reply, done] {
         const int s =
             reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         reply->deleteLater();
-        setBusy(false);
-        setStatus(s >= 200 && s < 300 ? tr("PDF uploaded.")
-                                      : tr("PDF upload failed (HTTP %1)").arg(s));
+        const bool ok = s >= 200 && s < 300;
+        if (!ok)
+            setStatus(tr("PDF upload failed (HTTP %1)").arg(s));
+        done(ok);
     });
+}
+
+void FileSyncService::repairAttachments()
+{
+    if (!m_repairQueue.isEmpty())
+        return;                       // already running
+    const QString projectId = m_projects->currentId();
+    if (projectId.isEmpty()) {
+        setStatus(tr("Open a project first."));
+        return;
+    }
+    const QList<SyncObjectRow> rows =
+        m_db->objectsByType(projectId, QStringLiteral("attachment"));
+    for (const SyncObjectRow &r : rows) {
+        const QString sha = r.data.value(QStringLiteral("sha256")).toString();
+        if (sha.isEmpty())
+            continue;
+        m_repairQueue.append({r.id,
+                              r.data.value(QStringLiteral("itemId")).toString(),
+                              sha, r.data});
+    }
+    m_repairTotal = int(m_repairQueue.size());
+    m_repairOk = m_repairFixed = m_repairRetired = m_repairFailed = 0;
+    if (m_repairQueue.isEmpty()) {
+        setStatus(tr("No PDFs to check in this project."));
+        return;
+    }
+    setBusy(true);
+    repairStep();
+}
+
+void FileSyncService::repairStep()
+{
+    if (m_repairQueue.isEmpty()) {
+        setBusy(false);
+        setStatus(tr("Checked %1 PDF(s): %2 already in storage, %3 re-uploaded, "
+                     "%4 unavailable, %5 failed.")
+                      .arg(m_repairTotal)
+                      .arg(m_repairOk)
+                      .arg(m_repairFixed)
+                      .arg(m_repairRetired)
+                      .arg(m_repairFailed));
+        m_repairTotal = 0;
+        return;
+    }
+    const RepairTask task = m_repairQueue.takeFirst();
+    setStatus(tr("Checking PDFs… (%1 left)").arg(m_repairQueue.size() + 1));
+
+    m_api->get(
+        QStringLiteral("/projects/") + m_projects->currentId()
+            + QStringLiteral("/attachments/blob-status?sha256=") + task.sha256,
+        [this, task](bool ok, int, const QJsonDocument &doc) {
+            if (!ok) {
+                ++m_repairFailed;
+                repairStep();
+                return;
+            }
+            if (doc.object().value(QStringLiteral("exists")).toBool()) {
+                ++m_repairOk;
+                repairStep();
+                return;
+            }
+            // Bytes are missing. If the original file is still on this
+            // machine we can put them back; uploadOne re-hashes it, so
+            // a file that changed since simply lands under its new key.
+            SyncObjectRow item;
+            m_db->getObject(m_projects->currentId(), task.itemId, item);
+            const QString path = toLocalPath(
+                item.data.value(QStringLiteral("localPath")).toString());
+            if (!path.isEmpty() && QFileInfo::exists(path)) {
+                uploadOne(task.itemId, path, [this](bool sent, bool) {
+                    sent ? ++m_repairFixed : ++m_repairFailed;
+                    repairStep();
+                });
+                return;
+            }
+            // Nothing to upload from and nothing in storage: retire the
+            // record so other machines stop trying to download it. The
+            // library entry itself is untouched — only the claim that a
+            // PDF is available goes away.
+            m_sync->putObject(QStringLiteral("attachment"), task.attachmentId,
+                              task.data, /*deleted=*/true);
+            ++m_repairRetired;
+            repairStep();
+        });
 }
 
 void FileSyncService::openItem(const QString &itemId, const QString &localPath)

@@ -36,6 +36,12 @@ public:
 
     Q_INVOKABLE void uploadPaper(const QString &itemId, const QString &localPath);
     Q_INVOKABLE void openItem(const QString &itemId, const QString &localPath);
+    // Walk the current project's attachments and reconcile them with
+    // what storage actually holds: re-upload anything whose bytes are
+    // missing but whose file is still on this machine, and retire the
+    // records whose bytes exist nowhere (they only lead other machines
+    // into failed downloads).
+    Q_INVOKABLE void repairAttachments();
 
 signals:
     // Carries a file:// URL, not a bare filesystem path: QML's
@@ -58,8 +64,13 @@ private:
     // Authenticated request against the API host, for the byte transfers
     // ApiClient's JSON interface can't carry.
     QNetworkRequest blobRequest(const QString &path) const;
-    void putBlob(const QString &sha256, const QString &localPath);
+    // (succeeded, wasAlreadyInStorage)
+    using UploadDone = std::function<void(bool, bool)>;
+    void uploadOne(const QString &itemId, const QString &path, UploadDone done);
+    void putBlob(const QString &sha256, const QString &localPath,
+                 std::function<void(bool)> done);
     void downloadBlob(const QString &key, const QString &sha256);
+    void repairStep();
     void setStatus(const QString &s);
     void setBusy(bool v);
 
@@ -70,4 +81,16 @@ private:
     QNetworkAccessManager m_nam;
     bool m_busy = false;
     QString m_status;
+
+    // repairAttachments() worklist — processed one at a time so a big
+    // library can't open dozens of concurrent transfers.
+    struct RepairTask {
+        QString attachmentId;   // sync object id of the attachment record
+        QString itemId;
+        QString sha256;
+        QJsonObject data;       // kept so a retired record keeps its fields
+    };
+    QList<RepairTask> m_repairQueue;
+    int m_repairTotal = 0, m_repairOk = 0, m_repairFixed = 0,
+        m_repairRetired = 0, m_repairFailed = 0;
 };

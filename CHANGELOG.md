@@ -1,5 +1,25 @@
 # AI Reader changelog
 
+## v1.1.14 — 2026-08-20
+
+### The library tells you what it's doing
+- **Upload, download and check progress now appear** at the bottom of
+  the library pane. They were reported internally but shown nowhere,
+  so a failed upload looked exactly like a successful one.
+
+### PDFs are recorded only once they're really stored
+- **A paper is marked as having a PDF only after its bytes reach the
+  cloud.** The record used to be written before the upload, so a
+  failed transfer left an entry claiming a PDF that other machines
+  then tried, and failed, to download.
+- **New "Check PDFs" button** reconciles the project with what's
+  actually stored: papers whose PDF is missing are re-uploaded when
+  the file is still on this machine, and entries whose file exists
+  nowhere are retired so they stop causing failed downloads. The
+  library entries themselves are never touched.
+
+- Buttons in the project settings dialog are all one size now.
+
 ## v1.1.13 — 2026-08-20
 
 - **Papers opened from the library no longer come up blank.** The
