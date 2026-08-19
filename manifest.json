@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "latestVersion": "1.1.8",
+  "latestVersion": "1.1.9",
   "releaseDate": "2026-08-20",
-  "releaseNotes": "目录自动从论文结构生成(GROBID);公共切分服务启用滚动验证码;修复向导聚光灯漂移。",
+  "releaseNotes": "分段与目录合并为一个操作(重新分段自动刷新目录);自动更新完成后自动打开新版本。",
   "platforms": {
     "windows-x64": {
-      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.8.exe",
-      "sha256": "64ade78361b31148918934780cf96a43830a27966d72027ffe229975186004d8"
+      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.9.exe",
+      "sha256": "5b71a4cb58dc53f1196d7b9fa1e6e71ac39f93083206293b8bce4fe577b3cf9f"
     }
   }
 }
