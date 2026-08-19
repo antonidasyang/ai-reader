@@ -186,7 +186,7 @@ void FileSyncService::openItem(const QString &itemId, const QString &localPath)
 {
     const QString path = toLocalPath(localPath);
     if (!path.isEmpty() && QFileInfo::exists(path)) {
-        emit openReady(path);
+        emit openReady(QUrl::fromLocalFile(path).toString());
         return;
     }
     QString key, sha;
@@ -196,7 +196,7 @@ void FileSyncService::openItem(const QString &itemId, const QString &localPath)
     }
     const QString cache = blobCachePath(sha);
     if (QFileInfo::exists(cache)) {
-        emit openReady(cache);
+        emit openReady(QUrl::fromLocalFile(cache).toString());
         return;
     }
     downloadBlob(key, sha);
@@ -242,7 +242,7 @@ void FileSyncService::downloadBlob(const QString &key, const QString &sha256)
                 if (f.open(QIODevice::WriteOnly) && f.write(bytes) == bytes.size()) {
                     f.close();
                     setStatus(tr("PDF downloaded."));
-                    emit openReady(cache);
+                    emit openReady(QUrl::fromLocalFile(cache).toString());
                 } else {
                     setStatus(tr("Could not save the downloaded PDF."));
                 }

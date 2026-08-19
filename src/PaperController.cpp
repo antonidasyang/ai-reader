@@ -59,9 +59,24 @@ QString PaperController::fileName() const
 
 void PaperController::openPdf(const QUrl &url)
 {
-    if (url == m_source && m_status == Ready)
+    // Accept a bare filesystem path as well as a real URL. QUrl parses
+    // "/a/b.pdf" (and Windows' "C:/a/b.pdf", whose drive letter becomes
+    // a scheme) as non-local, which silently degrades everything
+    // downstream: QML's PdfDocument refuses to load it so the viewer
+    // goes blank, and both the GROBID upgrade and the async extractor
+    // take their remote branches. Normalize once, here, rather than
+    // trusting every caller to build the URL correctly.
+    QUrl src = url;
+    if (!src.isLocalFile() && src.scheme() != QLatin1String("http")
+        && src.scheme() != QLatin1String("https")) {
+        const QString asPath = url.toString();
+        if (!asPath.isEmpty() && QFileInfo::exists(asPath))
+            src = QUrl::fromLocalFile(asPath);
+    }
+
+    if (src == m_source && m_status == Ready)
         return;
-    m_source = url;
+    m_source = src;
     m_password.clear();
     // Persist immediately so a hard crash mid-load still restores the
     // user's last paper next launch. Remote URLs are skipped — restoring

@@ -1,5 +1,15 @@
 # AI Reader changelog
 
+## v1.1.13 — 2026-08-20
+
+- **Papers opened from the library no longer come up blank.** The
+  library handed the viewer a bare filesystem path where a file:// URL
+  was required, so the PDF pane stayed empty while the paragraph list
+  filled in — and, for the same reason, the paper was treated as
+  remote, which skipped GROBID and left fragmented fallback
+  paragraphs. Bare paths are now normalized wherever a paper is
+  opened, so no caller can trigger this again.
+
 ## v1.1.12 — 2026-08-20
 
 ### Library PDFs sync outside the office network

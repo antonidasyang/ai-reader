@@ -38,7 +38,12 @@ public:
     Q_INVOKABLE void openItem(const QString &itemId, const QString &localPath);
 
 signals:
-    void openReady(const QString &path);
+    // Carries a file:// URL, not a bare filesystem path: QML's
+    // PdfDocument.source only accepts a real URL, and PaperController
+    // treats a source whose isLocalFile() is false as remote (which
+    // also skips GROBID). A bare path silently produced a blank
+    // viewer with fallback-segmented paragraphs.
+    void openReady(const QString &url);
     void statusChanged();
     void busyChanged();
 
