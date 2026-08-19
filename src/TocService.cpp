@@ -76,13 +76,16 @@ void TocService::rehydrateFromCache()
 
     QVector<Section> cached = m_cache.lookup(
         m_settings->model(), TocCache::sha(systemPrompt()));
+    Source src = Llm;
     if (cached.isEmpty()) {
         // No LLM result for the current model/prompt — fall back to a
         // structurally derived (GROBID) TOC if one was cached.
         cached = m_cache.lookup(QString::fromLatin1(kGrobidCacheModel),
                                 QString::fromLatin1(kGrobidCachePrompt));
+        src = Structural;
     }
     if (cached.isEmpty()) return;
+    m_source = src;
 
     // Rebuild blockId → page map so any UI that resolves start_block back
     // to a page (TOC sidebar click) keeps working without regenerating.
@@ -130,6 +133,7 @@ void TocService::adoptStructuredOutline(const QVector<Section> &sections)
                       QString::fromLatin1(kGrobidCachePrompt),
                       sections);
     }
+    m_source = Structural;
     m_model.setSections(QVector<Section>(sections));
     emit sectionsChanged();
     setStatus(Done);
@@ -141,6 +145,7 @@ void TocService::clear()
 {
     m_buffer.clear();
     m_blockIdToPage.clear();
+    m_source = NoSource;
     if (m_model.sectionCount() == 0 && m_status == Idle && m_lastError.isEmpty())
         return;
     m_model.clear();
@@ -435,6 +440,7 @@ void TocService::parseResponse(const QString &text)
                       TocCache::sha(systemPrompt()),
                       flat);
     }
+    m_source = Llm;
     m_model.setSections(std::move(flat));
     emit sectionsChanged();
     setStatus(Done);

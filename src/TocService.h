@@ -22,11 +22,19 @@ class TocService : public QObject
     Q_PROPERTY(Status   status      READ status     NOTIFY statusChanged)
     Q_PROPERTY(QString  lastError   READ lastError  NOTIFY statusChanged)
     Q_PROPERTY(int      sectionCount READ sectionCount NOTIFY sectionsChanged)
+    Q_PROPERTY(Source   source      READ source     NOTIFY sectionsChanged)
     Q_PROPERTY(QString  defaultSystemPrompt READ defaultSystemPrompt CONSTANT)
 
 public:
     enum Status { Idle, Generating, Done, Failed };
     Q_ENUM(Status)
+
+    // Where the TOC on display came from. The UI says so out loud:
+    // rebuilding with the LLM costs a request and discards a
+    // structural outline that is usually better, so the user should
+    // never have to guess what they are about to replace.
+    enum Source { NoSource, Structural, Llm };
+    Q_ENUM(Source)
 
     TocService(Settings *settings,
                PaperController *paper,
@@ -37,6 +45,7 @@ public:
     Status   status()       const { return m_status; }
     QString  lastError()    const { return m_lastError; }
     int      sectionCount() const { return m_model.sectionCount(); }
+    Source   source()       const { return m_source; }
     QString  defaultSystemPrompt() const;
 
 public slots:
@@ -80,6 +89,7 @@ private:
 
     QString m_buffer;
     Status m_status = Idle;
+    Source m_source = NoSource;
 
     // Tracks which paper we last reset cache state for. blocksChanged
     // fires on every paragraph mutation as well as on paper-load, but

@@ -4,12 +4,12 @@
 <context>
     <name>AiPdfView</name>
     <message>
-        <location filename="../qml/AiPdfView.qml" line="546"/>
+        <location filename="../qml/AiPdfView.qml" line="566"/>
         <source>Copy</source>
         <translation>复制</translation>
     </message>
     <message>
-        <location filename="../qml/AiPdfView.qml" line="551"/>
+        <location filename="../qml/AiPdfView.qml" line="571"/>
         <source>Select All on Page</source>
         <translation>全选本页</translation>
     </message>
@@ -737,17 +737,17 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation>显示新手向导</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1115"/>
+        <location filename="../qml/Main.qml" line="1121"/>
         <source>Drag a PDF here, or click Open…</source>
         <translation>将 PDF 拖到此处,或点击「打开…」</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1121"/>
+        <location filename="../qml/Main.qml" line="1127"/>
         <source>AI Reader — milestone 3.2 (TOC sidebar)</source>
         <translation>AI Reader — 里程碑 3.2(目录侧栏)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1262"/>
+        <location filename="../qml/Main.qml" line="1268"/>
         <source>Drop PDF to open</source>
         <translation>松开以打开 PDF</translation>
     </message>
@@ -869,22 +869,22 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation> · 分段中…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1364"/>
+        <location filename="../qml/Main.qml" line="1370"/>
         <source>Restarting…</source>
         <translation>即将重启…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1366"/>
+        <location filename="../qml/Main.qml" line="1372"/>
         <source>Downloading… %1%</source>
         <translation>下载中… %1%</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1368"/>
+        <location filename="../qml/Main.qml" line="1374"/>
         <source>Update now</source>
         <translation>立即更新</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1374"/>
+        <location filename="../qml/Main.qml" line="1380"/>
         <source>Downloads and installs automatically, then restarts the app.</source>
         <translation>自动下载并安装，随后自动重启应用。</translation>
     </message>
@@ -938,7 +938,7 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation>退出登录</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1351"/>
+        <location filename="../qml/Main.qml" line="1357"/>
         <source>Update available: v%1</source>
         <translation>有可用更新:v%1</translation>
     </message>
@@ -947,12 +947,12 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation type="vanished">下载</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1401"/>
+        <location filename="../qml/Main.qml" line="1407"/>
         <source>Dismiss</source>
         <translation>忽略</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1375"/>
+        <location filename="../qml/Main.qml" line="1381"/>
         <source>No download for this platform yet — check the website.</source>
         <translation>当前平台暂无下载——请到项目网站查看。</translation>
     </message>
@@ -1822,32 +1822,32 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
 <context>
     <name>TocService</name>
     <message>
-        <location filename="../src/TocService.cpp" line="171"/>
+        <location filename="../src/TocService.cpp" line="176"/>
         <source>LLM is not configured. Open Settings to add a model and API key.</source>
         <translation>未配置大模型。请在「设置」中添加模型和 API Key。</translation>
     </message>
     <message>
-        <location filename="../src/TocService.cpp" line="175"/>
+        <location filename="../src/TocService.cpp" line="180"/>
         <source>No paper open.</source>
         <translation>未打开文献。</translation>
     </message>
     <message>
-        <location filename="../src/TocService.cpp" line="316"/>
+        <location filename="../src/TocService.cpp" line="321"/>
         <source>LLM returned no JSON object. Raw output: %1</source>
         <translation>大模型未返回 JSON 对象。原始输出:%1</translation>
     </message>
     <message>
-        <location filename="../src/TocService.cpp" line="324"/>
+        <location filename="../src/TocService.cpp" line="329"/>
         <source>Invalid JSON: %1. Body: %2</source>
         <translation>JSON 无效:%1。内容:%2</translation>
     </message>
     <message>
-        <location filename="../src/TocService.cpp" line="345"/>
+        <location filename="../src/TocService.cpp" line="350"/>
         <source>JSON has no section array. Body: %1</source>
         <translation>JSON 中没有 section 数组。内容:%1</translation>
     </message>
     <message>
-        <location filename="../src/TocService.cpp" line="428"/>
+        <location filename="../src/TocService.cpp" line="433"/>
         <source>Walked JSON but found no titled sections. Body: %1</source>
         <translation>遍历 JSON 未找到带标题的章节。内容:%1</translation>
     </message>
@@ -1855,47 +1855,84 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
 <context>
     <name>TocSidebar</name>
     <message>
-        <location filename="../qml/TocSidebar.qml" line="32"/>
+        <location filename="../qml/TocSidebar.qml" line="31"/>
         <source>TOC (%1)</source>
         <translation>目录 (%1)</translation>
     </message>
     <message>
-        <location filename="../qml/TocSidebar.qml" line="33"/>
+        <location filename="../qml/TocSidebar.qml" line="32"/>
         <source>TOC</source>
         <translation>目录</translation>
     </message>
     <message>
-        <location filename="../qml/TocSidebar.qml" line="44"/>
         <source>Refresh</source>
-        <translation>刷新</translation>
+        <translation type="vanished">刷新</translation>
     </message>
     <message>
-        <location filename="../qml/TocSidebar.qml" line="44"/>
         <source>Generate</source>
-        <translation>生成</translation>
+        <translation type="vanished">生成</translation>
     </message>
     <message>
-        <location filename="../qml/TocSidebar.qml" line="91"/>
+        <location filename="../qml/TocSidebar.qml" line="45"/>
+        <source>from paper structure</source>
+        <translation>来自论文结构</translation>
+    </message>
+    <message>
+        <location filename="../qml/TocSidebar.qml" line="46"/>
+        <source>by AI</source>
+        <translation>AI 生成</translation>
+    </message>
+    <message>
+        <location filename="../qml/TocSidebar.qml" line="58"/>
+        <source>Rebuild with AI</source>
+        <translation>用 AI 重建</translation>
+    </message>
+    <message>
+        <location filename="../qml/TocSidebar.qml" line="59"/>
+        <source>Build with AI</source>
+        <translation>用 AI 生成</translation>
+    </message>
+    <message>
+        <location filename="../qml/TocSidebar.qml" line="66"/>
+        <source>Discard this table of contents and have the AI model build a new one (one request).</source>
+        <translation>丢弃当前目录,让 AI 模型重新生成一份(消耗一次请求)。</translation>
+    </message>
+    <message>
+        <location filename="../qml/TocSidebar.qml" line="67"/>
+        <source>Have the AI model read the paper and build a table of contents (one request).</source>
+        <translation>让 AI 模型通读论文并生成目录(消耗一次请求)。</translation>
+    </message>
+    <message>
+        <location filename="../qml/TocSidebar.qml" line="111"/>
         <source>p.%1</source>
         <translation>第 %1 页</translation>
     </message>
     <message>
-        <location filename="../qml/TocSidebar.qml" line="113"/>
+        <location filename="../qml/TocSidebar.qml" line="133"/>
         <source>Generating TOC…</source>
         <translation>正在生成目录…</translation>
     </message>
     <message>
-        <location filename="../qml/TocSidebar.qml" line="114"/>
+        <location filename="../qml/TocSidebar.qml" line="134"/>
         <source>Failed: %1</source>
         <translation>失败:%1</translation>
     </message>
     <message>
-        <location filename="../qml/TocSidebar.qml" line="117"/>
-        <source>Click Generate to build the table of contents.</source>
-        <translation>点击「生成」以构建目录。</translation>
+        <location filename="../qml/TocSidebar.qml" line="144"/>
+        <source>Reading the paper&apos;s structure…</source>
+        <translation>正在读取论文结构…</translation>
     </message>
     <message>
-        <location filename="../qml/TocSidebar.qml" line="118"/>
+        <location filename="../qml/TocSidebar.qml" line="145"/>
+        <source>No table of contents in this document&apos;s structure. Use Build with AI to have the model create one.</source>
+        <translation>未能从本文档的结构中获得目录。可点「用 AI 生成」让模型生成一份。</translation>
+    </message>
+    <message>
+        <source>Click Generate to build the table of contents.</source>
+        <translation type="vanished">点击「生成」以构建目录。</translation>
+    </message>
+    <message>
+        <location filename="../qml/TocSidebar.qml" line="137"/>
         <source>Open a PDF first.</source>
         <translation>请先打开 PDF。</translation>
     </message>
@@ -1912,27 +1949,27 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
 <context>
     <name>UpdateChecker</name>
     <message>
-        <location filename="../src/UpdateChecker.cpp" line="97"/>
+        <location filename="../src/UpdateChecker.cpp" line="99"/>
         <source>No manifest URL configured.</source>
         <translation>未配置更新清单 URL。</translation>
     </message>
     <message>
-        <location filename="../src/UpdateChecker.cpp" line="135"/>
+        <location filename="../src/UpdateChecker.cpp" line="137"/>
         <source>Manifest is not valid JSON: %1</source>
         <translation>更新清单不是有效 JSON:%1</translation>
     </message>
     <message>
-        <location filename="../src/UpdateChecker.cpp" line="155"/>
+        <location filename="../src/UpdateChecker.cpp" line="157"/>
         <source>Manifest is missing latestVersion.</source>
         <translation>更新清单缺少 latestVersion。</translation>
     </message>
     <message>
-        <location filename="../src/UpdateChecker.cpp" line="190"/>
+        <location filename="../src/UpdateChecker.cpp" line="192"/>
         <source>Cannot write the update to %1</source>
         <translation>无法将更新写入 %1</translation>
     </message>
     <message>
-        <location filename="../src/UpdateChecker.cpp" line="237"/>
+        <location filename="../src/UpdateChecker.cpp" line="239"/>
         <source>Update download failed: %1</source>
         <translation>更新下载失败：%1</translation>
     </message>

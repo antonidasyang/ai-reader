@@ -1056,6 +1056,12 @@ ApplicationWindow {
                             MouseArea {
                                 id: pdfPan
                                 anchors.fill: parent
+                                // Leave the scrollbars reachable: this
+                                // overlay sits above them, so without the
+                                // margins the hand tool would swallow every
+                                // click meant for the scrollbar.
+                                anchors.rightMargin: pdfView.vScrollWidth
+                                anchors.bottomMargin: pdfView.hScrollHeight
                                 z: 3
                                 visible: window.panMode
                                 acceptedButtons: Qt.LeftButton

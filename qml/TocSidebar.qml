@@ -26,12 +26,26 @@ Rectangle {
                 spacing: 6
 
                 Label {
-                    Layout.fillWidth: true
                     Layout.minimumWidth: 0
                     text: list.count > 0
                           ? qsTr("TOC (%1)").arg(list.count)
                           : qsTr("TOC")
                     font.bold: true
+                    elide: Text.ElideRight
+                }
+                // Where the visible TOC came from. Without this the
+                // rebuild button below is a blind trade: the paper's
+                // own structure is usually the better outline, and
+                // replacing it costs an LLM request.
+                Label {
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                    visible: list.count > 0 && text !== ""
+                    text: toc.source === TocService.Structural
+                          ? qsTr("from paper structure")
+                          : toc.source === TocService.Llm ? qsTr("by AI") : ""
+                    color: Theme.dimText
+                    font.pixelSize: Math.max(8, settings.tocFontSize - 2)
                     elide: Text.ElideRight
                 }
                 BusyIndicator {
@@ -41,10 +55,16 @@ Rectangle {
                     Layout.preferredHeight: 16
                 }
                 ToolButton {
-                    text: list.count > 0 ? qsTr("Refresh") : qsTr("Generate")
+                    text: list.count > 0 ? qsTr("Rebuild with AI")
+                                         : qsTr("Build with AI")
                     enabled: paperController.status === PaperController.Ready
                              && settings.isConfigured
                              && toc.status !== TocService.Generating
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 400
+                    ToolTip.text: list.count > 0
+                        ? qsTr("Discard this table of contents and have the AI model build a new one (one request).")
+                        : qsTr("Have the AI model read the paper and build a table of contents (one request).")
                     onClicked: toc.generate()
                 }
             }
@@ -113,9 +133,16 @@ Rectangle {
                     case TocService.Generating: return qsTr("Generating TOC…")
                     case TocService.Failed:     return qsTr("Failed: %1").arg(toc.lastError)
                     default:
-                        return paperController.status === PaperController.Ready
-                            ? qsTr("Click Generate to build the table of contents.")
-                            : qsTr("Open a PDF first.")
+                        if (paperController.status !== PaperController.Ready)
+                            return qsTr("Open a PDF first.")
+                        // GROBID fills this in by itself for papers it
+                        // can parse, so an empty pane means it didn't
+                        // (service off/unreachable, or not a paper) —
+                        // say so instead of implying the button is the
+                        // normal route.
+                        return paperController.extracting
+                            ? qsTr("Reading the paper's structure…")
+                            : qsTr("No table of contents in this document's structure. Use Build with AI to have the model create one.")
                     }
                 }
             }

@@ -140,6 +140,12 @@ Item {
     readonly property real pageDisplayWidth:
         (root.document ? root.document.maxPageWidth : 0) * root.renderScale
 
+    // Space the scrollbars occupy, so overlays the app stacks on top
+    // of this view (the hand-tool layer) can leave them grabbable.
+    // The internal selection layer keeps itself clear the same way.
+    readonly property real vScrollWidth: vscroll.visible ? vscroll.width : 0
+    readonly property real hScrollHeight: hscroll.visible ? hscroll.height : 0
+
     // Clamp a prospective contentX so the page never detaches from the
     // window edges: pages narrower than the viewport stay put, wider
     // pages stop with their edge flush against the viewport edge.
@@ -350,6 +356,19 @@ Item {
         }
         ScrollBar.vertical: ScrollBar {
             id: vscroll
+            // The app moves the view by writing contentX/contentY
+            // directly (hand tool, wheel router) because the inner
+            // TableView is interactive:false. That never sets the
+            // Flickable's `moving` flag, so the default auto-hiding
+            // scrollbar would essentially never fade in — the view
+            // looked like it had no scrollbar at all. Keep it on
+            // screen whenever there is something to scroll: it is
+            // both the position indicator and a grab target.
+            policy: ScrollBar.AlwaysOn
+            visible: size < 1.0
+            // The style's 10 px overlay indicator is a thin grab
+            // target for a bar the user is now meant to drag.
+            implicitWidth: 13
             property bool moved: false
             onPositionChanged: moved = true
             onPressedChanged: if (pressed) {
@@ -373,7 +392,12 @@ Item {
                 pageNavigator.update(cell.y, currentLocation, root.renderScale)
             }
         }
-        ScrollBar.horizontal: ScrollBar { id: hscroll }
+        ScrollBar.horizontal: ScrollBar {
+            id: hscroll
+            policy: ScrollBar.AlwaysOn
+            visible: size < 1.0     // only when the page is wider than the pane
+            implicitHeight: 13
+        }
     }
 
     // ── Selection interaction layer ─────────────────────────────────
