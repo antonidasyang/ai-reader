@@ -99,17 +99,17 @@ void TocService::rehydrateFromCache()
 
 void TocService::adoptStructuredOutline(const QVector<Section> &sections)
 {
-    // GROBID handed us the section structure for free. Adopt it only
-    // when the TOC pane holds nothing yet — an existing TOC (LLM
-    // generated live or rehydrated from cache) or an LLM run the user
-    // explicitly started always wins, mirroring the "never clobber
-    // what the user already has" rule of applyStructuredBlocks.
+    // GROBID handed us the section structure for free. Segmentation
+    // and the TOC are one operation: every applied GROBID result
+    // refreshes the TOC, replacing whatever was on display — the old
+    // TOC (LLM or structural) referenced block ids that the fresh
+    // block list just invalidated. Only an LLM run the user explicitly
+    // started right now wins over us; running generate() later also
+    // overwrites, so the rule is simply "latest result wins".
     if (sections.size() < 2)
         return;                    // unusable outline — leave TOC alone
     if (m_status == Generating)
         return;                    // explicit LLM generation wins
-    if (m_model.sectionCount() > 0)
-        return;                    // user already sees a TOC
 
     // Keep blockId → page resolvable, same as after a generate().
     m_blockIdToPage.clear();
@@ -121,6 +121,11 @@ void TocService::adoptStructuredOutline(const QVector<Section> &sections)
     }
 
     if (!m_cache.paperId().isEmpty()) {
+        // Cached LLM TOCs are stale now too (their block ids died with
+        // the old segmentation), and rehydrate prefers the LLM key —
+        // drop everything so reopening shows this outline, not a
+        // resurrected pre-segmentation TOC.
+        m_cache.clearEntries();
         m_cache.store(QString::fromLatin1(kGrobidCacheModel),
                       QString::fromLatin1(kGrobidCachePrompt),
                       sections);

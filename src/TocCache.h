@@ -26,6 +26,11 @@ public:
                const QString &promptHash,
                const QVector<Section> &sections);
 
+    // Drop every cached TOC for the current paper (all keys). Used
+    // when a fresh segmentation replaces the block list: every older
+    // TOC references block ids that no longer exist.
+    void clearEntries();
+
     // SHA-256 prefix utility — used by callers to hash the prompt template.
     static QString sha(const QString &s);
 

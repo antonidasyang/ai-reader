@@ -125,6 +125,13 @@ void TocCache::store(const QString &model,
     scheduleSave();
 }
 
+void TocCache::clearEntries()
+{
+    if (m_paperId.isEmpty() || m_entries.isEmpty()) return;
+    m_entries.clear();
+    scheduleSave();
+}
+
 void TocCache::scheduleSave()
 {
     if (!m_saveTimer.isActive())

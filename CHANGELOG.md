@@ -1,5 +1,18 @@
 # AI Reader changelog
 
+## v1.1.9 — 2026-08-20
+
+- **Segmentation and the TOC are one operation now**: every applied
+  GROBID segmentation (first open or an explicit re-segment) also
+  refreshes the table of contents from the paper's structure — the
+  old TOC referenced paragraph ids the fresh segmentation just
+  replaced. An LLM generation you start yourself still wins; the rule
+  is simply "latest result wins", on screen and in the cache.
+- **Auto-update reopens the app when it finishes** (Windows): the
+  installer's launch step was skipped in silent mode, so a one-click
+  update ended with… nothing. The silent path now relaunches the new
+  version explicitly, de-elevated.
+
 ## v1.1.8 — 2026-08-19
 
 ### Table of contents, straight from the paper
