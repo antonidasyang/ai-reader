@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "latestVersion": "1.1.7",
-  "releaseDate": "2026-08-19",
-  "releaseNotes": "一键自动更新(下载-安装-重启全自动);全局配色与中英文修复;向导新增登录与文库共享说明。",
+  "latestVersion": "1.1.8",
+  "releaseDate": "2026-08-20",
+  "releaseNotes": "目录自动从论文结构生成(GROBID);公共切分服务启用滚动验证码;修复向导聚光灯漂移。",
   "platforms": {
     "windows-x64": {
-      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.7.exe",
-      "sha256": "9901b25fe47822157e6c54e9ecc7d5e999038889066f99f851f24233100dcc85"
+      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.8.exe",
+      "sha256": "64ade78361b31148918934780cf96a43830a27966d72027ffe229975186004d8"
     }
   }
 }
