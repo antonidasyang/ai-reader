@@ -1,5 +1,18 @@
 # AI Reader changelog
 
+## v1.1.5 — 2026-08-19
+
+- **Standard buttons now follow the system language in packaged
+  builds.** OK / Cancel / Close and friends come from Qt's own
+  translation catalogs, which the app only looked for in the build
+  machine's Qt install; it now also checks the deployed
+  translations folder beside the executable (and the mac bundle's
+  Resources), so Chinese systems get Chinese buttons.
+- The Settings dialog's update-manifest field no longer hints at the
+  retired GitHub URL; the live update feed
+  (aireader.d2ssoft.com/update/manifest) now serves v1.1.4+ with a
+  working download route.
+
 ## v1.1.4 — 2026-08-19
 
 - **The zoom readout button changes behavior**: a single click fits

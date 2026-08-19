@@ -218,10 +218,34 @@ int main(int argc, char *argv[])
         if (appTranslator.load(loc, QStringLiteral("ai-reader"),
                                QStringLiteral("_"), QStringLiteral(":/i18n")))
             QCoreApplication::installTranslator(&appTranslator);
-        if (qtTranslator.load(loc, QStringLiteral("qtbase"),
-                              QStringLiteral("_"),
-                              QLibraryInfo::path(QLibraryInfo::TranslationsPath)))
+        // Qt's own strings (OK/Cancel/Close on standard buttons...).
+        // QLibraryInfo points at the BUILD machine's Qt install, which
+        // doesn't exist on end-user machines — packaged builds ship
+        // the catalogs beside the exe (windeployqt: translations\
+        // with merged qt_<locale>.qm) or in the mac bundle's
+        // Resources. Try each location, and both catalog names.
+        const QStringList qtTrDirs = {
+            QLibraryInfo::path(QLibraryInfo::TranslationsPath),
+            QCoreApplication::applicationDirPath()
+                + QStringLiteral("/translations"),
+            QCoreApplication::applicationDirPath()
+                + QStringLiteral("/../Resources/translations"),
+        };
+        bool qtLoaded = false;
+        for (const QString &dir : qtTrDirs) {
+            if (qtTranslator.load(loc, QStringLiteral("qtbase"),
+                                  QStringLiteral("_"), dir)
+                || qtTranslator.load(loc, QStringLiteral("qt"),
+                                     QStringLiteral("_"), dir)) {
+                qtLoaded = true;
+                break;
+            }
+        }
+        if (qtLoaded)
             QCoreApplication::installTranslator(&qtTranslator);
+        else
+            qWarning() << "No Qt base translations found for"
+                       << loc.name() << "- standard buttons stay English";
     };
     applyLanguage(settings.uiLanguage());
 

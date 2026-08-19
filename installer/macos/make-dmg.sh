@@ -54,6 +54,16 @@ if [ ! -f "$APP/Contents/Resources/microtex_res/.clatexmath-res_root" ]; then
   echo "         Math will fall back to raw LaTeX. Rebuild: cmake --build build" >&2
 fi
 
+# Qt's own UI strings (OK/Cancel/Close on standard buttons): main.cpp
+# falls back to Contents/Resources/translations when QLibraryInfo's
+# build-machine path doesn't exist. Stage the catalogs the app loads.
+QT_TR_DIR="$(brew --prefix qt)/share/qt/translations"
+if [ -d "$QT_TR_DIR" ]; then
+  mkdir -p "$APP/Contents/Resources/translations"
+  cp "$QT_TR_DIR"/qtbase_*.qm "$APP/Contents/Resources/translations/" 2>/dev/null || true
+  echo "== staged qtbase translations into Resources/translations =="
+fi
+
 echo "== bundling Qt (macdeployqt) =="
 # Homebrew splits Qt into per-module kegs; macdeployqt only searches qtbase/
 # qtdeclarative by default, so it can't resolve frameworks the QML imports pull

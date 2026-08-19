@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "latestVersion": "1.0.0",
-  "releaseDate": "2026-06-29",
-  "releaseNotes": "the cloud release: cloud-synced literature library, research-project sharing with member roles, auto-filled metadata + full-text search, shared AI interpretations, CAS single sign-on, and self-hosted auto-update.",
+  "latestVersion": "1.1.4",
+  "releaseDate": "2026-08-19",
+  "releaseNotes": "阅读体验大版本:网页级文本选择、GROBID 智能分段、界面翻新与多项性能修复",
   "platforms": {
     "windows-x64": {
-      "downloadUrl": "https://github.com/antonidasyang/ai-reader/releases/download/v0.2.0/AiReader-Setup-0.2.0.exe",
-      "sha256": "3607313f8085ef36700e46ba4e0261d276936dae325b5d8151586431f34fa520"
+      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.4.exe",
+      "sha256": "6e9276fa6ce4afeb587b21d0c768d209b081ccc10600a0f99360e4797234a710"
     }
   }
 }

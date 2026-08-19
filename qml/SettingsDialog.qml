@@ -636,7 +636,7 @@ Dialog {
                     FieldText {
                         id: manifestUrlField
                         Layout.fillWidth: true
-                        placeholderText: "https://raw.githubusercontent.com/antonidasyang/ai-reader/main/manifest.json"
+                        placeholderText: "https://aireader.d2ssoft.com/update/manifest"
                     }
 
                     FormLabel { text: qsTr("Crash reports") }
