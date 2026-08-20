@@ -102,6 +102,22 @@ Item {
         }
     }
 
+    // The width the page layout actually gets. The TableView is inset by
+    // its left margin, and the scrollbars are overlays that take none of
+    // it — so this is neither root.width nor root.width minus a bar.
+    readonly property real viewportWidth: tableView.width
+
+    // Largest scale at which the widest page still fits across: exactly
+    // the point where a horizontal scrollbar would start to appear, not
+    // a step past it. Mirrors tableView.pageHolderWidth — same page
+    // extent, same rotation swap — so the fit is exact rather than
+    // approximately right.
+    function fitWidthScale() {
+        const pageW = ((tableView.rot90 ? root.document?.maxPageHeight
+                                        : root.document?.maxPageWidth) ?? 0)
+        return pageW > 0 ? root.viewportWidth / pageW : 0
+    }
+
     // -------------------------------- text search
 
     property alias searchModel: searchModel
@@ -418,7 +434,11 @@ Item {
         ScrollBar.horizontal: ScrollBar {
             id: hscroll
             policy: ScrollBar.AlwaysOn
-            visible: size < 1.0     // only when the page is wider than the pane
+            // Only when the page is really wider than the pane. `size <
+            // 1` also trips on a sub-pixel overflow — which is exactly
+            // what fit-to-width leaves behind once the division rounds —
+            // so ask the geometry directly, with half a pixel of slack.
+            visible: tableView.contentWidth > tableView.width + 0.5
             implicitHeight: 13
         }
     }

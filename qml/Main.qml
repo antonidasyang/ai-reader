@@ -40,11 +40,14 @@ ApplicationWindow {
     function zoomOut()   { _setZoom(pdfView.renderScale / _zoomStep) }
     function resetZoom() { _setZoom(1.0) }
     function fitWidth()  {
-        // scaleToWidth clamps nothing itself; route the resulting
-        // scale through _setZoom's min/max like every other path.
-        const pageW = pdfView.document ? pdfView.document.maxPageWidth : 0
-        if (pageW > 0)
-            _setZoom(pdfView.width / pageW)
+        // Ask the view for the scale, rather than dividing by its outer
+        // width: the page layout is a couple of pixels narrower than the
+        // view, so this landed just past the edge of overflow and popped
+        // the horizontal scrollbar every time. Still routed through
+        // _setZoom for the min/max clamp — fitWidthScale clamps nothing.
+        const s = pdfView.fitWidthScale()
+        if (s > 0)
+            _setZoom(s)
     }
 
     Shortcut {

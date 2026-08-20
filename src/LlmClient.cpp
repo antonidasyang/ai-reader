@@ -2,6 +2,21 @@
 
 #include <QNetworkReply>
 
+#include <chrono>
+
+namespace {
+
+// Streaming replies are long-lived by design, so this has to be — and is
+// — an *inactivity* timeout: Qt restarts the clock on every byte that
+// arrives, so a slow model that keeps trickling tokens is never cut off.
+// Without it, a gateway that accepts the request, answers 200 and then
+// goes silent pins the reply forever: no error, no finish, and in
+// TranslationService the row keeps its slot in the two-deep queue, so
+// the whole batch stalls with nothing to show the user.
+constexpr std::chrono::seconds kIdleTimeout{120};
+
+} // namespace
+
 LlmReply::LlmReply(QObject *parent)
     : QObject(parent)
 {
@@ -54,6 +69,7 @@ LlmClient::LlmClient(QObject *parent)
     : QObject(parent)
     , m_nam(new QNetworkAccessManager(this))
 {
+    m_nam->setTransferTimeout(kIdleTimeout);
 }
 
 LlmClient::~LlmClient() = default;

@@ -289,20 +289,31 @@ void TranslationService::translateRow(int row)
     connect(reply, &LlmReply::finished, this, [this, reply]() {
         const int r = m_replyToRow.take(reply);
         --m_inflight;
-        if (r >= 0 && m_model && m_model->blockAt(r)
-            && m_model->blockAt(r)->translationStatus == Block::Translating) {
-            m_model->setTranslationStatus(r, Block::Translated);
-            ++m_done;
+        const Block *b = (r >= 0 && m_model) ? m_model->blockAt(r) : nullptr;
+        if (b && b->translationStatus == Block::Translating) {
+            if (b->translation.trimmed().isEmpty()) {
+                // A stream can end having delivered nothing at all. Calling
+                // that Translated hides the failure behind a blank line and,
+                // worse, caches the blank — so reopening the paper "restores"
+                // it and the block never gets retried.
+                const QString msg =
+                    tr("The model returned an empty translation.");
+                m_model->setTranslationStatus(r, Block::Failed, msg);
+                ++m_failed;
+                setLastError(msg);
+            } else {
+                m_model->setTranslationStatus(r, Block::Translated);
+                ++m_done;
 
-            // Persist to disk so reopening this paper restores the
-            // translation without another API round-trip.
-            const Block *b = m_model->blockAt(r);
-            if (b && m_settings && !m_cache.paperId().isEmpty()) {
-                m_cache.store(b->id, b->text,
-                              m_settings->model(),
-                              TranslationCache::sha(systemPrompt()),
-                              m_settings->targetLang(),
-                              b->translation);
+                // Persist to disk so reopening this paper restores the
+                // translation without another API round-trip.
+                if (m_settings && !m_cache.paperId().isEmpty()) {
+                    m_cache.store(b->id, b->text,
+                                  m_settings->model(),
+                                  TranslationCache::sha(systemPrompt()),
+                                  m_settings->targetLang(),
+                                  b->translation);
+                }
             }
         }
         emit progressChanged();

@@ -246,7 +246,12 @@ LlmReply *AnthropicClient::send(const Request &req)
     QObject::connect(netReply, &QNetworkReply::finished, reply,
                      [netReply, reply, stream = req.stream]() {
         if (netReply->error() != QNetworkReply::NoError) {
-            QString msg = QString::fromUtf8(netReply->readAll());
+            // An aborted reply (the transfer timeout) is already closed,
+            // and reading it just logs "device not open" — take the body
+            // only when there is one to take.
+            QString msg = netReply->isReadable()
+                        ? QString::fromUtf8(netReply->readAll())
+                        : QString();
             if (msg.isEmpty())
                 msg = netReply->errorString();
             reply->setError(msg);

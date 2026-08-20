@@ -1,5 +1,37 @@
 # AI Reader changelog
 
+## v1.1.17 — 2026-08-20
+
+### Fit-to-width really fits
+- **Clicking the zoom percentage now zooms to exactly the width that
+  fits.** It divided by the pane's outer width, but the page column is
+  two pixels narrower than that, so the page landed just past the edge
+  of overflow and the horizontal scrollbar appeared every single time.
+  It now zooms as far as it can go without one.
+- **A rotated document fits by its rotated width.** Fit-to-width always
+  measured the upright page, so it was wrong by the page's aspect ratio
+  whenever the view was turned 90°.
+- **A sub-pixel overflow no longer counts as overflow**, so the bar
+  cannot flicker back on over a rounding remainder.
+
+### A stalled model no longer looks like a stalled app
+- **Requests that go quiet now time out.** If a provider accepts the
+  request, answers 200 and then never sends a token, the reply used to
+  hang forever: no error, no progress, and — because translation runs
+  two blocks at a time — the whole batch stopped dead with nothing on
+  screen to explain it. Two minutes of complete silence now ends the
+  request and reports it. The clock resets on every byte received, so a
+  slow model that keeps producing output is never cut off.
+- **Errors reported inside a streamed response are shown.** Gateways
+  have to commit to "200 OK" before they know whether the model will
+  answer, so they report the failure as an event in the stream. Those
+  events were being dropped and the request just ended empty.
+- **An empty translation counts as a failure, not a result.** A block
+  that came back blank was marked Translated and the blank was written
+  to the on-disk cache, so reopening the paper restored the blank and
+  the block was never retried. It is now marked Failed, left out of the
+  cache, and picked up by Retry failed.
+
 ## v1.1.16 — 2026-08-20
 
 ### Scrollbars appear only when there is something to scroll

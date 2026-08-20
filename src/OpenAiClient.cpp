@@ -67,6 +67,22 @@ void parseSseChunk(const QByteArray &payload,
     if (err.error != QJsonParseError::NoError || !doc.isObject())
         return;
 
+    // OpenAI-compatible gateways commit to 200 + text/event-stream before
+    // they know whether the upstream model will answer, so a failure
+    // arrives as an event in the stream rather than an HTTP status.
+    // Dropping it left the request to just end with no content.
+    const QJsonValue errVal =
+        doc.object().value(QStringLiteral("error"));
+    if (!errVal.isUndefined() && !errVal.isNull()) {
+        QString msg = errVal.isObject()
+            ? errVal.toObject().value(QStringLiteral("message")).toString()
+            : errVal.toString();
+        if (msg.isEmpty())
+            msg = OpenAiClient::tr("The LLM gateway reported an error.");
+        reply->setError(msg);
+        return;
+    }
+
     const QJsonArray choices =
         doc.object().value(QStringLiteral("choices")).toArray();
     if (choices.isEmpty())
@@ -318,7 +334,12 @@ LlmReply *OpenAiClient::send(const Request &req)
     QObject::connect(netReply, &QNetworkReply::finished, reply,
                      [netReply, reply, stream = req.stream]() {
         if (netReply->error() != QNetworkReply::NoError) {
-            QString msg = QString::fromUtf8(netReply->readAll());
+            // An aborted reply (the transfer timeout) is already closed,
+            // and reading it just logs "device not open" — take the body
+            // only when there is one to take.
+            QString msg = netReply->isReadable()
+                        ? QString::fromUtf8(netReply->readAll())
+                        : QString();
             if (msg.isEmpty())
                 msg = netReply->errorString();
             reply->setError(msg);
@@ -356,6 +377,14 @@ LlmReply *OpenAiClient::send(const Request &req)
                 }
             }
             reply->markFinished();
+        } else if (!reply->isFinished() && reply->text().isEmpty()
+                   && reply->toolCalls().isEmpty()) {
+            // The stream closed without ever delivering a delta, a
+            // [DONE], or a finish_reason. That is a failed request, not
+            // an empty answer — say so, so callers can retry instead of
+            // storing the silence as a result.
+            reply->setError(tr("The server accepted the request but closed "
+                               "the stream without returning any content."));
         } else {
             reply->markFinished();
         }
