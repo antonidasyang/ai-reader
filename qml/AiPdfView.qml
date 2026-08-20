@@ -195,8 +195,31 @@ Item {
         onHeightChanged: forceLayout()
         onWidthChanged: forceLayout()
         property size firstPagePointSize: root.pageSizeAt(0)
-        property real pageHolderWidth: Math.max(root.width, ((rot90 ? root.document?.maxPageHeight : root.document?.maxPageWidth) ?? 0) * root.renderScale)
-        columnWidthProvider: function(col) { return root.document ? pageHolderWidth + vscroll.width + 2 : 0 }
+        // The column is exactly the viewport, or the page when the page
+        // is wider — so content overflows horizontally only when there is
+        // really something off-screen. Upstream sizes it `max(root.width,
+        // pageWidth) + scrollbarWidth + 2`, which is ~15 px wider than
+        // this TableView (itself 2 px narrower than root) even for a page
+        // that fits: invisible while the scrollbars auto-hide (upstream's
+        // default), but this view keeps them on, so a horizontal bar
+        // showed at every zoom — including zoomed way out, where the page
+        // is a fraction of the window and there is nothing to scroll to.
+        // The bars are overlays and must not be subtracted here: making
+        // the column depend on vscroll.visible closes a loop through the
+        // layout (width → layout → contentHeight → bar → width).
+        property real pageHolderWidth:
+            Math.max(width,
+                     ((rot90 ? root.document?.maxPageHeight
+                             : root.document?.maxPageWidth) ?? 0) * root.renderScale)
+        columnWidthProvider: function(col) { return root.document ? pageHolderWidth : 0 }
+        // Re-run the layout from the width itself, not from the zoom
+        // change: onRenderScaleChanged fires before this binding has been
+        // re-evaluated, so the forceLayout() there asks the provider for a
+        // width that is still one zoom step old, and contentWidth stays
+        // stale until something else relayouts. Keying off the computed
+        // width also covers the other inputs (viewport resize, rotation,
+        // the vertical bar appearing).
+        onPageHolderWidthChanged: forceLayout()
         rowHeightProvider: function(row) { const s = root.pageSizeAt(row); return (rot90 ? s.width : s.height) * root.renderScale }
 
         // delayed-jump feature in case the user called goToPage() or goToLocation() too early

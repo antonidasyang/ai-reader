@@ -22,6 +22,14 @@ Library::Library(QObject *parent)
     m_fs->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
     m_fs->setReadOnly(true);
 
+    // The subtree scans below are only valid while the tree is; the model
+    // watches the filesystem, so its row changes are the signal that a
+    // cached listing may be out of date.
+    connect(m_fs, &QAbstractItemModel::rowsInserted,
+            this, [this] { m_pdfCache.clear(); });
+    connect(m_fs, &QAbstractItemModel::rowsRemoved,
+            this, [this] { m_pdfCache.clear(); });
+
     // Restore the previous session's folder if it still exists. Like
     // VSCode reopening the last workspace.
     const QString last = m_qs.value(kKeyLastFolder).toString();
@@ -52,6 +60,7 @@ void Library::openFolder(const QUrl &url)
         return;
 
     m_currentFolder = path;
+    m_pdfCache.clear();
     m_fs->setRootPath(path);
     m_qs.setValue(kKeyLastFolder, path);
     m_qs.sync();
@@ -63,6 +72,7 @@ void Library::close()
     if (m_currentFolder.isEmpty())
         return;
     m_currentFolder.clear();
+    m_pdfCache.clear();
     m_fs->setRootPath(QString{});
     m_qs.remove(kKeyLastFolder);
     m_qs.sync();
@@ -103,11 +113,16 @@ QStringList Library::pdfsUnder(const QModelIndex &index) const
              ? QStringList{fi.absoluteFilePath()} : QStringList{};
     }
 
+    const auto cached = m_pdfCache.constFind(dir);
+    if (cached != m_pdfCache.constEnd())
+        return *cached;
+
     QStringList out;
     QDirIterator it(dir, {QStringLiteral("*.pdf")}, QDir::Files,
                     QDirIterator::Subdirectories);
     while (it.hasNext())
         out.append(it.next());
     out.sort(Qt::CaseInsensitive);
+    m_pdfCache.insert(dir, out);
     return out;
 }

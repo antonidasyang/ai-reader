@@ -53,3 +53,20 @@ void CursorUtil::clearCursor(QQuickItem *item)
     if (item)
         item->unsetCursor();
 }
+
+void CursorUtil::pushOverrideCursor(int shape)
+{
+    if (m_overrideActive)
+        return;
+    QGuiApplication::setOverrideCursor(
+        QCursor(static_cast<Qt::CursorShape>(shape)));
+    m_overrideActive = true;
+}
+
+void CursorUtil::popOverrideCursor()
+{
+    if (!m_overrideActive)
+        return;
+    QGuiApplication::restoreOverrideCursor();
+    m_overrideActive = false;
+}

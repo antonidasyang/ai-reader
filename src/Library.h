@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QHash>
 #include <QObject>
 #include <QSettings>
 #include <QString>
@@ -59,4 +60,10 @@ private:
     QFileSystemModel *m_fs;
     QString m_currentFolder;
     QSettings m_qs;
+    // pdfsUnder() results, keyed by directory. The tree pane asks once
+    // per delegate and rebuilds delegates as it scrolls, so without this
+    // a folder's subtree would be walked again on every scroll. Dropped
+    // whenever the model's rows change (the watcher noticed a file
+    // appear or disappear) and on every folder switch.
+    mutable QHash<QString, QStringList> m_pdfCache;
 };

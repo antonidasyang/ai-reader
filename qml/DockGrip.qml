@@ -55,7 +55,11 @@ Rectangle {
         id: ma
         anchors.fill: parent
         hoverEnabled: true
-        cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+        // The Windows "move window" cursor (four-headed arrow). While
+        // dragging, the pointer leaves this 18×18 grip and crosses other
+        // panes, whose own cursors would take over — so the drag runs
+        // under an application-wide override instead.
+        cursorShape: Qt.SizeAllCursor
 
         // Slot that the pane will land in if released right now.
         // -1 means "no valid drop target" (e.g., dropping where it
@@ -64,14 +68,25 @@ Rectangle {
 
         onPressed: function(mouse) {
             targetSlot = -1
+            cursorUtil.pushOverrideCursor(Qt.SizeAllCursor)
             updateMarker(mouse.x, mouse.y)
         }
         onPositionChanged: function(mouse) {
             if (!pressed) return
             updateMarker(mouse.x, mouse.y)
         }
+        onCanceled: {
+            // A stolen grab (window deactivated, a popup opening) never
+            // reaches onReleased — without this the marker would stay on
+            // screen and the override cursor would never be restored.
+            grip.marker.visible = false
+            targetSlot = -1
+            cursorUtil.popOverrideCursor()
+        }
+
         onReleased: function(mouse) {
             grip.marker.visible = false
+            cursorUtil.popOverrideCursor()
             const slot = targetSlot
             targetSlot = -1
             if (slot < 0) return

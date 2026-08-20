@@ -1,5 +1,31 @@
 # AI Reader changelog
 
+## v1.1.16 — 2026-08-20
+
+### Scrollbars appear only when there is something to scroll
+- **The PDF pane no longer shows a horizontal scrollbar at every zoom.**
+  The page column was sized a scrollbar's width wider than the viewport,
+  so the content technically overflowed even when the page was a
+  fraction of the window. It now overflows only when the page really is
+  wider than the pane — zoom out and the bar goes away.
+- **A one-page paper zoomed out shows no vertical bar either**, for the
+  same reason: each bar now tracks its own axis honestly.
+- **Zooming re-lays out immediately.** The relayout ran before the new
+  page width had been computed, so the scrollable width stayed one zoom
+  step behind until something else moved.
+
+### Tick a whole folder in the folder pane
+- **Folder rows have a tick box.** It selects every PDF underneath —
+  subfolders included, and the parts of the tree you never expanded —
+  and shows a partial mark while only some of them are selected. The
+  right-click actions are still there.
+
+### Moving a panel
+- **The pane grip now uses the move cursor** (the four-headed arrow), and
+  keeps it for the whole drag instead of losing it to whatever the
+  pointer passes over. A drag interrupted by a popup or a window switch
+  now also clears its insertion marker.
+
 ## v1.1.15 — 2026-08-20
 
 ### Segmentation happens when you ask for it

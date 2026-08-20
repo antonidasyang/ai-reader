@@ -44,6 +44,21 @@ Rectangle {
     function selectedList() {
         return Object.keys(root.selectedPaths)
     }
+    // Tick state of a whole folder: checked when every PDF under it is
+    // selected, partially checked when only some are. Reading
+    // selectedCount first is what makes callers re-evaluate.
+    function groupState(paths) {
+        const notifier = root.selectedCount
+        if (notifier < 0 || !paths || paths.length === 0)
+            return Qt.Unchecked
+        let n = 0
+        for (let i = 0; i < paths.length; ++i)
+            if (root.selectedPaths[paths[i]] === true)
+                ++n
+        return n === 0 ? Qt.Unchecked
+             : n === paths.length ? Qt.Checked
+                                  : Qt.PartiallyChecked
+    }
 
     // The import lands in the cloud project library, so it needs the
     // same rights the library pane's "+ Add" needs.
@@ -218,26 +233,41 @@ Rectangle {
                         && library.fileUrl(_modelIndex).toString()
                            === paperController.pdfSource.toString()
 
-                    // Tick box for the batch import. Only files carry
-                    // one; a folder's PDFs are ticked from its context
-                    // menu, since the tree has no rows for the parts of
-                    // it the user never expanded.
+                    // Every PDF this row stands for: the file itself, or
+                    // everything under the folder — including the parts
+                    // of it the user never expanded, which have no rows.
+                    // Read once per row, not per repaint: it walks the
+                    // filesystem.
+                    readonly property var _pdfs: library.pdfsUnder(_modelIndex)
+                    readonly property int _tickState:
+                        _isDir ? root.groupState(_pdfs)
+                               : (root.isSelected(_path) ? Qt.Checked
+                                                         : Qt.Unchecked)
+
+                    // Tick box for the batch import. A folder's box ticks
+                    // everything underneath it and shows a partial mark
+                    // while only some of it is selected.
                     contentItem: RowLayout {
                         spacing: 4
                         CheckBox {
                             id: tickBox
-                            visible: !delegateRoot._isDir
+                            visible: delegateRoot._pdfs.length > 0
                             implicitWidth: 20
                             implicitHeight: 20
                             padding: 0
-                            checked: root.isSelected(delegateRoot._path)
-                            onToggled: {
-                                root.setSelected(delegateRoot._path, checked)
-                                // Clicking assigned `checked` directly, which
-                                // drops the binding above; restore it so the
-                                // All / None buttons still drive this box.
-                                tickBox.checked = Qt.binding(
-                                    () => root.isSelected(delegateRoot._path))
+                            tristate: delegateRoot._isDir
+                            checkState: delegateRoot._tickState
+                            onClicked: {
+                                // The control already cycled its own
+                                // checkState; _tickState still holds what
+                                // the selection said before the click.
+                                const on = delegateRoot._tickState !== Qt.Checked
+                                root.selectPaths(delegateRoot._pdfs, on)
+                                // That click also dropped the binding
+                                // above; restore it so the All / None
+                                // buttons and sibling rows still drive it.
+                                tickBox.checkState = Qt.binding(
+                                    () => delegateRoot._tickState)
                             }
                         }
                         Label {
