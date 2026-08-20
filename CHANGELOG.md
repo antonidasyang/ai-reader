@@ -1,5 +1,34 @@
 # AI Reader changelog
 
+## v1.1.15 — 2026-08-20
+
+### Segmentation happens when you ask for it
+- **Opening a paper no longer splits it into paragraphs by itself.**
+  That work costs seconds of CPU (and a GROBID round trip) on a long
+  PDF, which is wasted when you only wanted to look at the pages. The
+  toolbar's **Segment** button — and the button in the empty paragraph
+  pane — runs exactly the same pipeline when you want it.
+- **New setting** under *Paragraph segmentation*: "Segment a paper
+  automatically the first time it is opened", off by default. Papers
+  that were already segmented still come back instantly from cache.
+
+### Add a whole folder to the library at once
+- **Tick PDFs in the folder tree and add them in one go.** The strip
+  above the tree adds the ticked files to the current project: each one
+  is hashed, entered in the library, looked up by DOI/arXiv and
+  uploaded, one after another, without opening any of them. Papers the
+  project already has are skipped, not duplicated.
+- **Right-click a folder** to select (or add) every PDF underneath it,
+  subfolders included — the tree only lists what you've expanded, so
+  this reads the folder itself.
+
+### Selection and tabs
+- **Ctrl+C now copies the selected PDF text** (⌘C on macOS, and the
+  physical Control key works there too). Clicking into the page puts it
+  in the keyboard focus chain, which a drag-selection never used to do —
+  so the shortcut went nowhere and only the right-click menu copied.
+- **Right-click a tab** for Close / Close Others / Close All.
+
 ## v1.1.14 — 2026-08-20
 
 ### The library tells you what it's doing

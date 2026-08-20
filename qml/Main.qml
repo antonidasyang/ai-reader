@@ -398,6 +398,9 @@ ApplicationWindow {
         function onTranslateBlockRequested(row) {
             translation.translateBlock(row)
         }
+        function onSegmentRequested() {
+            paperController.rebuildBlocks()
+        }
     }
 
     header: ToolBar {
@@ -424,12 +427,19 @@ ApplicationWindow {
                 onClicked: exportTextDialog.open()
             }
             ToolButton {
-                text: qsTr("Re-extract")
+                // One button, two readings: with no paragraphs yet this
+                // is the primary "segment this paper" action (auto
+                // segmentation is off by default); once there are
+                // paragraphs it means "throw them away and redo it".
+                readonly property bool _firstRun: paperController.blockCount === 0
+                text: _firstRun ? qsTr("Segment") : qsTr("Re-extract")
                 enabled: paperController.status === PaperController.Ready
                          && !paperController.extracting
                 ToolTip.visible: hovered
                 ToolTip.delay: 400
-                ToolTip.text: qsTr("Discard manual paragraph edits and re-run automatic extraction")
+                ToolTip.text: _firstRun
+                    ? qsTr("Split this paper into paragraphs (needed for translation, TOC and chat)")
+                    : qsTr("Discard manual paragraph edits and re-run automatic extraction")
                 onClicked: paperController.rebuildBlocks()
             }
             ToolSeparator {}
@@ -822,6 +832,27 @@ ApplicationWindow {
                         // never place a stock (palette-following) control here.
                         color: "#2d2d30"
 
+                        // One shared tab context menu (VS Code's Close /
+                        // Close Others / Close All). tabIndex is stamped by
+                        // whichever tab was right-clicked.
+                        Menu {
+                            id: tabCtxMenu
+                            property int tabIndex: -1
+                            MenuItem {
+                                text: qsTr("Close Tab")
+                                onTriggered: tabs.closePaper(tabCtxMenu.tabIndex)
+                            }
+                            MenuItem {
+                                text: qsTr("Close Others")
+                                enabled: tabs.count > 1
+                                onTriggered: tabs.closeOthers(tabCtxMenu.tabIndex)
+                            }
+                            MenuItem {
+                                text: qsTr("Close All")
+                                onTriggered: tabs.closeAll()
+                            }
+                        }
+
                         Flickable {
                             anchors.left: parent.left
                             anchors.leftMargin: 28   // space for the DockGrip
@@ -843,6 +874,10 @@ ApplicationWindow {
                                     delegate: Rectangle {
                                         id: tabDelegate
                                         readonly property bool isActive: index === tabs.activeIndex
+                                        // Captured for the context menu, whose
+                                        // actions mutate the tab list and would
+                                        // otherwise see a re-bound `index`.
+                                        readonly property int tabIndex: index
                                         height: parent.height
                                         // Cap tabs at ~220px so a long paper name
                                         // doesn't push the others off-screen.
@@ -859,6 +894,26 @@ ApplicationWindow {
                                             anchors.top: parent.top
                                             height: 2
                                             color: tabDelegate.isActive ? "#5b8def" : "transparent"
+                                        }
+
+                                        // Right-click menu, VS Code-style. Declared
+                                        // before the other mouse areas so it sits
+                                        // *below* them: they only take the left and
+                                        // middle buttons, so a right-click anywhere
+                                        // on the tab — the × included — falls
+                                        // through to here. Right-clicking does not
+                                        // activate the tab; the menu acts on the tab
+                                        // that was clicked. The menu itself lives on
+                                        // the bar, not in here: its actions destroy
+                                        // this delegate, and a popup must outlive the
+                                        // item that triggered it.
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            acceptedButtons: Qt.RightButton
+                                            onPressed: {
+                                                tabCtxMenu.tabIndex = tabDelegate.tabIndex
+                                                tabCtxMenu.popup()
+                                            }
                                         }
 
                                         Label {
@@ -942,13 +997,25 @@ ApplicationWindow {
                             gesturePolicy: TapHandler.DragThreshold
                             onTapped: pdfViewport.forceActiveFocus()
                         }
+                        // Ctrl/⌘ + key over the PDF. StandardKey.Copy is
+                        // ⌘C on macOS, so the literal physical-Control
+                        // chord is matched too (Qt reports it as
+                        // Qt.MetaModifier there) — people coming from
+                        // Windows reach for Ctrl+C and expect it to copy.
+                        function _isChord(event, key) {
+                            return event.key === key
+                                && (event.modifiers
+                                    & (Qt.ControlModifier | Qt.MetaModifier))
+                        }
                         Keys.onPressed: function(event) {
-                            if (event.matches(StandardKey.Copy)) {
+                            if (event.matches(StandardKey.Copy)
+                                    || pdfViewport._isChord(event, Qt.Key_C)) {
                                 pdfSelection.copyToClipboard()
                                 event.accepted = true
                                 return
                             }
-                            if (event.matches(StandardKey.SelectAll)) {
+                            if (event.matches(StandardKey.SelectAll)
+                                    || pdfViewport._isChord(event, Qt.Key_A)) {
                                 pdfSelection.selectAllOnPage(pdfView.currentPage)
                                 event.accepted = true
                                 return

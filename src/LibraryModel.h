@@ -40,9 +40,15 @@ public:
     QHash<int, QByteArray> roleNames() const override;
 
     Q_INVOKABLE void reload();
-    Q_INVOKABLE QString addCurrentPaper(const QString &title,
-                                        const QString &paperId,
-                                        const QString &localPath);
+    // Create an item for a PDF. Returns the new item's id, or empty when
+    // there's no current project.
+    Q_INVOKABLE QString addPaper(const QString &title,
+                                 const QString &paperId,
+                                 const QString &localPath);
+    // Id of the item already carrying `paperId`, or empty. Lets a batch
+    // import skip files the project already has instead of piling up
+    // duplicates on every re-run over the same folder.
+    Q_INVOKABLE QString findByPaperId(const QString &paperId) const;
     Q_INVOKABLE QVariantMap itemFields(const QString &id) const;
     Q_INVOKABLE void updateItem(const QString &id, const QVariantMap &fields);
     Q_INVOKABLE void removeItem(const QString &id);

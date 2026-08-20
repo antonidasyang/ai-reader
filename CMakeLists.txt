@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.1.14 LANGUAGES CXX)
+project(ai-reader VERSION 1.1.15 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -293,6 +293,8 @@ qt_add_executable(ai-reader
     src/AiArtifactService.cpp
     src/FileSyncService.h
     src/FileSyncService.cpp
+    src/ImportService.h
+    src/ImportService.cpp
 )
 
 target_compile_definitions(ai-reader PRIVATE

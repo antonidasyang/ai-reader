@@ -10,11 +10,12 @@
 
 namespace {
 constexpr auto kKeyLastUrl = "paper/lastUrl";
+} // namespace
 
 // Hash the first 4 MB of the PDF (and the file size) so we get a stable
 // id even when the file is moved or renamed, but we don't pay for full
 // SHA-256 over a 200 MB book. Cheap and good enough as a cache key.
-QString computePaperId(const QString &filePath)
+QString PaperController::paperIdForFile(const QString &filePath)
 {
     QFile f(filePath);
     if (!f.open(QIODevice::ReadOnly)) return {};
@@ -23,7 +24,6 @@ QString computePaperId(const QString &filePath)
     hash.addData(f.read(4 * 1024 * 1024));
     return QString::fromUtf8(hash.result().toHex());
 }
-} // namespace
 
 PaperController::PaperController(QObject *parent)
     : QObject(parent)
@@ -167,7 +167,7 @@ void PaperController::reload()
     switch (err) {
     case QPdfDocument::Error::None: {
         if (m_source.isLocalFile())
-            m_paperId = computePaperId(m_source.toLocalFile());
+            m_paperId = paperIdForFile(m_source.toLocalFile());
         else
             m_paperId.clear();
         m_forceExtract = false;   // a force never outlives its paper
@@ -188,7 +188,12 @@ void PaperController::reload()
             m_model.clear();
             emit blocksChanged();
             setStatus(Ready);
-            startAsyncExtraction();
+            // Off by default: clustering a long PDF (and the GROBID
+            // round trip behind it) costs seconds that a reader who
+            // only wants to page through the document never asked
+            // for. The Segment button runs the exact same path.
+            if (m_autoSegment)
+                startAsyncExtraction();
         }
         break;
     }

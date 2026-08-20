@@ -85,6 +85,41 @@ void Tabs::closePaper(int idx)
     }
 }
 
+void Tabs::closeOthers(int idx)
+{
+    if (idx < 0 || idx >= m_papers.size()) return;
+    if (m_papers.size() == 1) return;   // nothing else to close
+
+    const QUrl keep = m_papers.at(idx);
+    const bool keepWasActive = (idx == m_activeIndex);
+
+    m_papers = { keep };
+    const bool activeChanged = (m_activeIndex != 0);
+    m_activeIndex = 0;
+    emit tabsChanged();
+    if (activeChanged) emit activeIndexChanged();
+    persist();
+
+    // Same ordering rule as closePaper(): settle the tab list first, then
+    // hand the controller its new paper. Nothing to load when the kept
+    // tab was already the one on screen.
+    if (!keepWasActive)
+        m_paper->openPdf(keep);
+}
+
+void Tabs::closeAll()
+{
+    if (m_papers.isEmpty()) return;
+
+    m_papers.clear();
+    const bool activeChanged = (m_activeIndex != -1);
+    m_activeIndex = -1;
+    emit tabsChanged();
+    if (activeChanged) emit activeIndexChanged();
+    persist();
+    m_paper->clear();
+}
+
 void Tabs::activatePaper(int idx)
 {
     if (idx < 0 || idx >= m_papers.size()) return;

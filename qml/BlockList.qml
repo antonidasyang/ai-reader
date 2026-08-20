@@ -14,6 +14,7 @@ Rectangle {
     signal pageRequested(int page)
     signal askInChatRequested(string text, int page)
     signal translateBlockRequested(int row)
+    signal segmentRequested()
 
     function showPage(page) {
         if (!root.model)
@@ -361,16 +362,37 @@ Rectangle {
                 }
             }
 
-            Label {
+            // Empty state. With auto-segmentation off (the default) an
+            // opened paper lands here with nothing to show, so the state
+            // carries the action that fills it rather than just a label.
+            ColumnLayout {
                 anchors.centerIn: parent
+                width: parent.width - 48
                 visible: !list.visible
-                horizontalAlignment: Text.AlignHCenter
-                color: Theme.dimText
-                text: root.paperStatus === PaperController.Loading
-                      ? qsTr("Extracting paragraphs…")
-                      : root.paperStatus === PaperController.Error
-                        ? qsTr("No paragraphs (load failed).")
-                        : qsTr("Open a PDF to see extracted text.")
+                spacing: 10
+
+                Label {
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.Wrap
+                    color: Theme.dimText
+                    text: paperController.extracting
+                          ? qsTr("Segmenting…")
+                          : root.paperStatus === PaperController.Loading
+                            ? qsTr("Extracting paragraphs…")
+                            : root.paperStatus === PaperController.Error
+                              ? qsTr("No paragraphs (load failed).")
+                              : root.paperStatus === PaperController.Ready
+                                ? qsTr("This paper hasn't been split into paragraphs yet.")
+                                : qsTr("Open a PDF to see extracted text.")
+                }
+                Button {
+                    Layout.alignment: Qt.AlignHCenter
+                    visible: root.paperStatus === PaperController.Ready
+                             && !paperController.extracting
+                    text: qsTr("Segment paragraphs")
+                    onClicked: root.segmentRequested()
+                }
             }
         }
     }

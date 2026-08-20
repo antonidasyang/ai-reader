@@ -28,7 +28,12 @@ public:
     bool busy() const { return m_busy; }
     QString status() const { return m_status; }
 
+    // Fill from the *current* paper's head text.
     Q_INVOKABLE void autoFill(const QString &itemId);
+    // Same, for a paper that isn't open — the batch importer reads the
+    // head text itself and hands it over.
+    Q_INVOKABLE void autoFillFromText(const QString &itemId,
+                                      const QString &headText);
     Q_INVOKABLE void resolveIdentifier(const QString &itemId,
                                        const QString &identifier);
 

@@ -62,7 +62,7 @@ Rectangle {
                     ToolTip.delay: 400
                     ToolTip.text: qsTr("Add the current paper to this project")
                     onClicked: {
-                        const id = libraryModel.addCurrentPaper(
+                        const id = libraryModel.addPaper(
                                        paperController.fileName,
                                        paperController.paperId,
                                        paperController.pdfSource)

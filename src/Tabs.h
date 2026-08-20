@@ -44,6 +44,10 @@ public:
     // neighbour (preferring the tab that was to its right). Closing
     // the last tab clears the PaperController.
     Q_INVOKABLE void closePaper(int idx);
+    // Close every tab except `idx`, which becomes the active one.
+    Q_INVOKABLE void closeOthers(int idx);
+    // Close every tab and clear the PaperController.
+    Q_INVOKABLE void closeAll();
     // Switch the active tab without changing the list.
     Q_INVOKABLE void activatePaper(int idx);
     // Restore the saved tab list and re-open the active one. Returns

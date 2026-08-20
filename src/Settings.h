@@ -46,6 +46,13 @@ class Settings : public QObject
     Q_PROPERTY(bool    grobidEnabled READ grobidEnabled WRITE setGrobidEnabled NOTIFY grobidEnabledChanged)
     Q_PROPERTY(QString grobidUrl     READ grobidUrl     WRITE setGrobidUrl     NOTIFY grobidUrlChanged)
 
+    // Whether opening a paper that has no saved paragraphs starts the
+    // segmentation (clusterer, then the GROBID upgrade) by itself. Off
+    // by default: on a large PDF that work costs seconds of CPU and a
+    // round trip, which is wasted when the reader only wanted to look
+    // at the pages. The toolbar's Segment button runs it on demand.
+    Q_PROPERTY(bool    autoSegment   READ autoSegment   WRITE setAutoSegment   NOTIFY autoSegmentChanged)
+
     // Per-pane body font size (px). Each pane uses the value as the
     // baseline; headings/labels in that pane scale up relative to
     // it (typically +2 px) so the visual hierarchy stays intact.
@@ -94,6 +101,7 @@ public:
 
     bool    grobidEnabled() const { return m_grobidEnabled; }
     QString grobidUrl()     const { return m_grobidUrl; }
+    bool    autoSegment()   const { return m_autoSegment; }
 
     int     tocFontSize()       const { return m_tocFontSize; }
     int     summaryFontSize()   const { return m_summaryFontSize; }
@@ -128,6 +136,7 @@ public:
     void setCrashReportsOptIn(bool v);
     void setGrobidEnabled(bool v);
     void setGrobidUrl(const QString &v);
+    void setAutoSegment(bool v);
 
     void setTocFontSize(int v);
     void setSummaryFontSize(int v);
@@ -172,6 +181,7 @@ signals:
     void crashReportsOptInChanged();
     void grobidEnabledChanged();
     void grobidUrlChanged();
+    void autoSegmentChanged();
 
     void tocFontSizeChanged();
     void summaryFontSizeChanged();
@@ -217,6 +227,7 @@ private:
     bool    m_crashReportsOptIn = false;
     bool    m_grobidEnabled = true;
     QString m_grobidUrl;
+    bool    m_autoSegment = false;
 
     // Defaults match the previously hard-coded values in each pane.
     int     m_tocFontSize       = 12;

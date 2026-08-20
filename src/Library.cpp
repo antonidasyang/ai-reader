@@ -1,6 +1,7 @@
 #include "Library.h"
 
 #include <QDir>
+#include <QDirIterator>
 #include <QFileInfo>
 #include <QFileSystemModel>
 #include <QModelIndex>
@@ -88,4 +89,25 @@ QUrl Library::fileUrl(const QModelIndex &index) const
 QString Library::filePath(const QModelIndex &index) const
 {
     return m_fs->filePath(index);
+}
+
+QStringList Library::pdfsUnder(const QModelIndex &index) const
+{
+    QString dir = index.isValid() ? m_fs->filePath(index) : m_currentFolder;
+    if (dir.isEmpty())
+        return {};
+    // A file index: treat it as "just this one".
+    const QFileInfo fi(dir);
+    if (fi.isFile()) {
+        return fi.suffix().compare(QStringLiteral("pdf"), Qt::CaseInsensitive) == 0
+             ? QStringList{fi.absoluteFilePath()} : QStringList{};
+    }
+
+    QStringList out;
+    QDirIterator it(dir, {QStringLiteral("*.pdf")}, QDir::Files,
+                    QDirIterator::Subdirectories);
+    while (it.hasNext())
+        out.append(it.next());
+    out.sort(Qt::CaseInsensitive);
+    return out;
 }

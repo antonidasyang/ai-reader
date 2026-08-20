@@ -118,7 +118,13 @@ MetadataService::MetadataService(LibraryModel *lib, PaperController *paper,
 
 void MetadataService::autoFill(const QString &itemId)
 {
-    const Identifier id = extractIdentifier(m_paper->headText());
+    autoFillFromText(itemId, m_paper->headText());
+}
+
+void MetadataService::autoFillFromText(const QString &itemId,
+                                       const QString &headText)
+{
+    const Identifier id = extractIdentifier(headText);
     if (id.type.isEmpty()) {
         setStatus(tr("No DOI/arXiv id found; fill manually."));
         emit resolved(itemId, false);

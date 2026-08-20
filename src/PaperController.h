@@ -36,6 +36,11 @@ public:
 
     explicit PaperController(QObject *parent = nullptr);
 
+    // Stable per-file id (size + hash of the first 4 MB), the key the
+    // block/TOC caches and the synced library entries agree on. Static
+    // so a batch importer can label a file it never opens.
+    static QString paperIdForFile(const QString &filePath);
+
     QUrl pdfSource() const { return m_source; }
     QString pdfPassword() const { return m_password; }
     QString fileName() const;
@@ -51,6 +56,11 @@ public:
     QString paperId() const { return m_paperId; }
     QString currentSelection() const { return m_currentSelection; }
     int currentSelectionPage() const { return m_currentSelectionPage; }
+
+    // Whether opening a paper with no cached paragraphs segments it by
+    // itself. Mirrors Settings::autoSegment (wired in main.cpp) so this
+    // class stays free of a Settings dependency.
+    void setAutoSegment(bool v) { m_autoSegment = v; }
 
     // Rasterize a page at approximately `targetWidthPx` wide. Returns a null
     // image when the page is out of range or the document isn't loaded.
@@ -128,6 +138,7 @@ private:
     // next applyStructuredBlocks(); reset on paper switch.
     bool m_forceExtract = false;
     bool m_extracting = false;
+    bool m_autoSegment = false;
     QFutureWatcher<QVector<Block>> m_extractWatcher;
     QString m_extractPaperId;   // which paper the running job is for
     Status m_status = Empty;

@@ -96,12 +96,14 @@ void FileSyncService::uploadPaper(const QString &itemId,
 {
     setBusy(true);
     setStatus(tr("Uploading PDF…"));
-    uploadOne(itemId, toLocalPath(localPath), [this](bool ok, bool deduped) {
+    uploadOne(itemId, toLocalPath(localPath), [this, itemId](bool ok, bool deduped) {
         setBusy(false);
-        if (!ok)
-            return;   // uploadOne already set a specific message
-        setStatus(deduped ? tr("PDF already in storage (deduped).")
-                          : tr("PDF uploaded."));
+        if (ok) {
+            setStatus(deduped ? tr("PDF already in storage (deduped).")
+                              : tr("PDF uploaded."));
+        }
+        // else: uploadOne already set a specific message.
+        emit paperUploaded(itemId, ok);
     });
 }
 

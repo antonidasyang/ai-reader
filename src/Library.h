@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QSettings>
 #include <QString>
+#include <QStringList>
 #include <QUrl>
 
 class QAbstractItemModel;
@@ -44,6 +45,12 @@ public:
     Q_INVOKABLE bool    isDir(const QModelIndex &index) const;
     Q_INVOKABLE QUrl    fileUrl(const QModelIndex &index) const;
     Q_INVOKABLE QString filePath(const QModelIndex &index) const;
+
+    // Every *.pdf under `index` (recursively), as absolute paths, sorted.
+    // An invalid index means the whole open folder. The tree only
+    // materialises rows the user has expanded, so "select everything
+    // here" has to come from the filesystem, not from the delegates.
+    Q_INVOKABLE QStringList pdfsUnder(const QModelIndex &index) const;
 
 signals:
     void currentFolderChanged();

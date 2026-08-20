@@ -43,6 +43,7 @@ Dialog {
         autoCheckBox.checked    = settings.autoCheckUpdates
         manifestUrlField.text   = settings.updateManifestUrl
         crashOptInBox.checked   = settings.crashReportsOptIn
+        autoSegmentBox.checked   = settings.autoSegment
         grobidEnabledBox.checked = settings.grobidEnabled
         grobidUrlField.text      = settings.grobidUrl
         tocFontSizeField.value       = settings.tocFontSize
@@ -66,6 +67,7 @@ Dialog {
         settings.autoCheckUpdates  = autoCheckBox.checked
         settings.updateManifestUrl = manifestUrlField.text.trim()
         settings.crashReportsOptIn = crashOptInBox.checked
+        settings.autoSegment       = autoSegmentBox.checked
         settings.grobidEnabled     = grobidEnabledBox.checked
         settings.grobidUrl         = grobidUrlField.text.trim()
         settings.tocFontSize        = tocFontSizeField.value
@@ -579,6 +581,12 @@ Dialog {
                     columnSpacing: Theme.spaceL
                     rowSpacing: Theme.spaceS
 
+                    FormLabel { text: qsTr("On open") }
+                    CheckBox {
+                        id: autoSegmentBox
+                        text: qsTr("Segment a paper automatically the first time it is opened")
+                    }
+
                     FormLabel { text: qsTr("GROBID service") }
                     CheckBox {
                         id: grobidEnabledBox
@@ -595,9 +603,13 @@ Dialog {
                 }
             }
             HintLabel {
-                text: qsTr("Applied when a paper is opened for the first time; falls back "
-                           + "to the built-in splitter when the service is unreachable. "
-                           + "Self-host with: docker run -d -p 8070:8070 grobid/grobid:0.9.1-crf")
+                text: qsTr("Off by default, since segmenting a long paper costs seconds of "
+                           + "work a reader who only wants to page through it never asked "
+                           + "for — press Segment in the toolbar when you want paragraphs. "
+                           + "GROBID is applied to whichever run does the segmenting; it "
+                           + "falls back to the built-in splitter when the service is "
+                           + "unreachable. Self-host with: "
+                           + "docker run -d -p 8070:8070 grobid/grobid:0.9.1-crf")
             }
 
             // ── Updates & privacy ───────────────────────────────────

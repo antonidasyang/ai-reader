@@ -94,9 +94,20 @@ void LibraryModel::reload()
     emit countChanged();
 }
 
-QString LibraryModel::addCurrentPaper(const QString &title,
-                                      const QString &paperId,
-                                      const QString &localPath)
+QString LibraryModel::findByPaperId(const QString &paperId) const
+{
+    if (paperId.isEmpty())
+        return {};
+    for (const SyncObjectRow &row : m_items) {
+        if (row.data.value(QStringLiteral("paperId")).toString() == paperId)
+            return row.id;
+    }
+    return {};
+}
+
+QString LibraryModel::addPaper(const QString &title,
+                               const QString &paperId,
+                               const QString &localPath)
 {
     if (m_projects->currentId().isEmpty())
         return {};

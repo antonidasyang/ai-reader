@@ -15,6 +15,7 @@
 #include "SearchService.h"
 #include "AiArtifactService.h"
 #include "FileSyncService.h"
+#include "ImportService.h"
 #include "MarkdownRenderer.h"
 #include "PaperController.h"
 #include "PdfSelectionModel.h"
@@ -276,6 +277,17 @@ int main(int argc, char *argv[])
                                         &syncEngine, &auth, &paperController);
     FileSyncService fileSync(&apiClient, &libraryDb, &projectController,
                              &syncEngine);
+    ImportService importService(&libraryModel, &fileSync, &metadataService,
+                                &projectController);
+
+    // Auto-segmentation is a Settings switch, but PaperController must not
+    // depend on Settings (it predates it and is constructed first), so the
+    // value is pushed in and kept in sync here.
+    paperController.setAutoSegment(settings.autoSegment());
+    QObject::connect(&settings, &Settings::autoSegmentChanged,
+                     &paperController, [&]() {
+                         paperController.setAutoSegment(settings.autoSegment());
+                     });
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
@@ -332,6 +344,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("search", &searchService);
     engine.rootContext()->setContextProperty("aiArtifacts", &aiArtifactService);
     engine.rootContext()->setContextProperty("fileSync", &fileSync);
+    engine.rootContext()->setContextProperty("importer", &importService);
 
     QObject::connect(
         &engine,

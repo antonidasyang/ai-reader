@@ -43,6 +43,7 @@ constexpr auto kKeyAutoCheckUpdates     = "updates/autoCheck";
 constexpr auto kKeyUpdateManifestUrl    = "updates/manifestUrl";
 constexpr auto kKeyGrobidEnabled        = "grobid/enabled";
 constexpr auto kKeyGrobidUrl            = "grobid/url";
+constexpr auto kKeyAutoSegment          = "paper/autoSegment";
 constexpr auto kKeyCrashReportsOptIn    = "privacy/crashReportsOptIn";
 constexpr auto kKeyTocFontSize          = "fonts/toc";
 constexpr auto kKeySummaryFontSize      = "fonts/summary";
@@ -444,6 +445,7 @@ void Settings::load()
     m_grobidUrl            = m_qs.value(kKeyGrobidUrl,
                                  QStringLiteral("https://aireader.d2ssoft.com/grobid")).toString();
     m_crashReportsOptIn    = m_qs.value(kKeyCrashReportsOptIn,    false).toBool();
+    m_autoSegment          = m_qs.value(kKeyAutoSegment,          false).toBool();
     m_tocFontSize          = qBound(8, m_qs.value(kKeyTocFontSize,       12).toInt(), 32);
     m_summaryFontSize      = qBound(8, m_qs.value(kKeySummaryFontSize,   13).toInt(), 32);
     m_paragraphFontSize    = qBound(8, m_qs.value(kKeyParagraphFontSize, 12).toInt(), 32);
@@ -473,6 +475,7 @@ void Settings::save()
     m_qs.setValue(kKeyGrobidEnabled,        m_grobidEnabled);
     m_qs.setValue(kKeyGrobidUrl,            m_grobidUrl);
     m_qs.setValue(kKeyCrashReportsOptIn,    m_crashReportsOptIn);
+    m_qs.setValue(kKeyAutoSegment,          m_autoSegment);
     m_qs.setValue(kKeyTocFontSize,          m_tocFontSize);
     m_qs.setValue(kKeySummaryFontSize,      m_summaryFontSize);
     m_qs.setValue(kKeyParagraphFontSize,    m_paragraphFontSize);
@@ -520,6 +523,14 @@ void Settings::setGrobidUrl(const QString &v)
     m_grobidUrl = v;
     save();
     emit grobidUrlChanged();
+}
+
+void Settings::setAutoSegment(bool v)
+{
+    if (v == m_autoSegment) return;
+    m_autoSegment = v;
+    save();
+    emit autoSegmentChanged();
 }
 
 void Settings::setTocFontSize(int v)

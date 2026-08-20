@@ -52,6 +52,9 @@ signals:
     void openReady(const QString &url);
     void statusChanged();
     void busyChanged();
+    // One uploadPaper() call settled. The batch importer paces itself on
+    // this so it never has more than one transfer in flight.
+    void paperUploaded(const QString &itemId, bool ok);
 
 private:
     static QString toLocalPath(const QString &pathOrUrl);

@@ -467,6 +467,13 @@ Item {
         }
 
         onPressed: function(mouse) {
+            // Any press on the page area puts the view in the focus
+            // chain, so the enclosing scope's keyboard shortcuts (Copy,
+            // Select All, arrow scrolling) reach it. A tap handler
+            // outside is not enough: a drag-select never produces a tap,
+            // which used to leave Ctrl+C going nowhere right after the
+            // user selected something.
+            root.forceActiveFocus()
             const h = pageHit(mouse.x, mouse.y)
             if (mouse.button === Qt.RightButton) {
                 ctxMenu.pageIdx = h ? h.page : pageNavigator.currentPage
