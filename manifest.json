@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "latestVersion": "1.1.15",
+  "latestVersion": "1.1.16",
   "releaseDate": "2026-08-20",
-  "releaseNotes": "打开论文不再自动分段,需要时点工具栏「分段」(可在设置里改回自动);文件夹里勾选 PDF 即可批量加入文献库;Ctrl+C 可复制 PDF 选中的文字;标签页右键可关闭其他/全部。",
+  "releaseNotes": "滚动条只在内容真的溢出时才出现(缩小后不再挂着横条);文件夹面板可以按文件夹整体勾选,支持半选;移动面板时用移动光标。",
   "platforms": {
     "windows-x64": {
-      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.15.exe",
-      "sha256": "6a934c42b6e8c771c7b9b2fa248777b83e59c42628fba1aa0244dc887de30db1"
+      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.16.exe",
+      "sha256": "a8aac5b4a0854d9ed5fc7be43a0991b76abe18e98006d0f435fe3f40f6d00dae"
     }
   }
 }
