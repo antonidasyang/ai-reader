@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "latestVersion": "1.1.14",
+  "latestVersion": "1.1.15",
   "releaseDate": "2026-08-20",
-  "releaseNotes": "修复从文献库打开论文显示空白;PDF 确实存进云端后才记账,并新增「检查 PDF」补传;文献库显示传输状态。",
+  "releaseNotes": "打开论文不再自动分段,需要时点工具栏「分段」(可在设置里改回自动);文件夹里勾选 PDF 即可批量加入文献库;Ctrl+C 可复制 PDF 选中的文字;标签页右键可关闭其他/全部。",
   "platforms": {
     "windows-x64": {
-      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.14.exe",
-      "sha256": "346f8c2eb1cce7edebb569ba1ebba54f8418a59b4cd5e7c2b1f3c360feb0ef10"
+      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.15.exe",
+      "sha256": "6a934c42b6e8c771c7b9b2fa248777b83e59c42628fba1aa0244dc887de30db1"
     }
   }
 }
