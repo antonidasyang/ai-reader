@@ -3,36 +3,47 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import AiReader
 
-// Floating translation card for a PDF selection: right-click →
-// Translate opens it next to the text. It reads TranslationService's
-// snippet channel, which either mirrors the paragraph row the selection
-// landed in (so the stream shows here and in the right pane at once) or
-// streams an ad-hoc translation of the selected text.
+// One pinned translation card, floating over the PDF. Created per row of
+// TranslationService's snippet model: right-click → Translate opens one,
+// and only its × closes it — it survives losing focus, a new selection,
+// and scrolling. Drag it by the header; several can sit open at once.
 //
-// Anchored in the coordinates of whatever it is parented to (the PDF
-// viewport), and clamped to stay inside it. It must be invisible when
-// idle: anything stacked over the page area steals hover from the
-// selection layer and kills the I-beam.
+// Position is plain x/y (never a binding) so dragging can write it. The
+// card clamps itself into the viewport on creation and on resize.
 Rectangle {
     id: card
 
-    // Where the user right-clicked, in parent coordinates.
-    property real anchorX: 0
-    property real anchorY: 0
+    // ── Row data (set by the delegate) ────────────────────────────────
+    property int snippetId: -1
+    property string status: "translating"
+    property string translatedText: ""
+    property string errorText: ""
+    property bool fromParagraph: false
 
-    readonly property string status: translation.snippetStatus
-    readonly property bool fromParagraph: translation.snippetIsParagraph
+    signal closeRequested()
+    signal raiseRequested()
+
     readonly property bool busy: status === "translating"
 
-    visible: status !== "idle"
+    // Where to open, in parent coordinates. Applied once, then owned by
+    // the drag.
+    property real openX: 0
+    property real openY: 0
 
-    function showAt(x, y) {
-        card.anchorX = x
-        card.anchorY = y
+    function clampIntoView() {
+        if (!parent) return
+        card.x = Math.max(0, Math.min(card.x, parent.width - card.width))
+        card.y = Math.max(0, Math.min(card.y, parent.height - card.height))
     }
 
-    function dismiss() {
-        translation.clearSnippet()
+    Component.onCompleted: {
+        card.x = openX
+        card.y = openY
+        clampIntoView()
+        // A new card opens on top. z is assigned by the handler, never
+        // bound — a binding that reads the stacking counter it also
+        // bumps is a binding loop.
+        card.raiseRequested()
     }
 
     width: Math.min(400, parent ? parent.width - 2 * Theme.spaceM : 400)
@@ -42,16 +53,12 @@ Rectangle {
         header.height + bodyColumn.implicitHeight + 3 * Theme.spaceM)
     height: implicitHeight
 
-    // Prefer below-right of the click; flip above when there's no room,
-    // and keep both edges inside the viewport either way.
-    x: parent ? Math.max(Theme.spaceM,
-                         Math.min(anchorX + 12, parent.width - width - Theme.spaceM))
-              : 0
-    y: parent
-       ? (anchorY + 16 + height <= parent.height
-          ? anchorY + 16
-          : Math.max(Theme.spaceM, anchorY - height - 12))
-       : 0
+    Connections {
+        target: card.parent
+        function onWidthChanged()  { card.clampIntoView() }
+        function onHeightChanged() { card.clampIntoView() }
+    }
+    onHeightChanged: clampIntoView()
 
     radius: Theme.radiusM
     color: Theme.dialogBg
@@ -71,17 +78,29 @@ Rectangle {
     }
 
     // Swallow clicks/hover so a press meant for the card can't start a
-    // new selection on the page underneath.
+    // new selection on the page underneath, and bring it to the front.
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onPressed: card.raiseRequested()
     }
 
-    Shortcut {
-        sequence: "Escape"
-        enabled: card.visible
-        onActivated: card.dismiss()
+    // ── Header: status, drag handle, actions ──────────────────────────
+    MouseArea {
+        id: dragArea
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        height: header.height + 2 * Theme.spaceM
+        cursorShape: Qt.SizeAllCursor
+        drag.target: card
+        drag.minimumX: 0
+        drag.maximumX: card.parent ? Math.max(0, card.parent.width - card.width) : 0
+        drag.minimumY: 0
+        drag.maximumY: card.parent ? Math.max(0, card.parent.height - card.height) : 0
+        drag.threshold: 0
+        onPressed: card.raiseRequested()
     }
 
     RowLayout {
@@ -142,7 +161,7 @@ Rectangle {
             implicitWidth: 20
             implicitHeight: 20
             padding: 0
-            onClicked: card.dismiss()
+            onClicked: card.closeRequested()
         }
     }
 
@@ -170,7 +189,7 @@ Rectangle {
                 visible: card.status !== "failed"
                 // Streams in while the model writes; empty until the
                 // first chunk lands, which the pulsing dot covers.
-                text: translation.snippetText
+                text: card.translatedText
                 readOnly: true
                 selectByMouse: true
                 wrapMode: TextEdit.Wrap
@@ -182,7 +201,7 @@ Rectangle {
             Text {
                 width: parent.width
                 visible: card.status === "failed"
-                text: translation.snippetError
+                text: card.errorText
                 wrapMode: Text.Wrap
                 color: Theme.danger
                 font.pixelSize: 12

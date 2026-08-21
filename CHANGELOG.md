@@ -5,8 +5,11 @@
 ### Translate a selection where you selected it
 - **Right-click text in the PDF and choose "Translate Selection".** A
   card opens next to it with the translation, streaming in as the model
-  writes. Esc, the × or starting a new selection puts it away, and Copy
-  takes the translation with you.
+  writes. Copy takes the translation with you.
+- **The cards are pinned.** They stay put when the card loses focus,
+  when you select something else, and while you scroll — only the ×
+  closes one. Drag a card by its header to move it, and open as many as
+  you want: each new one lands on top, clear of the ones already there.
 - **When the selection sits inside a paragraph the app knows, that
   paragraph is what gets translated.** It is the same row the right pane
   shows and the same on-disk cache, so the pane fills in at the same

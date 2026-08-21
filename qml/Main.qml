@@ -988,6 +988,39 @@ ApplicationWindow {
                         Layout.fillHeight: true
                         clip: true
 
+                        // ── Pinned translation cards ──────────────────
+                        // Where the next card opens. Set just before the
+                        // service appends its row, since the delegate is
+                        // created during that call.
+                        property point nextCardPos: Qt.point(24, 24)
+                        // Monotonic stacking order: clicking a card puts
+                        // it on top of the others.
+                        property int cardZTop: 2
+                        function raiseCard() { return ++cardZTop }
+                        // A spot near (x, y) that isn't already occupied,
+                        // so translating twice from the same place doesn't
+                        // hide one card exactly behind another.
+                        function freeCardSpot(x, y) {
+                            let px = x + 12
+                            let py = y + 16
+                            for (let guard = 0; guard < 10; ++guard) {
+                                let clash = false
+                                for (let i = 0; i < cardRepeater.count; ++i) {
+                                    const it = cardRepeater.itemAt(i)
+                                    if (it && Math.abs(it.x - px) < 12
+                                           && Math.abs(it.y - py) < 12) {
+                                        clash = true
+                                        break
+                                    }
+                                }
+                                if (!clash)
+                                    break
+                                px += 24
+                                py += 24
+                            }
+                            return Qt.point(px, py)
+                        }
+
                         // Click the PDF area to focus it, then use the arrow
                         // keys to scroll the whole document. The TapHandler is
                         // passive (DragThreshold) so it never steals a text-
@@ -1057,25 +1090,22 @@ ApplicationWindow {
                             }
                             // Mirror the user's PDF selection into the controller so
                             // the chat tool `get_user_selection` can read it.
-                            onSelectedTextChanged: {
-                                paperController.setCurrentSelection(
-                                    selectedText,
-                                    pdfSelection.startPage >= 0 ? pdfSelection.startPage
-                                                                : currentPage)
-                                // Starting a new selection retires the old
-                                // card — it belonged to the previous text.
-                                translation.clearSnippet()
-                            }
+                            onSelectedTextChanged: paperController.setCurrentSelection(
+                                selectedText,
+                                pdfSelection.startPage >= 0 ? pdfSelection.startPage
+                                                            : currentPage)
 
-                            // Right-click → Translate: pops the card beside
-                            // the click. The service places the selection in
-                            // a paragraph when it can, so the right pane and
-                            // the on-disk cache get the same translation.
+                            // Right-click → Translate: opens a card beside
+                            // the click. Cards are pinned — a new selection
+                            // leaves the old ones alone. The service places
+                            // the selection in a paragraph when it can, so
+                            // the right pane and the on-disk cache get the
+                            // same translation.
                             canTranslateSelection: settings.isConfigured
                             onTranslateSelectionRequested: function(x, y) {
                                 const p = pdfView.mapToItem(pdfViewport, x, y)
-                                selectionCard.showAt(p.x, p.y)
-                                translation.translateSnippet(
+                                pdfViewport.nextCardPos = pdfViewport.freeCardSpot(p.x, p.y)
+                                translation.translateSelection(
                                     pdfSelection.text,
                                     pdfSelection.startPage >= 0
                                         ? pdfSelection.startPage : pdfView.currentPage)
@@ -1242,13 +1272,34 @@ ApplicationWindow {
                             visible: running
                         }
 
-                        // Selection translation card. Sits above the page
-                        // (z 2 clears the selection layer at z 1) and is
-                        // invisible unless a translation is on screen, so
-                        // it never steals hover from the I-beam.
-                        SelectionTranslateCard {
-                            id: selectionCard
-                            z: 2
+                        // Pinned selection-translation cards, one per row of
+                        // the service's snippet model. They sit above the
+                        // page (z clears the selection layer at z 1) and
+                        // only close on their own × button.
+                        Repeater {
+                            id: cardRepeater
+                            model: translation.snippets
+
+                            delegate: SelectionTranslateCard {
+                                // Roles are read through `model.` so they
+                                // can't collide with the card's own
+                                // `status` / `text` properties.
+                                required property var model
+
+                                snippetId: model.snippetId
+                                translatedText: model.text
+                                status: model.status
+                                errorText: model.error
+                                fromParagraph: model.paragraph
+
+                                // Consume the spot Main picked for this
+                                // card just before the row was appended.
+                                openX: pdfViewport.nextCardPos.x
+                                openY: pdfViewport.nextCardPos.y
+
+                                onCloseRequested: translation.closeSnippet(model.snippetId)
+                                onRaiseRequested: z = pdfViewport.raiseCard()
+                            }
                         }
                     }
                 }

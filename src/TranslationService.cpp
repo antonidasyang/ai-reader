@@ -61,9 +61,12 @@ TranslationService::TranslationService(Settings *settings,
     }
     if (m_model) {
         // Splitting/merging/deleting paragraphs renumbers rows, which
-        // would leave the selection card mirroring somebody else's text.
-        connect(m_model, &BlockListModel::blocksMutated,
-                this, &TranslationService::clearSnippet);
+        // would leave a pinned card mirroring somebody else's text. The
+        // cards stay open with the text they already have; they just
+        // stop following a row.
+        connect(m_model, &BlockListModel::blocksMutated, this, [this] {
+            m_snippets.detachBlockRows();
+        });
     }
 }
 
@@ -72,7 +75,14 @@ TranslationService::~TranslationService() = default;
 void TranslationService::onPaperChanged()
 {
     cancel();
-    clearSnippet();
+    // PaperController re-emits blocksChanged for paragraph edits too, so
+    // "the blocks changed" is not the same as "a different paper". Cards
+    // belong to the paper they were opened on and close with it; an edit
+    // to the current paper only costs them their row (see the
+    // blocksMutated hookup in the constructor).
+    const QString paperId = m_paper ? m_paper->paperId() : QString();
+    if (paperId != m_cache.paperId())
+        closeAllSnippets();
     m_done = 0;
     m_failed = 0;
     m_total = 0;
@@ -314,9 +324,8 @@ void TranslationService::translateRow(int row)
         const int r = m_replyToRow.value(reply, -1);
         if (r >= 0 && m_model) {
             m_model->appendTranslationChunk(r, chunk);
-            // The selection card reads this row's text live.
-            if (r == m_snippetRow)
-                emit snippetChanged();
+            // Any card pinned to this paragraph streams along with it.
+            syncBlockRow(r);
         }
     });
     connect(reply, &LlmReply::finished, this, [this, reply]() {
@@ -349,14 +358,8 @@ void TranslationService::translateRow(int row)
                 }
             }
         }
-        if (r >= 0 && r == m_snippetRow) {
-            const Block *cur = m_model ? m_model->blockAt(r) : nullptr;
-            if (cur && cur->translationStatus == Block::Failed)
-                setSnippetFailed(cur->translationError);
-            else
-                m_snippetStatus = QStringLiteral("done");
-            emit snippetChanged();
-        }
+        if (r >= 0)
+            syncBlockRow(r);
         emit progressChanged();
         reply->deleteLater();
         scheduleNext();
@@ -367,10 +370,10 @@ void TranslationService::translateRow(int row)
             [this, reply](const QString &message) {
         const int r = m_replyToRow.take(reply);
         --m_inflight;
-        if (r >= 0 && m_model)
+        if (r >= 0 && m_model) {
             m_model->setTranslationStatus(r, Block::Failed, message);
-        if (r >= 0 && r == m_snippetRow)
-            setSnippetFailed(message);
+            syncBlockRow(r);
+        }
         ++m_failed;
         setLastError(message);
         emit progressChanged();
@@ -382,17 +385,6 @@ void TranslationService::translateRow(int row)
 }
 
 // ── Selection translation ──────────────────────────────────────────────
-
-QString TranslationService::snippetText() const
-{
-    // Paragraph mode reads straight off the model, so a stream lands in
-    // the card and the right pane together and nothing can drift.
-    if (m_snippetRow >= 0 && m_model) {
-        if (const Block *b = m_model->blockAt(m_snippetRow))
-            return b->translation;
-    }
-    return m_snippetText;
-}
 
 int TranslationService::findBlockRow(const QString &text, int page) const
 {
@@ -414,97 +406,121 @@ int TranslationService::findBlockRow(const QString &text, int page) const
     return fallback;
 }
 
-void TranslationService::clearSnippet()
+void TranslationService::syncBlockRow(int row)
 {
-    if (m_snippetReply) {
-        m_snippetReply->abort();
-        m_snippetReply.clear();
+    if (!m_model || !m_snippets.hasBlockRow(row)) return;
+    const Block *b = m_model->blockAt(row);
+    if (!b) return;
+
+    QString status;
+    switch (b->translationStatus) {
+    case Block::Translated:
+    case Block::Skipped:
+        status = QStringLiteral("done");
+        break;
+    case Block::Failed:
+        status = QStringLiteral("failed");
+        break;
+    default:
+        status = QStringLiteral("translating");
+        break;
     }
-    const bool wasIdle = m_snippetStatus == QLatin1String("idle")
-                         && m_snippetRow < 0 && m_snippetSource.isEmpty();
-    m_snippetRow = -1;
-    m_snippetSource.clear();
-    m_snippetText.clear();
-    m_snippetError.clear();
-    m_snippetStatus = QStringLiteral("idle");
-    if (!wasIdle)
-        emit snippetChanged();
+    const QVector<int> ids = m_snippets.idsForBlockRow(row);
+    for (const int id : ids) {
+        m_snippets.setText(id, b->translation);
+        m_snippets.setStatus(id, status, b->translationError);
+    }
 }
 
-void TranslationService::setSnippetFailed(const QString &message)
+void TranslationService::closeSnippet(int id)
 {
-    m_snippetStatus = QStringLiteral("failed");
-    m_snippetError = message;
-    emit snippetChanged();
+    for (auto it = m_snippetReplies.begin(); it != m_snippetReplies.end(); ) {
+        if (it.value() != id) { ++it; continue; }
+        if (it.key())
+            it.key()->abort();
+        it = m_snippetReplies.erase(it);
+    }
+    m_snippets.remove(id);
 }
 
-void TranslationService::translateSnippet(const QString &text, int page)
+void TranslationService::closeAllSnippets()
+{
+    for (auto it = m_snippetReplies.begin(); it != m_snippetReplies.end(); ++it) {
+        if (it.key())
+            it.key()->abort();
+    }
+    m_snippetReplies.clear();
+    m_snippets.clear();
+}
+
+int TranslationService::translateSelection(const QString &text, int page)
 {
     const QString src = text.trimmed();
-    clearSnippet();
     if (src.isEmpty() || !m_settings)
-        return;
+        return -1;
 
-    m_snippetSource = src;
+    SnippetModel::Snippet s;
+    s.source = src;
+    s.status = QStringLiteral("translating");
 
     // Paragraph path — hand the work to the normal per-block pipeline so
     // the result is cached and the right pane fills in as well. Work the
     // model already did is shown whether or not an LLM is configured.
     const int row = findBlockRow(src, page);
-    if (row >= 0) {
-        const Block *b = m_model ? m_model->blockAt(row) : nullptr;
-        if (b) {
-            m_snippetRow = row;
-            switch (b->translationStatus) {
-            case Block::Translated:
-            case Block::Skipped:
-                m_snippetStatus = QStringLiteral("done");
-                emit snippetChanged();
-                return;
-            case Block::Translating:
-            case Block::Queued:
-                m_snippetStatus = QStringLiteral("translating");
-                emit snippetChanged();
-                return;   // already in flight; translateRow mirrors it
-            default:
-                break;
-            }
-            if (!m_settings->isConfigured()) {
-                setSnippetFailed(tr("LLM is not configured. Open Settings to "
-                                    "add a model and API key."));
-                return;
-            }
-            m_snippetStatus = QStringLiteral("translating");
-            translateBlock(row);
-            // translateBlock can resolve the row on the spot (formula-
-            // only text is passed through as Skipped) or refuse it — so
-            // read the row back rather than leaving the card spinning.
-            const Block *after = m_model->blockAt(row);
-            const Block::TranslationStatus st =
-                after ? after->translationStatus : Block::NotTranslated;
-            if (st == Block::Translated || st == Block::Skipped)
-                m_snippetStatus = QStringLiteral("done");
-            else if (st == Block::NotTranslated || st == Block::Failed)
-                setSnippetFailed(m_lastError.isEmpty()
+    const Block *b = (row >= 0 && m_model) ? m_model->blockAt(row) : nullptr;
+    if (b) {
+        s.paragraph = true;
+        s.blockRow = row;
+        s.text = b->translation;
+        switch (b->translationStatus) {
+        case Block::Translated:
+        case Block::Skipped:
+            s.status = QStringLiteral("done");
+            return m_snippets.add(s);
+        case Block::Translating:
+        case Block::Queued:
+            return m_snippets.add(s);   // in flight; syncBlockRow feeds it
+        default:
+            break;
+        }
+        if (!m_settings->isConfigured()) {
+            s.status = QStringLiteral("failed");
+            s.error = tr("LLM is not configured. Open Settings to add a "
+                         "model and API key.");
+            return m_snippets.add(s);
+        }
+
+        const int id = m_snippets.add(s);
+        translateBlock(row);
+        // translateBlock can resolve the row on the spot (formula-only
+        // text is passed through as Skipped) or refuse it — so read the
+        // row back rather than leaving the card spinning.
+        syncBlockRow(row);
+        const Block *after = m_model->blockAt(row);
+        if (after && after->translationStatus == Block::NotTranslated) {
+            m_snippets.setStatus(id, QStringLiteral("failed"),
+                                 m_lastError.isEmpty()
                                      ? tr("Could not translate this paragraph.")
                                      : m_lastError);
-            emit snippetChanged();
-            return;
         }
+        return id;
     }
 
     // Ad-hoc path — the selection spans paragraphs, is too short to
     // place, or the paper hasn't been segmented yet.
-    translateSnippetAdHoc(src);
+    const int id = m_snippets.add(s);
+    translateSelectionAdHoc(id, src);
+    return id;
 }
 
-void TranslationService::translateSnippetAdHoc(const QString &text)
+void TranslationService::translateSelectionAdHoc(int snippetId, const QString &text)
 {
     // The cache key carries the model and language, so a lookup without
     // a configured model can only miss — no point trying first.
     if (!m_settings->isConfigured()) {
-        setSnippetFailed(
-            tr("LLM is not configured. Open Settings to add a model and API key."));
+        m_snippets.setStatus(snippetId, QStringLiteral("failed"),
+                             tr("LLM is not configured. Open Settings to add "
+                                "a model and API key."));
         return;
     }
 
@@ -515,15 +531,16 @@ void TranslationService::translateSnippetAdHoc(const QString &text)
     const QString cached =
         m_cache.lookup(kSnippetBlockId, text, model, promptHash, lang);
     if (!cached.isEmpty()) {
-        m_snippetText = cached;
-        m_snippetStatus = QStringLiteral("done");
-        emit snippetChanged();
+        m_snippets.setText(snippetId, cached);
+        m_snippets.setStatus(snippetId, QStringLiteral("done"));
         return;
     }
 
     refreshClient();
     if (!m_client) {
-        setSnippetFailed(tr("LLM is not configured. Open Settings to add a model and API key."));
+        m_snippets.setStatus(snippetId, QStringLiteral("failed"),
+                             tr("LLM is not configured. Open Settings to add "
+                                "a model and API key."));
         return;
     }
 
@@ -534,41 +551,37 @@ void TranslationService::translateSnippetAdHoc(const QString &text)
     req.stream = true;
     req.maxTokens = m_settings->maxTokens();
 
-    m_snippetStatus = QStringLiteral("translating");
-    emit snippetChanged();
-
     LlmReply *reply = m_client->send(req);
-    m_snippetReply = reply;
+    m_snippetReplies.insert(reply, snippetId);
 
     connect(reply, &LlmReply::chunkReceived, this,
             [this, reply](const QString &chunk) {
-        if (m_snippetReply != reply) return;   // superseded
-        m_snippetText += chunk;
-        emit snippetChanged();
+        const int id = m_snippetReplies.value(reply, -1);
+        if (id >= 0)
+            m_snippets.appendText(id, chunk);
     });
     connect(reply, &LlmReply::finished, this, [this, reply, text,
                                                model, promptHash, lang]() {
+        const int id = m_snippetReplies.take(reply);
         reply->deleteLater();
-        if (m_snippetReply != reply) return;
-        m_snippetReply.clear();
-        if (m_snippetText.trimmed().isEmpty()) {
-            setSnippetFailed(tr("The model returned an empty translation."));
+        const SnippetModel::Snippet *s = id >= 0 ? m_snippets.byId(id) : nullptr;
+        if (!s) return;   // card was closed while the reply was in flight
+        if (s->text.trimmed().isEmpty()) {
+            m_snippets.setStatus(id, QStringLiteral("failed"),
+                                 tr("The model returned an empty translation."));
             return;
         }
-        m_snippetStatus = QStringLiteral("done");
         // Worth caching: people re-select the same sentence.
-        if (!m_cache.paperId().isEmpty()) {
-            m_cache.store(kSnippetBlockId, text, model, promptHash, lang,
-                          m_snippetText);
-        }
-        emit snippetChanged();
+        if (!m_cache.paperId().isEmpty())
+            m_cache.store(kSnippetBlockId, text, model, promptHash, lang, s->text);
+        m_snippets.setStatus(id, QStringLiteral("done"));
     });
     connect(reply, &LlmReply::errorOccurred, this,
             [this, reply](const QString &message) {
+        const int id = m_snippetReplies.take(reply);
         reply->deleteLater();
-        if (m_snippetReply != reply) return;
-        m_snippetReply.clear();
-        setSnippetFailed(message);
+        if (id >= 0)
+            m_snippets.setStatus(id, QStringLiteral("failed"), message);
     });
 }
 
