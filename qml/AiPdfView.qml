@@ -29,6 +29,13 @@ Item {
     // takes the drags and the I-beam should not show.
     property bool selectionEnabled: true
 
+    // Gates the context menu's Translate item. The app sets it from
+    // whether an LLM is configured; this file stays free of app globals.
+    property bool canTranslateSelection: false
+    // Right-click → Translate. (x, y) is where the menu was opened, in
+    // this item's coordinates, so the app can anchor its card there.
+    signal translateSelectionRequested(real x, real y)
+
     readonly property string selectedText:
         selectionModel ? selectionModel.text : ""
 
@@ -520,6 +527,8 @@ Item {
             const h = pageHit(mouse.x, mouse.y)
             if (mouse.button === Qt.RightButton) {
                 ctxMenu.pageIdx = h ? h.page : pageNavigator.currentPage
+                ctxMenu.originX = mouse.x
+                ctxMenu.originY = mouse.y
                 ctxMenu.popup()
                 return
             }
@@ -616,11 +625,23 @@ Item {
         Menu {
             id: ctxMenu
             property int pageIdx: 0
+            // Where the menu was opened, in root coordinates — the
+            // translation card is anchored there.
+            property real originX: 0
+            property real originY: 0
             MenuItem {
                 text: qsTr("Copy")
                 enabled: root.selectionModel && root.selectionModel.hasSelection
                 onTriggered: root.selectionModel.copyToClipboard()
             }
+            MenuItem {
+                text: qsTr("Translate Selection")
+                enabled: root.canTranslateSelection
+                         && root.selectionModel && root.selectionModel.hasSelection
+                onTriggered: root.translateSelectionRequested(ctxMenu.originX,
+                                                              ctxMenu.originY)
+            }
+            MenuSeparator {}
             MenuItem {
                 text: qsTr("Select All on Page")
                 onTriggered: root.selectionModel.selectAllOnPage(ctxMenu.pageIdx)

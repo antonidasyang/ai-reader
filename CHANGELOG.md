@@ -1,5 +1,21 @@
 # AI Reader changelog
 
+## v1.1.18 — 2026-08-21
+
+### Translate a selection where you selected it
+- **Right-click text in the PDF and choose "Translate Selection".** A
+  card opens next to it with the translation, streaming in as the model
+  writes. Esc, the × or starting a new selection puts it away, and Copy
+  takes the translation with you.
+- **When the selection sits inside a paragraph the app knows, that
+  paragraph is what gets translated.** It is the same row the right pane
+  shows and the same on-disk cache, so the pane fills in at the same
+  time and a paragraph you have already paid for opens instantly, with
+  no second API call.
+- **Anything else is translated on its own** — a selection running
+  across two paragraphs, a phrase, or a paper that has not been split
+  into paragraphs yet. Those results are cached per paper too.
+
 ## v1.1.17 — 2026-08-20
 
 ### Fit-to-width really fits

@@ -1057,10 +1057,29 @@ ApplicationWindow {
                             }
                             // Mirror the user's PDF selection into the controller so
                             // the chat tool `get_user_selection` can read it.
-                            onSelectedTextChanged: paperController.setCurrentSelection(
-                                selectedText,
-                                pdfSelection.startPage >= 0 ? pdfSelection.startPage
-                                                            : currentPage)
+                            onSelectedTextChanged: {
+                                paperController.setCurrentSelection(
+                                    selectedText,
+                                    pdfSelection.startPage >= 0 ? pdfSelection.startPage
+                                                                : currentPage)
+                                // Starting a new selection retires the old
+                                // card — it belonged to the previous text.
+                                translation.clearSnippet()
+                            }
+
+                            // Right-click → Translate: pops the card beside
+                            // the click. The service places the selection in
+                            // a paragraph when it can, so the right pane and
+                            // the on-disk cache get the same translation.
+                            canTranslateSelection: settings.isConfigured
+                            onTranslateSelectionRequested: function(x, y) {
+                                const p = pdfView.mapToItem(pdfViewport, x, y)
+                                selectionCard.showAt(p.x, p.y)
+                                translation.translateSnippet(
+                                    pdfSelection.text,
+                                    pdfSelection.startPage >= 0
+                                        ? pdfSelection.startPage : pdfView.currentPage)
+                            }
 
                             // Wheel router as a *child* of pdfView so it sits in
                             // the event chain ABOVE the inner Flickable but
@@ -1221,6 +1240,15 @@ ApplicationWindow {
                                      || (paperController.extracting
                                          && paperController.blockCount === 0)
                             visible: running
+                        }
+
+                        // Selection translation card. Sits above the page
+                        // (z 2 clears the selection layer at z 1) and is
+                        // invisible unless a translation is on screen, so
+                        // it never steals hover from the I-beam.
+                        SelectionTranslateCard {
+                            id: selectionCard
+                            z: 2
                         }
                     }
                 }
