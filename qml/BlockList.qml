@@ -10,6 +10,13 @@ Rectangle {
     property var model: null
     property int paperStatus: PaperController.Empty
     property bool syncEnabled: true
+    // True while the user drags a splitter handle. Every paragraph in
+    // view re-wraps its text when this pane's width changes, which costs
+    // milliseconds per pixel — far too much to do 60 times a second. The
+    // rows hold their width while the handle moves and re-wrap once, on
+    // release.
+    property bool resizing: false
+    onResizingChanged: if (!resizing) list.layoutWidth = list.width
 
     signal pageRequested(int page)
     signal askInChatRequested(string text, int page)
@@ -116,12 +123,19 @@ Rectangle {
                 visible: count > 0
 
                 property int lastReportedPage: -1
+                // The width the delegates wrap to — frozen during a
+                // splitter drag (see root.resizing).
+                property real layoutWidth: width
+                onWidthChanged: if (!root.resizing) layoutWidth = width
 
                 onContentYChanged: maybeReportPage()
                 onModelChanged: lastReportedPage = -1
 
                 function maybeReportPage() {
                     if (!root.syncEnabled) return
+                    // A relayout is not the user scrolling — reporting a
+                    // page here would jump the PDF pane mid-drag.
+                    if (root.resizing) return
                     if (count === 0) return
                     const idx = list.indexAt(list.width / 2, list.contentY + 1)
                     if (idx < 0) return
@@ -135,7 +149,7 @@ Rectangle {
 
                 delegate: Rectangle {
                     id: blockDelegate
-                    width: ListView.view ? ListView.view.width : 0
+                    width: list.layoutWidth
                     color: ctxArea.containsMouse ? Theme.hover : "transparent"
                     implicitHeight: cell.implicitHeight + 16
 

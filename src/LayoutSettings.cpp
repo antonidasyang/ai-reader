@@ -156,8 +156,12 @@ void LayoutSettings::setPaneWidth(const QString &name, int width)
     if (width <= 0) return;
 
     m_pendingWidths.insert(name, width);
-    if (!m_widthSaveTimer.isActive())
-        m_widthSaveTimer.start();
+    // Restart, don't skip: only arming an idle timer turns this into a
+    // throttle that fires every 300 ms for the whole drag, which is not
+    // what the header promises. Restarting makes a drag one write, 300 ms
+    // after the user lets go. (Measured at 0.01 ms a flush, so this is
+    // about matching the documented behaviour, not about speed.)
+    m_widthSaveTimer.start();
 }
 
 void LayoutSettings::flushPendingWidths()

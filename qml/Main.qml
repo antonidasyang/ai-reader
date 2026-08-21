@@ -1325,6 +1325,9 @@ ApplicationWindow {
                 SplitView.minimumWidth: 240
                 model: paperController.blocks
                 paperStatus: paperController.status
+                // Wrapped text is expensive to re-lay-out; the pane holds
+                // its layout width while a handle is being dragged.
+                resizing: split.resizing
 
                 DockGrip {
                     anchors.left: parent.left
@@ -1342,6 +1345,7 @@ ApplicationWindow {
             SummaryPane {
                 id: summaryPane
                 objectName: "summary"
+                resizing: split.resizing
                 visible: layoutSettings.paneVisible("summary", false)
                 onVisibleChanged: layoutSettings.setPaneVisible("summary", visible)
                 SplitView.preferredWidth: layoutSettings.paneWidth("summary", 360)
@@ -1364,6 +1368,7 @@ ApplicationWindow {
             ChatPane {
                 id: chatPane
                 objectName: "chat"
+                resizing: split.resizing
                 visible: layoutSettings.paneVisible("chat", false)
                 onVisibleChanged: layoutSettings.setPaneVisible("chat", visible)
                 SplitView.preferredWidth: layoutSettings.paneWidth("chat", 360)

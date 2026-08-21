@@ -7,6 +7,11 @@ Rectangle {
     id: root
     color: Theme.paneBg
 
+    // True while the user drags a splitter handle — see the TextArea's
+    // frozen width below.
+    property bool resizing: false
+    onResizingChanged: if (!resizing) summaryFlick.layoutWidth = summaryFlick.width
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -91,6 +96,9 @@ Rectangle {
                 contentHeight: body.implicitHeight
                 boundsBehavior: Flickable.StopAtBounds
 
+                property real layoutWidth: width
+                onWidthChanged: if (!root.resizing) layoutWidth = width
+
                 ScrollBar.vertical: ScrollBar { active: true; policy: ScrollBar.AsNeeded }
 
                 // True when the viewport is at (or near) the bottom.
@@ -115,7 +123,10 @@ Rectangle {
 
                 TextArea {
                     id: body
-                    width: parent.width
+                    // Frozen while a splitter handle moves: this is one
+                    // TextArea holding the whole interpretation, and a
+                    // width change re-lays out the entire document.
+                    width: summaryFlick.layoutWidth
                     readOnly: true
                     selectByMouse: true
                     wrapMode: TextEdit.Wrap

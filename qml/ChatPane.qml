@@ -7,6 +7,13 @@ Rectangle {
     id: root
     color: Theme.paneBg
 
+    // True while the user drags a splitter handle. Every visible bubble
+    // re-lays-out its rich text when the pane's width changes, so the
+    // bubbles hold their width while the handle moves and reflow once,
+    // on release.
+    property bool resizing: false
+    onResizingChanged: if (!resizing) list.layoutWidth = list.width
+
     // ── Typed-item delegate factories (file-root scope so the
     //     dynamically-loaded ColumnLayout in the message bubble can
     //     resolve them by id; nested scopes don't always see ids
@@ -271,6 +278,11 @@ Rectangle {
                 if (atBottom !== stickBottom) stickBottom = atBottom
             }
 
+            // The width the bubbles lay out to — frozen during a
+            // splitter drag (see root.resizing).
+            property real layoutWidth: width
+            onWidthChanged: if (!root.resizing) layoutWidth = width
+
             // positionViewAtIndex(count-1, ListView.End) anchors the
             // *bottom* of the last delegate to the bottom of the
             // viewport, which is what we actually want while a delegate
@@ -291,7 +303,7 @@ Rectangle {
 
             delegate: Item {
                 id: msgDelegate
-                width: ListView.view ? ListView.view.width : 0
+                width: list.layoutWidth
                 implicitHeight: bubble.height + 12
 
                 // Capture per-row model data on the delegate root so
