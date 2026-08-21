@@ -1387,14 +1387,30 @@ ApplicationWindow {
                 }
             }
 
-            handle: Rectangle {
-                implicitWidth: 4
-                // Idle/hover follow the theme (the old fixed light grays
-                // glowed against the dark UI); pressed keeps the same
-                // fixed drag-accent blue as the DockGrip/dropMarker,
-                // which reads on both themes.
-                color: SplitHandle.pressed ? "#5b8def"
-                       : SplitHandle.hovered ? Theme.dimText : Theme.border
+            // The grab area is wider than the line it draws: 4 px is a
+            // hard target to hit, and missing it reads as the handle not
+            // following the mouse. The visible bar stays 4 px.
+            handle: Item {
+                implicitWidth: 10
+
+                // Without this the pointer stays an arrow over the
+                // handle, so there is nothing telling the user the
+                // splitter can be dragged at all.
+                HoverHandler {
+                    cursorShape: Qt.SplitHCursor
+                }
+
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 4
+                    height: parent.height
+                    // Idle/hover follow the theme (the old fixed light grays
+                    // glowed against the dark UI); pressed keeps the same
+                    // fixed drag-accent blue as the DockGrip/dropMarker,
+                    // which reads on both themes.
+                    color: parent.SplitHandle.pressed ? "#5b8def"
+                           : parent.SplitHandle.hovered ? Theme.dimText : Theme.border
+                }
             }
         }
 

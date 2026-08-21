@@ -20,14 +20,18 @@
   into paragraphs yet. Those results are cached per paper too.
 
 ### Dragging a splitter is smooth again
-- **The panes stop re-wrapping their text while you drag a handle.**
-  Every pixel of a drag re-laid-out every paragraph, chat bubble and the
-  whole interpretation document: measured at 3.2 ms per pixel for the
-  paragraph pane, 3.1 ms for chat and 8.5 ms for the interpretation —
-  together far past a frame's budget, which is exactly what the stutter
-  was. Those panes now hold their layout width while the handle moves
-  and reflow once, when you let go. Same measurement after the change:
-  0.31, 0.29 and 1.3 ms.
+- **The splitter handle has a proper grab area and cursor.** It was a
+  4 px strip with no cursor change, so there was nothing to tell you it
+  could be dragged and it was easy to miss. The grab area is now 10 px
+  (the visible line is still 4 px) and the pointer turns into the
+  resize cursor over it.
+- **The panes keep reflowing as you drag, but no longer once per mouse
+  move.** Every move re-wrapped every paragraph, chat bubble and the
+  whole interpretation document — 3.1 ms, 3.1 ms and 7.8 ms a move,
+  measured, which is what ate the frame budget. They now re-wrap at
+  about 30 times a second while the handle moves and land exactly right
+  when it is released. Same measurement after: 0.10, 0.16 and 0.71 ms a
+  move.
 - **A paragraph list re-flowing no longer jumps the PDF.** Changing row
   heights shift the list's scroll position, which the pane reported as
   "the user scrolled to page N" — so the PDF pane could be dragged into

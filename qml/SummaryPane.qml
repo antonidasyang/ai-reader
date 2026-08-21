@@ -8,9 +8,12 @@ Rectangle {
     color: Theme.paneBg
 
     // True while the user drags a splitter handle — see the TextArea's
-    // frozen width below.
+    // rate-capped width below.
     property bool resizing: false
-    onResizingChanged: if (!resizing) summaryFlick.layoutWidth = summaryFlick.width
+    onResizingChanged: if (!resizing) {
+        reflow.stop()
+        summaryFlick.layoutWidth = summaryFlick.width
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -96,8 +99,19 @@ Rectangle {
                 contentHeight: body.implicitHeight
                 boundsBehavior: Flickable.StopAtBounds
 
+                // Re-laying out the whole interpretation costs 8.5 ms, so
+                // during a splitter drag it happens on a timer instead of
+                // on every mouse move.
                 property real layoutWidth: width
-                onWidthChanged: if (!root.resizing) layoutWidth = width
+                onWidthChanged: {
+                    if (!root.resizing) { layoutWidth = width; return }
+                    if (!reflow.running) reflow.start()
+                }
+                Timer {
+                    id: reflow
+                    interval: 32
+                    onTriggered: summaryFlick.layoutWidth = summaryFlick.width
+                }
 
                 ScrollBar.vertical: ScrollBar { active: true; policy: ScrollBar.AsNeeded }
 
@@ -123,9 +137,6 @@ Rectangle {
 
                 TextArea {
                     id: body
-                    // Frozen while a splitter handle moves: this is one
-                    // TextArea holding the whole interpretation, and a
-                    // width change re-lays out the entire document.
                     width: summaryFlick.layoutWidth
                     readOnly: true
                     selectByMouse: true

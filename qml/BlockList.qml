@@ -11,12 +11,12 @@ Rectangle {
     property int paperStatus: PaperController.Empty
     property bool syncEnabled: true
     // True while the user drags a splitter handle. Every paragraph in
-    // view re-wraps its text when this pane's width changes, which costs
-    // milliseconds per pixel — far too much to do 60 times a second. The
-    // rows hold their width while the handle moves and re-wrap once, on
-    // release.
+    // view re-wraps its text when this pane's width changes — measured at
+    // 3.2 ms — which is too much to pay on every mouse move. The rows keep
+    // re-wrapping during the drag (they should follow the handle), just at
+    // a capped rate, and land exactly right when the handle is released.
     property bool resizing: false
-    onResizingChanged: if (!resizing) list.layoutWidth = list.width
+    onResizingChanged: if (!resizing) { reflow.stop(); list.layoutWidth = list.width }
 
     signal pageRequested(int page)
     signal askInChatRequested(string text, int page)
@@ -123,10 +123,19 @@ Rectangle {
                 visible: count > 0
 
                 property int lastReportedPage: -1
-                // The width the delegates wrap to — frozen during a
-                // splitter drag (see root.resizing).
+                // The width the delegates wrap to. Tracks the pane
+                // exactly, except during a splitter drag, where it is
+                // resampled on a timer (see root.resizing).
                 property real layoutWidth: width
-                onWidthChanged: if (!root.resizing) layoutWidth = width
+                onWidthChanged: {
+                    if (!root.resizing) { layoutWidth = width; return }
+                    if (!reflow.running) reflow.start()
+                }
+                Timer {
+                    id: reflow
+                    interval: 32   // ~30 re-wraps a second while dragging
+                    onTriggered: list.layoutWidth = list.width
+                }
 
                 onContentYChanged: maybeReportPage()
                 onModelChanged: lastReportedPage = -1
