@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "latestVersion": "1.1.18",
+  "latestVersion": "1.1.19",
   "releaseDate": "2026-08-22",
-  "releaseNotes": "选中 PDF 文字右键即可翻译,译文卡片钉在页面上、可拖动、可同时开多个;拖动面板分隔条不再卡,分隔条也更好抓并有了拉伸光标;适应宽度不再多出一条横向滚动条;模型迟迟不响应时会超时报错,不再无限等待。",
+  "releaseNotes": "分段和翻译现在会同步到课题:换台机器自动拿回来,课题里没做过这份活的同事直接就能用,而自己分的段、自己翻的译文永远优先;拉来的内容会标明来自谁,不想共享可以在设置里关掉。",
   "platforms": {
     "windows-x64": {
-      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.18.exe",
-      "sha256": "54ec4ebdeb1dba5c95cfed470d7a44ca4063304fce8582fcb534c48e7894de0d"
+      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.19.exe",
+      "sha256": "4b047e1ff27deff640bd5aa0e8f64f879c6246a25b391903ddcfb1f54b2e45f9"
     }
   }
 }
