@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "latestVersion": "1.1.16",
-  "releaseDate": "2026-08-20",
-  "releaseNotes": "滚动条只在内容真的溢出时才出现(缩小后不再挂着横条);文件夹面板可以按文件夹整体勾选,支持半选;移动面板时用移动光标。",
+  "latestVersion": "1.1.18",
+  "releaseDate": "2026-08-22",
+  "releaseNotes": "选中 PDF 文字右键即可翻译,译文卡片钉在页面上、可拖动、可同时开多个;拖动面板分隔条不再卡,分隔条也更好抓并有了拉伸光标;适应宽度不再多出一条横向滚动条;模型迟迟不响应时会超时报错,不再无限等待。",
   "platforms": {
     "windows-x64": {
-      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.16.exe",
-      "sha256": "a8aac5b4a0854d9ed5fc7be43a0991b76abe18e98006d0f435fe3f40f6d00dae"
+      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.18.exe",
+      "sha256": "54ec4ebdeb1dba5c95cfed470d7a44ca4063304fce8582fcb534c48e7894de0d"
     }
   }
 }
