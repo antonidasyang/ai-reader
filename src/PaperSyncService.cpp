@@ -34,8 +34,9 @@ const QUuid kNs =
 constexpr int kPublishThrottleMs = 15000;
 
 // Refuse to publish beyond this much base64. Reached only by something like a
-// 900-page book: the paper stays perfectly usable, it just isn't shared.
-constexpr int kMaxPayloadChars = 4 * 1024 * 1024;
+// 900-page book: the paper stays perfectly usable, it just isn't shared. The
+// server's own limit caps it further when that is the smaller of the two.
+constexpr qint64 kMaxPayloadChars = 4 * 1024 * 1024;
 
 QString encodePayload(const QJsonObject &inner)
 {
@@ -142,8 +143,13 @@ PaperSyncService::PaperSyncService(LibraryDb *db, ProjectController *projects,
 
 bool PaperSyncService::sharing() const
 {
+    // A server that never advertised a push limit predates these objects: its
+    // body limit is Express' 100 KB default, well under one segmented paper,
+    // and a rejected batch would stall the outbox for ordinary library edits
+    // too. Wait for it to be upgraded rather than jam the queue.
     return m_auth->authenticated() && m_projects->canWrite()
            && !m_projects->currentId().isEmpty()
+           && m_sync->serverPushLimit() > 0
            && (!m_settings || m_settings->sharePaperData());
 }
 
@@ -386,9 +392,11 @@ bool PaperSyncService::putArtifact(const QString &kind, const QString &paperId,
     if (author.isEmpty())
         return false;
     const QString payload = encodePayload(inner);
-    if (payload.size() > kMaxPayloadChars) {
+    const qint64 limit = qMin(kMaxPayloadChars, m_sync->serverPushLimit() / 2);
+    if (payload.size() > limit) {
         qWarning() << "PaperSyncService: not sharing" << kind << "for" << paperId
-                   << "-" << payload.size() << "chars exceeds the limit";
+                   << "-" << payload.size() << "chars exceeds the" << limit
+                   << "char limit";
         setNotice(tr("This paper is too large to share (%1 MB); it stays on "
                      "this machine.").arg(payload.size() / (1024 * 1024)));
         return false;

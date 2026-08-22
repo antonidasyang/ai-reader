@@ -30,6 +30,12 @@ public:
 
     bool syncing() const { return m_syncing; }
     QString lastError() const { return m_lastError; }
+    // Largest push body the server said it accepts, as advertised on the last
+    // pull; 0 until we have heard from a server that advertises one. Callers
+    // that want to sync large objects must gate on this: a server from before
+    // the limit was raised would reject the whole batch, and the outbox — with
+    // everyone's ordinary library edits in it — would stop draining.
+    qint64 serverPushLimit() const { return m_serverPushLimit; }
 
     Q_INVOKABLE void syncNow();
     // Record a local item edit and trigger a push (used by LibraryModel etc.).
@@ -82,5 +88,6 @@ private:
     QString m_wsProject;
 
     bool m_syncing = false;
+    qint64 m_serverPushLimit = 0;
     QString m_lastError;
 };

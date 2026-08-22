@@ -153,6 +153,8 @@ void SyncEngine::pullPage(const QString &projectId, int page,
                                o.value(QStringLiteral("version"))
                                    .toString().toLongLong());
             }
+            m_serverPushLimit =
+                qint64(root.value(QStringLiteral("pushLimitBytes")).toDouble());
             const qint64 newVersion =
                 root.value(QStringLiteral("newVersion")).toString().toLongLong();
 
@@ -188,8 +190,13 @@ void SyncEngine::applyServerObject(const QString &projectId,
 void SyncEngine::push(const QString &projectId, int attempt, int batch,
                       std::function<void()> then)
 {
+    // Stay inside whatever the server admitted to accepting, with room for the
+    // JSON envelope around the objects.
+    const qint64 budget = m_serverPushLimit > 0
+                              ? qMin(kPushMaxBytes, m_serverPushLimit * 3 / 4)
+                              : kPushMaxBytes;
     const QList<SyncObjectRow> dirty =
-        m_db->dirtyObjects(projectId, kPushMaxObjects, kPushMaxBytes);
+        m_db->dirtyObjects(projectId, kPushMaxObjects, budget);
     if (dirty.isEmpty() || attempt >= kMaxPushAttempts
         || batch >= kMaxPushBatches) {
         if (then)

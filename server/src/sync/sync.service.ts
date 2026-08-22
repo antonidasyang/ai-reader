@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProjectsService } from '../projects/projects.service';
 import { ChangeNotifier } from '../events/change-notifier';
@@ -17,6 +18,10 @@ export interface SyncObjectView {
 export interface PullResult {
   newVersion: string;
   objects: SyncObjectView[];
+  /** Largest push body this server accepts, in bytes. Clients use it both to
+   *  size their batches and to tell whether the server is new enough to be
+   *  sent the big objects at all — one that predates this field omits it. */
+  pushLimitBytes: number;
   /** More changes are waiting past this page — pull again from the last
    *  object's version. Clients that predate pagination ignore it and see the
    *  same single-page behaviour as before, since the default limit is high. */
@@ -52,13 +57,31 @@ function view(o: {
 /** Hard ceiling on one pull page, whatever the client asks for. */
 const MAX_PULL_LIMIT = 1000;
 
+/** '32mb' / '512kb' / '1048576' → bytes, as body-parser reads it. */
+export function parseByteSize(v: string | undefined, fallback: number): number {
+  if (!v) return fallback;
+  const m = /^(\d+(?:\.\d+)?)\s*(b|kb|mb|gb)?$/i.exec(v.trim());
+  if (!m) return fallback;
+  const unit = (m[2] ?? 'b').toLowerCase();
+  const scale = { b: 1, kb: 1024, mb: 1024 ** 2, gb: 1024 ** 3 }[unit] ?? 1;
+  return Math.floor(parseFloat(m[1]) * scale);
+}
+
 @Injectable()
 export class SyncService {
+  private readonly pushLimitBytes: number;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly projects: ProjectsService,
     private readonly notifier: ChangeNotifier,
-  ) {}
+    config: ConfigService,
+  ) {
+    this.pushLimitBytes = parseByteSize(
+      config.get<string>('BODY_LIMIT'),
+      32 * 1024 * 1024,
+    );
+  }
 
   /**
    * Incremental pull: everything (including tombstones) changed after
@@ -91,6 +114,7 @@ export class SyncService {
       newVersion: project.version.toString(),
       objects: page.map(view),
       hasMore,
+      pushLimitBytes: this.pushLimitBytes,
     };
   }
 

@@ -26,8 +26,12 @@ research project, synced like everything else.
   project". Turn it off and a paper's text never leaves the machine; the local
   caches keep working exactly as before.
 - Payloads are deflated before they go up — a 790 KB segmentation travels as
-  about 200 KB — and a paper too large to share (over 4 MB compressed) is left
-  alone rather than wedging the queue.
+  about 200 KB — and a paper too large to share (over 4 MB compressed, or half
+  of what the server will take) is left alone rather than wedging the queue.
+- **Nothing is shared until the server can take it.** The server now says on
+  every pull how large a push body it accepts; against one that doesn't say,
+  the app keeps segmentation and translations local. A rejected batch would
+  have stalled the outbox for ordinary library edits too.
 
 ### Sync holds up under the bigger objects
 - **The pull is paged.** A first sync of a busy project used to be one
