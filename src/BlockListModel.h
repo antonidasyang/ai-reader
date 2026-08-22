@@ -21,6 +21,7 @@ public:
         TranslationStatusRole,
         TranslationStatusNameRole,
         TranslationErrorRole,
+        TranslationOriginRole,
         SourceVisibleRole,
         TranslationVisibleRole,
     };
@@ -50,6 +51,8 @@ public:
                               const QString &error = {});
     void appendTranslationChunk(int row, const QString &chunk);
     void setTranslation(int row, const QString &text);
+    // Label the row's translation as somebody else's (empty = ours).
+    void setTranslationOrigin(int row, const QString &origin);
 
     Q_INVOKABLE int firstRowOnPage(int page) const;
     Q_INVOKABLE int pageOfRow(int row) const;

@@ -79,8 +79,13 @@ void TranslationCache::load()
         if (text.isEmpty()) continue;
         const QString key = makeKey(blockId, srcHash, model, promptHash, lang);
         m_index.insert(key, text);
-        if (e.value(QStringLiteral("ext")).toBool())
-            m_foreign.insert(key);
+        const QJsonValue ext = e.value(QStringLiteral("ext"));
+        // A string names the donor; a bare `true` is an older file that only
+        // recorded that the entry wasn't ours.
+        if (ext.isString())
+            m_foreign.insert(key, ext.toString());
+        else if (ext.toBool())
+            m_foreign.insert(key, QString());
     }
 }
 
@@ -100,7 +105,7 @@ void TranslationCache::store(int blockId, const QString &sourceText,
     const QString key = makeKey(blockId, sha(sourceText), model, promptHash, lang);
     // Re-translating locally claims the entry even when the text matches
     // what we had adopted — from here on it is ours to publish.
-    const bool claimed = m_foreign.remove(key);
+    const bool claimed = m_foreign.remove(key) > 0;
     if (!claimed && m_index.value(key) == translation) return;
     m_index.insert(key, translation);
     scheduleSave();
@@ -128,7 +133,22 @@ QJsonArray TranslationCache::ownEntriesJson() const
     return entries;
 }
 
-int TranslationCache::mergeEntries(const QJsonArray &entries)
+QString TranslationCache::originOf(int blockId, const QString &sourceText,
+                                   const QString &model,
+                                   const QString &promptHash,
+                                   const QString &lang) const
+{
+    if (m_paperId.isEmpty())
+        return {};
+    const QString key = makeKey(blockId, sha(sourceText), model, promptHash, lang);
+    if (!m_foreign.contains(key))
+        return {};
+    const QString donor = m_foreign.value(key);
+    return donor.isEmpty() ? tr("a collaborator") : donor;
+}
+
+int TranslationCache::mergeEntries(const QJsonArray &entries,
+                                   const QString &donor)
 {
     if (m_paperId.isEmpty() || entries.isEmpty())
         return 0;
@@ -147,7 +167,10 @@ int TranslationCache::mergeEntries(const QJsonArray &entries)
         if (m_index.contains(key))
             continue;              // our own paragraph translation wins
         m_index.insert(key, text);
-        m_foreign.insert(key);
+        if (donor.isEmpty())
+            m_foreign.remove(key);     // our own work, from our other machine
+        else
+            m_foreign.insert(key, donor);
         ++added;
     }
     if (added > 0) {
@@ -181,7 +204,7 @@ void TranslationCache::saveNow()
         e[QStringLiteral("lang")]    = parts[4];
         e[QStringLiteral("text")]    = it.value();
         if (m_foreign.contains(it.key()))
-            e[QStringLiteral("ext")] = true;
+            e[QStringLiteral("ext")] = m_foreign.value(it.key());
         entries.append(e);
     }
 

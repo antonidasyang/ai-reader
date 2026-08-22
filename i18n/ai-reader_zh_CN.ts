@@ -93,47 +93,47 @@
         <translation>段</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="98"/>
+        <location filename="../qml/BlockList.qml" line="121"/>
         <source>translating %1/%2…</source>
         <translation>正在翻译 %1/%2…</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="106"/>
+        <location filename="../qml/BlockList.qml" line="129"/>
         <source>%1 failed</source>
         <translation>%1 项失败</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="318"/>
+        <location filename="../qml/BlockList.qml" line="341"/>
         <source>Src</source>
         <translation>原文</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="331"/>
+        <location filename="../qml/BlockList.qml" line="354"/>
         <source>Trans</source>
         <translation>译文</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="325"/>
+        <location filename="../qml/BlockList.qml" line="348"/>
         <source>Hide source text</source>
         <translation>隐藏原文</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="326"/>
+        <location filename="../qml/BlockList.qml" line="349"/>
         <source>Show source text</source>
         <translation>显示原文</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="338"/>
+        <location filename="../qml/BlockList.qml" line="361"/>
         <source>Hide translation</source>
         <translation>隐藏译文</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="339"/>
+        <location filename="../qml/BlockList.qml" line="362"/>
         <source>Show translation</source>
         <translation>显示译文</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="251"/>
+        <location filename="../qml/BlockList.qml" line="274"/>
         <source>Ask AI about this</source>
         <translation>向 AI 提问</translation>
     </message>
@@ -188,62 +188,82 @@
         <translation>已跳过</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="259"/>
+        <location filename="../qml/BlockList.qml" line="108"/>
+        <source>split by %1</source>
+        <translation>分段来自 %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/BlockList.qml" line="114"/>
+        <source>These paragraphs came from the project. Re-segmenting makes them yours.</source>
+        <translation>这些段落来自课题。重新分段后就是你自己的了。</translation>
+    </message>
+    <message>
+        <location filename="../qml/BlockList.qml" line="282"/>
         <source>Translate this paragraph</source>
         <translation>翻译该段</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="267"/>
+        <location filename="../qml/BlockList.qml" line="290"/>
         <source>Split here</source>
         <translation>在此处拆分</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="273"/>
+        <location filename="../qml/BlockList.qml" line="296"/>
         <source>Merge with previous</source>
         <translation>与上一段合并</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="278"/>
+        <location filename="../qml/BlockList.qml" line="301"/>
         <source>Merge with next</source>
         <translation>与下一段合并</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="284"/>
+        <location filename="../qml/BlockList.qml" line="307"/>
         <source>Delete paragraph</source>
         <translation>删除该段</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="305"/>
+        <location filename="../qml/BlockList.qml" line="328"/>
         <source>p.%1 · %2</source>
         <translation>第 %1 页 · %2</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="438"/>
+        <location filename="../qml/BlockList.qml" line="380"/>
+        <source>from %1</source>
+        <translation>来自 %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/BlockList.qml" line="386"/>
+        <source>Translated by %1, shared through the project. Translating this paragraph yourself replaces it.</source>
+        <translation>由 %1 翻译,通过课题共享。你自己重翻这一段就会替换掉它。</translation>
+    </message>
+    <message>
+        <location filename="../qml/BlockList.qml" line="485"/>
         <source>Segmenting…</source>
         <translation>正在分段…</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="440"/>
+        <location filename="../qml/BlockList.qml" line="487"/>
         <source>Extracting paragraphs…</source>
         <translation>正在提取段…</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="442"/>
+        <location filename="../qml/BlockList.qml" line="489"/>
         <source>No paragraphs (load failed).</source>
         <translation>无段(加载失败)。</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="444"/>
+        <location filename="../qml/BlockList.qml" line="491"/>
         <source>This paper hasn&apos;t been split into paragraphs yet.</source>
         <translation>这篇论文还没有分段。</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="445"/>
+        <location filename="../qml/BlockList.qml" line="492"/>
         <source>Open a PDF to see extracted text.</source>
         <translation>打开 PDF 以查看提取的文本。</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="451"/>
+        <location filename="../qml/BlockList.qml" line="498"/>
         <source>Segment paragraphs</source>
         <translation>分段</translation>
     </message>
@@ -1403,32 +1423,34 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
 <context>
     <name>PaperSyncService</name>
     <message>
-        <location filename="../src/PaperSyncService.cpp" line="255"/>
+        <location filename="../src/PaperSyncService.cpp" line="267"/>
         <source>Restored %1 paragraphs you segmented on another machine.</source>
         <translation>已恢复你在另一台机器上分好的 %1 个段落。</translation>
     </message>
     <message>
-        <location filename="../src/PaperSyncService.cpp" line="257"/>
+        <location filename="../src/PaperSyncService.cpp" line="269"/>
         <source>Using %1 paragraphs segmented by %2.</source>
         <translation>正在使用 %2 分好的 %1 个段落。</translation>
     </message>
     <message>
-        <location filename="../src/PaperSyncService.cpp" line="259"/>
+        <location filename="../src/PaperSyncService.cpp" line="188"/>
+        <location filename="../src/PaperSyncService.cpp" line="261"/>
+        <location filename="../src/PaperSyncService.cpp" line="316"/>
         <source>a collaborator</source>
         <translation>某位协作者</translation>
     </message>
     <message>
-        <location filename="../src/PaperSyncService.cpp" line="310"/>
+        <location filename="../src/PaperSyncService.cpp" line="327"/>
         <source>Restored %1 translated paragraphs from your other machine.</source>
         <translation>已从你的另一台机器恢复 %1 个段落的译文。</translation>
     </message>
     <message>
-        <location filename="../src/PaperSyncService.cpp" line="312"/>
+        <location filename="../src/PaperSyncService.cpp" line="329"/>
         <source>Picked up %1 translated paragraphs already done in this project.</source>
         <translation>已取用课题里现成的 %1 个段落译文。</translation>
     </message>
     <message>
-        <location filename="../src/PaperSyncService.cpp" line="392"/>
+        <location filename="../src/PaperSyncService.cpp" line="411"/>
         <source>This paper is too large to share (%1 MB); it stays on this machine.</source>
         <translation>这篇论文太大(%1 MB),不共享,只留在本机。</translation>
     </message>
@@ -2211,7 +2233,7 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation>拉取失败(HTTP %1)</translation>
     </message>
     <message>
-        <location filename="../src/SyncEngine.cpp" line="222"/>
+        <location filename="../src/SyncEngine.cpp" line="229"/>
         <source>Push failed (HTTP %1)</source>
         <translation>推送失败(HTTP %1)</translation>
     </message>
@@ -2335,24 +2357,32 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
     </message>
 </context>
 <context>
+    <name>TranslationCache</name>
+    <message>
+        <location filename="../src/TranslationCache.cpp" line="147"/>
+        <source>a collaborator</source>
+        <translation type="unfinished">某位协作者</translation>
+    </message>
+</context>
+<context>
     <name>TranslationService</name>
     <message>
-        <location filename="../src/TranslationService.cpp" line="165"/>
-        <location filename="../src/TranslationService.cpp" line="231"/>
-        <location filename="../src/TranslationService.cpp" line="501"/>
-        <location filename="../src/TranslationService.cpp" line="535"/>
-        <location filename="../src/TranslationService.cpp" line="555"/>
+        <location filename="../src/TranslationService.cpp" line="169"/>
+        <location filename="../src/TranslationService.cpp" line="235"/>
+        <location filename="../src/TranslationService.cpp" line="505"/>
+        <location filename="../src/TranslationService.cpp" line="539"/>
+        <location filename="../src/TranslationService.cpp" line="559"/>
         <source>LLM is not configured. Open Settings to add a model and API key.</source>
         <translation>未配置大模型。请在「设置」中添加模型和 API Key。</translation>
     </message>
     <message>
-        <location filename="../src/TranslationService.cpp" line="355"/>
-        <location filename="../src/TranslationService.cpp" line="584"/>
+        <location filename="../src/TranslationService.cpp" line="359"/>
+        <location filename="../src/TranslationService.cpp" line="588"/>
         <source>The model returned an empty translation.</source>
         <translation>模型返回了空的译文。</translation>
     </message>
     <message>
-        <location filename="../src/TranslationService.cpp" line="516"/>
+        <location filename="../src/TranslationService.cpp" line="520"/>
         <source>Could not translate this paragraph.</source>
         <translation>无法翻译这一段。</translation>
     </message>

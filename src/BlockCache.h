@@ -22,7 +22,7 @@
 //   ]}
 //
 // `origin` marks a block list adopted from another member (or another
-// machine of ours) through PaperSyncService: the content is usable but
+// machine of ours) through PaperSyncService, and `originLabel` names them: the content is usable but
 // not ours to re-publish. Any local segmentation or paragraph edit
 // clears it, and from then on this account owns the list.
 //
@@ -72,11 +72,14 @@ public:
     // owns blocks for the paper — the local list always wins. `author` is
     // empty when the donor is this same account.
     bool adopt(const QJsonObject &doc, const QString &author,
-               const QString &rev);
+               const QString &authorLabel, const QString &rev);
     // False once the content was adopted and nothing local has touched it;
     // the bridge publishes only what this account owns.
     bool owned() const { return m_owned; }
     QString origin() const { return m_origin; }
+    // How to name the donor in the UI (their email, usually). Kept in the
+    // cache file so the label survives a restart with no project loaded.
+    QString originLabel() const { return m_originLabel; }
     // Version stamp of the artifact we adopted, so a re-check can tell an
     // unchanged donor from an updated one and skip the rewrite.
     QString originRev() const { return m_originRev; }
@@ -103,6 +106,7 @@ private:
     // Empty when this account produced the list; otherwise the id of the
     // member we adopted it from.
     QString          m_origin;
+    QString          m_originLabel;
     QString          m_originRev;
     bool             m_owned = true;
     QTimer           m_saveTimer;

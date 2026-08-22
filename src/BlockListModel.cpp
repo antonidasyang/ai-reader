@@ -59,6 +59,8 @@ QVariant BlockListModel::data(const QModelIndex &index, int role) const
         return int(b.translationStatus);
     case TranslationStatusNameRole:
         return translationStatusName(b.translationStatus);
+    case TranslationOriginRole:
+        return b.translationOrigin;
     case TranslationErrorRole:
         return b.translationError;
     case SourceVisibleRole:
@@ -105,6 +107,7 @@ QHash<int, QByteArray> BlockListModel::roleNames() const
         {TranslationStatusRole,        "translationStatus"},
         {TranslationStatusNameRole,    "translationStatusName"},
         {TranslationErrorRole,         "translationError"},
+        {TranslationOriginRole,        "translationOrigin"},
         {SourceVisibleRole,            "sourceVisible"},
         {TranslationVisibleRole,       "translationVisible"},
     };
@@ -144,11 +147,26 @@ void BlockListModel::setTranslationStatus(int row,
         return;
     b.translationStatus = status;
     b.translationError = error;
+    // Re-translating a paragraph makes the result ours, whoever's it was.
+    if (status == Block::Queued || status == Block::Translating)
+        b.translationOrigin.clear();
     const QModelIndex idx = index(row);
     emit dataChanged(idx, idx,
                      {TranslationStatusRole,
                       TranslationStatusNameRole,
-                      TranslationErrorRole});
+                      TranslationErrorRole,
+                      TranslationOriginRole});
+}
+
+void BlockListModel::setTranslationOrigin(int row, const QString &origin)
+{
+    if (row < 0 || row >= m_blocks.size())
+        return;
+    if (m_blocks[row].translationOrigin == origin)
+        return;
+    m_blocks[row].translationOrigin = origin;
+    const QModelIndex idx = index(row);
+    emit dataChanged(idx, idx, {TranslationOriginRole});
 }
 
 void BlockListModel::appendTranslationChunk(int row, const QString &chunk)
@@ -216,11 +234,12 @@ bool BlockListModel::splitBlock(int row, int textOffset)
     edited.translation.clear();
     edited.translationStatus = Block::NotTranslated;
     edited.translationError.clear();
+    edited.translationOrigin.clear();
     const QModelIndex idxRow = index(row);
     emit dataChanged(idxRow, idxRow,
                      {TextRole, TranslationRole,
                       TranslationStatusRole, TranslationStatusNameRole,
-                      TranslationErrorRole});
+                      TranslationErrorRole, TranslationOriginRole});
 
     // Insert the right half as a new row immediately after.
     Block tail;
@@ -252,6 +271,7 @@ bool BlockListModel::mergeWithNext(int row)
     keep.translation.clear();
     keep.translationStatus = Block::NotTranslated;
     keep.translationError.clear();
+    keep.translationOrigin.clear();
 
     beginRemoveRows({}, row + 1, row + 1);
     m_blocks.removeAt(row + 1);
@@ -261,7 +281,7 @@ bool BlockListModel::mergeWithNext(int row)
     emit dataChanged(idxRow, idxRow,
                      {TextRole, TranslationRole,
                       TranslationStatusRole, TranslationStatusNameRole,
-                      TranslationErrorRole});
+                      TranslationErrorRole, TranslationOriginRole});
 
     emit blocksMutated();
     return true;

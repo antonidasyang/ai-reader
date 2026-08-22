@@ -13,8 +13,13 @@ research project, synced like everything else.
   splitter or paying for the tokens twice. The key is the file's content hash,
   so it works even if the PDF was renamed or moved.
 - **Collaborators who haven't done the work get yours.** Open a paper someone
-  in the project already segmented and its paragraphs are there, attributed to
-  them in a line above the list.
+  in the project already segmented and its paragraphs are there.
+- **Anything borrowed says whose it is.** A "split by name@example.com" chip
+  sits in the Paragraphs header while the paragraphs are somebody else's, and
+  every paragraph whose translation came from the project carries a "from
+  name@example.com" badge of its own — translations are adopted one paragraph
+  at a time, so one page can mix your own with a collaborator's. Both go away
+  the moment you redo that work yourself.
 - **What you did yourself always wins.** Paragraph lists are all or nothing —
   once you have segmented or edited a paper, nobody else's segmentation
   replaces it. Translations are per paragraph: one you translated yourself is

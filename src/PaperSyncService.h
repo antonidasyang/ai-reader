@@ -46,8 +46,10 @@ class PaperSyncService : public QObject
     // Whether this machine will publish what it segments and translates:
     // signed in, a project selected that we can write to, and the setting on.
     Q_PROPERTY(bool sharing READ sharing NOTIFY stateChanged)
-    // Who the paragraphs on screen came from, empty when they are ours.
+    // Who the paragraphs on screen came from, empty when they are ours:
+    // the member's id for the code, their email for the reading pane.
     Q_PROPERTY(QString blocksOrigin READ blocksOrigin NOTIFY stateChanged)
+    Q_PROPERTY(QString blocksOriginLabel READ blocksOriginLabel NOTIFY stateChanged)
     // One line about what was just adopted, for the reading pane to show.
     Q_PROPERTY(QString notice READ notice NOTIFY noticeChanged)
 
@@ -59,6 +61,7 @@ public:
 
     bool sharing() const;
     QString blocksOrigin() const { return m_blocksOrigin; }
+    QString blocksOriginLabel() const { return m_blocksOriginLabel; }
     QString notice() const { return m_notice; }
 
     Q_INVOKABLE void dismissNotice();
@@ -127,6 +130,7 @@ private:
     QHash<QString, QString> m_mergedRev;
     QString m_mergedPaper;
 
-    QString m_blocksOrigin;   // display name / email of the donor, if any
+    QString m_blocksOrigin;        // the donor's member id, if any
+    QString m_blocksOriginLabel;   // ...and how to name them on screen
     QString m_notice;
 };

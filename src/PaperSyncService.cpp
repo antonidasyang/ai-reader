@@ -181,15 +181,19 @@ void PaperSyncService::onBlockCacheReady(const QString &paperId)
 
 void PaperSyncService::refreshBlocksOrigin()
 {
-    const QString origin =
-        (m_blocks && !m_blocks->owned()) ? m_blocks->origin() : QString();
-    if (origin == m_blocksOrigin)
+    const bool adopted = m_blocks && !m_blocks->owned();
+    const QString origin = adopted ? m_blocks->origin() : QString();
+    QString label = adopted ? m_blocks->originLabel() : QString();
+    if (adopted && label.isEmpty())
+        label = tr("a collaborator");
+    if (origin == m_blocksOrigin && label == m_blocksOriginLabel)
         return;
     // Segmenting or editing the paragraphs ourselves retires the line saying
     // whose they were.
     if (origin.isEmpty())
         setNotice(QString());
     m_blocksOrigin = origin;
+    m_blocksOriginLabel = label;
     emit stateChanged();
 }
 
@@ -253,17 +257,17 @@ bool PaperSyncService::adoptBlocks(const QString &paperId)
         return false;
 
     const bool mine = !me.isEmpty() && pick.author == me;
+    const QString label =
+        pick.authorEmail.isEmpty() ? tr("a collaborator") : pick.authorEmail;
     if (!m_blocks->adopt(loadPayload(pick), mine ? QString() : pick.author,
-                         pick.updatedAt))
+                         mine ? QString() : label, pick.updatedAt))
         return false;
 
     setNotice(mine
                   ? tr("Restored %1 paragraphs you segmented on another machine.")
                         .arg(m_blocks->count())
                   : tr("Using %1 paragraphs segmented by %2.")
-                        .arg(m_blocks->count())
-                        .arg(pick.authorEmail.isEmpty() ? tr("a collaborator")
-                                                        : pick.authorEmail));
+                        .arg(m_blocks->count()).arg(label));
     return true;
 }
 
@@ -299,13 +303,20 @@ int PaperSyncService::adoptTranslations(const QString &paperId)
         }
     }
 
-    const auto mergeOnce = [this](const PaperDataRef &r) -> int {
+    const auto mergeOnce = [this, &me](const PaperDataRef &r) -> int {
         if (r.objectId.isEmpty()
             || m_mergedRev.value(r.objectId) == r.updatedAt)
             return 0;
         m_mergedRev.insert(r.objectId, r.updatedAt);
+        // Our own entries from another machine are ours; only a real
+        // collaborator's get a name attached for the reading pane.
+        const bool mine = !me.isEmpty() && r.author == me;
+        const QString donor =
+            mine ? QString()
+                 : (r.authorEmail.isEmpty() ? tr("a collaborator")
+                                            : r.authorEmail);
         return m_trans->mergeEntries(
-            loadPayload(r).value(QStringLiteral("entries")).toArray());
+            loadPayload(r).value(QStringLiteral("entries")).toArray(), donor);
     };
 
     const int added = mergeOnce(ours) + mergeOnce(theirs);

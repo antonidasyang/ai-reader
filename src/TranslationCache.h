@@ -3,7 +3,6 @@
 #include <QHash>
 #include <QJsonArray>
 #include <QObject>
-#include <QSet>
 #include <QString>
 #include <QTimer>
 
@@ -17,15 +16,17 @@
 //   { "paperId": "...", "entries": [
 //       {"blockId": int, "src": "<sha256-prefix>",
 //        "model": "...", "prompt": "<sha256-prefix>",
-//        "lang": "...", "text": "...", "ext": true}
+//        "lang": "...", "text": "...", "ext": "them@example.com"}
 //   ]}
 //
-// `ext` marks an entry adopted from another member (or another machine of
-// ours) through PaperSyncService. Adopted entries are used like any other,
-// but they are not re-published under this account — otherwise every
-// member would end up storing a copy of everyone else's work. Ownership is
-// per entry: a local translation always wins over an adopted one with the
-// same key, and re-translating an adopted entry makes it ours.
+// `ext` names the member an entry was adopted from through PaperSyncService
+// (empty string when we only know it wasn't ours; `true` in files written by
+// an older build). Adopted entries are used like any other and the reading
+// pane labels them with that name, but they are not re-published under this
+// account — otherwise every member would end up storing a copy of everyone
+// else's work. Ownership is per entry: a local translation always wins over
+// an adopted one with the same key, and re-translating an adopted entry
+// makes it ours.
 class TranslationCache : public QObject
 {
     Q_OBJECT
@@ -55,10 +56,19 @@ public:
     // are not duplicated into every member's artifact).
     QJsonArray ownEntriesJson() const;
     int ownCount() const { return m_index.size() - m_foreign.size(); }
-    // Merge somebody else's entries in. A key we already hold is never
-    // overwritten — local work wins per paragraph — so this only fills
-    // gaps. Returns how many entries were new.
-    int mergeEntries(const QJsonArray &entries);
+    // Merge entries in, labelled with `donor` (their email, or whatever names
+    // them). An EMPTY donor means the entries are this account's own, coming
+    // back from another of its machines: those must not be marked adopted, or
+    // the next publish would replace the full artifact with the subset this
+    // machine happens to have translated. A key we already hold is never
+    // overwritten — local work wins per paragraph — so this only fills gaps.
+    // Returns how many entries were new.
+    int mergeEntries(const QJsonArray &entries, const QString &donor);
+    // Who this paragraph's cached translation came from; empty when it is
+    // ours (or when there is nothing cached).
+    QString originOf(int blockId, const QString &sourceText,
+                     const QString &model, const QString &promptHash,
+                     const QString &lang) const;
 
 signals:
     // A write just landed on disk — the sync bridge publishes off this.
@@ -79,6 +89,6 @@ private:
     QString m_paperId;
     QString m_cacheDir;
     QHash<QString, QString> m_index;   // composite key → translation text
-    QSet<QString> m_foreign;           // keys adopted from another member
+    QHash<QString, QString> m_foreign; // adopted keys → who they came from
     QTimer m_saveTimer;
 };

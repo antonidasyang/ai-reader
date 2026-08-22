@@ -92,6 +92,29 @@ Rectangle {
                           : qsTr("Paragraphs")
                     font.bold: true
                 }
+                // Standing label for paragraphs that came from the project.
+                // The notice below is a one-off "this just happened"; this
+                // stays for as long as the paragraphs are somebody else's.
+                Rectangle {
+                    visible: paperSync.blocksOriginLabel.length > 0
+                    radius: 6
+                    color: Theme.accent
+                    opacity: 0.18
+                    implicitWidth: blocksOriginLabel.implicitWidth + 12
+                    implicitHeight: blocksOriginLabel.implicitHeight + 4
+                    Label {
+                        id: blocksOriginLabel
+                        anchors.centerIn: parent
+                        text: qsTr("split by %1").arg(paperSync.blocksOriginLabel)
+                        font.pixelSize: 10
+                        color: Theme.accent
+                    }
+                    HoverHandler { id: originHover }
+                    ToolTip.visible: originHover.hovered
+                    ToolTip.text: qsTr("These paragraphs came from the project. "
+                                       + "Re-segmenting makes them yours.")
+                }
+
                 Item { Layout.fillWidth: true }
                 Label {
                     visible: translation.busy
@@ -341,6 +364,30 @@ Rectangle {
                             }
 
                             Item { Layout.fillWidth: true }
+                            // Translations are adopted per paragraph, so the
+                            // attribution has to be per paragraph too — one
+                            // page can mix your own with a collaborator's.
+                            Rectangle {
+                                visible: model.translationOrigin.length > 0
+                                radius: 6
+                                color: Theme.dimText
+                                opacity: 0.16
+                                implicitWidth: originBadge.implicitWidth + 12
+                                implicitHeight: originBadge.implicitHeight + 4
+                                Label {
+                                    id: originBadge
+                                    anchors.centerIn: parent
+                                    text: qsTr("from %1").arg(model.translationOrigin)
+                                    font.pixelSize: 10
+                                    color: Theme.dimText
+                                }
+                                HoverHandler { id: rowOriginHover }
+                                ToolTip.visible: rowOriginHover.hovered
+                                ToolTip.text: qsTr("Translated by %1, shared through "
+                                                   + "the project. Translating this "
+                                                   + "paragraph yourself replaces it.")
+                                              .arg(model.translationOrigin)
+                            }
                             Rectangle {
                                 visible: model.translationStatusName !== "idle"
                                 radius: 6

@@ -126,6 +126,10 @@ void TranslationService::rehydrateFromCache()
         if (cached.isEmpty()) continue;
         m_model->setTranslation(row, cached);
         m_model->setTranslationStatus(row, Block::Translated);
+        // Label it if it came from the project rather than from us — the
+        // status must be set first, since starting a translation clears this.
+        m_model->setTranslationOrigin(
+            row, m_cache.originOf(b->id, b->text, model, promptHash, lang));
         ++hits;
     }
     if (hits > 0) {

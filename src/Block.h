@@ -25,6 +25,10 @@ struct Block
     QString translation;
     TranslationStatus translationStatus = NotTranslated;
     QString translationError;
+    // Empty when we translated this paragraph ourselves; otherwise how to
+    // name the member whose translation we adopted (their email, usually).
+    // Derived from TranslationCache on rehydrate, never persisted here.
+    QString translationOrigin;
 
     QRectF bbox;
 

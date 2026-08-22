@@ -43,6 +43,7 @@ void BlockCache::setPaperId(const QString &paperId)
     m_blocks.clear();
     m_loaded = false;
     m_origin.clear();
+    m_originLabel.clear();
     m_originRev.clear();
     m_owned = true;
     if (!m_paperId.isEmpty()) load();
@@ -57,6 +58,7 @@ void BlockCache::setBlocks(const QVector<Block> &blocks)
     m_loaded = true;
     // Local work: whatever we had adopted is now ours.
     m_origin.clear();
+    m_originLabel.clear();
     m_originRev.clear();
     m_owned = true;
     scheduleSave();
@@ -76,6 +78,7 @@ void BlockCache::clear()
     m_blocks.clear();
     m_loaded = false;
     m_origin.clear();
+    m_originLabel.clear();
     m_originRev.clear();
     m_owned = true;
     const QString path = filePath();
@@ -148,7 +151,7 @@ QJsonObject BlockCache::toJson() const
 }
 
 bool BlockCache::adopt(const QJsonObject &doc, const QString &author,
-                       const QString &rev)
+                       const QString &authorLabel, const QString &rev)
 {
     // A block list this account produced or edited is never replaced.
     if (m_paperId.isEmpty() || (m_loaded && !m_blocks.isEmpty() && m_owned))
@@ -164,6 +167,7 @@ bool BlockCache::adopt(const QJsonObject &doc, const QString &author,
     m_blocks = blocks;
     m_loaded = true;
     m_origin = author;
+    m_originLabel = authorLabel;
     m_originRev = rev;
     m_owned  = author.isEmpty();
     if (m_saveTimer.isActive())
@@ -185,6 +189,7 @@ void BlockCache::load()
     const QJsonObject root = doc.object();
     m_blocks = blocksFromJson(root.value(QStringLiteral("blocks")).toArray());
     m_origin = root.value(QStringLiteral("origin")).toString();
+    m_originLabel = root.value(QStringLiteral("originLabel")).toString();
     m_originRev = root.value(QStringLiteral("originRev")).toString();
     m_owned  = m_origin.isEmpty();
     m_loaded = true;
@@ -204,6 +209,7 @@ void BlockCache::saveNow()
     QJsonObject root = toJson();
     if (!m_origin.isEmpty()) {
         root[QStringLiteral("origin")] = m_origin;
+        root[QStringLiteral("originLabel")] = m_originLabel;
         root[QStringLiteral("originRev")] = m_originRev;
     }
 
