@@ -101,6 +101,52 @@ bool LibraryDb::migrate()
         " role TEXT,"
         " version INTEGER NOT NULL DEFAULT 0)"));
 
+    // Side index over the `paper_data` objects (a member's segmentation /
+    // translations for one paper). Their payloads run to hundreds of KB, so
+    // the paper-open path must never scan them; it keys straight in here.
+    ok &= run(QStringLiteral(
+        "CREATE TABLE IF NOT EXISTS paper_data_index ("
+        " object_id TEXT PRIMARY KEY,"
+        " project_id TEXT NOT NULL,"
+        " paper_id TEXT NOT NULL,"
+        " kind TEXT NOT NULL,"
+        " author TEXT,"
+        " author_email TEXT,"
+        " n INTEGER NOT NULL DEFAULT 0,"
+        " updated_at TEXT)"));
+    ok &= run(QStringLiteral(
+        "CREATE INDEX IF NOT EXISTS idx_paper_data_lookup "
+        "ON paper_data_index(project_id, paper_id, kind)"));
+    // Backfill for a store that synced paper_data before the index existed
+    // (and after a purge-and-repull, where rows arrive through the indexed
+    // path anyway). Cheap: the WHERE clause hits idx_obj_project_type.
+    {
+        QSqlQuery c(db);
+        if (c.exec(QStringLiteral("SELECT COUNT(*) FROM paper_data_index"))
+            && c.next() && c.value(0).toInt() == 0) {
+            QSqlQuery scan(db);
+            if (scan.exec(QStringLiteral(
+                    "SELECT id, project_id, data, updated_at FROM sync_objects "
+                    "WHERE type='paper_data' AND deleted=0"))) {
+                while (scan.next()) {
+                    const QJsonObject d = textToJson(scan.value(2).toString());
+                    PaperDataRef ref;
+                    ref.objectId = scan.value(0).toString();
+                    ref.projectId = scan.value(1).toString();
+                    ref.paperId = d.value(QStringLiteral("paperId")).toString();
+                    ref.kind = d.value(QStringLiteral("kind")).toString();
+                    ref.author = d.value(QStringLiteral("author")).toString();
+                    ref.authorEmail =
+                        d.value(QStringLiteral("authorEmail")).toString();
+                    ref.count = d.value(QStringLiteral("n")).toInt();
+                    ref.updatedAt = scan.value(3).toString();
+                    if (!ref.paperId.isEmpty() && !ref.kind.isEmpty())
+                        indexPaperData(ref);
+                }
+            }
+        }
+    }
+
     // FTS5 self-check: the bundled qsqlite driver normally ships FTS5, but a
     // system-sqlite build might not. If the virtual table can't be created,
     // disable search rather than break the whole DB.
@@ -226,23 +272,38 @@ bool LibraryDb::isDirty(const QString &projectId, const QString &id) const
     return q.exec() && q.next() && q.value(0).toInt() != 0;
 }
 
-QList<SyncObjectRow> LibraryDb::dirtyObjects(const QString &projectId) const
+QList<SyncObjectRow> LibraryDb::dirtyObjects(const QString &projectId,
+                                            int maxCount,
+                                            qint64 maxBytes) const
 {
     QList<SyncObjectRow> rows;
     QSqlQuery q(database());
+    // Oldest first (rowid order) so a busy paper can't keep jumping the
+    // queue ahead of edits that have been waiting.
     q.prepare(QStringLiteral(
         "SELECT id, project_id, type, data, version, deleted, updated_at,"
         " updated_by, base_version FROM sync_objects "
-        "WHERE project_id=? AND dirty=1"));
+        "WHERE project_id=? AND dirty=1 ORDER BY rowid"));
     q.addBindValue(projectId);
     if (!q.exec())
         return rows;
+    qint64 bytes = 0;
     while (q.next()) {
+        const QString text = q.value(3).toString();
+        // Stop before overshooting the batch budget, but never return an
+        // empty batch: one object bigger than the budget still has to go.
+        if (!rows.isEmpty()) {
+            if (maxCount > 0 && rows.size() >= maxCount)
+                break;
+            if (maxBytes > 0 && bytes + text.size() > maxBytes)
+                break;
+        }
+        bytes += text.size();
         SyncObjectRow r;
         r.id = q.value(0).toString();
         r.projectId = q.value(1).toString();
         r.type = q.value(2).toString();
-        r.data = textToJson(q.value(3).toString());
+        r.data = textToJson(text);
         r.version = q.value(4).toLongLong();
         r.deleted = q.value(5).toInt() != 0;
         r.updatedAt = q.value(6).toString();
@@ -251,6 +312,17 @@ QList<SyncObjectRow> LibraryDb::dirtyObjects(const QString &projectId) const
         rows.append(r);
     }
     return rows;
+}
+
+int LibraryDb::dirtyCount(const QString &projectId) const
+{
+    QSqlQuery q(database());
+    q.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM sync_objects WHERE project_id=? AND dirty=1"));
+    q.addBindValue(projectId);
+    if (q.exec() && q.next())
+        return q.value(0).toInt();
+    return 0;
 }
 
 void LibraryDb::markPushed(const QString &projectId, const QStringList &ids,
@@ -358,6 +430,7 @@ void LibraryDb::purgeProject(const QString &projectId)
     for (const auto &sql : {
              QStringLiteral("DELETE FROM sync_objects WHERE project_id=?"),
              QStringLiteral("DELETE FROM sync_state WHERE project_id=?"),
+             QStringLiteral("DELETE FROM paper_data_index WHERE project_id=?"),
          }) {
         q.prepare(sql);
         q.addBindValue(projectId);
@@ -370,6 +443,70 @@ void LibraryDb::purgeProject(const QString &projectId)
         q.exec();
     }
     db.commit();
+}
+
+void LibraryDb::indexPaperData(const PaperDataRef &ref)
+{
+    QSqlQuery q(database());
+    q.prepare(QStringLiteral(
+        "INSERT INTO paper_data_index"
+        "(object_id, project_id, paper_id, kind, author, author_email, n,"
+        " updated_at) VALUES(?,?,?,?,?,?,?,?) "
+        "ON CONFLICT(object_id) DO UPDATE SET project_id=excluded.project_id,"
+        " paper_id=excluded.paper_id, kind=excluded.kind,"
+        " author=excluded.author, author_email=excluded.author_email,"
+        " n=excluded.n, updated_at=excluded.updated_at"));
+    q.addBindValue(ref.objectId);
+    q.addBindValue(ref.projectId);
+    q.addBindValue(ref.paperId);
+    q.addBindValue(ref.kind);
+    q.addBindValue(ref.author);
+    q.addBindValue(ref.authorEmail);
+    q.addBindValue(ref.count);
+    q.addBindValue(ref.updatedAt);
+    if (!q.exec())
+        qWarning() << "LibraryDb::indexPaperData:" << q.lastError().text();
+}
+
+void LibraryDb::removePaperData(const QString &objectId)
+{
+    QSqlQuery q(database());
+    q.prepare(QStringLiteral("DELETE FROM paper_data_index WHERE object_id=?"));
+    q.addBindValue(objectId);
+    q.exec();
+}
+
+QList<PaperDataRef> LibraryDb::paperData(const QString &projectId,
+                                         const QString &paperId,
+                                         const QString &kind) const
+{
+    QList<PaperDataRef> out;
+    if (projectId.isEmpty() || paperId.isEmpty())
+        return out;
+    QSqlQuery q(database());
+    q.prepare(QStringLiteral(
+        "SELECT object_id, project_id, paper_id, kind, author, author_email,"
+        " n, updated_at FROM paper_data_index "
+        "WHERE project_id=? AND paper_id=? AND kind=? "
+        "ORDER BY updated_at DESC"));
+    q.addBindValue(projectId);
+    q.addBindValue(paperId);
+    q.addBindValue(kind);
+    if (!q.exec())
+        return out;
+    while (q.next()) {
+        PaperDataRef r;
+        r.objectId = q.value(0).toString();
+        r.projectId = q.value(1).toString();
+        r.paperId = q.value(2).toString();
+        r.kind = q.value(3).toString();
+        r.author = q.value(4).toString();
+        r.authorEmail = q.value(5).toString();
+        r.count = q.value(6).toInt();
+        r.updatedAt = q.value(7).toString();
+        out.append(r);
+    }
+    return out;
 }
 
 void LibraryDb::indexDoc(const QString &objectId, const QString &projectId,

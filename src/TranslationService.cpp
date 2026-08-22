@@ -92,6 +92,15 @@ void TranslationService::onPaperChanged()
     // straight into the BlockListModel — translations the user already
     // paid for show up instantly without another API call.
     m_cache.setPaperId(m_paper ? m_paper->paperId() : QString());
+    if (!m_cache.paperId().isEmpty())
+        emit translationCacheReady(m_cache.paperId());
+    rehydrateFromCache();
+}
+
+void TranslationService::refreshFromCache()
+{
+    if (busy())
+        return;
     rehydrateFromCache();
 }
 
@@ -108,6 +117,10 @@ void TranslationService::rehydrateFromCache()
     for (int row = 0; row < m_model->blockCount(); ++row) {
         const Block *b = m_model->blockAt(row);
         if (!b) continue;
+        if (b->translationStatus == Block::Translated) {
+            ++hits;     // already on screen — count it, never overwrite it
+            continue;
+        }
         const QString cached =
             m_cache.lookup(b->id, b->text, model, promptHash, lang);
         if (cached.isEmpty()) continue;

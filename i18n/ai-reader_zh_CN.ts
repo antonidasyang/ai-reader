@@ -83,167 +83,167 @@
 <context>
     <name>BlockList</name>
     <message>
-        <location filename="../qml/BlockList.qml" line="84"/>
+        <location filename="../qml/BlockList.qml" line="91"/>
         <source>Paragraphs (%1)</source>
         <translation>段 (%1)</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="85"/>
+        <location filename="../qml/BlockList.qml" line="92"/>
         <source>Paragraphs</source>
         <translation>段</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="91"/>
+        <location filename="../qml/BlockList.qml" line="98"/>
         <source>translating %1/%2…</source>
         <translation>正在翻译 %1/%2…</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="99"/>
+        <location filename="../qml/BlockList.qml" line="106"/>
         <source>%1 failed</source>
         <translation>%1 项失败</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="260"/>
+        <location filename="../qml/BlockList.qml" line="318"/>
         <source>Src</source>
         <translation>原文</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="273"/>
+        <location filename="../qml/BlockList.qml" line="331"/>
         <source>Trans</source>
         <translation>译文</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="267"/>
+        <location filename="../qml/BlockList.qml" line="325"/>
         <source>Hide source text</source>
         <translation>隐藏原文</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="268"/>
+        <location filename="../qml/BlockList.qml" line="326"/>
         <source>Show source text</source>
         <translation>显示原文</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="280"/>
+        <location filename="../qml/BlockList.qml" line="338"/>
         <source>Hide translation</source>
         <translation>隐藏译文</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="281"/>
+        <location filename="../qml/BlockList.qml" line="339"/>
         <source>Show translation</source>
         <translation>显示译文</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="193"/>
+        <location filename="../qml/BlockList.qml" line="251"/>
         <source>Ask AI about this</source>
         <translation>向 AI 提问</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="50"/>
+        <location filename="../qml/BlockList.qml" line="57"/>
         <source>heading</source>
         <translation>标题</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="51"/>
+        <location filename="../qml/BlockList.qml" line="58"/>
         <source>caption</source>
         <translation>题注</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="52"/>
+        <location filename="../qml/BlockList.qml" line="59"/>
         <source>list item</source>
         <translation>列表项</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="53"/>
+        <location filename="../qml/BlockList.qml" line="60"/>
         <source>equation</source>
         <translation>公式</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="54"/>
+        <location filename="../qml/BlockList.qml" line="61"/>
         <source>paragraph</source>
         <translation>段落</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="60"/>
+        <location filename="../qml/BlockList.qml" line="67"/>
         <source>translated</source>
         <translation>已翻译</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="61"/>
+        <location filename="../qml/BlockList.qml" line="68"/>
         <source>translating</source>
         <translation>翻译中</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="62"/>
+        <location filename="../qml/BlockList.qml" line="69"/>
         <source>queued</source>
         <translation>排队中</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="63"/>
+        <location filename="../qml/BlockList.qml" line="70"/>
         <source>failed</source>
         <translation>失败</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="64"/>
+        <location filename="../qml/BlockList.qml" line="71"/>
         <source>skipped</source>
         <translation>已跳过</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="201"/>
+        <location filename="../qml/BlockList.qml" line="259"/>
         <source>Translate this paragraph</source>
         <translation>翻译该段</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="209"/>
+        <location filename="../qml/BlockList.qml" line="267"/>
         <source>Split here</source>
         <translation>在此处拆分</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="215"/>
+        <location filename="../qml/BlockList.qml" line="273"/>
         <source>Merge with previous</source>
         <translation>与上一段合并</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="220"/>
+        <location filename="../qml/BlockList.qml" line="278"/>
         <source>Merge with next</source>
         <translation>与下一段合并</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="226"/>
+        <location filename="../qml/BlockList.qml" line="284"/>
         <source>Delete paragraph</source>
         <translation>删除该段</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="247"/>
+        <location filename="../qml/BlockList.qml" line="305"/>
         <source>p.%1 · %2</source>
         <translation>第 %1 页 · %2</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="380"/>
+        <location filename="../qml/BlockList.qml" line="438"/>
         <source>Segmenting…</source>
         <translation>正在分段…</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="382"/>
+        <location filename="../qml/BlockList.qml" line="440"/>
         <source>Extracting paragraphs…</source>
         <translation>正在提取段…</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="384"/>
+        <location filename="../qml/BlockList.qml" line="442"/>
         <source>No paragraphs (load failed).</source>
         <translation>无段(加载失败)。</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="386"/>
+        <location filename="../qml/BlockList.qml" line="444"/>
         <source>This paper hasn&apos;t been split into paragraphs yet.</source>
         <translation>这篇论文还没有分段。</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="387"/>
+        <location filename="../qml/BlockList.qml" line="445"/>
         <source>Open a PDF to see extracted text.</source>
         <translation>打开 PDF 以查看提取的文本。</translation>
     </message>
     <message>
-        <location filename="../qml/BlockList.qml" line="393"/>
+        <location filename="../qml/BlockList.qml" line="451"/>
         <source>Segment paragraphs</source>
         <translation>分段</translation>
     </message>
@@ -272,83 +272,83 @@
 <context>
     <name>ChatPane</name>
     <message>
-        <location filename="../qml/ChatPane.qml" line="231"/>
+        <location filename="../qml/ChatPane.qml" line="238"/>
         <source>Chat (%1)</source>
         <translation>对话 (%1)</translation>
     </message>
     <message>
-        <location filename="../qml/ChatPane.qml" line="232"/>
+        <location filename="../qml/ChatPane.qml" line="239"/>
         <source>Chat</source>
         <translation>对话</translation>
     </message>
     <message>
-        <location filename="../qml/ChatPane.qml" line="243"/>
+        <location filename="../qml/ChatPane.qml" line="250"/>
         <source>Clear</source>
         <translation>清空</translation>
     </message>
     <message>
-        <location filename="../qml/ChatPane.qml" line="346"/>
+        <location filename="../qml/ChatPane.qml" line="366"/>
         <source>You</source>
         <translation>你</translation>
     </message>
     <message>
-        <location filename="../qml/ChatPane.qml" line="347"/>
+        <location filename="../qml/ChatPane.qml" line="367"/>
         <source>Assistant</source>
         <translation>助手</translation>
     </message>
     <message>
-        <location filename="../qml/ChatPane.qml" line="424"/>
+        <location filename="../qml/ChatPane.qml" line="444"/>
         <source>Error: %1</source>
         <translation>错误:%1</translation>
     </message>
     <message>
-        <location filename="../qml/ChatPane.qml" line="443"/>
+        <location filename="../qml/ChatPane.qml" line="463"/>
         <source>Ask a question about this paper.</source>
         <translation>就本文向 AI 提问。</translation>
     </message>
     <message>
-        <location filename="../qml/ChatPane.qml" line="444"/>
-        <location filename="../qml/ChatPane.qml" line="478"/>
+        <location filename="../qml/ChatPane.qml" line="464"/>
+        <location filename="../qml/ChatPane.qml" line="498"/>
         <source>Open a PDF first.</source>
         <translation>请先打开 PDF。</translation>
     </message>
     <message>
-        <location filename="../qml/ChatPane.qml" line="477"/>
+        <location filename="../qml/ChatPane.qml" line="497"/>
         <source>Ask about the paper…  (Ctrl+Enter to send)</source>
         <translation>就论文提问…(Ctrl+Enter 发送)</translation>
     </message>
     <message>
-        <location filename="../qml/ChatPane.qml" line="501"/>
+        <location filename="../qml/ChatPane.qml" line="521"/>
         <source>Stop</source>
         <translation>停止</translation>
     </message>
     <message>
-        <location filename="../qml/ChatPane.qml" line="501"/>
+        <location filename="../qml/ChatPane.qml" line="521"/>
         <source>Send</source>
         <translation>发送</translation>
     </message>
     <message>
-        <location filename="../qml/ChatPane.qml" line="525"/>
+        <location filename="../qml/ChatPane.qml" line="545"/>
         <source>About this passage (page %1):</source>
         <translation>关于这段文字(第 %1 页):</translation>
     </message>
     <message>
-        <location filename="../qml/ChatPane.qml" line="526"/>
+        <location filename="../qml/ChatPane.qml" line="546"/>
         <source>About this passage:</source>
         <translation>关于这段文字:</translation>
     </message>
     <message>
-        <location filename="../qml/ChatPane.qml" line="182"/>
+        <location filename="../qml/ChatPane.qml" line="189"/>
         <source>Close session</source>
         <translation>关闭会话</translation>
     </message>
     <message>
-        <location filename="../qml/ChatPane.qml" line="211"/>
+        <location filename="../qml/ChatPane.qml" line="218"/>
         <source>New session</source>
         <translation>新建会话</translation>
     </message>
     <message>
-        <location filename="../qml/ChatPane.qml" line="248"/>
+        <location filename="../qml/ChatPane.qml" line="255"/>
         <source>Clear messages in the current session</source>
         <translation>清空当前会话的消息</translation>
     </message>
@@ -898,17 +898,17 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation>显示新手向导</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1219"/>
+        <location filename="../qml/Main.qml" line="1249"/>
         <source>Drag a PDF here, or click Open…</source>
         <translation>将 PDF 拖到此处,或点击「打开…」</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1225"/>
+        <location filename="../qml/Main.qml" line="1255"/>
         <source>AI Reader — milestone 3.2 (TOC sidebar)</source>
         <translation>AI Reader — 里程碑 3.2(目录侧栏)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1375"/>
+        <location filename="../qml/Main.qml" line="1447"/>
         <source>Drop PDF to open</source>
         <translation>松开以打开 PDF</translation>
     </message>
@@ -1050,22 +1050,22 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation>重命名或删除该课题</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1477"/>
+        <location filename="../qml/Main.qml" line="1549"/>
         <source>Restarting…</source>
         <translation>即将重启…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1479"/>
+        <location filename="../qml/Main.qml" line="1551"/>
         <source>Downloading… %1%</source>
         <translation>下载中… %1%</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1481"/>
+        <location filename="../qml/Main.qml" line="1553"/>
         <source>Update now</source>
         <translation>立即更新</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1487"/>
+        <location filename="../qml/Main.qml" line="1559"/>
         <source>Downloads and installs automatically, then restarts the app.</source>
         <translation>自动下载并安装，随后自动重启应用。</translation>
     </message>
@@ -1119,7 +1119,7 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation>退出登录</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1464"/>
+        <location filename="../qml/Main.qml" line="1536"/>
         <source>Update available: v%1</source>
         <translation>有可用更新:v%1</translation>
     </message>
@@ -1128,12 +1128,12 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation type="vanished">下载</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1514"/>
+        <location filename="../qml/Main.qml" line="1586"/>
         <source>Dismiss</source>
         <translation>忽略</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1488"/>
+        <location filename="../qml/Main.qml" line="1560"/>
         <source>No download for this platform yet — check the website.</source>
         <translation>当前平台暂无下载——请到项目网站查看。</translation>
     </message>
@@ -1375,29 +1375,62 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
 <context>
     <name>PaperController</name>
     <message>
-        <location filename="../src/PaperController.cpp" line="205"/>
+        <location filename="../src/PaperController.cpp" line="211"/>
         <source>File not found.</source>
         <translation>文件未找到。</translation>
     </message>
     <message>
-        <location filename="../src/PaperController.cpp" line="208"/>
+        <location filename="../src/PaperController.cpp" line="214"/>
         <source>Invalid PDF format.</source>
         <translation>PDF 格式无效。</translation>
     </message>
     <message>
-        <location filename="../src/PaperController.cpp" line="211"/>
+        <location filename="../src/PaperController.cpp" line="217"/>
         <source>Unsupported PDF security scheme.</source>
         <translation>不支持的 PDF 加密方式。</translation>
     </message>
     <message>
-        <location filename="../src/PaperController.cpp" line="214"/>
+        <location filename="../src/PaperController.cpp" line="220"/>
         <source>PDF data not yet available.</source>
         <translation>PDF 数据尚不可用。</translation>
     </message>
     <message>
-        <location filename="../src/PaperController.cpp" line="218"/>
+        <location filename="../src/PaperController.cpp" line="224"/>
         <source>Failed to load PDF.</source>
         <translation>加载 PDF 失败。</translation>
+    </message>
+</context>
+<context>
+    <name>PaperSyncService</name>
+    <message>
+        <location filename="../src/PaperSyncService.cpp" line="255"/>
+        <source>Restored %1 paragraphs you segmented on another machine.</source>
+        <translation>已恢复你在另一台机器上分好的 %1 个段落。</translation>
+    </message>
+    <message>
+        <location filename="../src/PaperSyncService.cpp" line="257"/>
+        <source>Using %1 paragraphs segmented by %2.</source>
+        <translation>正在使用 %2 分好的 %1 个段落。</translation>
+    </message>
+    <message>
+        <location filename="../src/PaperSyncService.cpp" line="259"/>
+        <source>a collaborator</source>
+        <translation>某位协作者</translation>
+    </message>
+    <message>
+        <location filename="../src/PaperSyncService.cpp" line="310"/>
+        <source>Restored %1 translated paragraphs from your other machine.</source>
+        <translation>已从你的另一台机器恢复 %1 个段落的译文。</translation>
+    </message>
+    <message>
+        <location filename="../src/PaperSyncService.cpp" line="312"/>
+        <source>Picked up %1 translated paragraphs already done in this project.</source>
+        <translation>已取用课题里现成的 %1 个段落译文。</translation>
+    </message>
+    <message>
+        <location filename="../src/PaperSyncService.cpp" line="392"/>
+        <source>This paper is too large to share (%1 MB); it stays on this machine.</source>
+        <translation>这篇论文太大(%1 MB),不共享,只留在本机。</translation>
     </message>
 </context>
 <context>
@@ -1624,120 +1657,103 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
 <context>
     <name>QKeychain::Job</name>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="29"/>
         <source>No error</source>
-        <translation>无错误</translation>
+        <translation type="vanished">无错误</translation>
     </message>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="31"/>
         <source>The specified item could not be found in the keychain</source>
-        <translation>在钥匙串中找不到指定的项目</translation>
+        <translation type="vanished">在钥匙串中找不到指定的项目</translation>
     </message>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="33"/>
         <source>User canceled the operation</source>
-        <translation>用户取消了操作</translation>
+        <translation type="vanished">用户取消了操作</translation>
     </message>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="35"/>
         <source>User interaction is not allowed</source>
-        <translation>不允许用户交互</translation>
+        <translation type="vanished">不允许用户交互</translation>
     </message>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="37"/>
         <source>No keychain is available. You may need to restart your computer</source>
-        <translation>没有可用的钥匙串，可能需要重新启动电脑</translation>
+        <translation type="vanished">没有可用的钥匙串，可能需要重新启动电脑</translation>
     </message>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="39"/>
         <source>The user name or passphrase you entered is not correct</source>
-        <translation>输入的用户名或密码不正确</translation>
+        <translation type="vanished">输入的用户名或密码不正确</translation>
     </message>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="41"/>
         <source>A cryptographic verification failure has occurred</source>
-        <translation>发生加密校验失败</translation>
+        <translation type="vanished">发生加密校验失败</translation>
     </message>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="43"/>
         <source>Function or operation not implemented</source>
-        <translation>功能或操作尚未实现</translation>
+        <translation type="vanished">功能或操作尚未实现</translation>
     </message>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="45"/>
         <source>I/O error</source>
-        <translation>I/O 错误</translation>
+        <translation type="vanished">I/O 错误</translation>
     </message>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="47"/>
         <source>Already open with with write permission</source>
-        <translation>已以写入权限打开</translation>
+        <translation type="vanished">已以写入权限打开</translation>
     </message>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="49"/>
         <source>Invalid parameters passed to a function</source>
-        <translation>传递给函数的参数无效</translation>
+        <translation type="vanished">传递给函数的参数无效</translation>
     </message>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="51"/>
         <source>Failed to allocate memory</source>
-        <translation>内存分配失败</translation>
+        <translation type="vanished">内存分配失败</translation>
     </message>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="53"/>
         <source>Bad parameter or invalid state for operation</source>
-        <translation>参数错误或操作状态无效</translation>
+        <translation type="vanished">参数错误或操作状态无效</translation>
     </message>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="55"/>
         <source>An internal component failed</source>
-        <translation>内部组件出错</translation>
+        <translation type="vanished">内部组件出错</translation>
     </message>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="57"/>
         <source>The specified item already exists in the keychain</source>
-        <translation>指定的项目已存在于钥匙串中</translation>
+        <translation type="vanished">指定的项目已存在于钥匙串中</translation>
     </message>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="59"/>
         <source>Unable to decode the provided data</source>
-        <translation>无法解码所提供的数据</translation>
+        <translation type="vanished">无法解码所提供的数据</translation>
     </message>
     <message>
-        <location filename="../build/_deps/qtkeychain-src/keychain_apple.mm" line="62"/>
         <source>Unknown error</source>
-        <translation>未知错误</translation>
+        <translation type="vanished">未知错误</translation>
     </message>
 </context>
 <context>
     <name>SelectionTranslateCard</name>
     <message>
-        <location filename="../qml/SelectionTranslateCard.qml" line="117"/>
+        <location filename="../qml/SelectionTranslateCard.qml" line="136"/>
         <source>Translation failed</source>
         <translation>翻译失败</translation>
     </message>
     <message>
-        <location filename="../qml/SelectionTranslateCard.qml" line="119"/>
+        <location filename="../qml/SelectionTranslateCard.qml" line="138"/>
         <source>Paragraph · translating…</source>
         <translation>段落对照 · 翻译中…</translation>
     </message>
     <message>
-        <location filename="../qml/SelectionTranslateCard.qml" line="120"/>
+        <location filename="../qml/SelectionTranslateCard.qml" line="139"/>
         <source>Selection · translating…</source>
         <translation>选中即译 · 翻译中…</translation>
     </message>
     <message>
-        <location filename="../qml/SelectionTranslateCard.qml" line="121"/>
+        <location filename="../qml/SelectionTranslateCard.qml" line="140"/>
         <source>Paragraph · translated</source>
         <translation>段落对照 · 已翻译</translation>
     </message>
     <message>
-        <location filename="../qml/SelectionTranslateCard.qml" line="122"/>
+        <location filename="../qml/SelectionTranslateCard.qml" line="141"/>
         <source>Selection · translated</source>
         <translation>选中即译 · 已翻译</translation>
     </message>
     <message>
-        <location filename="../qml/SelectionTranslateCard.qml" line="126"/>
+        <location filename="../qml/SelectionTranslateCard.qml" line="145"/>
         <source>Copy</source>
         <translation>复制</translation>
     </message>
@@ -1745,57 +1761,57 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
 <context>
     <name>Settings</name>
     <message>
-        <location filename="../src/Settings.cpp" line="123"/>
+        <location filename="../src/Settings.cpp" line="124"/>
         <source>Keychain delete failed: %1</source>
         <translation>钥匙串删除失败:%1</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="125"/>
+        <location filename="../src/Settings.cpp" line="126"/>
         <source>API key removed from keyring.</source>
         <translation>已从钥匙串移除 API Key。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="264"/>
+        <location filename="../src/Settings.cpp" line="265"/>
         <source>Enter an API key first.</source>
         <translation>请先输入 API Key。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="311"/>
+        <location filename="../src/Settings.cpp" line="312"/>
         <source>HTTP %1: %2</source>
         <translation>HTTP %1:%2</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="319"/>
+        <location filename="../src/Settings.cpp" line="320"/>
         <source>Invalid JSON: %1</source>
         <translation>JSON 无效:%1</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="334"/>
+        <location filename="../src/Settings.cpp" line="335"/>
         <source>Endpoint returned no models.</source>
         <translation>接口未返回模型列表。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="356"/>
+        <location filename="../src/Settings.cpp" line="357"/>
         <source>API key loaded from keyring.</source>
         <translation>已从钥匙串加载 API Key。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="358"/>
+        <location filename="../src/Settings.cpp" line="359"/>
         <source>No API key in keyring yet.</source>
         <translation>钥匙串中尚无 API Key。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="360"/>
+        <location filename="../src/Settings.cpp" line="361"/>
         <source>Keychain read failed: %1</source>
         <translation>钥匙串读取失败:%1</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="374"/>
+        <location filename="../src/Settings.cpp" line="375"/>
         <source>API key saved to keyring.</source>
         <translation>API Key 已保存到钥匙串。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="376"/>
+        <location filename="../src/Settings.cpp" line="377"/>
         <source>Keychain write failed: %1</source>
         <translation>钥匙串写入失败:%1</translation>
     </message>
@@ -1823,117 +1839,117 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation>中文(简体)</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="382"/>
+        <location filename="../qml/SettingsDialog.qml" line="384"/>
         <source>Provider</source>
         <translation>服务商</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="389"/>
+        <location filename="../qml/SettingsDialog.qml" line="391"/>
         <source>Model</source>
         <translation>模型</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="410"/>
+        <location filename="../qml/SettingsDialog.qml" line="412"/>
         <source>Fetch</source>
         <translation>获取</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="410"/>
+        <location filename="../qml/SettingsDialog.qml" line="412"/>
         <source>Fetching…</source>
         <translation>获取中…</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="419"/>
+        <location filename="../qml/SettingsDialog.qml" line="421"/>
         <source>Base URL</source>
         <translation>基础 URL</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="424"/>
+        <location filename="../qml/SettingsDialog.qml" line="426"/>
         <source>https://api.anthropic.com (default)</source>
         <translation>https://api.anthropic.com（默认）</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="429"/>
+        <location filename="../qml/SettingsDialog.qml" line="431"/>
         <source>https://api.openai.com (default)</source>
         <translation>https://api.openai.com（默认）</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="432"/>
+        <location filename="../qml/SettingsDialog.qml" line="434"/>
         <source>API key</source>
         <translation>API 密钥</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="437"/>
+        <location filename="../qml/SettingsDialog.qml" line="439"/>
         <source>sk-…</source>
         <translation>sk-…</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="440"/>
+        <location filename="../qml/SettingsDialog.qml" line="442"/>
         <source>Temperature</source>
         <translation>温度</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="458"/>
+        <location filename="../qml/SettingsDialog.qml" line="460"/>
         <source>Max output tokens</source>
         <translation>最大输出 token 数</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="465"/>
+        <location filename="../qml/SettingsDialog.qml" line="467"/>
         <source>Context window</source>
         <translation>上下文窗口</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="472"/>
+        <location filename="../qml/SettingsDialog.qml" line="474"/>
         <source>Max tool calls per chat turn</source>
         <translation>每轮对话最大工具调用次数</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="479"/>
+        <location filename="../qml/SettingsDialog.qml" line="481"/>
         <source>Translate into</source>
         <translation>翻译目标语言</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="486"/>
+        <location filename="../qml/SettingsDialog.qml" line="488"/>
         <source>UI language</source>
         <translation>界面语言</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="505"/>
+        <location filename="../qml/SettingsDialog.qml" line="507"/>
         <source>Loaded %1 models.</source>
         <translation>已加载 %1 个模型。</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="512"/>
+        <location filename="../qml/SettingsDialog.qml" line="514"/>
         <source>Settings are stored per-user in the OS-native QSettings location. The API key lives in the OS keychain (Keychain on macOS, Credential Manager on Windows, libsecret on Linux); when no keychain backend is available it falls back to plaintext QSettings.</source>
         <translation>设置以系统默认方式按用户存储于 QSettings 位置;API 密钥保存在系统密钥链中(macOS 钥匙串、Windows 凭据管理器、Linux libsecret)。若无可用的密钥链后端,则回退到 QSettings 明文存储。</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="570"/>
+        <location filename="../qml/SettingsDialog.qml" line="572"/>
         <source>Paragraph segmentation</source>
         <translation>段落切分</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="584"/>
+        <location filename="../qml/SettingsDialog.qml" line="586"/>
         <source>On open</source>
         <translation>打开时</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="587"/>
+        <location filename="../qml/SettingsDialog.qml" line="589"/>
         <source>Segment a paper automatically the first time it is opened</source>
         <translation>首次打开论文时自动分段</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="590"/>
+        <location filename="../qml/SettingsDialog.qml" line="592"/>
         <source>GROBID service</source>
         <translation>GROBID 服务</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="593"/>
+        <location filename="../qml/SettingsDialog.qml" line="595"/>
         <source>Use GROBID for paragraph detection (best for academic papers)</source>
         <translation>使用 GROBID 识别段落（学术论文效果最佳）</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="596"/>
+        <location filename="../qml/SettingsDialog.qml" line="598"/>
         <source>Service URL</source>
         <translation>服务地址</translation>
     </message>
@@ -1942,22 +1958,22 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation type="vanished">在论文首次打开时生效；服务不可达时自动回退到内置切分器。自建服务：docker run -d -p 8070:8070 grobid/grobid:0.9.1-crf</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="680"/>
+        <location filename="../qml/SettingsDialog.qml" line="697"/>
         <source>v%1 is available.</source>
         <translation>v%1 已发布。</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="690"/>
+        <location filename="../qml/SettingsDialog.qml" line="707"/>
         <source>Restarting…</source>
         <translation>即将重启…</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="692"/>
+        <location filename="../qml/SettingsDialog.qml" line="709"/>
         <source>Downloading… %1%</source>
         <translation>下载中… %1%</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="694"/>
+        <location filename="../qml/SettingsDialog.qml" line="711"/>
         <source>Update to v%1</source>
         <translation>更新到 v%1</translation>
     </message>
@@ -1966,62 +1982,77 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation type="vanished">下载 v%1</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="714"/>
+        <location filename="../qml/SettingsDialog.qml" line="731"/>
         <source>AI Reader</source>
         <translation>AI Reader</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="726"/>
+        <location filename="../qml/SettingsDialog.qml" line="743"/>
         <source>github.com/antonidasyang/ai-reader</source>
         <translation>github.com/antonidasyang/ai-reader</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="617"/>
+        <location filename="../qml/SettingsDialog.qml" line="619"/>
         <source>Updates &amp; privacy</source>
         <translation>更新与隐私</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="606"/>
+        <location filename="../qml/SettingsDialog.qml" line="608"/>
         <source>Off by default, since segmenting a long paper costs seconds of work a reader who only wants to page through it never asked for — press Segment in the toolbar when you want paragraphs. GROBID is applied to whichever run does the segmenting; it falls back to the built-in splitter when the service is unreachable. Self-host with: docker run -d -p 8070:8070 grobid/grobid:0.9.1-crf</source>
         <translation>默认关闭:给长论文分段要花掉好几秒,只想翻页看看的读者并不需要——需要段落时点工具栏的“分段”。GROBID 会用在真正执行分段的那一次;服务不可用时自动回退到内置切分器。自建服务:docker run -d -p 8070:8070 grobid/grobid:0.9.1-crf</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="631"/>
+        <location filename="../qml/SettingsDialog.qml" line="633"/>
         <source>Auto-check for updates</source>
         <translation>自动检查更新</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="637"/>
+        <location filename="../qml/SettingsDialog.qml" line="639"/>
         <source>Check on launch</source>
         <translation>启动时检查</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="641"/>
+        <location filename="../qml/SettingsDialog.qml" line="643"/>
         <source>Check now</source>
         <translation>立即检查</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="641"/>
+        <location filename="../qml/SettingsDialog.qml" line="643"/>
         <source>Checking…</source>
         <translation>检查中…</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="647"/>
+        <location filename="../qml/SettingsDialog.qml" line="649"/>
         <source>Manifest URL</source>
         <translation>清单 URL</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="654"/>
+        <location filename="../qml/SettingsDialog.qml" line="656"/>
         <source>Crash reports</source>
         <translation>崩溃报告</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="657"/>
+        <location filename="../qml/SettingsDialog.qml" line="659"/>
         <source>Send anonymous crash reports (off by default)</source>
         <translation>发送匿名崩溃报告(默认关闭)</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="677"/>
+        <location filename="../qml/SettingsDialog.qml" line="662"/>
+        <source>Share with project</source>
+        <translation>共享到课题</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsDialog.qml" line="665"/>
+        <source>Upload paragraph segmentation and translations</source>
+        <translation>上传分段结果和译文</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsDialog.qml" line="670"/>
+        <source>Segmenting and translating a paper costs CPU seconds and model tokens. Shared, that work is done once: your own other machines get it back automatically, and so does anyone in the research project who hasn&apos;t done it themselves. What you segment or translate yourself always wins over anything pulled down. Turn this off to keep a paper&apos;s text on this machine.</source>
+        <translation>分段和翻译要花 CPU 时间和模型 token。共享之后这份活只做一遍:你自己的其他机器会自动拿回来,课题里没做过这份活的人也一样。你自己分的段、自己翻的译文,永远优先于拉下来的。关掉它,论文正文就只留在这台机器上。</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsDialog.qml" line="694"/>
         <source>Update check failed: %1</source>
         <translation>检查更新失败:%1</translation>
     </message>
@@ -2030,32 +2061,32 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation type="vanished">v%1 已发布——请查看窗口底部的提示横幅。</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="681"/>
+        <location filename="../qml/SettingsDialog.qml" line="698"/>
         <source>You&apos;re on the latest version (v%1).</source>
         <translation>当前已是最新版本(v%1)。</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="524"/>
+        <location filename="../qml/SettingsDialog.qml" line="526"/>
         <source>Font sizes (px)</source>
         <translation>字号(像素)</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="538"/>
+        <location filename="../qml/SettingsDialog.qml" line="540"/>
         <source>Chapter menu</source>
         <translation>章节目录</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="545"/>
+        <location filename="../qml/SettingsDialog.qml" line="547"/>
         <source>Interpretation</source>
         <translation>论文解读</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="552"/>
+        <location filename="../qml/SettingsDialog.qml" line="554"/>
         <source>Paragraphs</source>
         <translation>段落</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="559"/>
+        <location filename="../qml/SettingsDialog.qml" line="561"/>
         <source>Chat</source>
         <translation>对话</translation>
     </message>
@@ -2109,52 +2140,52 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
 <context>
     <name>SummaryPane</name>
     <message>
-        <location filename="../qml/SummaryPane.qml" line="29"/>
+        <location filename="../qml/SummaryPane.qml" line="37"/>
         <source>Interpretation</source>
         <translation>解读</translation>
     </message>
     <message>
-        <location filename="../qml/SummaryPane.qml" line="41"/>
+        <location filename="../qml/SummaryPane.qml" line="49"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../qml/SummaryPane.qml" line="43"/>
+        <location filename="../qml/SummaryPane.qml" line="51"/>
         <source>Regenerate</source>
         <translation>重新生成</translation>
     </message>
     <message>
-        <location filename="../qml/SummaryPane.qml" line="43"/>
+        <location filename="../qml/SummaryPane.qml" line="51"/>
         <source>Generate</source>
         <translation>生成</translation>
     </message>
     <message>
-        <location filename="../qml/SummaryPane.qml" line="55"/>
+        <location filename="../qml/SummaryPane.qml" line="63"/>
         <source>Share</source>
         <translation>共享</translation>
     </message>
     <message>
-        <location filename="../qml/SummaryPane.qml" line="59"/>
+        <location filename="../qml/SummaryPane.qml" line="67"/>
         <source>Share this interpretation with the project</source>
         <translation>把这份解读共享到课题</translation>
     </message>
     <message>
-        <location filename="../qml/SummaryPane.qml" line="64"/>
+        <location filename="../qml/SummaryPane.qml" line="72"/>
         <source>Shared (%1)</source>
         <translation>共享 (%1)</translation>
     </message>
     <message>
-        <location filename="../qml/SummaryPane.qml" line="127"/>
+        <location filename="../qml/SummaryPane.qml" line="149"/>
         <source>Sending paper to model…</source>
         <translation>正在将论文发送给模型…</translation>
     </message>
     <message>
-        <location filename="../qml/SummaryPane.qml" line="129"/>
+        <location filename="../qml/SummaryPane.qml" line="151"/>
         <source>Failed: %1</source>
         <translation>失败:%1</translation>
     </message>
     <message>
-        <location filename="../qml/SummaryPane.qml" line="130"/>
+        <location filename="../qml/SummaryPane.qml" line="152"/>
         <source>Click Generate to interpret this paper.</source>
         <translation>点击「生成」以解读本文。</translation>
     </message>
@@ -2175,12 +2206,12 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
 <context>
     <name>SyncEngine</name>
     <message>
-        <location filename="../src/SyncEngine.cpp" line="122"/>
+        <location filename="../src/SyncEngine.cpp" line="140"/>
         <source>Pull failed (HTTP %1)</source>
         <translation>拉取失败(HTTP %1)</translation>
     </message>
     <message>
-        <location filename="../src/SyncEngine.cpp" line="185"/>
+        <location filename="../src/SyncEngine.cpp" line="222"/>
         <source>Push failed (HTTP %1)</source>
         <translation>推送失败(HTTP %1)</translation>
     </message>
@@ -2306,22 +2337,22 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
 <context>
     <name>TranslationService</name>
     <message>
-        <location filename="../src/TranslationService.cpp" line="142"/>
-        <location filename="../src/TranslationService.cpp" line="208"/>
-        <location filename="../src/TranslationService.cpp" line="473"/>
-        <location filename="../src/TranslationService.cpp" line="507"/>
-        <location filename="../src/TranslationService.cpp" line="526"/>
+        <location filename="../src/TranslationService.cpp" line="165"/>
+        <location filename="../src/TranslationService.cpp" line="231"/>
+        <location filename="../src/TranslationService.cpp" line="501"/>
+        <location filename="../src/TranslationService.cpp" line="535"/>
+        <location filename="../src/TranslationService.cpp" line="555"/>
         <source>LLM is not configured. Open Settings to add a model and API key.</source>
         <translation>未配置大模型。请在「设置」中添加模型和 API Key。</translation>
     </message>
     <message>
-        <location filename="../src/TranslationService.cpp" line="333"/>
-        <location filename="../src/TranslationService.cpp" line="555"/>
+        <location filename="../src/TranslationService.cpp" line="355"/>
+        <location filename="../src/TranslationService.cpp" line="584"/>
         <source>The model returned an empty translation.</source>
         <translation>模型返回了空的译文。</translation>
     </message>
     <message>
-        <location filename="../src/TranslationService.cpp" line="489"/>
+        <location filename="../src/TranslationService.cpp" line="516"/>
         <source>Could not translate this paragraph.</source>
         <translation>无法翻译这一段。</translation>
     </message>

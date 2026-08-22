@@ -45,7 +45,7 @@ PaperController::PaperController(QObject *parent)
     // to the cache (no blocksChanged emission) so TranslationService
     // doesn't see them and rehydrate / cancel translations.
     connect(&m_model, &BlockListModel::blockMetaChanged,
-            this, [this]() { m_blockCache.setBlocks(m_model.allBlocks()); });
+            this, [this]() { m_blockCache.updateBlocks(m_model.allBlocks()); });
     connect(&m_extractWatcher, &QFutureWatcher<QVector<Block>>::finished,
             this, &PaperController::onExtractionFinished);
 }
@@ -171,12 +171,18 @@ void PaperController::reload()
         else
             m_paperId.clear();
         m_forceExtract = false;   // a force never outlives its paper
+        m_blocksEdited = false;
         m_blockCache.setPaperId(m_paperId);
+        // Before anything decides to segment: let PaperSyncService fill the
+        // cache from a segmentation the project already holds for this exact
+        // file — ours from another machine, or a collaborator's. It reads the
+        // local sync mirror, so this stays instant and works offline.
+        if (!m_paperId.isEmpty())
+            emit paperCacheReady(m_paperId);
         // Use the user's saved/edited paragraph list when one exists;
         // otherwise run automatic extraction and seed the cache so
         // future opens skip clustering and any later edits are
         // preserved.
-        m_blocksEdited = false;
         if (m_blockCache.hasBlocks()) {
             m_model.setBlocks(m_blockCache.blocks());
             emit blocksChanged();
@@ -218,6 +224,23 @@ void PaperController::reload()
         setStatus(Error, tr("Failed to load PDF."));
         break;
     }
+}
+
+bool PaperController::applyCachedBlocks()
+{
+    if (m_status != Ready || m_paperId.isEmpty())
+        return false;
+    if (!m_blockCache.hasBlocks())
+        return false;
+    // Same guards as a GROBID swap: never replace paragraphs the user is
+    // already looking at or has edited, and never race a running extraction.
+    if (m_blocksEdited || m_model.blockCount() > 0)
+        return false;
+    if (m_extractWatcher.isRunning())
+        return false;
+    m_model.setBlocks(m_blockCache.blocks());
+    emit blocksChanged();
+    return true;
 }
 
 void PaperController::rebuildBlocks()

@@ -3,7 +3,6 @@
 #include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
-#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSaveFile>
@@ -50,8 +49,11 @@ void TranslationCache::setPaperId(const QString &paperId)
         m_saveTimer.stop();
         saveNow();
     }
+    if (!m_paperId.isEmpty())
+        emit aboutToSwitch(m_paperId);
     m_paperId = paperId;
     m_index.clear();
+    m_foreign.clear();
     if (!m_paperId.isEmpty()) load();
 }
 
@@ -75,7 +77,10 @@ void TranslationCache::load()
         const QString lang       = e.value(QStringLiteral("lang")).toString();
         const QString text       = e.value(QStringLiteral("text")).toString();
         if (text.isEmpty()) continue;
-        m_index.insert(makeKey(blockId, srcHash, model, promptHash, lang), text);
+        const QString key = makeKey(blockId, srcHash, model, promptHash, lang);
+        m_index.insert(key, text);
+        if (e.value(QStringLiteral("ext")).toBool())
+            m_foreign.insert(key);
     }
 }
 
@@ -93,9 +98,64 @@ void TranslationCache::store(int blockId, const QString &sourceText,
 {
     if (m_paperId.isEmpty() || translation.isEmpty()) return;
     const QString key = makeKey(blockId, sha(sourceText), model, promptHash, lang);
-    if (m_index.value(key) == translation) return;
+    // Re-translating locally claims the entry even when the text matches
+    // what we had adopted — from here on it is ours to publish.
+    const bool claimed = m_foreign.remove(key);
+    if (!claimed && m_index.value(key) == translation) return;
     m_index.insert(key, translation);
     scheduleSave();
+}
+
+QJsonArray TranslationCache::ownEntriesJson() const
+{
+    QJsonArray entries;
+    for (auto it = m_index.constBegin(); it != m_index.constEnd(); ++it) {
+        if (m_foreign.contains(it.key()))
+            continue;
+        // Reverse-parse the composite key. Using \x1f as a separator that
+        // won't appear in any of the source fields.
+        const QStringList parts = it.key().split(QChar(0x1f));
+        if (parts.size() != 5) continue;
+        QJsonObject e;
+        e[QStringLiteral("blockId")] = parts[0].toInt();
+        e[QStringLiteral("src")]     = parts[1];
+        e[QStringLiteral("model")]   = parts[2];
+        e[QStringLiteral("prompt")]  = parts[3];
+        e[QStringLiteral("lang")]    = parts[4];
+        e[QStringLiteral("text")]    = it.value();
+        entries.append(e);
+    }
+    return entries;
+}
+
+int TranslationCache::mergeEntries(const QJsonArray &entries)
+{
+    if (m_paperId.isEmpty() || entries.isEmpty())
+        return 0;
+    int added = 0;
+    for (const QJsonValue &v : entries) {
+        const QJsonObject e = v.toObject();
+        const int blockId = e.value(QStringLiteral("blockId")).toInt(-1);
+        if (blockId < 0) continue;
+        const QString text = e.value(QStringLiteral("text")).toString();
+        if (text.isEmpty()) continue;
+        const QString key = makeKey(blockId,
+                                    e.value(QStringLiteral("src")).toString(),
+                                    e.value(QStringLiteral("model")).toString(),
+                                    e.value(QStringLiteral("prompt")).toString(),
+                                    e.value(QStringLiteral("lang")).toString());
+        if (m_index.contains(key))
+            continue;              // our own paragraph translation wins
+        m_index.insert(key, text);
+        m_foreign.insert(key);
+        ++added;
+    }
+    if (added > 0) {
+        if (m_saveTimer.isActive())
+            m_saveTimer.stop();
+        saveNow();
+    }
+    return added;
 }
 
 void TranslationCache::scheduleSave()
@@ -111,8 +171,6 @@ void TranslationCache::saveNow()
 
     QJsonArray entries;
     for (auto it = m_index.constBegin(); it != m_index.constEnd(); ++it) {
-        // Reverse-parse the composite key. Using \x1f as a separator that
-        // won't appear in any of the source fields.
         const QStringList parts = it.key().split(QChar(0x1f));
         if (parts.size() != 5) continue;
         QJsonObject e;
@@ -122,6 +180,8 @@ void TranslationCache::saveNow()
         e[QStringLiteral("prompt")]  = parts[3];
         e[QStringLiteral("lang")]    = parts[4];
         e[QStringLiteral("text")]    = it.value();
+        if (m_foreign.contains(it.key()))
+            e[QStringLiteral("ext")] = true;
         entries.append(e);
     }
 
@@ -136,7 +196,10 @@ void TranslationCache::saveNow()
         return;
     }
     f.write(QJsonDocument(root).toJson(QJsonDocument::Compact));
-    if (!f.commit())
+    if (!f.commit()) {
         qWarning("TranslationCache: commit failed for %s: %s",
                  qUtf8Printable(path), qUtf8Printable(f.errorString()));
+        return;
+    }
+    emit contentChanged();
 }

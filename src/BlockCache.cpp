@@ -3,9 +3,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QFile>
-#include <QJsonArray>
 #include <QJsonDocument>
-#include <QJsonObject>
 #include <QSaveFile>
 #include <QStandardPaths>
 
@@ -39,9 +37,14 @@ void BlockCache::setPaperId(const QString &paperId)
         m_saveTimer.stop();
         saveNow();
     }
+    if (!m_paperId.isEmpty())
+        emit aboutToSwitch(m_paperId);
     m_paperId = paperId;
     m_blocks.clear();
     m_loaded = false;
+    m_origin.clear();
+    m_originRev.clear();
+    m_owned = true;
     if (!m_paperId.isEmpty()) load();
 }
 
@@ -52,6 +55,17 @@ void BlockCache::setBlocks(const QVector<Block> &blocks)
     // empty list represents "we know what's here, it's just empty"
     // which is different from "haven't checked yet".
     m_loaded = true;
+    // Local work: whatever we had adopted is now ours.
+    m_origin.clear();
+    m_originRev.clear();
+    m_owned = true;
+    scheduleSave();
+}
+
+void BlockCache::updateBlocks(const QVector<Block> &blocks)
+{
+    m_blocks = blocks;
+    m_loaded = true;
     scheduleSave();
 }
 
@@ -61,22 +75,16 @@ void BlockCache::clear()
         m_saveTimer.stop();
     m_blocks.clear();
     m_loaded = false;
+    m_origin.clear();
+    m_originRev.clear();
+    m_owned = true;
     const QString path = filePath();
     if (!path.isEmpty())
         QFile::remove(path);
 }
 
-void BlockCache::load()
+QVector<Block> BlockCache::blocksFromJson(const QJsonArray &arr)
 {
-    const QString path = filePath();
-    if (path.isEmpty()) return;
-    QFile f(path);
-    if (!f.open(QIODevice::ReadOnly)) return;
-
-    const QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
-    if (!doc.isObject()) return;
-
-    const QJsonArray arr = doc.object().value(QStringLiteral("blocks")).toArray();
     QVector<Block> out;
     out.reserve(arr.size());
     for (const QJsonValue &v : arr) {
@@ -101,23 +109,13 @@ void BlockCache::load()
         if (b.text.isEmpty()) continue;  // ignore obviously broken entries
         out.append(b);
     }
-    m_blocks = out;
-    m_loaded = true;
+    return out;
 }
 
-void BlockCache::scheduleSave()
+QJsonArray BlockCache::blocksToJson(const QVector<Block> &blocks)
 {
-    if (!m_saveTimer.isActive())
-        m_saveTimer.start();
-}
-
-void BlockCache::saveNow()
-{
-    const QString path = filePath();
-    if (path.isEmpty()) return;
-
     QJsonArray arr;
-    for (const Block &b : m_blocks) {
+    for (const Block &b : blocks) {
         QJsonObject o;
         o[QStringLiteral("id")]   = b.id;
         o[QStringLiteral("ord")]  = b.ord;
@@ -138,10 +136,76 @@ void BlockCache::saveNow()
             o[QStringLiteral("transVis")] = false;
         arr.append(o);
     }
+    return arr;
+}
 
+QJsonObject BlockCache::toJson() const
+{
     QJsonObject root;
     root[QStringLiteral("paperId")] = m_paperId;
-    root[QStringLiteral("blocks")]  = arr;
+    root[QStringLiteral("blocks")]  = blocksToJson(m_blocks);
+    return root;
+}
+
+bool BlockCache::adopt(const QJsonObject &doc, const QString &author,
+                       const QString &rev)
+{
+    // A block list this account produced or edited is never replaced.
+    if (m_paperId.isEmpty() || (m_loaded && !m_blocks.isEmpty() && m_owned))
+        return false;
+    // Same donor, same revision: nothing to do.
+    if (!m_blocks.isEmpty() && m_origin == author && m_originRev == rev
+        && !rev.isEmpty())
+        return false;
+    QVector<Block> blocks =
+        blocksFromJson(doc.value(QStringLiteral("blocks")).toArray());
+    if (blocks.isEmpty())
+        return false;
+    m_blocks = blocks;
+    m_loaded = true;
+    m_origin = author;
+    m_originRev = rev;
+    m_owned  = author.isEmpty();
+    if (m_saveTimer.isActive())
+        m_saveTimer.stop();
+    saveNow();
+    return true;
+}
+
+void BlockCache::load()
+{
+    const QString path = filePath();
+    if (path.isEmpty()) return;
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly)) return;
+
+    const QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
+    if (!doc.isObject()) return;
+
+    const QJsonObject root = doc.object();
+    m_blocks = blocksFromJson(root.value(QStringLiteral("blocks")).toArray());
+    m_origin = root.value(QStringLiteral("origin")).toString();
+    m_originRev = root.value(QStringLiteral("originRev")).toString();
+    m_owned  = m_origin.isEmpty();
+    m_loaded = true;
+}
+
+void BlockCache::scheduleSave()
+{
+    if (!m_saveTimer.isActive())
+        m_saveTimer.start();
+}
+
+void BlockCache::saveNow()
+{
+    const QString path = filePath();
+    if (path.isEmpty()) return;
+
+    QJsonObject root = toJson();
+    if (!m_origin.isEmpty()) {
+        root[QStringLiteral("origin")] = m_origin;
+        root[QStringLiteral("originRev")] = m_originRev;
+    }
 
     QSaveFile f(path);
     if (!f.open(QIODevice::WriteOnly)) {
@@ -153,5 +217,7 @@ void BlockCache::saveNow()
     if (!f.commit()) {
         qWarning("BlockCache: commit failed for %s: %s",
                  qUtf8Printable(path), qUtf8Printable(f.errorString()));
+        return;
     }
+    emit contentChanged();
 }

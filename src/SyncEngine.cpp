@@ -13,6 +13,16 @@
 namespace {
 constexpr int kPollMs = 30000;
 constexpr int kMaxPushAttempts = 5;
+// Pull one page at a time. Sized for the biggest objects we sync (a paper's
+// blocks or translations, a few hundred KB compressed) rather than for
+// items, which are tiny.
+constexpr int kPullPageLimit = 200;
+constexpr int kMaxPullPages = 500;
+// Outbox batching. The server's JSON body limit is well above this; the point
+// is to keep any single request modest and to make progress incrementally.
+constexpr int kPushMaxObjects = 100;
+constexpr qint64 kPushMaxBytes = 6 * 1024 * 1024;
+constexpr int kMaxPushBatches = 200;
 } // namespace
 
 SyncEngine::SyncEngine(ApiClient *api, AuthController *auth,
@@ -104,7 +114,7 @@ void SyncEngine::syncProject(const QString &projectId)
         return;
     setSyncing(true);
     pull(projectId, [this, projectId] {
-        push(projectId, 0, [this, projectId] {
+        push(projectId, 0, 0, [this, projectId] {
             setSyncing(false);
             emit projectSynced(projectId);
         });
@@ -113,11 +123,19 @@ void SyncEngine::syncProject(const QString &projectId)
 
 void SyncEngine::pull(const QString &projectId, std::function<void()> then)
 {
+    pullPage(projectId, 0, then);
+}
+
+void SyncEngine::pullPage(const QString &projectId, int page,
+                          std::function<void()> then)
+{
     const qint64 since = m_db->lastVersion(projectId);
     m_api->get(
         QStringLiteral("/projects/") + projectId + QStringLiteral("/sync?since=")
-            + QString::number(since),
-        [this, projectId, then](bool ok, int status, const QJsonDocument &doc) {
+            + QString::number(since) + QStringLiteral("&limit=")
+            + QString::number(kPullPageLimit),
+        [this, projectId, page, since, then](bool ok, int status,
+                                             const QJsonDocument &doc) {
             if (!ok) {
                 setError(tr("Pull failed (HTTP %1)").arg(status));
                 if (then)
@@ -127,10 +145,27 @@ void SyncEngine::pull(const QString &projectId, std::function<void()> then)
             const QJsonObject root = doc.object();
             const QJsonArray objects =
                 root.value(QStringLiteral("objects")).toArray();
-            for (const QJsonValue &v : objects)
-                applyServerObject(projectId, v.toObject());
+            qint64 applied = since;
+            for (const QJsonValue &v : objects) {
+                const QJsonObject o = v.toObject();
+                applyServerObject(projectId, o);
+                applied = qMax(applied,
+                               o.value(QStringLiteral("version"))
+                                   .toString().toLongLong());
+            }
             const qint64 newVersion =
                 root.value(QStringLiteral("newVersion")).toString().toLongLong();
+
+            // A server that paginates says so; an older one never sets the
+            // flag and answers in a single page, exactly as before.
+            const bool more = root.value(QStringLiteral("hasMore")).toBool();
+            if (more && applied > since && page + 1 < kMaxPullPages) {
+                // Park the cursor on what we actually applied, so an
+                // interrupted multi-page pull resumes instead of restarting.
+                m_db->setLastVersion(projectId, applied);
+                pullPage(projectId, page + 1, then);
+                return;
+            }
             m_db->setLastVersion(projectId, newVersion);
             if (then)
                 then();
@@ -150,11 +185,13 @@ void SyncEngine::applyServerObject(const QString &projectId,
     indexObject(row);
 }
 
-void SyncEngine::push(const QString &projectId, int attempt,
+void SyncEngine::push(const QString &projectId, int attempt, int batch,
                       std::function<void()> then)
 {
-    const QList<SyncObjectRow> dirty = m_db->dirtyObjects(projectId);
-    if (dirty.isEmpty() || attempt >= kMaxPushAttempts) {
+    const QList<SyncObjectRow> dirty =
+        m_db->dirtyObjects(projectId, kPushMaxObjects, kPushMaxBytes);
+    if (dirty.isEmpty() || attempt >= kMaxPushAttempts
+        || batch >= kMaxPushBatches) {
         if (then)
             then();
         return;
@@ -179,7 +216,7 @@ void SyncEngine::push(const QString &projectId, int attempt,
     m_api->post(
         QStringLiteral("/projects/") + projectId + QStringLiteral("/push"),
         QJsonObject{{QStringLiteral("objects"), objects}},
-        [this, projectId, attempt, then, localById](
+        [this, projectId, attempt, batch, then, localById](
             bool ok, int status, const QJsonDocument &doc) {
             if (!ok) {
                 setError(tr("Push failed (HTTP %1)").arg(status));
@@ -219,10 +256,16 @@ void SyncEngine::push(const QString &projectId, int attempt,
                 }
             }
 
-            if (producedDirty)
-                push(projectId, attempt + 1, then);
-            else if (then)
+            if (producedDirty) {
+                push(projectId, attempt + 1, batch, then);
+            } else if (!appliedIds.isEmpty()
+                       && m_db->dirtyCount(projectId) > 0) {
+                // More outbox than one batch could carry — keep going, with
+                // the retry counter reset for the fresh batch.
+                push(projectId, 0, batch + 1, then);
+            } else if (then) {
                 then();
+            }
         });
 }
 
@@ -260,6 +303,27 @@ QJsonObject SyncEngine::mergeLww(const SyncObjectRow &local,
 
 void SyncEngine::indexObject(const SyncObjectRow &row)
 {
+    if (row.type == QLatin1String("paper_data")) {
+        // Keep the lightweight side index in step; the payload itself stays
+        // in sync_objects and is only read when a paper actually adopts it.
+        if (row.deleted) {
+            m_db->removePaperData(row.id);
+            return;
+        }
+        PaperDataRef ref;
+        ref.objectId = row.id;
+        ref.projectId = row.projectId;
+        ref.paperId = row.data.value(QStringLiteral("paperId")).toString();
+        ref.kind = row.data.value(QStringLiteral("kind")).toString();
+        ref.author = row.data.value(QStringLiteral("author")).toString();
+        ref.authorEmail =
+            row.data.value(QStringLiteral("authorEmail")).toString();
+        ref.count = row.data.value(QStringLiteral("n")).toInt();
+        ref.updatedAt = row.data.value(QStringLiteral("updatedAt")).toString();
+        if (!ref.paperId.isEmpty() && !ref.kind.isEmpty())
+            m_db->indexPaperData(ref);
+        return;
+    }
     if (row.type != QLatin1String("item"))
         return;
     if (row.deleted) {

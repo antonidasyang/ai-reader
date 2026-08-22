@@ -46,7 +46,15 @@ private:
     void onAuthChanged();
     void syncProject(const QString &projectId);
     void pull(const QString &projectId, std::function<void()> then);
-    void push(const QString &projectId, int attempt, std::function<void()> then);
+    // One page of the incremental pull. A project that has accumulated a lot
+    // of paper_data (segmentations and translations run to hundreds of KB
+    // each) would otherwise answer a first sync with one enormous response.
+    void pullPage(const QString &projectId, int page, std::function<void()> then);
+    // `attempt` counts conflict retries of the same batch; `batch` counts
+    // successive outbox batches, which are bounded by size so one push body
+    // stays small enough for the server to accept.
+    void push(const QString &projectId, int attempt, int batch,
+              std::function<void()> then);
     void applyServerObject(const QString &projectId, const QJsonObject &o);
     void indexObject(const SyncObjectRow &row);
     void setSyncing(bool v);

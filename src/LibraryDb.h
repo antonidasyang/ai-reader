@@ -37,6 +37,21 @@ struct SearchHit {
     QString snippet;
 };
 
+// One `paper_data` artifact (a member's segmentation or translations for a
+// paper) without its payload. These blobs are far too big to scan on every
+// paper open, so SyncEngine keeps this side index as objects are applied and
+// PaperSyncService looks a paper up by key.
+struct PaperDataRef {
+    QString objectId;
+    QString projectId;
+    QString paperId;
+    QString kind;          // "blocks" | "translations"
+    QString author;
+    QString authorEmail;
+    int count = 0;         // blocks / entries in the payload
+    QString updatedAt;
+};
+
 // Offline-first local store: a SQLite mirror of the cloud library. Owns the
 // per-project objects (+ outbox), the sync cursor, a projects cache, and an
 // FTS5 full-text index. SyncEngine / LibraryModel / SearchService go through it.
@@ -68,7 +83,13 @@ public:
     bool getObject(const QString &projectId, const QString &id,
                    SyncObjectRow &out) const;
     bool isDirty(const QString &projectId, const QString &id) const;
-    QList<SyncObjectRow> dirtyObjects(const QString &projectId) const;
+    // The outbox, oldest first. `maxCount` / `maxBytes` bound one push
+    // batch (0 = unbounded); at least one object always comes back so a
+    // single large one can never wedge the queue.
+    QList<SyncObjectRow> dirtyObjects(const QString &projectId,
+                                      int maxCount = 0,
+                                      qint64 maxBytes = 0) const;
+    int dirtyCount(const QString &projectId) const;
     // After a successful push: clear dirty, advance version/base_version.
     void markPushed(const QString &projectId, const QStringList &ids,
                     qint64 newVersion);
@@ -85,6 +106,14 @@ public:
     // query is scoped by the current project id and a deleted project
     // can never be current again.
     void purgeProject(const QString &projectId);
+
+    // ── paper-data index ──────────────────────────────────────────────
+    void indexPaperData(const PaperDataRef &ref);
+    void removePaperData(const QString &objectId);
+    // Every member's artifact of `kind` for this paper, newest first.
+    QList<PaperDataRef> paperData(const QString &projectId,
+                                  const QString &paperId,
+                                  const QString &kind) const;
 
     // ── full-text index ───────────────────────────────────────────────
     void indexDoc(const QString &objectId, const QString &projectId,

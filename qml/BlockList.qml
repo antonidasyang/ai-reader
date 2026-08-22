@@ -110,6 +110,41 @@ Rectangle {
             }
         }
 
+        // What the project just handed this paper — a segmentation from
+        // another machine of yours, or paragraphs a collaborator already
+        // translated. Says so once, then gets out of the way.
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: visible ? noticeRow.implicitHeight + 12 : 0
+            visible: paperSync.notice.length > 0
+            color: Theme.dark ? Qt.rgba(1, 1, 1, 0.06) : Qt.rgba(0, 0, 0, 0.04)
+
+            RowLayout {
+                id: noticeRow
+                anchors.fill: parent
+                anchors.leftMargin: 12
+                anchors.rightMargin: 6
+                anchors.topMargin: 6
+                anchors.bottomMargin: 6
+                spacing: 6
+
+                Label {
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    font.pixelSize: 11
+                    color: Theme.dimText
+                    text: paperSync.notice
+                }
+                ToolButton {
+                    text: "\u00d7"
+                    flat: true
+                    implicitWidth: 22
+                    implicitHeight: 22
+                    onClicked: paperSync.dismissNotice()
+                }
+            }
+        }
+
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true

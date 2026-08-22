@@ -45,6 +45,10 @@ public:
 
     QAbstractListModel *snippets() { return &m_snippets; }
 
+    // The translation cache behind the current paper. PaperSyncService fills
+    // it from (and publishes it to) the project; nothing else touches it.
+    TranslationCache *cache() { return &m_cache; }
+
 public slots:
     void translateAll();
     void retryFailed();
@@ -66,11 +70,20 @@ public slots:
     // belongs to the right pane too.
     void closeSnippet(int id);
     void closeAllSnippets();
+    // Pull anything new in the cache onto the paragraphs on screen. Called
+    // by PaperSyncService when a collaborator's translations land after the
+    // paper was opened. Ignored while a translation run is in flight.
+    void refreshFromCache();
 
 signals:
     void busyChanged();
     void progressChanged();
     void lastErrorChanged();
+    // The cache has been switched to `paperId` and loaded, and the
+    // paragraphs on screen have not been rehydrated from it yet — the
+    // window in which PaperSyncService merges in what the project already
+    // has, so the first rehydrate already sees it.
+    void translationCacheReady(const QString &paperId);
 
 private:
     void onPaperChanged();

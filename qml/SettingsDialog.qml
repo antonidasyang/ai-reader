@@ -43,6 +43,7 @@ Dialog {
         autoCheckBox.checked    = settings.autoCheckUpdates
         manifestUrlField.text   = settings.updateManifestUrl
         crashOptInBox.checked   = settings.crashReportsOptIn
+        sharePaperDataBox.checked = settings.sharePaperData
         autoSegmentBox.checked   = settings.autoSegment
         grobidEnabledBox.checked = settings.grobidEnabled
         grobidUrlField.text      = settings.grobidUrl
@@ -67,6 +68,7 @@ Dialog {
         settings.autoCheckUpdates  = autoCheckBox.checked
         settings.updateManifestUrl = manifestUrlField.text.trim()
         settings.crashReportsOptIn = crashOptInBox.checked
+        settings.sharePaperData    = sharePaperDataBox.checked
         settings.autoSegment       = autoSegmentBox.checked
         settings.grobidEnabled     = grobidEnabledBox.checked
         settings.grobidUrl         = grobidUrlField.text.trim()
@@ -656,7 +658,22 @@ Dialog {
                         id: crashOptInBox
                         text: qsTr("Send anonymous crash reports (off by default)")
                     }
+
+                    FormLabel { text: qsTr("Share with project") }
+                    CheckBox {
+                        id: sharePaperDataBox
+                        text: qsTr("Upload paragraph segmentation and translations")
+                    }
                 }
+            }
+            HintLabel {
+                text: qsTr("Segmenting and translating a paper costs CPU seconds and "
+                           + "model tokens. Shared, that work is done once: your own "
+                           + "other machines get it back automatically, and so does "
+                           + "anyone in the research project who hasn't done it "
+                           + "themselves. What you segment or translate yourself always "
+                           + "wins over anything pulled down. Turn this off to keep a "
+                           + "paper's text on this machine.")
             }
 
             // Check-result row. The download action lives HERE: the

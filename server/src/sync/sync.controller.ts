@@ -31,8 +31,10 @@ export class SyncController {
     @CurrentUser() u: AuthUser,
     @Param('id') id: string,
     @Query('since') since?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.sync.pull(u.userId, id, parseVersion(since));
+    const n = limit && /^\d+$/.test(limit) ? parseInt(limit, 10) : undefined;
+    return this.sync.pull(u.userId, id, parseVersion(since), n);
   }
 
   @Post('push')

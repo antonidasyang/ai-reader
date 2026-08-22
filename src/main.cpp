@@ -14,6 +14,7 @@
 #include "MetadataService.h"
 #include "SearchService.h"
 #include "AiArtifactService.h"
+#include "PaperSyncService.h"
 #include "FileSyncService.h"
 #include "ImportService.h"
 #include "MarkdownRenderer.h"
@@ -275,6 +276,12 @@ int main(int argc, char *argv[])
     SearchService searchService(&libraryDb, &projectController);
     AiArtifactService aiArtifactService(&libraryDb, &projectController,
                                         &syncEngine, &auth, &paperController);
+    // Bridges the two big per-paper caches (paragraph segmentation and
+    // translations) to the project, so the same account on another machine —
+    // and collaborators who haven't done the work — get them for free.
+    PaperSyncService paperSync(&libraryDb, &projectController, &syncEngine,
+                               &auth, &paperController, &translation,
+                               &settings);
     FileSyncService fileSync(&apiClient, &libraryDb, &projectController,
                              &syncEngine);
     ImportService importService(&libraryModel, &fileSync, &metadataService,
@@ -343,6 +350,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("metadata", &metadataService);
     engine.rootContext()->setContextProperty("search", &searchService);
     engine.rootContext()->setContextProperty("aiArtifacts", &aiArtifactService);
+    engine.rootContext()->setContextProperty("paperSync", &paperSync);
     engine.rootContext()->setContextProperty("fileSync", &fileSync);
     engine.rootContext()->setContextProperty("importer", &importService);
 

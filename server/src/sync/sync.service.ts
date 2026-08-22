@@ -17,6 +17,10 @@ export interface SyncObjectView {
 export interface PullResult {
   newVersion: string;
   objects: SyncObjectView[];
+  /** More changes are waiting past this page — pull again from the last
+   *  object's version. Clients that predate pagination ignore it and see the
+   *  same single-page behaviour as before, since the default limit is high. */
+  hasMore: boolean;
 }
 
 export interface PushResult {
@@ -45,6 +49,9 @@ function view(o: {
   };
 }
 
+/** Hard ceiling on one pull page, whatever the client asks for. */
+const MAX_PULL_LIMIT = 1000;
+
 @Injectable()
 export class SyncService {
   constructor(
@@ -53,11 +60,17 @@ export class SyncService {
     private readonly notifier: ChangeNotifier,
   ) {}
 
-  /** Incremental pull: everything (including tombstones) changed after `since`. */
+  /**
+   * Incremental pull: everything (including tombstones) changed after
+   * `since`, oldest first, at most `limit` objects. Paging matters because
+   * paper_data objects carry a whole paper's segmentation or translations;
+   * a first sync of a busy project would otherwise be one enormous response.
+   */
   async pull(
     userId: string,
     projectId: string,
     since: bigint,
+    limit = MAX_PULL_LIMIT,
   ): Promise<PullResult> {
     await this.projects.assertMember(projectId, userId);
     const project = await this.prisma.project.findUnique({
@@ -65,11 +78,20 @@ export class SyncService {
     });
     if (!project) throw new NotFoundException('project not found');
 
+    const take = Math.min(Math.max(limit, 1), MAX_PULL_LIMIT);
+    // One extra row is the cheapest way to know whether more is waiting.
     const rows = await this.prisma.syncObject.findMany({
       where: { projectId, version: { gt: since } },
       orderBy: { version: 'asc' },
+      take: take + 1,
     });
-    return { newVersion: project.version.toString(), objects: rows.map(view) };
+    const hasMore = rows.length > take;
+    const page = hasMore ? rows.slice(0, take) : rows;
+    return {
+      newVersion: project.version.toString(),
+      objects: page.map(view),
+      hasMore,
+    };
   }
 
   /**

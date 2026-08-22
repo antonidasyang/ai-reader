@@ -53,6 +53,13 @@ class Settings : public QObject
     // at the pages. The toolbar's Segment button runs it on demand.
     Q_PROPERTY(bool    autoSegment   READ autoSegment   WRITE setAutoSegment   NOTIFY autoSegmentChanged)
 
+    // Whether the paragraph segmentation and the translations of a paper go
+    // into the current research project, so the same account on another
+    // machine — and collaborators who have not done the work themselves —
+    // get them instead of paying the CPU and the tokens again. Local work
+    // always wins over anything pulled down; see PaperSyncService.
+    Q_PROPERTY(bool    sharePaperData READ sharePaperData WRITE setSharePaperData NOTIFY sharePaperDataChanged)
+
     // Per-pane body font size (px). Each pane uses the value as the
     // baseline; headings/labels in that pane scale up relative to
     // it (typically +2 px) so the visual hierarchy stays intact.
@@ -102,6 +109,7 @@ public:
     bool    grobidEnabled() const { return m_grobidEnabled; }
     QString grobidUrl()     const { return m_grobidUrl; }
     bool    autoSegment()   const { return m_autoSegment; }
+    bool    sharePaperData() const { return m_sharePaperData; }
 
     int     tocFontSize()       const { return m_tocFontSize; }
     int     summaryFontSize()   const { return m_summaryFontSize; }
@@ -137,6 +145,7 @@ public:
     void setGrobidEnabled(bool v);
     void setGrobidUrl(const QString &v);
     void setAutoSegment(bool v);
+    void setSharePaperData(bool v);
 
     void setTocFontSize(int v);
     void setSummaryFontSize(int v);
@@ -182,6 +191,7 @@ signals:
     void grobidEnabledChanged();
     void grobidUrlChanged();
     void autoSegmentChanged();
+    void sharePaperDataChanged();
 
     void tocFontSizeChanged();
     void summaryFontSizeChanged();
@@ -228,6 +238,7 @@ private:
     bool    m_grobidEnabled = true;
     QString m_grobidUrl;
     bool    m_autoSegment = false;
+    bool    m_sharePaperData = true;
 
     // Defaults match the previously hard-coded values in each pane.
     int     m_tocFontSize       = 12;

@@ -1,5 +1,46 @@
 # AI Reader changelog
 
+## v1.1.19 — 2026-08-22
+
+### Segmentation and translations now belong to the project
+Splitting a paper into paragraphs costs seconds of CPU; translating it costs
+model tokens. Until now both stayed in a local JSON cache and were paid for
+again on every machine and by every collaborator. They are now objects in the
+research project, synced like everything else.
+
+- **Your own other machines get them back.** Open a paper you segmented or
+  translated on the desktop and the laptop has it, without re-running the
+  splitter or paying for the tokens twice. The key is the file's content hash,
+  so it works even if the PDF was renamed or moved.
+- **Collaborators who haven't done the work get yours.** Open a paper someone
+  in the project already segmented and its paragraphs are there, attributed to
+  them in a line above the list.
+- **What you did yourself always wins.** Paragraph lists are all or nothing —
+  once you have segmented or edited a paper, nobody else's segmentation
+  replaces it. Translations are per paragraph: one you translated yourself is
+  never overwritten, and a collaborator's only ever fills a paragraph you have
+  no translation for. Adopted work is marked as adopted and is not re-published
+  under your name, so a project of five members doesn't end up storing five
+  copies of the same thing.
+- **Off with one checkbox.** Settings → Updates & privacy → "Share with
+  project". Turn it off and a paper's text never leaves the machine; the local
+  caches keep working exactly as before.
+- Payloads are deflated before they go up — a 790 KB segmentation travels as
+  about 200 KB — and a paper too large to share (over 4 MB compressed) is left
+  alone rather than wedging the queue.
+
+### Sync holds up under the bigger objects
+- **The pull is paged.** A first sync of a busy project used to be one
+  response with everything in it; it now walks pages of 200 objects, parking
+  the cursor on what it has applied so an interrupted sync resumes instead of
+  starting over.
+- **The push is batched** by object count and by size, so one request stays
+  small and the outbox drains steadily.
+- **The server accepts them.** Its JSON body limit was the Express default of
+  100 KB, which is smaller than a single segmented paper.
+- **Paper data is indexed, not scanned.** Opening a paper looks its
+  segmentation up by key instead of parsing every synced blob in the project.
+
 ## v1.1.18 — 2026-08-21
 
 ### Translate a selection where you selected it

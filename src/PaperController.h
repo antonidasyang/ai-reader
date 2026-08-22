@@ -54,6 +54,9 @@ public:
     // hit-testing off it (C++-side only, not exposed to QML).
     QPdfDocument *document() { return &m_doc; }
     QString paperId() const { return m_paperId; }
+    // The paragraph cache behind this paper. PaperSyncService fills it from
+    // (and publishes it to) the project, and nothing else touches it.
+    BlockCache *blockCache() { return &m_blockCache; }
     QString currentSelection() const { return m_currentSelection; }
     int currentSelectionPage() const { return m_currentSelectionPage; }
 
@@ -84,6 +87,12 @@ public slots:
     // First blocks' text, used for DOI/arXiv identifier extraction.
     Q_INVOKABLE QString headText(int maxChars = 6000) const;
 
+    // Show whatever the block cache holds now. Used by PaperSyncService
+    // when a collaborator's segmentation lands after the paper was already
+    // opened. Refused once anything is on screen or the user edited the
+    // paragraphs — an adoption must never yank away what's being read.
+    bool applyCachedBlocks();
+
     // Discard any saved (auto-extracted + manually-edited) paragraphs
     // for the current paper and re-run the clusterer. Use this when
     // the user wants to start over after manual edits, or to pick up
@@ -103,6 +112,12 @@ signals:
     void blocksChanged();
     void statusChanged();
     void passwordRequired();
+    // The block cache has been switched to `paperId` and loaded from disk,
+    // and nothing has decided yet whether to segment. PaperSyncService
+    // listens here and, on a local miss, adopts a segmentation the project
+    // already has for this exact file — so the Segment button and the
+    // auto-segment path only ever run on work nobody has done.
+    void paperCacheReady(const QString &paperId);
     void currentSelectionChanged();
     void extractingChanged();
     // A fresh automatic extraction just ran (cache miss or explicit

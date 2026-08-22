@@ -1,7 +1,9 @@
 #pragma once
 
 #include <QHash>
+#include <QJsonArray>
 #include <QObject>
+#include <QSet>
 #include <QString>
 #include <QTimer>
 
@@ -15,8 +17,15 @@
 //   { "paperId": "...", "entries": [
 //       {"blockId": int, "src": "<sha256-prefix>",
 //        "model": "...", "prompt": "<sha256-prefix>",
-//        "lang": "...", "text": "..."}
+//        "lang": "...", "text": "...", "ext": true}
 //   ]}
+//
+// `ext` marks an entry adopted from another member (or another machine of
+// ours) through PaperSyncService. Adopted entries are used like any other,
+// but they are not re-published under this account — otherwise every
+// member would end up storing a copy of everyone else's work. Ownership is
+// per entry: a local translation always wins over an adopted one with the
+// same key, and re-translating an adopted entry makes it ours.
 class TranslationCache : public QObject
 {
     Q_OBJECT
@@ -40,6 +49,24 @@ public:
     // SHA-256 prefix utility — used for both source-text and prompt hashes.
     static QString sha(const QString &s);
 
+    // ── sync bridge ───────────────────────────────────────────────────
+    int count() const { return m_index.size(); }
+    // Entries this account produced (adopted ones are left out, so they
+    // are not duplicated into every member's artifact).
+    QJsonArray ownEntriesJson() const;
+    int ownCount() const { return m_index.size() - m_foreign.size(); }
+    // Merge somebody else's entries in. A key we already hold is never
+    // overwritten — local work wins per paragraph — so this only fills
+    // gaps. Returns how many entries were new.
+    int mergeEntries(const QJsonArray &entries);
+
+signals:
+    // A write just landed on disk — the sync bridge publishes off this.
+    void contentChanged();
+    // The cache is about to leave `paperId` behind (paper switch). Last
+    // chance to publish what it still holds.
+    void aboutToSwitch(const QString &paperId);
+
 private:
     void load();
     void scheduleSave();
@@ -52,5 +79,6 @@ private:
     QString m_paperId;
     QString m_cacheDir;
     QHash<QString, QString> m_index;   // composite key → translation text
+    QSet<QString> m_foreign;           // keys adopted from another member
     QTimer m_saveTimer;
 };
