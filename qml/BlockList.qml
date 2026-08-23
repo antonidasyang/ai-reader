@@ -87,9 +87,15 @@ Rectangle {
                 anchors.leftMargin: 12
                 anchors.rightMargin: 12
                 Label {
-                    text: list.count > 0
-                          ? qsTr("Paragraphs (%1)").arg(list.count)
-                          : qsTr("Paragraphs")
+                    // How much of this paper is done is the thing worth
+                    // knowing at a glance; the live "translating x/y" to the
+                    // right only says what is happening right now.
+                    text: list.count === 0
+                          ? qsTr("Paragraphs")
+                          : translation.doneCount > 0
+                            ? qsTr("Paragraphs (%1 · %2 translated)")
+                                  .arg(list.count).arg(translation.doneCount)
+                            : qsTr("Paragraphs (%1)").arg(list.count)
                     font.bold: true
                 }
                 // Standing label for paragraphs that came from the project.

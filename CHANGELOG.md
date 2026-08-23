@@ -1,9 +1,16 @@
 # AI Reader changelog
 
-## v1.1.23 — 2026-08-23
+## v1.1.24 — 2026-08-23
 
-Carries v1.1.20, v1.1.21 and v1.1.22 too — none of them were published, so an
+Carries v1.1.20 through v1.1.23 too — none of them were published, so an
 update from 1.1.19 brings the lot.
+
+### The paragraph pane says how much is translated
+- **The Paragraphs header now reads "Paragraphs (382 · 300 translated)".** How
+  far through a paper you are was only visible while a translation was
+  actually running; now it is there whenever any of it is done.
+
+## v1.1.23 — 2026-08-23
 
 ### The translation counter can't overrun any more
 - **"translating 419/382" is fixed.** The progress numbers were a running
