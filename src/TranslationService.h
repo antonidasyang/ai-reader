@@ -100,6 +100,7 @@ private:
     void onPaperChanged();
     void rehydrateFromCache();
     void scheduleNext();
+    void applyConcurrency();
     void translateRow(int row);
     bool shouldSkip(const QString &text) const;
     QString systemPrompt() const;
@@ -151,6 +152,10 @@ private:
     // Build a job for `row` of the current paper, or a job with an empty
     // paperId when the row can't be translated.
     Job jobForRow(int row) const;
+    // Pull the next job to run, sharing the slots out across papers instead
+    // of draining the queue in arrival order. Returns false when nothing is
+    // waiting.
+    bool takeNextJob(Job &out);
 
     QPointer<Settings> m_settings;
     QPointer<PaperController> m_paper;
@@ -165,6 +170,8 @@ private:
     QHash<LlmReply *, Job> m_inflightJobs;
     QHash<QString, Progress> m_progress;   // paperId → its tally
     int m_inflight = 0;
+    // Mirrors Settings::translationConcurrency; the cap is global, since what
+    // it protects is the provider's rate limit, not any one paper.
     int m_maxInflight = 2;
     QString m_lastError;
 

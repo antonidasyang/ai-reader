@@ -61,6 +61,11 @@ TranslationService::TranslationService(Settings *settings,
         connect(m_paper, &PaperController::blocksChanged,
                 this, &TranslationService::onPaperChanged);
     }
+    if (m_settings) {
+        applyConcurrency();
+        connect(m_settings, &Settings::translationConcurrencyChanged,
+                this, &TranslationService::applyConcurrency);
+    }
     if (m_model) {
         // Splitting/merging/deleting paragraphs renumbers rows, which
         // would leave a pinned card mirroring somebody else's text. The
@@ -546,8 +551,49 @@ void TranslationService::refreshClient()
 
 void TranslationService::scheduleNext()
 {
-    while (m_inflight < m_maxInflight && !m_pending.isEmpty())
-        startJob(m_pending.dequeue());
+    Job job;
+    while (m_inflight < m_maxInflight && takeNextJob(job))
+        startJob(std::move(job));
+}
+
+bool TranslationService::takeNextJob(Job &out)
+{
+    if (m_pending.isEmpty())
+        return false;
+
+    // Round-robin across papers rather than strict arrival order. A single
+    // queue meant a second paper had to wait out the first one's entire
+    // backlog before its first paragraph went anywhere — "各翻译各的" only
+    // holds if the slots are shared.
+    QHash<QString, int> running;
+    for (const Job &j : m_inflightJobs)
+        ++running[j.paperId];
+
+    int best = -1;
+    int bestRunning = 0;
+    for (int i = 0; i < m_pending.size(); ++i) {
+        const int n = running.value(m_pending.at(i).paperId, 0);
+        if (best < 0 || n < bestRunning) {
+            best = i;
+            bestRunning = n;
+            if (n == 0)
+                break;      // nothing in the air for that paper — take it
+        }
+    }
+    out = m_pending.at(best);
+    m_pending.removeAt(best);
+    return true;
+}
+
+void TranslationService::applyConcurrency()
+{
+    const int want = m_settings ? m_settings->translationConcurrency() : 2;
+    if (want == m_maxInflight)
+        return;
+    m_maxInflight = want;
+    // Raising it should take effect on the run already going, not on the
+    // next one.
+    scheduleNext();
 }
 
 bool TranslationService::shouldSkip(const QString &text) const

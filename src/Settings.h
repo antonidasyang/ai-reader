@@ -60,6 +60,11 @@ class Settings : public QObject
     // always wins over anything pulled down; see PaperSyncService.
     Q_PROPERTY(bool    sharePaperData READ sharePaperData WRITE setSharePaperData NOTIFY sharePaperDataChanged)
 
+    // How many paragraph translations may be in the air at once, across every
+    // paper being translated. It is a rate limit, not a speed dial: raise it
+    // and the provider is the next thing to push back.
+    Q_PROPERTY(int     translationConcurrency READ translationConcurrency WRITE setTranslationConcurrency NOTIFY translationConcurrencyChanged)
+
     // Per-pane body font size (px). Each pane uses the value as the
     // baseline; headings/labels in that pane scale up relative to
     // it (typically +2 px) so the visual hierarchy stays intact.
@@ -110,6 +115,7 @@ public:
     QString grobidUrl()     const { return m_grobidUrl; }
     bool    autoSegment()   const { return m_autoSegment; }
     bool    sharePaperData() const { return m_sharePaperData; }
+    int     translationConcurrency() const { return m_translationConcurrency; }
 
     int     tocFontSize()       const { return m_tocFontSize; }
     int     summaryFontSize()   const { return m_summaryFontSize; }
@@ -146,6 +152,7 @@ public:
     void setGrobidUrl(const QString &v);
     void setAutoSegment(bool v);
     void setSharePaperData(bool v);
+    void setTranslationConcurrency(int v);
 
     void setTocFontSize(int v);
     void setSummaryFontSize(int v);
@@ -192,6 +199,7 @@ signals:
     void grobidUrlChanged();
     void autoSegmentChanged();
     void sharePaperDataChanged();
+    void translationConcurrencyChanged();
 
     void tocFontSizeChanged();
     void summaryFontSizeChanged();
@@ -239,6 +247,7 @@ private:
     QString m_grobidUrl;
     bool    m_autoSegment = false;
     bool    m_sharePaperData = true;
+    int     m_translationConcurrency = 2;
 
     // Defaults match the previously hard-coded values in each pane.
     int     m_tocFontSize       = 12;

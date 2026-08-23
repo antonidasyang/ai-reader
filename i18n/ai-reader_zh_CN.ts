@@ -1798,57 +1798,57 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
 <context>
     <name>Settings</name>
     <message>
-        <location filename="../src/Settings.cpp" line="124"/>
+        <location filename="../src/Settings.cpp" line="125"/>
         <source>Keychain delete failed: %1</source>
         <translation>钥匙串删除失败:%1</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="126"/>
+        <location filename="../src/Settings.cpp" line="127"/>
         <source>API key removed from keyring.</source>
         <translation>已从钥匙串移除 API Key。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="265"/>
+        <location filename="../src/Settings.cpp" line="266"/>
         <source>Enter an API key first.</source>
         <translation>请先输入 API Key。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="312"/>
+        <location filename="../src/Settings.cpp" line="313"/>
         <source>HTTP %1: %2</source>
         <translation>HTTP %1:%2</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="320"/>
+        <location filename="../src/Settings.cpp" line="321"/>
         <source>Invalid JSON: %1</source>
         <translation>JSON 无效:%1</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="335"/>
+        <location filename="../src/Settings.cpp" line="336"/>
         <source>Endpoint returned no models.</source>
         <translation>接口未返回模型列表。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="357"/>
+        <location filename="../src/Settings.cpp" line="358"/>
         <source>API key loaded from keyring.</source>
         <translation>已从钥匙串加载 API Key。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="359"/>
+        <location filename="../src/Settings.cpp" line="360"/>
         <source>No API key in keyring yet.</source>
         <translation>钥匙串中尚无 API Key。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="361"/>
+        <location filename="../src/Settings.cpp" line="362"/>
         <source>Keychain read failed: %1</source>
         <translation>钥匙串读取失败:%1</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="375"/>
+        <location filename="../src/Settings.cpp" line="376"/>
         <source>API key saved to keyring.</source>
         <translation>API Key 已保存到钥匙串。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="377"/>
+        <location filename="../src/Settings.cpp" line="378"/>
         <source>Keychain write failed: %1</source>
         <translation>钥匙串写入失败:%1</translation>
     </message>
@@ -1876,117 +1876,132 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation>中文(简体)</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="384"/>
+        <location filename="../qml/SettingsDialog.qml" line="376"/>
+        <source>Model &amp; language</source>
+        <translation>模型与语言</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsDialog.qml" line="389"/>
         <source>Provider</source>
         <translation>服务商</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="391"/>
+        <location filename="../qml/SettingsDialog.qml" line="396"/>
         <source>Model</source>
         <translation>模型</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="412"/>
+        <location filename="../qml/SettingsDialog.qml" line="417"/>
         <source>Fetch</source>
         <translation>获取</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="412"/>
+        <location filename="../qml/SettingsDialog.qml" line="417"/>
         <source>Fetching…</source>
         <translation>获取中…</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="421"/>
+        <location filename="../qml/SettingsDialog.qml" line="426"/>
         <source>Base URL</source>
         <translation>基础 URL</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="426"/>
+        <location filename="../qml/SettingsDialog.qml" line="431"/>
         <source>https://api.anthropic.com (default)</source>
         <translation>https://api.anthropic.com（默认）</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="431"/>
+        <location filename="../qml/SettingsDialog.qml" line="436"/>
         <source>https://api.openai.com (default)</source>
         <translation>https://api.openai.com（默认）</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="434"/>
+        <location filename="../qml/SettingsDialog.qml" line="439"/>
         <source>API key</source>
         <translation>API 密钥</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="439"/>
+        <location filename="../qml/SettingsDialog.qml" line="444"/>
         <source>sk-…</source>
         <translation>sk-…</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="442"/>
+        <location filename="../qml/SettingsDialog.qml" line="447"/>
         <source>Temperature</source>
         <translation>温度</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="460"/>
+        <location filename="../qml/SettingsDialog.qml" line="465"/>
         <source>Max output tokens</source>
         <translation>最大输出 token 数</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="467"/>
+        <location filename="../qml/SettingsDialog.qml" line="472"/>
         <source>Context window</source>
         <translation>上下文窗口</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="474"/>
+        <location filename="../qml/SettingsDialog.qml" line="479"/>
         <source>Max tool calls per chat turn</source>
         <translation>每轮对话最大工具调用次数</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="481"/>
+        <location filename="../qml/SettingsDialog.qml" line="486"/>
         <source>Translate into</source>
         <translation>翻译目标语言</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="488"/>
+        <location filename="../qml/SettingsDialog.qml" line="493"/>
+        <source>Paragraphs at once</source>
+        <translation>同时翻译段落数</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsDialog.qml" line="506"/>
+        <source>Shared across every paper being translated. Raising it is limited by what your provider will accept.</source>
+        <translation>所有正在翻译的文章共用这个数。往上调受限于你的服务商能接受多少并发。</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsDialog.qml" line="512"/>
         <source>UI language</source>
         <translation>界面语言</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="507"/>
+        <location filename="../qml/SettingsDialog.qml" line="531"/>
         <source>Loaded %1 models.</source>
         <translation>已加载 %1 个模型。</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="514"/>
+        <location filename="../qml/SettingsDialog.qml" line="538"/>
         <source>Settings are stored per-user in the OS-native QSettings location. The API key lives in the OS keychain (Keychain on macOS, Credential Manager on Windows, libsecret on Linux); when no keychain backend is available it falls back to plaintext QSettings.</source>
         <translation>设置以系统默认方式按用户存储于 QSettings 位置;API 密钥保存在系统密钥链中(macOS 钥匙串、Windows 凭据管理器、Linux libsecret)。若无可用的密钥链后端,则回退到 QSettings 明文存储。</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="572"/>
+        <location filename="../qml/SettingsDialog.qml" line="596"/>
         <source>Paragraph segmentation</source>
         <translation>段落切分</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="586"/>
+        <location filename="../qml/SettingsDialog.qml" line="610"/>
         <source>On open</source>
         <translation>打开时</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="589"/>
+        <location filename="../qml/SettingsDialog.qml" line="613"/>
         <source>Segment a paper automatically the first time it is opened</source>
         <translation>首次打开论文时自动分段</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="592"/>
+        <location filename="../qml/SettingsDialog.qml" line="616"/>
         <source>GROBID service</source>
         <translation>GROBID 服务</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="595"/>
+        <location filename="../qml/SettingsDialog.qml" line="619"/>
         <source>Use GROBID for paragraph detection (best for academic papers)</source>
         <translation>使用 GROBID 识别段落（学术论文效果最佳）</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="598"/>
+        <location filename="../qml/SettingsDialog.qml" line="622"/>
         <source>Service URL</source>
         <translation>服务地址</translation>
     </message>
@@ -1995,22 +2010,22 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation type="vanished">在论文首次打开时生效；服务不可达时自动回退到内置切分器。自建服务：docker run -d -p 8070:8070 grobid/grobid:0.9.1-crf</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="697"/>
+        <location filename="../qml/SettingsDialog.qml" line="721"/>
         <source>v%1 is available.</source>
         <translation>v%1 已发布。</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="707"/>
+        <location filename="../qml/SettingsDialog.qml" line="731"/>
         <source>Restarting…</source>
         <translation>即将重启…</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="709"/>
+        <location filename="../qml/SettingsDialog.qml" line="733"/>
         <source>Downloading… %1%</source>
         <translation>下载中… %1%</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="711"/>
+        <location filename="../qml/SettingsDialog.qml" line="735"/>
         <source>Update to v%1</source>
         <translation>更新到 v%1</translation>
     </message>
@@ -2019,77 +2034,77 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation type="vanished">下载 v%1</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="731"/>
+        <location filename="../qml/SettingsDialog.qml" line="755"/>
         <source>AI Reader</source>
         <translation>AI Reader</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="743"/>
+        <location filename="../qml/SettingsDialog.qml" line="767"/>
         <source>github.com/antonidasyang/ai-reader</source>
         <translation>github.com/antonidasyang/ai-reader</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="619"/>
+        <location filename="../qml/SettingsDialog.qml" line="643"/>
         <source>Updates &amp; privacy</source>
         <translation>更新与隐私</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="608"/>
+        <location filename="../qml/SettingsDialog.qml" line="632"/>
         <source>Off by default, since segmenting a long paper costs seconds of work a reader who only wants to page through it never asked for — press Segment in the toolbar when you want paragraphs. GROBID is applied to whichever run does the segmenting; it falls back to the built-in splitter when the service is unreachable. Self-host with: docker run -d -p 8070:8070 grobid/grobid:0.9.1-crf</source>
         <translation>默认关闭:给长论文分段要花掉好几秒,只想翻页看看的读者并不需要——需要段落时点工具栏的“分段”。GROBID 会用在真正执行分段的那一次;服务不可用时自动回退到内置切分器。自建服务:docker run -d -p 8070:8070 grobid/grobid:0.9.1-crf</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="633"/>
+        <location filename="../qml/SettingsDialog.qml" line="657"/>
         <source>Auto-check for updates</source>
         <translation>自动检查更新</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="639"/>
+        <location filename="../qml/SettingsDialog.qml" line="663"/>
         <source>Check on launch</source>
         <translation>启动时检查</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="643"/>
+        <location filename="../qml/SettingsDialog.qml" line="667"/>
         <source>Check now</source>
         <translation>立即检查</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="643"/>
+        <location filename="../qml/SettingsDialog.qml" line="667"/>
         <source>Checking…</source>
         <translation>检查中…</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="649"/>
+        <location filename="../qml/SettingsDialog.qml" line="673"/>
         <source>Manifest URL</source>
         <translation>清单 URL</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="656"/>
+        <location filename="../qml/SettingsDialog.qml" line="680"/>
         <source>Crash reports</source>
         <translation>崩溃报告</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="659"/>
+        <location filename="../qml/SettingsDialog.qml" line="683"/>
         <source>Send anonymous crash reports (off by default)</source>
         <translation>发送匿名崩溃报告(默认关闭)</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="662"/>
+        <location filename="../qml/SettingsDialog.qml" line="686"/>
         <source>Share with project</source>
         <translation>共享到课题</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="665"/>
+        <location filename="../qml/SettingsDialog.qml" line="689"/>
         <source>Upload paragraph segmentation and translations</source>
         <translation>上传分段结果和译文</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="670"/>
+        <location filename="../qml/SettingsDialog.qml" line="694"/>
         <source>Segmenting and translating a paper costs CPU seconds and model tokens. Shared, that work is done once: your own other machines get it back automatically, and so does anyone in the research project who hasn&apos;t done it themselves. What you segment or translate yourself always wins over anything pulled down. Turn this off to keep a paper&apos;s text on this machine.</source>
         <translation>分段和翻译要花 CPU 时间和模型 token。共享之后这份活只做一遍:你自己的其他机器会自动拿回来,课题里没做过这份活的人也一样。你自己分的段、自己翻的译文,永远优先于拉下来的。关掉它,论文正文就只留在这台机器上。</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="694"/>
+        <location filename="../qml/SettingsDialog.qml" line="718"/>
         <source>Update check failed: %1</source>
         <translation>检查更新失败:%1</translation>
     </message>
@@ -2098,32 +2113,32 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
         <translation type="vanished">v%1 已发布——请查看窗口底部的提示横幅。</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="698"/>
+        <location filename="../qml/SettingsDialog.qml" line="722"/>
         <source>You&apos;re on the latest version (v%1).</source>
         <translation>当前已是最新版本(v%1)。</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="526"/>
+        <location filename="../qml/SettingsDialog.qml" line="550"/>
         <source>Font sizes (px)</source>
         <translation>字号(像素)</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="540"/>
+        <location filename="../qml/SettingsDialog.qml" line="564"/>
         <source>Chapter menu</source>
         <translation>章节目录</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="547"/>
+        <location filename="../qml/SettingsDialog.qml" line="571"/>
         <source>Interpretation</source>
         <translation>论文解读</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="554"/>
+        <location filename="../qml/SettingsDialog.qml" line="578"/>
         <source>Paragraphs</source>
         <translation>段落</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsDialog.qml" line="561"/>
+        <location filename="../qml/SettingsDialog.qml" line="585"/>
         <source>Chat</source>
         <translation>对话</translation>
     </message>
@@ -2374,7 +2389,7 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
 <context>
     <name>TranslationCache</name>
     <message>
-        <location filename="../src/TranslationCache.cpp" line="147"/>
+        <location filename="../src/TranslationCache.cpp" line="150"/>
         <source>a collaborator</source>
         <translation type="unfinished">某位协作者</translation>
     </message>
@@ -2382,27 +2397,27 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
 <context>
     <name>TranslationService</name>
     <message>
-        <location filename="../src/TranslationService.cpp" line="376"/>
+        <location filename="../src/TranslationService.cpp" line="381"/>
         <source>Cancelled.</source>
         <translation type="unfinished">已取消。</translation>
     </message>
     <message>
-        <location filename="../src/TranslationService.cpp" line="399"/>
-        <location filename="../src/TranslationService.cpp" line="501"/>
-        <location filename="../src/TranslationService.cpp" line="806"/>
-        <location filename="../src/TranslationService.cpp" line="840"/>
-        <location filename="../src/TranslationService.cpp" line="860"/>
+        <location filename="../src/TranslationService.cpp" line="404"/>
+        <location filename="../src/TranslationService.cpp" line="506"/>
+        <location filename="../src/TranslationService.cpp" line="852"/>
+        <location filename="../src/TranslationService.cpp" line="886"/>
+        <location filename="../src/TranslationService.cpp" line="906"/>
         <source>LLM is not configured. Open Settings to add a model and API key.</source>
         <translation>未配置大模型。请在「设置」中添加模型和 API Key。</translation>
     </message>
     <message>
-        <location filename="../src/TranslationService.cpp" line="645"/>
-        <location filename="../src/TranslationService.cpp" line="889"/>
+        <location filename="../src/TranslationService.cpp" line="691"/>
+        <location filename="../src/TranslationService.cpp" line="935"/>
         <source>The model returned an empty translation.</source>
         <translation>模型返回了空的译文。</translation>
     </message>
     <message>
-        <location filename="../src/TranslationService.cpp" line="821"/>
+        <location filename="../src/TranslationService.cpp" line="867"/>
         <source>Could not translate this paragraph.</source>
         <translation>无法翻译这一段。</translation>
     </message>

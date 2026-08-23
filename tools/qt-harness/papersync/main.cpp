@@ -30,6 +30,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSettings>
 #include <QStandardPaths>
 #include <QUuid>
 #include <QtGlobal>
@@ -142,6 +143,10 @@ int main(int argc, char **argv)
         QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     QDir(root).removeRecursively();
     QDir().mkpath(root);
+    // QSettings is not under AppDataLocation (it is a plist in
+    // ~/Library/Preferences keyed by the org/app names above), so wiping the
+    // app-data root alone would carry the previous run's settings over.
+    { QSettings stale; stale.clear(); stale.sync(); }
 
     const QString PROJ = QStringLiteral("11111111-2222-3333-4444-555555555555");
     const QString ME   = QStringLiteral("me-user-id");
@@ -487,6 +492,7 @@ int main(int argc, char **argv)
           QStringLiteral("%1 block pushes").arg(blockPushes().size()));
 
     QDir(root).removeRecursively();
+    { QSettings s; s.clear(); s.sync(); }
     qInfo().noquote() << QStringLiteral("\n%1 passed, %2 failed")
                              .arg(g_pass).arg(g_fail);
     return g_fail ? 1 : 0;

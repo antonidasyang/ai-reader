@@ -45,6 +45,7 @@ constexpr auto kKeyGrobidEnabled        = "grobid/enabled";
 constexpr auto kKeyGrobidUrl            = "grobid/url";
 constexpr auto kKeyAutoSegment          = "paper/autoSegment";
 constexpr auto kKeySharePaperData       = "paper/sharePaperData";
+constexpr auto kKeyTranslationConcurrency = "translation/concurrency";
 constexpr auto kKeyCrashReportsOptIn    = "privacy/crashReportsOptIn";
 constexpr auto kKeyTocFontSize          = "fonts/toc";
 constexpr auto kKeySummaryFontSize      = "fonts/summary";
@@ -448,6 +449,8 @@ void Settings::load()
     m_crashReportsOptIn    = m_qs.value(kKeyCrashReportsOptIn,    false).toBool();
     m_autoSegment          = m_qs.value(kKeyAutoSegment,          false).toBool();
     m_sharePaperData       = m_qs.value(kKeySharePaperData,       true).toBool();
+    m_translationConcurrency =
+        qBound(1, m_qs.value(kKeyTranslationConcurrency, 2).toInt(), 16);
     m_tocFontSize          = qBound(8, m_qs.value(kKeyTocFontSize,       12).toInt(), 32);
     m_summaryFontSize      = qBound(8, m_qs.value(kKeySummaryFontSize,   13).toInt(), 32);
     m_paragraphFontSize    = qBound(8, m_qs.value(kKeyParagraphFontSize, 12).toInt(), 32);
@@ -479,6 +482,7 @@ void Settings::save()
     m_qs.setValue(kKeyCrashReportsOptIn,    m_crashReportsOptIn);
     m_qs.setValue(kKeyAutoSegment,          m_autoSegment);
     m_qs.setValue(kKeySharePaperData,       m_sharePaperData);
+    m_qs.setValue(kKeyTranslationConcurrency, m_translationConcurrency);
     m_qs.setValue(kKeyTocFontSize,          m_tocFontSize);
     m_qs.setValue(kKeySummaryFontSize,      m_summaryFontSize);
     m_qs.setValue(kKeyParagraphFontSize,    m_paragraphFontSize);
@@ -542,6 +546,15 @@ void Settings::setSharePaperData(bool v)
     m_sharePaperData = v;
     save();
     emit sharePaperDataChanged();
+}
+
+void Settings::setTranslationConcurrency(int v)
+{
+    v = qBound(1, v, 16);
+    if (v == m_translationConcurrency) return;
+    m_translationConcurrency = v;
+    save();
+    emit translationConcurrencyChanged();
 }
 
 void Settings::setTocFontSize(int v)

@@ -37,6 +37,11 @@ public:
     int requests() const { return m_requests; }
     int openStreams() const { return int(m_timers.size()); }
     int chunksSent() const { return m_chunks; }
+    // Most streams ever open at the same time since the last reset — the only
+    // honest way to check a concurrency cap, since sampling openStreams() can
+    // catch a moment when everything happens to be between requests.
+    int peakStreams() const { return m_peak; }
+    void resetPeak() { m_peak = int(m_timers.size()); }
     // How many chunks each stream sends before it would finish. Left high so
     // nothing completes by itself while a test is looking at it.
     void setChunkLimit(int n) { m_chunkLimit = n; }
@@ -86,6 +91,7 @@ private:
                 ++m_chunks;
             });
             m_timers.insert(s, t);
+            m_peak = qMax(m_peak, int(m_timers.size()));
             t->start();
         });
         connect(s, &QTcpSocket::disconnected, this, [this, s] {
@@ -108,5 +114,6 @@ private:
     QHash<QTcpSocket *, QTimer *> m_timers;
     int m_requests = 0;
     int m_chunks = 0;
+    int m_peak = 0;
     int m_chunkLimit = 10000;
 };

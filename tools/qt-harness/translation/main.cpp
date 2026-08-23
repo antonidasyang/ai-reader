@@ -23,8 +23,11 @@
 #include <QDir>
 #include <QFile>
 #include <QJsonDocument>
+#include <QJsonArray>
 #include <QJsonObject>
+#include <QSet>
 #include <QGuiApplication>
+#include <QSettings>
 #include <QStandardPaths>
 #include <QUrl>
 #include <QtGlobal>
@@ -93,6 +96,12 @@ int main(int argc, char **argv)
         QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     QDir(root).removeRecursively();
     QDir().mkpath(root);
+    // QSettings does NOT live under AppDataLocation — on macOS it is a plist
+    // in ~/Library/Preferences keyed by the org/app names above. Wiping only
+    // the app-data root left the previous run's Settings behind, which is how
+    // a target language set at the end of one run turned up at the start of
+    // the next and quietly changed what the checks were measuring.
+    { QSettings stale; stale.clear(); stale.sync(); }
 
     FakeLlm llm;
 
@@ -266,7 +275,67 @@ int main(int argc, char **argv)
           waitFor([&] { return llm.openStreams() == 0; }, 5000),
           QStringLiteral("%1 open").arg(llm.openStreams()));
 
+    // ── two papers translating at the same time ───────────────────────
+    // Reported: a second paper couldn't get going while the first was still
+    // translating. The queue was one FIFO, so every paragraph of the first
+    // paper was ahead of the second paper's first one.
+    settings.setTargetLang(QStringLiteral("ja"));   // nothing rehydrates
+    settings.setTranslationConcurrency(2);
+    llm.setChunkLimit(10);   // long enough that A is still going while B works
+
+    // B has never been segmented in this run, and auto-segmentation is off,
+    // so it has no paragraphs to translate until we ask for them.
+    tabs.openPaper(QUrl::fromLocalFile(pdfB));
+    waitFor([&] { return paper.paperId() == paperB; }, 20000);
+    paper.rebuildBlocks();
+    check("paper B is segmented too",
+          waitFor([&] { return !paper.extracting() && paper.blockCount() > 4; },
+                  60000),
+          QStringLiteral("%1 paragraphs").arg(paper.blockCount()));
+
+    llm.resetPeak();
+    tabs.openPaper(QUrl::fromLocalFile(pdf));
+    waitFor([&] { return paper.paperId() == paperA; }, 20000);
+    translation.translateAll();
+    const int backlogA = translation.totalCount();
+    check("paper A has a backlog", backlogA > 6,
+          QStringLiteral("%1 queued").arg(backlogA));
+
+    tabs.openPaper(QUrl::fromLocalFile(pdfB));
+    waitFor([&] { return paper.paperId() == paperB; }, 20000);
+    translation.translateAll();
+    check("and paper B is asked to translate too", translation.totalCount() > 0,
+          QStringLiteral("%1 queued").arg(translation.totalCount()));
+
+    // B must make progress while A still has plenty left — that is the whole
+    // point. Under the old FIFO it would sit at 0 until A was finished.
+    const bool shared = waitFor([&] {
+        return translation.doneCount() > 0 && translation.backgroundPapers() == 1;
+    }, 60000);
+    check("both papers progress at once", shared,
+          QStringLiteral("B %1/%2 done, %3 other paper(s) running")
+              .arg(translation.doneCount()).arg(translation.totalCount())
+              .arg(translation.backgroundPapers()));
+
+    // ── the number of lanes is a setting ──────────────────────────────
+    check("the setting is the cap: two at a time, and two were used",
+          llm.peakStreams() == 2,
+          QStringLiteral("peak %1").arg(llm.peakStreams()));
+    llm.resetPeak();
+    settings.setTranslationConcurrency(5);
+    const bool widened = waitFor([&] { return llm.openStreams() > 2; }, 20000);
+    check("raising it takes effect on the run already going", widened,
+          QStringLiteral("%1 open").arg(llm.openStreams()));
+    pump(3000);
+    check("and the new cap is not exceeded either", llm.peakStreams() == 5,
+          QStringLiteral("peak %1").arg(llm.peakStreams()));
+
+    translation.cancelPaper(paperA);
+    translation.cancelPaper(paperB);
+    waitFor([&] { return llm.openStreams() == 0; }, 5000);
+
     QDir(root).removeRecursively();
+    { QSettings s; s.clear(); s.sync(); }
     qInfo().noquote() << QStringLiteral("\n%1 passed, %2 failed")
                              .arg(g_pass).arg(g_fail);
     return g_fail ? 1 : 0;

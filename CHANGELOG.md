@@ -17,6 +17,19 @@
   other papers are still translating so a run in the background isn't
   invisible. Closing a paper's tab stops it — otherwise a paper nobody has
   open would go on spending tokens.
+- **Two papers translate at the same time, not one after the other.** The
+  requests in flight are shared out across papers rather than taken in arrival
+  order, so starting a second paper doesn't mean waiting out the first one's
+  whole backlog.
+- **How many paragraphs go at once is now a setting** — Settings → Model &
+  language → "Paragraphs at once", 1 to 16, still 2 by default. It is one
+  budget shared by every paper being translated, and changing it takes effect
+  on a run already going.
+
+### Settings
+- The first block of settings — provider, model, keys, generation limits,
+  languages — had no heading, unlike every block below it. It is now
+  "Model & language".
 - **Editing paragraphs still cancels that paper's run**, because a split or a
   merge renumbers the paragraphs the queued work was built from. It is
   recognised by the paragraphs actually changing now, not by "the block list

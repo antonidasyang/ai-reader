@@ -38,6 +38,7 @@ Dialog {
         contextWindowField.value = settings.contextWindow
         toolBudgetField.value   = settings.toolBudget
         targetLangField.text    = settings.targetLang
+        concurrencyField.value  = settings.translationConcurrency
         const lidx = languageCodes.indexOf(settings.uiLanguage)
         languageBox.currentIndex = lidx >= 0 ? lidx : 0
         autoCheckBox.checked    = settings.autoCheckUpdates
@@ -64,6 +65,7 @@ Dialog {
         settings.contextWindow     = contextWindowField.value
         settings.toolBudget        = toolBudgetField.value
         settings.targetLang        = targetLangField.text.trim()
+        settings.translationConcurrency = concurrencyField.value
         settings.uiLanguage        = languageCodes[languageBox.currentIndex]
         settings.autoCheckUpdates  = autoCheckBox.checked
         settings.updateManifestUrl = manifestUrlField.text.trim()
@@ -370,6 +372,9 @@ Dialog {
             spacing: Theme.spaceM
 
             // ── Provider / model / generation settings ──────────────
+            SectionLabel {
+                text: qsTr("Model & language")
+            }
             SectionCard {
                 implicitHeight: apiGrid.implicitHeight + 2 * Theme.spaceL
 
@@ -483,6 +488,25 @@ Dialog {
                         id: targetLangField
                         Layout.fillWidth: true
                         placeholderText: "zh-CN"
+                    }
+
+                    FormLabel { text: qsTr("Paragraphs at once") }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.spaceM
+                        FieldSpin {
+                            id: concurrencyField
+                            from: 1; to: 16; stepSize: 1
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            wrapMode: Text.Wrap
+                            font.pixelSize: 11
+                            color: Theme.dimText
+                            text: qsTr("Shared across every paper being translated. "
+                                       + "Raising it is limited by what your provider "
+                                       + "will accept.")
+                        }
                     }
 
                     FormLabel { text: qsTr("UI language") }
