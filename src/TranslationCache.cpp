@@ -105,7 +105,10 @@ void TranslationCache::store(int blockId, const QString &sourceText,
     const QString key = makeKey(blockId, sha(sourceText), model, promptHash, lang);
     // Re-translating locally claims the entry even when the text matches
     // what we had adopted — from here on it is ours to publish.
-    const bool claimed = m_foreign.remove(key) > 0;
+    // QHash::remove returns whether the key was there — comparing it against
+    // 0 was a leftover from when m_foreign was a QSet, and MSVC rightly
+    // called it out (C4804: unsafe use of type 'bool').
+    const bool claimed = m_foreign.remove(key);
     if (!claimed && m_index.value(key) == translation) return;
     m_index.insert(key, translation);
     scheduleSave();
