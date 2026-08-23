@@ -130,6 +130,21 @@ Rectangle {
                     color: Theme.danger
                     font.pixelSize: 11
                 }
+                // A translation run belongs to the paper it was started on
+                // and keeps going after you switch tabs, so say how much is
+                // still in the air elsewhere — otherwise it is invisible.
+                Label {
+                    visible: translation.backgroundPapers > 0
+                    text: translation.backgroundPapers === 1
+                          ? qsTr("1 other paper translating")
+                          : qsTr("%1 other papers translating")
+                                .arg(translation.backgroundPapers)
+                    color: Theme.dimText
+                    font.pixelSize: 11
+                    HoverHandler { id: bgHover }
+                    ToolTip.visible: bgHover.hovered
+                    ToolTip.text: qsTr("Closing a paper's tab stops its translation.")
+                }
             }
         }
 

@@ -15,11 +15,15 @@
 #include "BlockListModel.h"
 #include "PaperController.h"
 #include "Settings.h"
+#include "Tabs.h"
 #include "TranslationService.h"
 
 #include <QCoreApplication>
 #include <QDeadlineTimer>
 #include <QDir>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QGuiApplication>
 #include <QStandardPaths>
 #include <QUrl>
@@ -84,6 +88,7 @@ int main(int argc, char **argv)
     app.setApplicationName("TranslationHarness");
 
     const QString pdf = QString::fromLocal8Bit(qgetenv("PDF_A"));
+    const QString pdfB = QString::fromLocal8Bit(qgetenv("PDF_B"));
     const QString root =
         QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     QDir(root).removeRecursively();
@@ -102,6 +107,24 @@ int main(int argc, char **argv)
 
     PaperController paper;
     TranslationService translation(&settings, &paper);
+    Tabs tabs(&paper);
+    // The same one-liner main.cpp uses: a closed tab ends that paper's run.
+    QObject::connect(&tabs, &Tabs::paperClosed, &translation,
+                     [&translation](const QUrl &url) {
+                         translation.cancelPaper(
+                             PaperController::paperIdForFile(url.toLocalFile()));
+                     });
+
+    const QString paperA = PaperController::paperIdForFile(pdf);
+    const QString paperB = PaperController::paperIdForFile(pdfB);
+    const auto entriesOnDisk = [&](const QString &paperId) {
+        QFile f(root + QStringLiteral("/cache/translations/") + paperId
+                + QStringLiteral(".json"));
+        if (!f.open(QIODevice::ReadOnly))
+            return 0;
+        return int(QJsonDocument::fromJson(f.readAll())
+                       .object().value(QStringLiteral("entries")).toArray().size());
+    };
 
     paper.openPdf(QUrl::fromLocalFile(pdf));
     paper.rebuildBlocks();
@@ -164,6 +187,84 @@ int main(int argc, char **argv)
           QStringLiteral("%1 → %2 requests").arg(requestsBefore).arg(llm.requests()));
     translation.cancel();
     waitFor([&] { return llm.openStreams() == 0; }, 5000);
+
+    // ── a run belongs to its paper, not to the pane ───────────────────
+    // Reported alongside the Cancel bug: switching papers killed the run,
+    // and it shouldn't — "各翻译各的".
+    llm.setChunkLimit(3);          // let paragraphs actually finish now
+    translation.translateAll();
+    waitFor([&] { return translation.doneCount() > 0; }, 30000);
+    const int doneOnA = translation.doneCount();
+    check("paper A is translating", doneOnA > 0 && translation.busy(),
+          QStringLiteral("%1 done").arg(doneOnA));
+
+    tabs.openPaper(QUrl::fromLocalFile(pdfB));
+    waitFor([&] { return paper.paperId() == paperB; }, 20000);
+    check("switching papers does not stop the run",
+          translation.backgroundPapers() == 1,
+          QStringLiteral("%1 background papers, %2 streams")
+              .arg(translation.backgroundPapers()).arg(llm.openStreams()));
+    check("the new paper has its own, empty tally",
+          !translation.busy() && translation.doneCount() == 0
+              && translation.totalCount() == 0,
+          QStringLiteral("busy=%1 %2/%3").arg(translation.busy())
+              .arg(translation.doneCount()).arg(translation.totalCount()));
+
+    const bool drained =
+        waitFor([&] { return translation.backgroundPapers() == 0; }, 120000);
+    check("paper A finishes in the background", drained);
+    check("and its translations were written to its own cache",
+          entriesOnDisk(paperA) > 0,
+          QStringLiteral("%1 entries").arg(entriesOnDisk(paperA)));
+    check("without leaking into the paper on screen",
+          entriesOnDisk(paperB) == 0);
+
+    tabs.openPaper(QUrl::fromLocalFile(pdf));
+    waitFor([&] { return paper.paperId() == paperA; }, 20000);
+    const Tally back = tally(paper.blocks());
+    check("coming back to A shows the work it did while hidden",
+          back.done > 0 && !translation.busy(),
+          QStringLiteral("%1 translated").arg(back.done));
+
+    // ── editing paragraphs still cancels that paper's run ─────────────
+    // Block ids move when a paragraph is split or merged, so jobs built
+    // against the old ids describe nothing.
+    llm.setChunkLimit(100000);
+    // translateAll would find nothing to do — A is fully translated by now —
+    // so ask for specific paragraphs, which re-translates them.
+    translation.translateBlock(0);
+    translation.translateBlock(1);
+    translation.translateBlock(2);
+    waitFor([&] { return llm.openStreams() >= 1; }, 30000);
+    check("a fresh run is under way", translation.busy(),
+          QStringLiteral("%1 streams").arg(llm.openStreams()));
+    paper.blocks()->mergeWithNext(0);
+    check("merging two paragraphs cancels the run", !translation.busy());
+    check("and lets go of the model connections",
+          waitFor([&] { return llm.openStreams() == 0; }, 5000),
+          QStringLiteral("%1 open").arg(llm.openStreams()));
+
+    // ── closing a tab stops that paper ────────────────────────────────
+    translation.translateBlock(3);
+    translation.translateBlock(4);
+    translation.translateBlock(5);
+    waitFor([&] { return llm.openStreams() >= 1; }, 30000);
+    tabs.openPaper(QUrl::fromLocalFile(pdfB));
+    waitFor([&] { return paper.paperId() == paperB; }, 20000);
+    check("A is still running from the other tab",
+          translation.backgroundPapers() == 1);
+    int idxA = -1;
+    for (int i = 0; i < tabs.count(); ++i) {
+        if (tabs.urlAt(i) == QUrl::fromLocalFile(pdf))
+            idxA = i;
+    }
+    tabs.closePaper(idxA);
+    check("closing A's tab stops A", translation.backgroundPapers() == 0,
+          QStringLiteral("%1 background papers")
+              .arg(translation.backgroundPapers()));
+    check("no request is left running for it",
+          waitFor([&] { return llm.openStreams() == 0; }, 5000),
+          QStringLiteral("%1 open").arg(llm.openStreams()));
 
     QDir(root).removeRecursively();
     qInfo().noquote() << QStringLiteral("\n%1 passed, %2 failed")

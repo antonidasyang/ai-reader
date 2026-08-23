@@ -23,6 +23,10 @@ class TranslationService : public QObject
     Q_PROPERTY(int  totalCount       READ totalCount       NOTIFY progressChanged)
     Q_PROPERTY(int  failedCount      READ failedCount      NOTIFY progressChanged)
     Q_PROPERTY(QString lastError     READ lastError        NOTIFY lastErrorChanged)
+    // Papers other than the one on screen that still have work running. A
+    // run belongs to the paper it was started on and keeps going when the
+    // reader moves to another tab, so the pane says how much is in the air.
+    Q_PROPERTY(int backgroundPapers READ backgroundPapers NOTIFY progressChanged)
     Q_PROPERTY(QString defaultSystemPrompt READ defaultSystemPrompt CONSTANT)
 
     // ── Selection translation ─────────────────────────────────────────
@@ -36,10 +40,13 @@ public:
                        QObject *parent = nullptr);
     ~TranslationService() override;
 
-    bool busy() const { return m_inflight > 0 || !m_pending.isEmpty(); }
-    int doneCount()   const { return m_done; }
-    int totalCount()  const { return m_total; }
-    int failedCount() const { return m_failed; }
+    // All four describe the paper on screen; another paper's run has its own
+    // tally and does not move these.
+    bool busy() const;
+    int doneCount()   const;
+    int totalCount()  const;
+    int failedCount() const;
+    int backgroundPapers() const;
     QString lastError() const { return m_lastError; }
     QString defaultSystemPrompt() const;
 
@@ -48,6 +55,10 @@ public:
     // The translation cache behind the current paper. PaperSyncService fills
     // it from (and publishes it to) the project; nothing else touches it.
     TranslationCache *cache() { return &m_cache; }
+
+    // Stop the run for one paper wherever it is — used when its tab closes,
+    // since otherwise a paper nobody has open keeps burning tokens.
+    void cancelPaper(const QString &paperId);
 
 public slots:
     void translateAll();
@@ -102,23 +113,63 @@ private:
     void syncBlockRow(int row);
     void translateSelectionAdHoc(int snippetId, const QString &text);
 
+    // One paragraph to translate, described so it survives the reader moving
+    // to another paper: the row index is a view detail that goes stale the
+    // moment the shared BlockListModel is refilled, so everything the result
+    // needs — which paper, which block, and the cache key it was requested
+    // under — is captured up front. `row` is re-derived on every paper switch
+    // and is -1 while the job's paper is not the one on screen.
+    struct Job {
+        QString paperId;
+        int blockId = -1;
+        QString text;
+        QString model;
+        QString promptHash;
+        QString lang;
+        int row = -1;
+        QString out;        // what has streamed back so far
+    };
+
+    struct Progress {
+        int done = 0;
+        int failed = 0;
+        int total = 0;
+    };
+
+    // The cache to write a finished paragraph into: the live one when the
+    // paper is on screen, otherwise a background instance for that paper,
+    // created on demand and retired when its last job lands.
+    TranslationCache *cacheFor(const QString &paperId);
+    void retireBackgroundCache(const QString &paperId);
+    // Point every job's `row` at the current model, or -1 for jobs belonging
+    // to another paper. Called whenever the block list changes underneath.
+    void rebindRows();
+    int rowOfBlockId(int blockId) const;
+    bool hasWorkFor(const QString &paperId) const;
+    QString currentPaperId() const;
+    void startJob(Job job);
+    // Build a job for `row` of the current paper, or a job with an empty
+    // paperId when the row can't be translated.
+    Job jobForRow(int row) const;
+
     QPointer<Settings> m_settings;
     QPointer<PaperController> m_paper;
     QPointer<BlockListModel> m_model;
     QPointer<LlmClient> m_client;
     TranslationCache m_cache;
+    // Papers being translated in the background, one cache each. Never holds
+    // the paper on screen — that one is m_cache.
+    QHash<QString, TranslationCache *> m_bgCaches;
 
-    QQueue<int> m_pending;
-    QHash<LlmReply *, int> m_replyToRow;
+    QQueue<Job> m_pending;
+    QHash<LlmReply *, Job> m_inflightJobs;
+    QHash<QString, Progress> m_progress;   // paperId → its tally
     int m_inflight = 0;
     int m_maxInflight = 2;
-    int m_done = 0;
-    int m_failed = 0;
-    int m_total = 0;
     QString m_lastError;
 
     // Open selection cards, plus the ad-hoc requests feeding them
-    // (paragraph cards are fed by m_replyToRow instead).
+    // (paragraph cards are fed by m_inflightJobs instead).
     SnippetModel m_snippets;
     QHash<LlmReply *, int> m_snippetReplies;   // reply → snippet id
 };

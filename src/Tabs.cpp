@@ -53,6 +53,7 @@ void Tabs::closePaper(int idx)
 {
     if (idx < 0 || idx >= m_papers.size()) return;
     const bool wasActive = (idx == m_activeIndex);
+    const QUrl closed = m_papers.at(idx);
 
     m_papers.removeAt(idx);
 
@@ -83,6 +84,7 @@ void Tabs::closePaper(int idx)
     } else if (wasActive) {
         m_paper->openPdf(m_papers.at(newActive));
     }
+    emit paperClosed(closed);
 }
 
 void Tabs::closeOthers(int idx)
@@ -92,6 +94,11 @@ void Tabs::closeOthers(int idx)
 
     const QUrl keep = m_papers.at(idx);
     const bool keepWasActive = (idx == m_activeIndex);
+    QVector<QUrl> closed;
+    for (const QUrl &u : std::as_const(m_papers)) {
+        if (u != keep)
+            closed.append(u);
+    }
 
     m_papers = { keep };
     const bool activeChanged = (m_activeIndex != 0);
@@ -105,12 +112,15 @@ void Tabs::closeOthers(int idx)
     // tab was already the one on screen.
     if (!keepWasActive)
         m_paper->openPdf(keep);
+    for (const QUrl &u : std::as_const(closed))
+        emit paperClosed(u);
 }
 
 void Tabs::closeAll()
 {
     if (m_papers.isEmpty()) return;
 
+    const QVector<QUrl> closed = m_papers;
     m_papers.clear();
     const bool activeChanged = (m_activeIndex != -1);
     m_activeIndex = -1;
@@ -118,6 +128,8 @@ void Tabs::closeAll()
     if (activeChanged) emit activeIndexChanged();
     persist();
     m_paper->clear();
+    for (const QUrl &u : std::as_const(closed))
+        emit paperClosed(u);
 }
 
 void Tabs::activatePaper(int idx)

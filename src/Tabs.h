@@ -57,6 +57,11 @@ public:
 signals:
     void tabsChanged();
     void activeIndexChanged();
+    // A paper is no longer open anywhere. Emitted once per closed tab, after
+    // the list has settled. TranslationService listens: a run belongs to its
+    // paper and survives a tab switch, so closing the tab is what stops it —
+    // otherwise a paper nobody can see keeps spending tokens.
+    void paperClosed(const QUrl &url);
 
 private:
     void persist();

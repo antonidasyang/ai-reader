@@ -296,6 +296,17 @@ int main(int argc, char *argv[])
                          paperController.setAutoSegment(settings.autoSegment());
                      });
 
+    // A translation run belongs to the paper it was started on and keeps going
+    // when the reader switches tabs. Closing the tab is what ends it —
+    // otherwise a paper nobody has open would go on spending tokens.
+    QObject::connect(&tabs, &Tabs::paperClosed, &translation,
+                     [&translation](const QUrl &url) {
+                         if (!url.isLocalFile())
+                             return;
+                         translation.cancelPaper(
+                             PaperController::paperIdForFile(url.toLocalFile()));
+                     });
+
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
     // GROBID → TOC wiring: when StructureService successfully applies

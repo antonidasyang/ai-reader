@@ -1,5 +1,27 @@
 # AI Reader changelog
 
+## Unreleased
+
+### Cancel stops the translation, and switching papers no longer does
+- **Cancel actually cancels.** It used to clear the queue and then let the
+  requests already in flight "finish naturally" — with two of them running
+  that is indistinguishable from a dead button: paragraphs kept arriving, the
+  button stayed on Cancel, and the model kept billing. It now aborts them.
+  A half-streamed paragraph is cleared rather than left mid-sentence under a
+  "translated" badge, and cancelling is not counted as a failure.
+- **A translation run belongs to its paper.** Switching tabs used to kill it.
+  Each paper now translates on its own: leave one running, read another, come
+  back and it is done. Results reached while you were elsewhere go into that
+  paper's own cache, so they are there when you return.
+- **The pane counts only the paper you are looking at**, and says how many
+  other papers are still translating so a run in the background isn't
+  invisible. Closing a paper's tab stops it — otherwise a paper nobody has
+  open would go on spending tokens.
+- **Editing paragraphs still cancels that paper's run**, because a split or a
+  merge renumbers the paragraphs the queued work was built from. It is
+  recognised by the paragraphs actually changing now, not by "the block list
+  emitted a signal", which is what made a plain tab switch look like an edit.
+
 ## v1.1.19 — 2026-08-22
 
 ### Segmentation and translations now belong to the project
