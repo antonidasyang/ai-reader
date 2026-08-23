@@ -1,5 +1,25 @@
 # AI Reader changelog
 
+## v1.1.21 — 2026-08-23
+
+Carries v1.1.20's translation work too — that one was built but never
+published, so an update from 1.1.19 brings both.
+
+### Two papers translate at once, and you choose how many lanes
+- **Starting a second paper no longer means waiting out the first.** Per-paper
+  runs landed in 1.1.20, but the queue behind them was still one line, so every
+  paragraph of the first paper sat ahead of the second paper's first one. The
+  requests in flight are now shared out across papers.
+- **How many paragraphs go at once is a setting** — Settings → Model &
+  language → "Paragraphs at once", 1 to 16, still 2 by default. It is one
+  budget shared by every paper being translated, not a limit per paper, and
+  changing it takes effect on a run already going.
+
+### Settings
+- The first block of settings — provider, model, keys, generation limits,
+  languages — had no heading, unlike every block below it. It is now
+  "Model & language".
+
 ## v1.1.20 — 2026-08-23
 
 ### Cancel stops the translation, and switching papers no longer does
@@ -17,19 +37,6 @@
   other papers are still translating so a run in the background isn't
   invisible. Closing a paper's tab stops it — otherwise a paper nobody has
   open would go on spending tokens.
-- **Two papers translate at the same time, not one after the other.** The
-  requests in flight are shared out across papers rather than taken in arrival
-  order, so starting a second paper doesn't mean waiting out the first one's
-  whole backlog.
-- **How many paragraphs go at once is now a setting** — Settings → Model &
-  language → "Paragraphs at once", 1 to 16, still 2 by default. It is one
-  budget shared by every paper being translated, and changing it takes effect
-  on a run already going.
-
-### Settings
-- The first block of settings — provider, model, keys, generation limits,
-  languages — had no heading, unlike every block below it. It is now
-  "Model & language".
 - **Editing paragraphs still cancels that paper's run**, because a split or a
   merge renumbers the paragraphs the queued work was built from. It is
   recognised by the paragraphs actually changing now, not by "the block list
