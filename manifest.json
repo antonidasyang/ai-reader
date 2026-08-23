@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "latestVersion": "1.1.19",
-  "releaseDate": "2026-08-22",
-  "releaseNotes": "分段和翻译现在会同步到课题:换台机器自动拿回来,课题里没做过这份活的同事直接就能用,而自己分的段、自己翻的译文永远优先;拉来的内容会标明来自谁,不想共享可以在设置里关掉。",
+  "latestVersion": "1.1.24",
+  "releaseDate": "2026-08-23",
+  "releaseNotes": "取消能真的取消,不再只是清空队列;翻译任务归属它那篇文章,切标签页不再打断,两篇可以同时翻、同时翻几段可以在设置里定;对翻了一半的文章点「翻译」会先问你是只补没翻的还是全部重来;库里会高亮并按标题显示当前打开的那篇;段落标题写明已翻译的段数,翻译进度不会再超出总数。",
   "platforms": {
     "windows-x64": {
-      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.19.exe",
-      "sha256": "4b047e1ff27deff640bd5aa0e8f64f879c6246a25b391903ddcfb1f54b2e45f9"
+      "downloadUrl": "https://aireader.d2ssoft.com/dl/AiReader-Setup-1.1.24.exe",
+      "sha256": "f8ab5fc44cabf50f946d36ab0f6b1638bfa593f5a7f4363b6081da3da580f0af"
     }
   }
 }
