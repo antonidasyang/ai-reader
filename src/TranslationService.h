@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Block.h"
 #include "SnippetModel.h"
 #include "TranslationCache.h"
 
@@ -7,6 +8,7 @@
 #include <QObject>
 #include <QPointer>
 #include <QQueue>
+#include <initializer_list>
 
 class BlockListModel;
 class LlmClient;
@@ -40,8 +42,11 @@ public:
                        QObject *parent = nullptr);
     ~TranslationService() override;
 
-    // All four describe the paper on screen; another paper's run has its own
-    // tally and does not move these.
+    // All four describe the paper on screen. They are counted off the
+    // paragraphs themselves rather than tallied as work goes by: a tally that
+    // both the finishing jobs and the cache-rehydrate added to could count the
+    // same paragraph twice, which is how "translating 419/382" happened.
+    // Another paper's run moves none of these — it has no rows here.
     bool busy() const;
     int doneCount()   const;
     int totalCount()  const;
@@ -140,12 +145,6 @@ private:
         QString out;        // what has streamed back so far
     };
 
-    struct Progress {
-        int done = 0;
-        int failed = 0;
-        int total = 0;
-    };
-
     // The cache to write a finished paragraph into: the live one when the
     // paper is on screen, otherwise a background instance for that paper,
     // created on demand and retired when its last job lands.
@@ -156,6 +155,8 @@ private:
     void rebindRows();
     int rowOfBlockId(int blockId) const;
     bool hasWorkFor(const QString &paperId) const;
+    // Paragraphs of the current paper in any of `want`.
+    int countRows(std::initializer_list<Block::TranslationStatus> want) const;
     QString currentPaperId() const;
     void startJob(Job job);
     // Build a job for `row` of the current paper, or a job with an empty
@@ -177,7 +178,6 @@ private:
 
     QQueue<Job> m_pending;
     QHash<LlmReply *, Job> m_inflightJobs;
-    QHash<QString, Progress> m_progress;   // paperId → its tally
     int m_inflight = 0;
     // Mirrors Settings::translationConcurrency; the cap is global, since what
     // it protects is the provider's rate limit, not any one paper.

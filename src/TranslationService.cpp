@@ -131,17 +131,40 @@ bool TranslationService::busy() const
 
 int TranslationService::doneCount() const
 {
-    return m_progress.value(currentPaperId()).done;
+    return countRows({Block::Translated});
 }
 
 int TranslationService::totalCount() const
 {
-    return m_progress.value(currentPaperId()).total;
+    // Everything this paper's run is about: what is done, what failed, and
+    // what is still coming. Paragraphs nobody has asked for are not in it.
+    return countRows({Block::Translated, Block::Failed, Block::Queued,
+                      Block::Translating});
 }
 
 int TranslationService::failedCount() const
 {
-    return m_progress.value(currentPaperId()).failed;
+    return countRows({Block::Failed});
+}
+
+int TranslationService::countRows(
+    std::initializer_list<Block::TranslationStatus> want) const
+{
+    if (!m_model)
+        return 0;
+    int n = 0;
+    for (int row = 0; row < m_model->blockCount(); ++row) {
+        const Block *b = m_model->blockAt(row);
+        if (!b)
+            continue;
+        for (const Block::TranslationStatus s : want) {
+            if (b->translationStatus == s) {
+                ++n;
+                break;
+            }
+        }
+    }
+    return n;
 }
 
 int TranslationService::backgroundPapers() const
@@ -311,14 +334,8 @@ void TranslationService::rehydrateFromCache()
             row, m_cache.originOf(b->id, b->text, model, promptHash, lang));
         ++hits;
     }
-    if (hits > 0) {
-        // Whatever came off disk counts as done for this paper, unless a run
-        // in progress already has a bigger tally to report.
-        Progress &p = m_progress[m_cache.paperId()];
-        p.done = qMax(p.done, hits);
-        p.total = qMax(p.total, hits);
+    if (hits > 0)
         emit progressChanged();
-    }
 }
 
 void TranslationService::cancel()
@@ -413,8 +430,6 @@ void TranslationService::translateAll()
     // Starting over on this paper: drop what it had queued, leave other
     // papers' runs alone.
     cancelPaper(paperId);
-    Progress &p = m_progress[paperId];
-    p = Progress{};
 
     for (int row = 0; row < m_model->blockCount(); ++row) {
         const Block *b = m_model->blockAt(row);
@@ -432,7 +447,6 @@ void TranslationService::translateAll()
             continue;
         m_pending.enqueue(job);
         m_model->setTranslationStatus(row, Block::Queued);
-        ++p.total;
     }
 
     setLastError({});
@@ -514,7 +528,6 @@ void TranslationService::retryFailed()
     if (!m_model) return;
     const QString paperId = currentPaperId();
     if (paperId.isEmpty()) return;
-    Progress &p = m_progress[paperId];
     bool added = false;
     for (int row = 0; row < m_model->blockCount(); ++row) {
         const Block *b = m_model->blockAt(row);
@@ -525,9 +538,6 @@ void TranslationService::retryFailed()
                 continue;
             m_pending.enqueue(job);
             m_model->setTranslationStatus(row, Block::Queued);
-            ++p.total;
-            if (p.failed > 0)
-                --p.failed;
             added = true;
         }
     }
@@ -573,7 +583,6 @@ void TranslationService::translateBlock(int row)
 
     m_pending.enqueue(job);
     m_model->setTranslationStatus(row, Block::Queued);
-    ++m_progress[job.paperId].total;
     setLastError({});
     emit progressChanged();
     if (m_inflight == 0)
@@ -706,6 +715,7 @@ void TranslationService::startJob(Job job)
         m_model->setTranslation(job.row, QString());
     }
     m_inflightJobs.insert(reply, job);
+    emit progressChanged();   // the row just became Translating
 
     connect(reply, &LlmReply::chunkReceived, this,
             [this, reply](const QString &chunk) {
@@ -726,7 +736,6 @@ void TranslationService::startJob(Job job)
             return;
         const Job j = m_inflightJobs.take(reply);
         --m_inflight;
-        Progress &p = m_progress[j.paperId];
         const bool onScreen = (m_model && j.row >= 0);
 
         if (j.out.trimmed().isEmpty()) {
@@ -737,13 +746,11 @@ void TranslationService::startJob(Job job)
             const QString msg = tr("The model returned an empty translation.");
             if (onScreen)
                 m_model->setTranslationStatus(j.row, Block::Failed, msg);
-            ++p.failed;
             if (j.paperId == currentPaperId())
                 setLastError(msg);
         } else {
             if (onScreen)
                 m_model->setTranslationStatus(j.row, Block::Translated);
-            ++p.done;
             // Persist to disk so reopening this paper restores the
             // translation without another API round-trip. A paper the reader
             // has moved on from writes to its own cache instead.
@@ -772,7 +779,6 @@ void TranslationService::startJob(Job job)
             m_model->setTranslationStatus(j.row, Block::Failed, message);
             syncBlockRow(j.row);
         }
-        ++m_progress[j.paperId].failed;
         if (j.paperId == currentPaperId())
             setLastError(message);
         if (!hasWorkFor(j.paperId) && j.paperId != currentPaperId())

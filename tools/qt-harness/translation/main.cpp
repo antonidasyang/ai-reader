@@ -294,6 +294,39 @@ int main(int argc, char **argv)
               .arg(translation.untranslatedParagraphs())
               .arg(paper.blockCount()));
 
+    // ── progress can never overrun ────────────────────────────────────
+    // Reported as "正在翻译 419/382". The tally was fed from two places at
+    // once: every finished job added one, and the cache-rehydrate raised it
+    // to however many paragraphs were translated. Start over with the old
+    // translations still in the cache, let a rehydrate refill them, and the
+    // same paragraph got counted twice.
+    llm.setChunkLimit(3);
+    translation.retranslateAll();
+    const int paras = paper.blockCount();
+    waitFor([&] { return translation.doneCount() > 2; }, 60000);
+    tabs.openPaper(QUrl::fromLocalFile(pdfB));      // forces a rehydrate...
+    waitFor([&] { return paper.paperId() == paperB; }, 20000);
+    tabs.openPaper(QUrl::fromLocalFile(pdf));       // ...on the way back
+    waitFor([&] { return paper.paperId() == paperA; }, 20000);
+
+    bool overran = false;
+    for (int i = 0; i < 400 && translation.busy(); ++i) {
+        if (translation.doneCount() > translation.totalCount())
+            overran = true;
+        pump(100);
+    }
+    if (translation.doneCount() > translation.totalCount())
+        overran = true;
+    check("re-translating past a rehydrate never overruns the total",
+          !overran, QStringLiteral("%1/%2").arg(translation.doneCount())
+                        .arg(translation.totalCount()));
+    check("and the total stays the paper's paragraph count",
+          translation.totalCount() <= paras,
+          QStringLiteral("%1 of %2 paragraphs")
+              .arg(translation.totalCount()).arg(paras));
+    translation.cancel();
+    waitFor([&] { return llm.openStreams() == 0; }, 5000);
+
     // ── editing paragraphs still cancels that paper's run ─────────────
     // Block ids move when a paragraph is split or merged, so jobs built
     // against the old ids describe nothing.

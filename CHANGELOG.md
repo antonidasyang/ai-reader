@@ -1,9 +1,22 @@
 # AI Reader changelog
 
+## v1.1.23 — 2026-08-23
+
+Carries v1.1.20, v1.1.21 and v1.1.22 too — none of them were published, so an
+update from 1.1.19 brings the lot.
+
+### The translation counter can't overrun any more
+- **"translating 419/382" is fixed.** The progress numbers were a running
+  tally that two different things added to: every finished paragraph counted
+  one, and rehydrating a paper from its cache raised the count to however many
+  paragraphs were translated. Start over on a paper whose old translations are
+  still cached, switch away and back while it runs, and the same paragraph was
+  counted twice. The numbers are now read off the paragraphs themselves, so
+  they cannot disagree with what is on screen.
+
 ## v1.1.22 — 2026-08-23
 
-Carries v1.1.20 and v1.1.21 too — both were built but never published, so an
-update from 1.1.19 brings all three.
+
 
 ### Translate asks what you meant
 - **On a paper that is part-translated, Translate now offers a choice**:
