@@ -90,11 +90,18 @@ set(HAVE_LOG       OFF CACHE BOOL "" FORCE)
 set(GRAPHICS_DEBUG OFF CACHE BOOL "" FORCE)
 set(BUILD_EXAMPLE  OFF CACHE BOOL "" FORCE)
 set(MEM_CHECK      OFF CACHE BOOL "" FORCE)
+# Pinned to a commit, not to `master`. Upstream publishes no tags, so this is
+# the only way to get a reproducible build — and tracking a branch made every
+# single configure go to the network: CMake has to fetch to find out where the
+# branch points, while the tag-pinned dependencies above skip the network once
+# they are populated. On a box that can't reach GitHub, or reconfiguring a
+# build dir whose checkout we have patched (see below), microtex was the only
+# dependency that could fail. GIT_SHALLOW is off because a --depth 1 fetch of
+# a bare commit hash is not something every git/server combination supports.
 FetchContent_Declare(
     microtex
     GIT_REPOSITORY https://github.com/NanoMichael/MicroTeX.git
-    GIT_TAG        master
-    GIT_SHALLOW    TRUE
+    GIT_TAG        0e3707f6dafebb121d98b53c64364d16fefe481d  # master, 2024-08-06
 )
 FetchContent_GetProperties(microtex)
 if(NOT microtex_POPULATED)
