@@ -1,6 +1,6 @@
 # AI Reader changelog
 
-## Unreleased
+## v1.1.20 — 2026-08-23
 
 ### Cancel stops the translation, and switching papers no longer does
 - **Cancel actually cancels.** It used to clear the queue and then let the
