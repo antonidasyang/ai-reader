@@ -154,11 +154,43 @@ void TranslationService::cancel()
     }
     m_pending.clear();
 
-    // Let in-flight requests finish naturally — they'll mark their rows
-    // Translated or Failed and decrement m_inflight via their handlers.
+    // Stop what is already in flight. Letting those finish "naturally" is
+    // what made Cancel look dead: with two requests running, paragraphs kept
+    // streaming in and the button stayed on Cancel until they were done.
+    //
+    // Disconnect before aborting — an aborted reply raises errorOccurred, and
+    // that handler would mark the row Failed and count it as a failure, which
+    // is not what the user asked for.
+    const QList<LlmReply *> inflight = m_replyToRow.keys();
+    for (LlmReply *reply : inflight) {
+        const int row = m_replyToRow.value(reply, -1);
+        if (m_model && row >= 0) {
+            // Drop a half-streamed paragraph: it is a truncated sentence, it
+            // was never cached, and leaving it on screen under a "translated"
+            // badge would be a lie. The row goes back to untranslated so
+            // Translate picks it up again.
+            const Block *b = m_model->blockAt(row);
+            if (b && b->translationStatus == Block::Translating) {
+                m_model->setTranslation(row, QString());
+                m_model->setTranslationStatus(row, Block::NotTranslated);
+            }
+            // A pinned card mirroring that row has to hear about it too;
+            // syncBlockRow would read the reset row as "still translating".
+            for (const int id : m_snippets.idsForBlockRow(row))
+                m_snippets.setStatus(id, QStringLiteral("failed"),
+                                     tr("Cancelled."));
+        }
+        if (reply) {
+            reply->disconnect(this);
+            reply->abort();
+            reply->deleteLater();
+        }
+    }
+    m_replyToRow.clear();
+    m_inflight = 0;
+
     emit progressChanged();
-    if (m_inflight == 0)
-        emit busyChanged();
+    emit busyChanged();
 }
 
 void TranslationService::translateAll()
@@ -453,8 +485,13 @@ void TranslationService::closeSnippet(int id)
 {
     for (auto it = m_snippetReplies.begin(); it != m_snippetReplies.end(); ) {
         if (it.value() != id) { ++it; continue; }
-        if (it.key())
+        if (it.key()) {
+            // Same rule as cancel(): disconnect first, or the abort's
+            // errorOccurred lands on a card that no longer exists.
+            it.key()->disconnect(this);
             it.key()->abort();
+            it.key()->deleteLater();
+        }
         it = m_snippetReplies.erase(it);
     }
     m_snippets.remove(id);
@@ -463,8 +500,11 @@ void TranslationService::closeSnippet(int id)
 void TranslationService::closeAllSnippets()
 {
     for (auto it = m_snippetReplies.begin(); it != m_snippetReplies.end(); ++it) {
-        if (it.key())
+        if (it.key()) {
+            it.key()->disconnect(this);
             it.key()->abort();
+            it.key()->deleteLater();
+        }
     }
     m_snippetReplies.clear();
     m_snippets.clear();

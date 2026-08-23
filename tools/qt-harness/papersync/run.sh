@@ -3,10 +3,10 @@
 # Takes about a minute: several assertions wait out the 15 s publish throttle.
 set -e
 HERE=${0:A:h}
-REPO=${HERE:h:h}
-OUT=${BUILD:-$REPO/build}/papersync-harness
+REPO=${HERE:h:h:h}
+OUT=${BUILD:-$REPO/build}/qt-harness
 
-"$HERE/build.sh"
+"${HERE:h}/build.sh" papersync
 
 # Two PDFs with real extractable text, of different lengths so they hash to
 # different paper ids. cupsfilter ships with macOS.
@@ -28,4 +28,4 @@ open(sys.argv[1],'w').write('\n'.join(out))
 mk a 7 12
 mk b 99 5
 
-PDF_A=$OUT/a.pdf PDF_B=$OUT/b.pdf "$OUT/papersync-harness"
+PDF_A=$OUT/a.pdf PDF_B=$OUT/b.pdf "$OUT/papersync"
