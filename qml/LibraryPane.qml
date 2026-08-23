@@ -109,8 +109,16 @@ Rectangle {
                     width: ListView.view ? ListView.view.width : 0
                     height: 52
                     onClicked: fileSync.openItem(model.itemId, model.localPath)
+                    // Naming pdfSource is what makes this re-evaluate when
+                    // the reader opens a different paper; isCurrentFile is a
+                    // plain call and would otherwise never be re-run.
+                    readonly property bool _isOpen:
+                        (paperController.pdfSource,
+                         paperController.isCurrentFile(model.localPath))
                     background: Rectangle {
-                        color: hovered ? Theme.hover : "transparent"
+                        color: _isOpen  ? Theme.activeRow
+                             : hovered  ? Theme.hover
+                                        : "transparent"
                     }
                     contentItem: ColumnLayout {
                         spacing: 2
@@ -168,8 +176,13 @@ Rectangle {
                     height: 54
                     onClicked: fileSync.openItem(modelData.itemId,
                                                  modelData.localPath)
+                    readonly property bool _isOpen:
+                        (paperController.pdfSource,
+                         paperController.isCurrentFile(modelData.localPath || ""))
                     background: Rectangle {
-                        color: hovered ? Theme.hover : "transparent"
+                        color: _isOpen  ? Theme.activeRow
+                             : hovered  ? Theme.hover
+                                        : "transparent"
                     }
                     contentItem: ColumnLayout {
                         spacing: 2

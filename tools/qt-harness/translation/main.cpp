@@ -143,6 +143,36 @@ int main(int argc, char **argv)
     check("the fixture segmented", segmented,
           QStringLiteral("%1 paragraphs").arg(paper.blockCount()));
 
+    // ── a tab can be named by something that knows better ─────────────
+    check("a tab falls back to the filename",
+          tabs.nameAt(0).endsWith(QStringLiteral(".pdf")), tabs.nameAt(0));
+    tabs.setTitleResolver([](const QUrl &u) {
+        return u.toLocalFile().endsWith(QStringLiteral("t.pdf"))
+                   ? QStringLiteral("A Named Paper") : QString();
+    });
+    tabs.refreshTitles();
+    check("and uses the resolver's title when there is one",
+          tabs.nameAt(0) == QStringLiteral("A Named Paper"), tabs.nameAt(0));
+    tabs.setTitleResolver({});
+    check("an empty title falls back rather than blanking the tab",
+          tabs.nameAt(0).endsWith(QStringLiteral(".pdf")), tabs.nameAt(0));
+
+    // ── which paper is open, as the library and folder panes ask it ───
+    check("the open paper is recognised by path",
+          paper.isCurrentFile(pdf) && !paper.isCurrentFile(pdfB));
+    {
+        // The library stores plain paths; a row differing only by a "/./"
+        // still has to light up.
+        const int slash = pdf.lastIndexOf(QChar('/'));
+        const QString noisy = pdf.left(slash) + QStringLiteral("/./")
+                              + pdf.mid(slash + 1);
+        check("and by an equivalent spelling of it", paper.isCurrentFile(noisy),
+              noisy);
+    }
+    check("a path that isn't a file is not the open paper",
+          !paper.isCurrentFile(QStringLiteral("/nowhere/missing.pdf"))
+              && !paper.isCurrentFile(QString()));
+
     // ── a run is under way ────────────────────────────────────────────
     translation.translateAll();
     const bool streaming = waitFor([&] {
@@ -234,6 +264,35 @@ int main(int argc, char **argv)
     check("coming back to A shows the work it did while hidden",
           back.done > 0 && !translation.busy(),
           QStringLiteral("%1 translated").arg(back.done));
+
+    // ── the two things Translate can mean on a half-done paper ────────
+    check("a fully translated paper reports no gaps",
+          translation.translatedParagraphs() == back.done
+              && translation.untranslatedParagraphs() == 0,
+          QStringLiteral("%1 translated, %2 left")
+              .arg(translation.translatedParagraphs())
+              .arg(translation.untranslatedParagraphs()));
+
+    llm.setChunkLimit(100000);
+    translation.retranslateAll();
+    check("starting over re-queues every paragraph",
+          translation.totalCount() == back.done && translation.busy(),
+          QStringLiteral("%1 queued of %2 translated")
+              .arg(translation.totalCount()).arg(back.done));
+    check("and nothing is left claiming to be translated",
+          tally(paper.blocks()).done == 0,
+          QStringLiteral("%1 still done").arg(tally(paper.blocks()).done));
+    translation.cancel();
+    waitFor([&] { return llm.openStreams() == 0; }, 5000);
+
+    // Filling the gaps is the other one: with everything cleared, the two
+    // now agree, and translateAll picks up exactly what has no translation.
+    check("the gap count is what translateAll would take",
+          translation.untranslatedParagraphs() == paper.blockCount()
+              - tally(paper.blocks()).skipped,
+          QStringLiteral("%1 gaps, %2 paragraphs")
+              .arg(translation.untranslatedParagraphs())
+              .arg(paper.blockCount()));
 
     // ── editing paragraphs still cancels that paper's run ─────────────
     // Block ids move when a paragraph is split or merged, so jobs built

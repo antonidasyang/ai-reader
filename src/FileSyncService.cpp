@@ -293,6 +293,54 @@ void FileSyncService::repairStep()
         });
 }
 
+QString FileSyncService::titleForFile(const QString &path) const
+{
+    if (path.isEmpty())
+        return {};
+    const QString projectId = m_projects->currentId();
+    if (projectId.isEmpty())
+        return {};
+    const QFileInfo fi(path);
+
+    // A blob-cache file is named after the attachment's sha256, which is the
+    // link back to the item that owns it.
+    QString itemId;
+    if (fi.absolutePath() == QFileInfo(blobCachePath(QStringLiteral("x")))
+                                 .absolutePath()) {
+        const QString sha = fi.completeBaseName();
+        const QList<SyncObjectRow> rows =
+            m_db->objectsByType(projectId, QStringLiteral("attachment"));
+        for (const SyncObjectRow &r : rows) {
+            if (r.data.value(QStringLiteral("sha256")).toString() == sha) {
+                itemId = r.data.value(QStringLiteral("itemId")).toString();
+                break;
+            }
+        }
+    }
+    if (itemId.isEmpty()) {
+        // Otherwise it may be a paper added from disk, whose item records the
+        // path it was added from.
+        const QString canonical = fi.canonicalFilePath();
+        const QList<SyncObjectRow> rows =
+            m_db->objectsByType(projectId, QStringLiteral("item"));
+        for (const SyncObjectRow &r : rows) {
+            const QString p =
+                r.data.value(QStringLiteral("localPath")).toString();
+            if (p.isEmpty())
+                continue;
+            const QString c = QFileInfo(p).canonicalFilePath();
+            if ((!c.isEmpty() && c == canonical) || p == path)
+                return r.data.value(QStringLiteral("title")).toString();
+        }
+        return {};
+    }
+
+    SyncObjectRow item;
+    if (!m_db->getObject(projectId, itemId, item) || item.deleted)
+        return {};
+    return item.data.value(QStringLiteral("title")).toString();
+}
+
 void FileSyncService::openItem(const QString &itemId, const QString &localPath)
 {
     const QString path = toLocalPath(localPath);

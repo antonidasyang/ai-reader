@@ -61,7 +61,16 @@ public:
     void cancelPaper(const QString &paperId);
 
 public slots:
+    // Translate the paragraphs that have no translation yet.
     void translateAll();
+    // Throw away what this paper already has and translate all of it again.
+    // The cache is overwritten as the new results land, so this really does
+    // re-ask the model rather than serving what is on disk.
+    Q_INVOKABLE void retranslateAll();
+    // How the pane decides whether the two are even different: with nothing
+    // translated there is nothing to ask the reader about.
+    Q_INVOKABLE int translatedParagraphs() const;
+    Q_INVOKABLE int untranslatedParagraphs() const;
     void retryFailed();
     void cancel();
     // Translate a single paragraph (used by the BlockList right-click

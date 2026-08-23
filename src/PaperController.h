@@ -87,6 +87,14 @@ public slots:
     // First blocks' text, used for DOI/arXiv identifier extraction.
     Q_INVOKABLE QString headText(int maxChars = 6000) const;
 
+    // True when `path` is the paper on screen. The library stores plain
+    // filesystem paths while the viewer holds a URL, and the two can disagree
+    // over separators, a symlinked directory or a "/./" without pointing at
+    // different files — so this compares canonical paths rather than strings.
+    // Bind it next to `pdfSource` so the binding re-runs when the paper
+    // changes: `paperController.pdfSource, paperController.isCurrentFile(p)`.
+    Q_INVOKABLE bool isCurrentFile(const QString &path) const;
+
     // Show whatever the block cache holds now. Used by PaperSyncService
     // when a collaborator's segmentation lands after the paper was already
     // opened. Refused once anything is on screen or the user edited the

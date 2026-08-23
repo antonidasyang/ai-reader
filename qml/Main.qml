@@ -197,6 +197,90 @@ ApplicationWindow {
         }
     }
 
+    // Asked when Translate is pressed on a paper that already has some
+    // translations: filling the gaps and starting over are both reasonable,
+    // and which one is meant isn't guessable. A paper with nothing translated
+    // never gets here — the button just goes.
+    Dialog {
+        id: translateChoiceDialog
+        title: qsTr("Translate this paper")
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        width: 420
+        padding: 14
+        standardButtons: Dialog.Cancel
+        palette.window: Theme.paneBg
+        palette.windowText: Theme.text
+        palette.base: Theme.fieldBg
+        palette.text: Theme.text
+        palette.button: Theme.buttonBg
+        palette.buttonText: Theme.text
+        palette.highlight: Theme.accent
+        palette.highlightedText: Theme.onAccent
+        palette.placeholderText: Theme.dimText
+        background: Rectangle {
+            color: Theme.paneBg
+            border.color: Theme.border
+            radius: 6
+        }
+
+        // Sampled when the dialog opens, so the numbers can't shift under the
+        // reader while they are looking at them.
+        property int doneCount: 0
+        property int leftCount: 0
+
+        function ask() {
+            doneCount = translation.translatedParagraphs()
+            leftCount = translation.untranslatedParagraphs()
+            open()
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 10
+
+            Label {
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                color: Theme.text
+                text: translateChoiceDialog.leftCount > 0
+                      ? qsTr("%1 of these paragraphs are already translated and %2 are not.")
+                            .arg(translateChoiceDialog.doneCount)
+                            .arg(translateChoiceDialog.leftCount)
+                      : qsTr("All %1 paragraphs are already translated.")
+                            .arg(translateChoiceDialog.doneCount)
+            }
+            Button {
+                Layout.fillWidth: true
+                visible: translateChoiceDialog.leftCount > 0
+                text: qsTr("Translate the remaining %1")
+                          .arg(translateChoiceDialog.leftCount)
+                onClicked: {
+                    translateChoiceDialog.close()
+                    translation.translateAll()
+                }
+            }
+            Button {
+                Layout.fillWidth: true
+                text: qsTr("Start over — re-translate all %1")
+                          .arg(translateChoiceDialog.doneCount
+                               + translateChoiceDialog.leftCount)
+                onClicked: {
+                    translateChoiceDialog.close()
+                    translation.retranslateAll()
+                }
+            }
+            Label {
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                font.pixelSize: 11
+                color: Theme.dimText
+                text: qsTr("Starting over asks the model again for every paragraph, "
+                           + "including the ones already done.")
+            }
+        }
+    }
+
     // Steps are wired up after the toolbar buttons / panes have been
     // instantiated, so the spotlight target references resolve. The
     // wizard auto-opens on first run via the Component.onCompleted
@@ -451,8 +535,15 @@ ApplicationWindow {
                 text: translation.busy ? qsTr("Cancel") : qsTr("Translate")
                 enabled: paperController.status === PaperController.Ready
                          && (translation.busy || settings.isConfigured)
-                onClicked: translation.busy ? translation.cancel()
-                                            : translation.translateAll()
+                onClicked: {
+                    if (translation.busy) {
+                        translation.cancel()
+                    } else if (translation.translatedParagraphs() > 0) {
+                        translateChoiceDialog.ask()
+                    } else {
+                        translation.translateAll()
+                    }
+                }
             }
             ToolButton {
                 text: qsTr("Retry failed")

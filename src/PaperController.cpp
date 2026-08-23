@@ -226,6 +226,21 @@ void PaperController::reload()
     }
 }
 
+bool PaperController::isCurrentFile(const QString &path) const
+{
+    if (path.isEmpty() || !m_source.isLocalFile())
+        return false;
+    const QFileInfo want(path);
+    const QFileInfo open(m_source.toLocalFile());
+    // canonicalFilePath is empty for a file that isn't there any more; fall
+    // back to the absolute path so a moved-away row still compares sanely.
+    const QString a = want.canonicalFilePath();
+    const QString b = open.canonicalFilePath();
+    if (!a.isEmpty() && !b.isEmpty())
+        return a == b;
+    return want.absoluteFilePath() == open.absoluteFilePath();
+}
+
 bool PaperController::applyCachedBlocks()
 {
     if (m_status != Ready || m_paperId.isEmpty())

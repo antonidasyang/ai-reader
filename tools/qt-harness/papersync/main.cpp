@@ -15,6 +15,7 @@
 #include "BlockListModel.h"
 #include "LibraryDb.h"
 #include "PaperController.h"
+#include "FileSyncService.h"
 #include "PaperSyncService.h"
 #include "ProjectController.h"
 #include "Settings.h"
@@ -26,6 +27,7 @@
 #include <QDateTime>
 #include <QDeadlineTimer>
 #include <QDir>
+#include <QFile>
 #include <QGuiApplication>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -181,6 +183,7 @@ int main(int argc, char **argv)
     SyncEngine sync(&api, &auth, &projects, &db);
     PaperSyncService paperSync(&db, &projects, &sync, &auth, &paper,
                                &translation, &settings);
+    FileSyncService fileSync(&api, &db, &projects, &sync);
 
     auth.startCasLogin();
     projects.selectProject(PROJ);
@@ -490,6 +493,58 @@ int main(int argc, char **argv)
     check("a server that never advertised a push limit is left alone",
           blockPushes().isEmpty(),
           QStringLiteral("%1 block pushes").arg(blockPushes().size()));
+
+    // ── naming a paper the library downloaded ─────────────────────────
+    // Those are served from the content-addressed blob cache, so the file on
+    // disk is called <sha256>.pdf — which is what the tab bar and the
+    // Interpret pane used to show instead of the paper's title.
+    {
+        const QString itemId = QStringLiteral("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+        const QString sha = QString(64, QChar('a'));
+        const auto put = [&](const QString &id, const QString &type,
+                             const QJsonObject &data) {
+            SyncObjectRow r;
+            r.id = id;
+            r.projectId = PROJ;
+            r.type = type;
+            r.data = data;
+            r.version = 1;
+            db.upsertFromServer(r);
+        };
+        put(itemId, QStringLiteral("item"),
+            QJsonObject{{"title", "Attention Is All You Need"}});
+        put(QStringLiteral("ffffffff-1111-2222-3333-444444444444"),
+            QStringLiteral("attachment"),
+            QJsonObject{{"itemId", itemId}, {"sha256", sha},
+                        {"storageKey", "blobs/" + sha}});
+
+        const QString blobDir = root + QStringLiteral("/library/blobs");
+        QDir().mkpath(blobDir);
+        const QString blob = blobDir + QChar('/') + sha + QStringLiteral(".pdf");
+        QFile f(blob);
+        f.open(QIODevice::WriteOnly);
+        f.write("%PDF-1.4\n");
+        f.close();
+
+        check("a downloaded paper is named by its library title",
+              fileSync.titleForFile(blob)
+                  == QStringLiteral("Attention Is All You Need"),
+              fileSync.titleForFile(blob));
+        check("a file the library doesn't know keeps its filename",
+              fileSync.titleForFile(pdfA).isEmpty(),
+              fileSync.titleForFile(pdfA));
+
+        // The other half: a paper added straight from disk records the path
+        // it came from, and is named from that.
+        put(QStringLiteral("11111111-aaaa-bbbb-cccc-dddddddddddd"),
+            QStringLiteral("item"),
+            QJsonObject{{"title", "A Paper Added From Disk"},
+                        {"localPath", pdfA}});
+        check("and a paper added from disk is named too",
+              fileSync.titleForFile(pdfA)
+                  == QStringLiteral("A Paper Added From Disk"),
+              fileSync.titleForFile(pdfA));
+    }
 
     QDir(root).removeRecursively();
     { QSettings s; s.clear(); s.sync(); }

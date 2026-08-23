@@ -444,6 +444,52 @@ void TranslationService::translateAll()
     scheduleNext();
 }
 
+void TranslationService::retranslateAll()
+{
+    if (!m_model) return;
+    // Clear first, or translateAll() would skip every one of them as already
+    // translated. Skipped rows are cleared too — translateAll marks them
+    // Skipped again on the way past, and a stale pass-through would otherwise
+    // survive a change of language.
+    for (int row = 0; row < m_model->blockCount(); ++row) {
+        const Block *b = m_model->blockAt(row);
+        if (!b || b->translationStatus == Block::NotTranslated)
+            continue;
+        m_model->setTranslation(row, QString());
+        m_model->setTranslationStatus(row, Block::NotTranslated);
+    }
+    translateAll();
+}
+
+int TranslationService::translatedParagraphs() const
+{
+    if (!m_model) return 0;
+    int n = 0;
+    for (int row = 0; row < m_model->blockCount(); ++row) {
+        const Block *b = m_model->blockAt(row);
+        if (b && b->translationStatus == Block::Translated)
+            ++n;
+    }
+    return n;
+}
+
+int TranslationService::untranslatedParagraphs() const
+{
+    if (!m_model) return 0;
+    int n = 0;
+    for (int row = 0; row < m_model->blockCount(); ++row) {
+        const Block *b = m_model->blockAt(row);
+        if (!b)
+            continue;
+        // Skipped is a decision, not a gap: those paragraphs are pass-through
+        // math or numbers and asking for them again changes nothing.
+        if (b->translationStatus == Block::NotTranslated
+            || b->translationStatus == Block::Failed)
+            ++n;
+    }
+    return n;
+}
+
 TranslationService::Job TranslationService::jobForRow(int row) const
 {
     Job job;

@@ -230,8 +230,8 @@ Rectangle {
                     readonly property string _path: library.filePath(_modelIndex)
                     readonly property bool _isActiveFile:
                         !_isDir
-                        && library.fileUrl(_modelIndex).toString()
-                           === paperController.pdfSource.toString()
+                        && (paperController.pdfSource,
+                            paperController.isCurrentFile(_path))
 
                     // Every PDF this row stands for: the file itself, or
                     // everything under the folder — including the parts

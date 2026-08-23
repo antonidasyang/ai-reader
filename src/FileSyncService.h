@@ -35,6 +35,12 @@ public:
     bool busy() const { return m_busy; }
 
     Q_INVOKABLE void uploadPaper(const QString &itemId, const QString &localPath);
+    // The library's title for a file on disk, or empty when the library
+    // doesn't know it. Papers opened from the library are served out of the
+    // content-addressed blob cache, so their filename is a sha256 — which is
+    // what the tab bar and the Interpret pane would otherwise show.
+    Q_INVOKABLE QString titleForFile(const QString &path) const;
+
     Q_INVOKABLE void openItem(const QString &itemId, const QString &localPath);
     // Walk the current project's attachments and reconcile them with
     // what storage actually holds: re-upload anything whose bytes are

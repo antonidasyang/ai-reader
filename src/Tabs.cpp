@@ -28,6 +28,11 @@ QUrl Tabs::urlAt(int idx) const
 QString Tabs::nameAt(int idx) const
 {
     const QUrl u = urlAt(idx);
+    if (m_titleFor) {
+        const QString title = m_titleFor(u).trimmed();
+        if (!title.isEmpty())
+            return title;
+    }
     if (u.isLocalFile())
         return QFileInfo(u.toLocalFile()).fileName();
     return u.fileName();

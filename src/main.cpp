@@ -307,8 +307,27 @@ int main(int argc, char *argv[])
                              PaperController::paperIdForFile(url.toLocalFile()));
                      });
 
+    // A paper opened from the library lives in the content-addressed blob
+    // cache, so its filename is a sha256. Wherever the app shows "which paper
+    // is this", prefer the library's title for it.
+    auto paperDisplayName = [&fileSync](const QUrl &url) -> QString {
+        if (!url.isLocalFile())
+            return {};
+        return fileSync.titleForFile(url.toLocalFile());
+    };
+    tabs.setTitleResolver(paperDisplayName);
+    // Titles land with a sync, after the tabs are already drawn.
+    QObject::connect(&syncEngine, &SyncEngine::projectSynced, &tabs,
+                     [&tabs](const QString &) { tabs.refreshTitles(); });
+
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
-                     &summary, [&]() { summary.setPaperTitle(paperController.fileName()); });
+                     &summary, [&]() {
+                         const QString title =
+                             paperDisplayName(paperController.pdfSource());
+                         summary.setPaperTitle(title.isEmpty()
+                                                   ? paperController.fileName()
+                                                   : title);
+                     });
     // GROBID → TOC wiring: when StructureService successfully applies
     // a TEI segmentation it also extracts the section outline; hand it
     // to the TOC pipeline, which adopts it only when the user doesn't

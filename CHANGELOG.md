@@ -15,6 +15,24 @@ published, so an update from 1.1.19 brings both.
   budget shared by every paper being translated, not a limit per paper, and
   changing it takes effect on a run already going.
 
+### Translate asks what you meant
+- **On a paper that is part-translated, Translate now offers a choice**:
+  translate the paragraphs that have no translation yet, or start over and
+  re-ask the model for all of them. Until now the button silently did the
+  first and there was no way to do the second short of going paragraph by
+  paragraph. A paper with nothing translated still just goes.
+
+### Knowing which paper you are looking at
+- **The library highlights the paper that is open**, the way the folder tree
+  already did. Both panes now decide it the same way, by comparing canonical
+  paths, so a symlinked folder or a differently spelled path doesn't stop the
+  row lighting up.
+- **A paper opened from the library is named, not hashed.** Those are served
+  out of a content-addressed cache, so the file on disk is called
+  `<sha256>.pdf` — which is what the tab and the Interpret pane were showing.
+  They now show the library's title for it, falling back to the filename for
+  anything the library doesn't know.
+
 ### Settings
 - The first block of settings — provider, model, keys, generation limits,
   languages — had no heading, unlike every block below it. It is now

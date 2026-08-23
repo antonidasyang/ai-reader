@@ -5,6 +5,7 @@
 #include <QString>
 #include <QUrl>
 #include <QVector>
+#include <functional>
 
 class PaperController;
 
@@ -36,6 +37,16 @@ public:
 
     Q_INVOKABLE QUrl   urlAt(int idx) const;
     Q_INVOKABLE QString nameAt(int idx) const;
+
+    // A tab is labelled with its filename, which is wrong for a paper opened
+    // from the library: those are served out of a content-addressed cache and
+    // so are named after a sha256. main.cpp installs a resolver that turns a
+    // URL into the library's title for it; anything it can't name falls back
+    // to the filename. A callback, so Tabs need not know the library exists.
+    using TitleResolver = std::function<QString(const QUrl &)>;
+    void setTitleResolver(TitleResolver fn) { m_titleFor = std::move(fn); }
+    // Titles arrive with a sync, after the tabs are already on screen.
+    Q_INVOKABLE void refreshTitles() { emit tabsChanged(); }
 
     // Open `url` as a tab and make it active. If it's already in the
     // list, just switch to it.
@@ -71,5 +82,6 @@ private:
     QVector<QUrl>     m_papers;
     int               m_activeIndex = -1;
     PaperController  *m_paper;
+    TitleResolver     m_titleFor;
     QSettings         m_qs;
 };
