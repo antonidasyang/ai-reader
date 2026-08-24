@@ -621,6 +621,24 @@ int main(int argc, char **argv)
           exporter.save(md, QUrl::fromLocalFile(outPath))
               && QFile(outPath).size() > 100);
 
+    // ── a settings change takes effect now, not after a restart ─────
+    // Every service used to cache its client and patch its fields, so
+    // switching provider kept talking to the previous endpoint until the
+    // app was restarted.
+    FakeAnalysisLlm gateway2;
+    const int wasOnOne = gateway.requests();
+    const int wasOnTwo = gateway2.requests();
+    settings.setBaseUrl(gateway2.baseUrl());
+    analysis.generateQuick(true);
+    waitFor([&] { return analysis.status() != AnalysisService::Running; }, 30000);
+    check("pointing at another endpoint takes effect without a restart",
+          gateway2.requests() > wasOnTwo,
+          QStringLiteral("second gateway saw %1")
+              .arg(gateway2.requests() - wasOnTwo));
+    check("...and the old one is not called again",
+          gateway.requests() == wasOnOne);
+    settings.setBaseUrl(gateway.baseUrl());
+
     // ── the endpoint follows the provider, not the field ────────────
     // A Base URL left behind by an earlier provider used to keep being
     // used, so every request went to the wrong server.

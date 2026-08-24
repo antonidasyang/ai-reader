@@ -22,6 +22,7 @@ AnalysisService::AnalysisService(Settings *settings, PaperController *paper,
     , m_paper(paper)
     , m_store(store)
     , m_profile(profile)
+    , m_clients(settings, this)
 {
     connect(m_paper, &PaperController::blocksChanged, this,
             &AnalysisService::onPaperChanged);
@@ -283,20 +284,10 @@ void AnalysisService::discardQuick()
 
 void AnalysisService::refreshClient()
 {
-    if (!m_settings)
-        return;
-    if (!m_client) {
-        m_client = m_settings->createClient(this);
-        return;
-    }
-    // Settings may have moved since it was made -- but every LlmReply is a
-    // child of the client, so replacing it while a job is in flight would
-    // destroy that job's reply with no finished and no error, and the job
-    // would wait forever. Only swap it when nothing is running.
-    if (m_job || m_deepInflight > 0)
-        return;
-    m_client->deleteLater();
-    m_client = m_settings->createClient(this);
+    // Rebuilt when the configuration moved -- but not while a job is in
+    // flight: every LlmReply is a child of the client, so replacing it
+    // would leave that job waiting for a signal that can never come.
+    m_client = m_clients.client(!m_job && m_deepInflight == 0);
 }
 
 void AnalysisService::setStatus(Status s, const QString &err)

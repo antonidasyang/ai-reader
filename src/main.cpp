@@ -13,7 +13,6 @@
 #include "LibraryModel.h"
 #include "MetadataService.h"
 #include "SearchService.h"
-#include "AiArtifactService.h"
 #include "PaperSyncService.h"
 #include "FileSyncService.h"
 #include "ImportService.h"
@@ -31,7 +30,6 @@
 #include "PdfSelectionModel.h"
 #include "Settings.h"
 #include "StructureService.h"
-#include "SummaryService.h"
 #include "Tabs.h"
 #include "TocService.h"
 #include "TranslationService.h"
@@ -230,9 +228,6 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<TranslationService>(
         "AiReader", 1, 0, "TranslationService",
         QStringLiteral("Use the translation context property"));
-    qmlRegisterUncreatableType<SummaryService>(
-        "AiReader", 1, 0, "SummaryService",
-        QStringLiteral("Use the summary context property"));
     qmlRegisterUncreatableType<TocService>(
         "AiReader", 1, 0, "TocService",
         QStringLiteral("Use the toc context property"));
@@ -329,7 +324,6 @@ int main(int argc, char *argv[])
     CursorUtil cursorUtil;
     StructureService structure(&settings, &paperController);
     TranslationService translation(&settings, &paperController);
-    SummaryService summary(&settings, &paperController);
     TocService toc(&settings, &paperController);
     VisionService vision(&settings, &paperController);
     ChatService chat(&settings, &paperController, &toc);
@@ -347,8 +341,6 @@ int main(int argc, char *argv[])
     LibraryModel libraryModel(&libraryDb, &projectController, &syncEngine);
     MetadataService metadataService(&libraryModel, &paperController);
     SearchService searchService(&libraryDb, &projectController);
-    AiArtifactService aiArtifactService(&libraryDb, &projectController,
-                                        &syncEngine, &auth, &paperController);
     // Bridges the two big per-paper caches (paragraph segmentation and
     // translations) to the project, so the same account on another machine —
     // and collaborators who haven't done the work — get them for free.
@@ -421,14 +413,6 @@ int main(int argc, char *argv[])
                      [&tabs](const QString &) { tabs.refreshTitles(); });
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
-                     &summary, [&]() {
-                         const QString title =
-                             paperDisplayName(paperController.pdfSource());
-                         summary.setPaperTitle(title.isEmpty()
-                                                   ? paperController.fileName()
-                                                   : title);
-                     });
-    QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &analysisService, [&]() {
                          const QString title =
                              paperDisplayName(paperController.pdfSource());
@@ -470,7 +454,6 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("cursorUtil", &cursorUtil);
     engine.rootContext()->setContextProperty("settings", &settings);
     engine.rootContext()->setContextProperty("translation", &translation);
-    engine.rootContext()->setContextProperty("summary", &summary);
     engine.rootContext()->setContextProperty("toc", &toc);
     engine.rootContext()->setContextProperty("vision", &vision);
     engine.rootContext()->setContextProperty("chat", &chat);
@@ -487,7 +470,6 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("libraryModel", &libraryModel);
     engine.rootContext()->setContextProperty("metadata", &metadataService);
     engine.rootContext()->setContextProperty("search", &searchService);
-    engine.rootContext()->setContextProperty("aiArtifacts", &aiArtifactService);
     engine.rootContext()->setContextProperty("paperSync", &paperSync);
     engine.rootContext()->setContextProperty("fileSync", &fileSync);
     engine.rootContext()->setContextProperty("importer", &importService);

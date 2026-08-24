@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.2.11 LANGUAGES CXX)
+project(ai-reader VERSION 1.2.13 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -227,6 +227,8 @@ qt_add_executable(ai-reader
     src/CursorUtil.cpp
     src/LlmClient.h
     src/LlmClient.cpp
+    src/LlmClientCache.h
+    src/LlmClientCache.cpp
     src/AnthropicClient.h
     src/AnthropicClient.cpp
     src/OpenAiClient.h
@@ -239,10 +241,6 @@ qt_add_executable(ai-reader
     src/SnippetModel.cpp
     src/TranslationCache.h
     src/TranslationCache.cpp
-    src/SummaryService.h
-    src/SummaryService.cpp
-    src/SummaryCache.h
-    src/SummaryCache.cpp
     src/Section.h
     src/TocModel.h
     src/TocModel.cpp
@@ -298,8 +296,6 @@ qt_add_executable(ai-reader
     src/MetadataService.cpp
     src/SearchService.h
     src/SearchService.cpp
-    src/AiArtifactService.h
-    src/AiArtifactService.cpp
     src/PaperSyncService.h
     src/PaperSyncService.cpp
     src/FileSyncService.h
@@ -417,12 +413,10 @@ qt_add_qml_module(ai-reader
         qml/ProjectSettingsDialog.qml
         qml/LibraryPane.qml
         qml/MetadataDialog.qml
-        qml/SharedAiDialog.qml
         qml/PasswordDialog.qml
         qml/BlockList.qml
         qml/SelectionTranslateCard.qml
         qml/SettingsDialog.qml
-        qml/SummaryPane.qml
         qml/TocSidebar.qml
         qml/VisionDialog.qml
         qml/PromptsDialog.qml

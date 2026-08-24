@@ -26,6 +26,7 @@ VisionService::VisionService(Settings *settings,
     : QObject(parent)
     , m_settings(settings)
     , m_paper(paper)
+    , m_clients(settings, this)
 {
 }
 
@@ -91,13 +92,12 @@ void VisionService::readPage(int pageIdx)
         return;
     }
 
-    if (!m_client)
-        m_client = m_settings->createClient(this);
-    else {
-        m_client->setApiKey(m_settings->apiKey());
-        m_client->setModel(m_settings->model());
-        if (!m_settings->baseUrl().isEmpty())
-            m_client->setBaseUrl(QUrl(m_settings->baseUrl()));
+    // Rebuilt when the configuration moved: switching provider needs a
+    // different client, not different fields on the old one.
+    m_client = m_clients.client();
+    if (!m_client) {
+        setStatus(Failed, tr("No model is configured."));
+        return;
     }
 
     LlmClient::Request req;

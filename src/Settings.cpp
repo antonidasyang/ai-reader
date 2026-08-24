@@ -33,7 +33,6 @@ constexpr auto kKeyContextWindow = "llm/contextWindow";
 constexpr auto kKeyToolBudget    = "chat/toolBudget";
 constexpr auto kKeyTargetLang    = "translation/targetLang";
 constexpr auto kKeyUiLanguage    = "ui/language";
-constexpr auto kKeySummaryPrompt     = "prompts/summary";
 constexpr auto kKeyTranslationPrompt = "prompts/translation";
 constexpr auto kKeyTocPrompt         = "prompts/toc";
 constexpr auto kKeyVisionPrompt      = "prompts/vision";
@@ -126,6 +125,7 @@ void Settings::setProvider(const QString &v)
 {
     if (v == m_provider) return;
     m_provider = v;
+    ++m_configRevision;
     save();
     emit providerChanged();
     emit configurationChanged();
@@ -135,6 +135,7 @@ void Settings::setModel(const QString &v)
 {
     if (v == m_model) return;
     m_model = v;
+    ++m_configRevision;
     save();
     emit modelChanged();
     emit configurationChanged();
@@ -144,6 +145,7 @@ void Settings::setBaseUrl(const QString &v)
 {
     if (v == m_baseUrl) return;
     m_baseUrl = v;
+    ++m_configRevision;
     save();
     emit baseUrlChanged();
 }
@@ -152,6 +154,7 @@ void Settings::setApiKey(const QString &v)
 {
     if (v == m_apiKey) return;
     m_apiKey = v;
+    ++m_configRevision;
     emit apiKeyChanged();
     emit configurationChanged();
     if (m_apiKey.isEmpty()) {
@@ -221,14 +224,6 @@ void Settings::setUiLanguage(const QString &v)
     m_uiLanguage = v;
     save();
     emit uiLanguageChanged();
-}
-
-void Settings::setSummaryPrompt(const QString &v)
-{
-    if (v == m_summaryPrompt) return;
-    m_summaryPrompt = v;
-    save();
-    emit summaryPromptChanged();
 }
 
 void Settings::setTranslationPrompt(const QString &v)
@@ -325,6 +320,7 @@ void Settings::setTranslationProvider(const QString &v)
 {
     if (v == m_translationProvider) return;
     m_translationProvider = v;
+    ++m_configRevision;
     save();
     emit translationConfigChanged();
 }
@@ -333,6 +329,7 @@ void Settings::setTranslationModel(const QString &v)
 {
     if (v == m_translationModel) return;
     m_translationModel = v;
+    ++m_configRevision;
     save();
     emit translationConfigChanged();
 }
@@ -341,6 +338,7 @@ void Settings::setTranslationBaseUrl(const QString &v)
 {
     if (v == m_translationBaseUrl) return;
     m_translationBaseUrl = v;
+    ++m_configRevision;
     save();
     emit translationConfigChanged();
 }
@@ -349,6 +347,7 @@ void Settings::setTranslationApiKey(const QString &v)
 {
     if (v == m_translationApiKey) return;
     m_translationApiKey = v;
+    ++m_configRevision;
     emit translationConfigChanged();
     if (m_translationApiKey.isEmpty()) {
         auto *job = new DeletePasswordJob(QStringLiteral("ai-reader"), this);
@@ -583,6 +582,7 @@ void Settings::readApiKeyFromKeychain()
             const QString text = r->textData();
             if (text != m_apiKey) {
                 m_apiKey = text;
+                ++m_configRevision;
                 emit apiKeyChanged();
                 emit configurationChanged();
             }
@@ -623,6 +623,7 @@ void Settings::readTranslationKeyFromKeychain()
         const QString text = r->textData();
         if (text != m_translationApiKey) {
             m_translationApiKey = text;
+            ++m_configRevision;
             emit translationConfigChanged();
         }
     });
@@ -709,7 +710,6 @@ void Settings::load()
     m_toolBudget    = qBound(1, m_qs.value(kKeyToolBudget, 30).toInt(), 100);
     m_targetLang    = m_qs.value(kKeyTargetLang,    QStringLiteral("zh-CN")).toString();
     m_uiLanguage    = m_qs.value(kKeyUiLanguage,    QString{}).toString();
-    m_summaryPrompt     = m_qs.value(kKeySummaryPrompt,     QString{}).toString();
     m_translationPrompt = m_qs.value(kKeyTranslationPrompt, QString{}).toString();
     m_tocPrompt         = m_qs.value(kKeyTocPrompt,         QString{}).toString();
     m_visionPrompt      = m_qs.value(kKeyVisionPrompt,      QString{}).toString();
@@ -777,7 +777,6 @@ void Settings::save()
     m_qs.setValue(kKeyToolBudget,    m_toolBudget);
     m_qs.setValue(kKeyTargetLang,    m_targetLang);
     m_qs.setValue(kKeyUiLanguage,    m_uiLanguage);
-    m_qs.setValue(kKeySummaryPrompt,     m_summaryPrompt);
     m_qs.setValue(kKeyTranslationPrompt, m_translationPrompt);
     m_qs.setValue(kKeyTocPrompt,         m_tocPrompt);
     m_qs.setValue(kKeyVisionPrompt,      m_visionPrompt);

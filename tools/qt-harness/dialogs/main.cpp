@@ -6,7 +6,6 @@
 // This driver builds the same services main.cpp does, registers the same
 // context properties, then instantiates and opens each dialog in turn.
 
-#include "AiArtifactService.h"
 #include "AnalysisExporter.h"
 #include "AnalysisListModel.h"
 #include "AnalysisService.h"
@@ -36,7 +35,6 @@
 #include "SearchService.h"
 #include "Settings.h"
 #include "StructureService.h"
-#include "SummaryService.h"
 #include "SyncEngine.h"
 #include "Tabs.h"
 #include "TocService.h"
@@ -105,8 +103,6 @@ int main(int argc, char **argv)
         "AiReader", 1, 0, "Settings", QStringLiteral("context property"));
     qmlRegisterUncreatableType<TranslationService>(
         "AiReader", 1, 0, "TranslationService", QStringLiteral("context property"));
-    qmlRegisterUncreatableType<SummaryService>(
-        "AiReader", 1, 0, "SummaryService", QStringLiteral("context property"));
     qmlRegisterUncreatableType<TocService>(
         "AiReader", 1, 0, "TocService", QStringLiteral("context property"));
     qmlRegisterUncreatableType<VisionService>(
@@ -130,7 +126,6 @@ int main(int argc, char **argv)
     CursorUtil cursorUtil;
     StructureService structure(&settings, &paperController);
     TranslationService translation(&settings, &paperController);
-    SummaryService summary(&settings, &paperController);
     TocService toc(&settings, &paperController);
     VisionService vision(&settings, &paperController);
     ChatService chat(&settings, &paperController, &toc);
@@ -148,8 +143,6 @@ int main(int argc, char **argv)
     LibraryModel libraryModel(&libraryDb, &projectController, &syncEngine);
     MetadataService metadataService(&libraryModel, &paperController);
     SearchService searchService(&libraryDb, &projectController);
-    AiArtifactService aiArtifactService(&libraryDb, &projectController,
-                                        &syncEngine, &auth, &paperController);
     PaperSyncService paperSync(&libraryDb, &projectController, &syncEngine,
                                &auth, &paperController, &translation, &settings);
     FileSyncService fileSync(&apiClient, &libraryDb, &projectController,
@@ -184,7 +177,6 @@ int main(int argc, char **argv)
     ctx->setContextProperty("cursorUtil", &cursorUtil);
     ctx->setContextProperty("settings", &settings);
     ctx->setContextProperty("translation", &translation);
-    ctx->setContextProperty("summary", &summary);
     ctx->setContextProperty("toc", &toc);
     ctx->setContextProperty("vision", &vision);
     ctx->setContextProperty("chat", &chat);
@@ -201,7 +193,6 @@ int main(int argc, char **argv)
     ctx->setContextProperty("libraryModel", &libraryModel);
     ctx->setContextProperty("metadata", &metadataService);
     ctx->setContextProperty("search", &searchService);
-    ctx->setContextProperty("aiArtifacts", &aiArtifactService);
     ctx->setContextProperty("paperSync", &paperSync);
     ctx->setContextProperty("fileSync", &fileSync);
     ctx->setContextProperty("importer", &importService);
@@ -234,7 +225,7 @@ int main(int argc, char **argv)
         QStringLiteral("SettingsDialog"),   QStringLiteral("PromptsDialog"),
         QStringLiteral("PasswordDialog"),   QStringLiteral("MetadataDialog"),
         QStringLiteral("MembersDialog"),    QStringLiteral("ProjectSettingsDialog"),
-        QStringLiteral("ProjectProfileDialog"), QStringLiteral("SharedAiDialog"),
+        QStringLiteral("ProjectProfileDialog"),
         QStringLiteral("VisionDialog"),     QStringLiteral("ChangelogDialog"),
         QStringLiteral("BatchAnalysisDialog"), QStringLiteral("CompareDialog"),
         QStringLiteral("ResearchDialog"),

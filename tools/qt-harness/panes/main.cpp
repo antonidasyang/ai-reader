@@ -15,7 +15,6 @@
 #include "PaperController.h"
 #include "PdfSelectionModel.h"
 #include "Settings.h"
-#include "SummaryService.h"
 #include "TocService.h"
 #include "TranslationService.h"
 #include "VisionService.h"
@@ -86,7 +85,6 @@ int main(int argc, char **argv)
     PdfSelectionModel pdfSelection(paper.document());
     CursorUtil cursorUtil;
     TranslationService translation(&settings, &paper);
-    SummaryService summary(&settings, &paper);
     TocService toc(&settings, &paper);
     VisionService vision(&settings, &paper);
     ChatService chat(&settings, &paper, &toc);
@@ -104,7 +102,6 @@ int main(int argc, char **argv)
     ctx->setContextProperty("cursorUtil", &cursorUtil);
     ctx->setContextProperty("settings", &settings);
     ctx->setContextProperty("translation", &translation);
-    ctx->setContextProperty("summary", &summary);
     ctx->setContextProperty("toc", &toc);
     ctx->setContextProperty("vision", &vision);
     ctx->setContextProperty("chat", &chat);

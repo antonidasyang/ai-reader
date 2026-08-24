@@ -333,9 +333,13 @@ AppDialog {
                 wrapMode: Text.Wrap
                 color: Theme.dimText
                 font.pixelSize: 11
-                text: qsTr("Papers already interpreted — by you or by a "
-                           + "collaborator — are skipped, so a project pays for "
-                           + "each paper once.")
+                text: batchAnalysis.busy
+                      ? qsTr("Closing this window does not stop the run — the "
+                             + "toolbar keeps the count, and Stop is the only "
+                             + "thing that ends it.")
+                      : qsTr("Papers already interpreted — by you or by a "
+                             + "collaborator — are skipped, so a project pays "
+                             + "for each paper once.")
             }
             AppButton {
                 text: qsTr("Close")

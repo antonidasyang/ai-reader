@@ -63,6 +63,7 @@ ChatService::ChatService(Settings *settings,
     , m_settings(settings)
     , m_paper(paper)
     , m_toc(toc)
+    , m_clients(settings, this)
 {
     if (m_paper) {
         connect(m_paper, &PaperController::blocksChanged,
@@ -408,13 +409,12 @@ void ChatService::runTurn()
     }
     ++m_iterations;
 
-    if (!m_client)
-        m_client = m_settings->createClient(this);
-    else {
-        m_client->setApiKey(m_settings->apiKey());
-        m_client->setModel(m_settings->model());
-        if (!m_settings->baseUrl().isEmpty())
-            m_client->setBaseUrl(QUrl(m_settings->baseUrl()));
+    // Rebuilt when the configuration moved -- but never mid-turn: the tool
+    // round-trips hold replies that are children of this client.
+    m_client = m_clients.client(!busy());
+    if (!m_client) {
+        setLastError(tr("No model is configured."));
+        return;
     }
 
     LlmClient::Request req;

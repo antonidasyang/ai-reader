@@ -43,6 +43,7 @@ TocService::TocService(Settings *settings,
     , m_settings(settings)
     , m_paper(paper)
     , m_blocks(paper ? paper->blocks() : nullptr)
+    , m_clients(settings, this)
 {
     if (m_paper) {
         connect(m_paper, &PaperController::blocksChanged,
@@ -186,13 +187,12 @@ void TocService::generate()
     m_blockIdToPage.clear();
     setStatus(Generating);
 
-    if (!m_client)
-        m_client = m_settings->createClient(this);
-    else {
-        m_client->setApiKey(m_settings->apiKey());
-        m_client->setModel(m_settings->model());
-        if (!m_settings->baseUrl().isEmpty())
-            m_client->setBaseUrl(QUrl(m_settings->baseUrl()));
+    // Rebuilt when the configuration moved: switching provider needs a
+    // different client, not different fields on the old one.
+    m_client = m_clients.client();
+    if (!m_client) {
+        setStatus(Failed, tr("No model is configured."));
+        return;
     }
 
     LlmClient::Request req;

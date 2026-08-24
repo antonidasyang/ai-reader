@@ -1,5 +1,6 @@
 #pragma once
 
+#include "LlmClientCache.h"
 #include "TocCache.h"
 #include "TocModel.h"
 
@@ -78,6 +79,7 @@ private:
     QPointer<Settings> m_settings;
     QPointer<PaperController> m_paper;
     QPointer<BlockListModel> m_blocks;
+    LlmClientCache m_clients;
     QPointer<LlmClient> m_client;
     QPointer<LlmReply> m_reply;
     TocModel m_model;

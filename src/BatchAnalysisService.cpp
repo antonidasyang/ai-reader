@@ -23,6 +23,7 @@ BatchAnalysisService::BatchAnalysisService(Settings *settings,
     , m_profile(profile)
     , m_source(source)
     , m_model(model)
+    , m_clients(settings, this)
 {
     connect(m_source, &PaperSource::ready, this,
             &BatchAnalysisService::onSourceReady);
@@ -139,8 +140,8 @@ void BatchAnalysisService::onSourceReady(const QString &itemId,
         }
     }
 
-    if (!m_client)
-        m_client = m_settings->createClient(this);
+    // Rebuilt when the model configuration moved (a batch has several interpretations in flight at once).
+    m_client = m_clients.client(m_running == 0);
 
     QuickAnalysisJob::Input in;
     in.paperId = paperId;

@@ -56,6 +56,7 @@ TranslationService::TranslationService(Settings *settings,
     , m_settings(settings)
     , m_paper(paper)
     , m_model(paper ? paper->blocks() : nullptr)
+    , m_clients(settings, this)
 {
     if (m_paper) {
         connect(m_paper, &PaperController::blocksChanged,
@@ -593,24 +594,10 @@ void TranslationService::translateBlock(int row)
 void TranslationService::refreshClient()
 {
     if (!m_settings) return;
-    if (!m_client) {
-        m_client = m_settings->createTranslationClient(this);
-        return;
-    }
-    // Settings may have changed since the client was built. With nothing in
-    // flight it is rebuilt outright, so a change of provider takes effect
-    // too; mid-run only the fields can be refreshed, because every LlmReply
-    // is a child of the client and replacing it would strand them.
-    if (m_inflight == 0) {
-        m_client->deleteLater();
-        m_client = m_settings->createTranslationClient(this);
-        return;
-    }
-    m_client->setApiKey(m_settings->translationApiKeyInUse());
-    m_client->setModel(m_settings->translationModelInUse());
-    const QString base = m_settings->translationBaseUrlInUse();
-    if (!base.isEmpty())
-        m_client->setBaseUrl(QUrl(base));
+    // Rebuilt when the configuration moved, but only with nothing in flight:
+    // every LlmReply is a child of the client, and replacing it mid-run
+    // would strand the paragraphs already out for translation.
+    m_client = m_clients.client(m_inflight == 0);
 }
 
 void TranslationService::scheduleNext()

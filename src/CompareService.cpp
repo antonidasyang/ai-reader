@@ -22,6 +22,7 @@ CompareService::CompareService(Settings *settings, AnalysisStore *store,
     , m_store(store)
     , m_projects(projects)
     , m_profile(profile)
+    , m_clients(settings, this)
 {
     connect(m_projects, &ProjectController::currentChanged, this, [this]() {
         m_basket.clear();
@@ -215,8 +216,8 @@ void CompareService::compare()
             notes.append(QStringLiteral("%1 — %2").arg(title, n));
     }
 
-    if (!m_client)
-        m_client = m_settings->createClient(this);
+    // Rebuilt when the model configuration moved (a comparison is a single call).
+    m_client = m_clients.client(m_call.isNull());
 
     StructuredCall::Request req;
     req.system = AnalysisPrompts::compareSystem(

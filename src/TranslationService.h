@@ -1,5 +1,6 @@
 #pragma once
 
+#include "LlmClientCache.h"
 #include "Block.h"
 #include "SnippetModel.h"
 #include "TranslationCache.h"
@@ -170,6 +171,7 @@ private:
     QPointer<Settings> m_settings;
     QPointer<PaperController> m_paper;
     QPointer<BlockListModel> m_model;
+    LlmClientCache m_clients;
     QPointer<LlmClient> m_client;
     TranslationCache m_cache;
     // Papers being translated in the background, one cache each. Never holds

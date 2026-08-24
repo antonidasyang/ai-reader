@@ -1,5 +1,6 @@
 #pragma once
 
+#include "LlmClientCache.h"
 #include "Block.h"
 
 #include <QHash>
@@ -86,6 +87,7 @@ private:
     ProjectProfileController *m_profile;
     PaperSource *m_source;
     AnalysisListModel *m_model;
+    LlmClientCache m_clients;
     QPointer<LlmClient> m_client;
 
     QQueue<QString> m_queue;

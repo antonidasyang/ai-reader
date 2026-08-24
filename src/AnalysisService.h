@@ -1,5 +1,6 @@
 #pragma once
 
+#include "LlmClientCache.h"
 #include <QHash>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -165,6 +166,7 @@ private:
     AnalysisStore *m_store;
     ProjectProfileController *m_profile;
 
+    LlmClientCache m_clients;
     QPointer<LlmClient> m_client;
     QPointer<QuickAnalysisJob> m_job;
 

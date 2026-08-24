@@ -15,8 +15,6 @@ AppDialog {
     // matches the default we save empty — that way the service keeps
     // tracking future default updates.
     onOpened: {
-        summaryArea.text     = settings.summaryPrompt.length     > 0 ? settings.summaryPrompt
-                                                                     : summary.defaultSystemPrompt
         translationArea.text = settings.translationPrompt.length > 0 ? settings.translationPrompt
                                                                      : translation.defaultSystemPrompt
         tocArea.text         = settings.tocPrompt.length         > 0 ? settings.tocPrompt
@@ -29,7 +27,6 @@ AppDialog {
     }
 
     onAccepted: {
-        settings.summaryPrompt     = summaryArea.text     === summary.defaultSystemPrompt     ? "" : summaryArea.text
         settings.translationPrompt = translationArea.text === translation.defaultSystemPrompt ? "" : translationArea.text
         settings.tocPrompt         = tocArea.text         === toc.defaultSystemPrompt         ? "" : tocArea.text
         settings.visionPrompt      = visionArea.text      === vision.defaultSystemPrompt      ? "" : visionArea.text
@@ -40,11 +37,10 @@ AppDialog {
     onReset: {
         // Restore the active tab's editor to the built-in default text.
         switch (tabBar.currentIndex) {
-        case 0: summaryArea.text     = summary.defaultSystemPrompt;     break
-        case 1: translationArea.text = translation.defaultSystemPrompt; break
-        case 2: tocArea.text         = toc.defaultSystemPrompt;         break
-        case 3: visionArea.text      = vision.defaultSystemPrompt;      break
-        case 4: chatArea.text        = chat.defaultSystemPrompt;        break
+        case 0: translationArea.text = translation.defaultSystemPrompt; break
+        case 1: tocArea.text         = toc.defaultSystemPrompt;         break
+        case 2: visionArea.text      = vision.defaultSystemPrompt;      break
+        case 3: chatArea.text        = chat.defaultSystemPrompt;        break
         }
     }
 
@@ -94,7 +90,6 @@ AppDialog {
                     color: Theme.divider
                 }
             }
-            PromptTab { text: qsTr("Summary") }
             PromptTab { text: qsTr("Translation") }
             PromptTab { text: qsTr("TOC") }
             PromptTab { text: qsTr("Vision") }
@@ -106,38 +101,6 @@ AppDialog {
             Layout.fillHeight: true
             currentIndex: tabBar.currentIndex
 
-            Item {  // Summary
-                ColumnLayout {
-                    anchors.fill: parent
-                    spacing: Theme.spaceS
-                    PromptHint {
-                        text: qsTr("System prompt for the Interpret command. " +
-                                   "Variable: {{lang}} → target language. " +
-                                   "Leave empty to use the built-in default.")
-                    }
-                    EditorCard {
-                        editor: summaryArea
-                        ScrollView {
-                            anchors.fill: parent
-                            anchors.margins: 1
-                            clip: true
-                            TextArea {
-                                id: summaryArea
-                                wrapMode: TextEdit.Wrap
-                                font.family: "monospace"
-                                font.pixelSize: 12
-                                color: Theme.text
-                                placeholderTextColor: Theme.dimText
-                                selectionColor: Theme.accent
-                                selectedTextColor: Theme.onAccent
-                                background: null
-                                padding: Theme.spaceM
-                                placeholderText: qsTr("(empty ⇒ built-in default applies on next request)")
-                            }
-                        }
-                    }
-                }
-            }
 
             Item {  // Translation
                 ColumnLayout {

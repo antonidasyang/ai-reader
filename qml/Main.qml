@@ -345,13 +345,6 @@ ApplicationWindow {
         function onLastErrorChanged() { showError(qsTr("Translation"), translation.lastError) }
     }
     Connections {
-        target: summary
-        function onStatusChanged() {
-            if (summary.status === SummaryService.Failed)
-                showError(qsTr("Summary"), summary.lastError)
-        }
-    }
-    Connections {
         target: toc
         function onStatusChanged() {
             if (toc.status === TocService.Failed)
@@ -538,15 +531,6 @@ ApplicationWindow {
                 onClicked: translation.retryFailed()
             }
             ToolButton {
-                // The older free-form summary. It and the structured
-                // interpretation next to it answer different questions, so
-                // they get names that say which is which.
-                text: qsTr("Summary")
-                checkable: true
-                checked: summaryPane.visible
-                onClicked: summaryPane.visible = !summaryPane.visible
-            }
-            ToolButton {
                 text: qsTr("Research")
                 visible: auth.authenticated && projects.currentId.length > 0
                 ToolTip.visible: hovered
@@ -568,12 +552,22 @@ ApplicationWindow {
                 onClicked: compareDialog.open()
             }
             ToolButton {
-                text: qsTr("Interpret library")
+                // A running batch is owned by the app, not by the dialog it
+                // was started from — closing that window does not stop it, so
+                // the progress has to be visible here too.
+                text: batchAnalysis.busy
+                      ? qsTr("Interpreting %1/%2")
+                            .arg(batchAnalysis.done + batchAnalysis.failed
+                                 + batchAnalysis.skipped)
+                            .arg(batchAnalysis.total)
+                      : qsTr("Interpret library")
                 visible: auth.authenticated && projects.currentId.length > 0
                 ToolTip.visible: hovered
                 ToolTip.delay: 400
-                ToolTip.text: qsTr("Interpret every paper in this project, "
-                                   + "then filter by relevance")
+                ToolTip.text: batchAnalysis.busy
+                              ? qsTr("Still interpreting — click to watch or stop")
+                              : qsTr("Interpret every paper in this project, "
+                                     + "then filter by relevance")
                 onClicked: batchAnalysisDialog.open()
             }
             ToolButton {
@@ -677,6 +671,17 @@ ApplicationWindow {
                 onClicked: libraryPane.visible = !libraryPane.visible
             }
             ToolButton {
+                id: blocksToggleBtn
+                text: qsTr("Paragraphs")
+                checkable: true
+                checked: blockList.visible
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("The paragraph pane: the paper's text, its "
+                                   + "translation, and the per-paragraph actions")
+                onClicked: blockList.visible = !blockList.visible
+            }
+            ToolButton {
                 id: tocToggleBtn
                 text: qsTr("TOC")
                 checkable: true
@@ -704,7 +709,8 @@ ApplicationWindow {
             }
             Label {
                 text: pdfDoc.status === PdfDocument.Ready
-                      ? qsTr("%1 pages · %2 paragraphs")
+                      ? qsTr("page %1 / %2 · %3 paragraphs")
+                            .arg(pdfView.currentPage + 1)
                             .arg(pdfDoc.pageCount)
                             .arg(paperController.blockCount)
                         + (paperController.extracting ? qsTr(" · Segmenting…")
@@ -1467,6 +1473,11 @@ ApplicationWindow {
             BlockList {
                 id: blockList
                 objectName: "blocks"
+                // Like every other pane, it can be put away — and it
+                // remembers, so a reader who works from the PDF alone does
+                // not get it back on every launch.
+                visible: layoutSettings.paneVisible("blocks", true)
+                onVisibleChanged: layoutSettings.setPaneVisible("blocks", visible)
                 SplitView.fillWidth: true
                 SplitView.minimumWidth: 240
                 model: paperController.blocks
@@ -1481,29 +1492,6 @@ ApplicationWindow {
                     anchors.leftMargin: 4
                     anchors.topMargin: 7
                     pane: blockList
-                    split: split
-                    marker: dropMarker
-                    onReordered: window.persistPaneOrder()
-                }
-            }
-
-            // ── Interpretation pane (toggleable) ───────────────────────
-            SummaryPane {
-                id: summaryPane
-                objectName: "summary"
-                resizing: split.resizing
-                visible: layoutSettings.paneVisible("summary", false)
-                onVisibleChanged: layoutSettings.setPaneVisible("summary", visible)
-                SplitView.preferredWidth: layoutSettings.paneWidth("summary", 360)
-                SplitView.minimumWidth: 240
-                onWidthChanged: layoutSettings.setPaneWidth("summary", width)
-
-                DockGrip {
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    anchors.leftMargin: 4
-                    anchors.topMargin: 7
-                    pane: summaryPane
                     split: split
                     marker: dropMarker
                     onReordered: window.persistPaneOrder()

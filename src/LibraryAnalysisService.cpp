@@ -54,6 +54,7 @@ LibraryAnalysisService::LibraryAnalysisService(
     , m_store(store)
     , m_projects(projects)
     , m_profile(profile)
+    , m_clients(settings, this)
 {
     connect(m_store, &AnalysisStore::changed, this,
             &LibraryAnalysisService::stateChanged);
@@ -224,8 +225,8 @@ void LibraryAnalysisService::run(
         setError(tr("There is nothing to work from yet."));
         return;
     }
-    if (!m_client)
-        m_client = m_settings->createClient(this);
+    // Rebuilt when the model configuration moved (one project-wide analysis runs at a time).
+    m_client = m_clients.client(m_call.isNull());
 
     StructuredCall::Request req;
     req.system = AnalysisPrompts::librarySystem(

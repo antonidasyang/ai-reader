@@ -1,5 +1,6 @@
 #pragma once
 
+#include "LlmClientCache.h"
 #include <QObject>
 #include <QPointer>
 #include <QString>
@@ -51,6 +52,7 @@ private:
 
     Settings *m_settings = nullptr;
     PaperController *m_paper = nullptr;
+    LlmClientCache m_clients;
     LlmClient *m_client = nullptr;
     QPointer<LlmReply> m_reply;
 

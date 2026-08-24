@@ -1,5 +1,6 @@
 #pragma once
 
+#include "LlmClientCache.h"
 #include "ChatHistoryCache.h"
 #include "ChatModel.h"
 #include "ChatSession.h"
@@ -103,6 +104,7 @@ private:
     QPointer<Settings> m_settings;
     QPointer<PaperController> m_paper;
     QPointer<TocService> m_toc;
+    LlmClientCache m_clients;
     QPointer<LlmClient> m_client;
     QPointer<LlmReply> m_reply;
 

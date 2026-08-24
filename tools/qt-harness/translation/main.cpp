@@ -106,7 +106,10 @@ int main(int argc, char **argv)
     FakeLlm llm;
 
     Settings settings;
-    settings.setProvider(QStringLiteral("openai"));
+    // "openai-compatible", not "openai": a named provider goes to its own
+    // official endpoint now, and a local fake gateway is exactly the case
+    // the compatible entry exists for.
+    settings.setProvider(QStringLiteral("openai-compatible"));
     settings.setModel(QStringLiteral("harness-model"));
     settings.setBaseUrl(llm.baseUrl());
     // Non-empty on purpose: an empty key takes setApiKey's delete branch,

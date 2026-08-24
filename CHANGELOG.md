@@ -1,5 +1,43 @@
 # AI Reader changelog
 
+## v1.2.13 — 2026-08-24
+
+### The old Summary pane is gone
+- The structured **Interpret** pane replaces it completely — it answers the
+  same questions and traces every statement back to the paper — so the older
+  free-form summary, its prompt tab and its "Shared" window have been removed
+  rather than left as a second, worse copy. Nothing is deleted from your
+  projects; the old shared summaries simply no longer have a window of their
+  own, and interpretations are shared with attribution in their place.
+
+### Toolbar
+- **A Paragraphs button** shows and hides the paragraph pane, like every other
+  pane, and it remembers.
+- The status line says **which page you are on**, not just how many there are.
+
+### Settings
+- **Interpretation and Chat are one page**, "Interpretation & chat" — between
+  them they held three controls.
+
+## v1.2.12 — 2026-08-24
+
+### Changing the model takes effect now, not after a restart
+- Switching provider used to keep talking to the previous one until the app
+  was restarted. Every service cached its own connection and, on the next
+  request, only patched its fields — but switching provider needs a different
+  kind of connection entirely (Anthropic and OpenAI speak different
+  protocols), and the address it re-applied was the stored one rather than the
+  provider's own.
+- There is now one place that decides when a connection has to be rebuilt, and
+  it rebuilds on any change to provider, model, address or key — while
+  refusing to do it under a request that is still in flight, which would leave
+  that request waiting forever.
+
+### A running batch is visible outside its window
+- **Closing the "Interpret library" window has never stopped the run** — only
+  Stop does. Now the toolbar button says so, counting *Interpreting 12/57*
+  while it works, and the window says it too.
+
 ## v1.2.11 — 2026-08-24
 
 ### Usable over Remote Desktop

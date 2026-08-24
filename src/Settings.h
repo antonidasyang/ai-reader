@@ -73,7 +73,6 @@ class Settings : public QObject
     Q_PROPERTY(int     paragraphFontSize    READ paragraphFontSize    WRITE setParagraphFontSize    NOTIFY paragraphFontSizeChanged)
     Q_PROPERTY(int     chatFontSize         READ chatFontSize         WRITE setChatFontSize         NOTIFY chatFontSizeChanged)
 
-    Q_PROPERTY(QString summaryPrompt     READ summaryPrompt     WRITE setSummaryPrompt     NOTIFY summaryPromptChanged)
     Q_PROPERTY(QString translationPrompt READ translationPrompt WRITE setTranslationPrompt NOTIFY translationPromptChanged)
     Q_PROPERTY(QString tocPrompt         READ tocPrompt         WRITE setTocPrompt         NOTIFY tocPromptChanged)
     Q_PROPERTY(QString visionPrompt      READ visionPrompt      WRITE setVisionPrompt      NOTIFY visionPromptChanged)
@@ -165,7 +164,6 @@ public:
     int     paragraphFontSize() const { return m_paragraphFontSize; }
     int     chatFontSize()      const { return m_chatFontSize; }
 
-    QString summaryPrompt()     const { return m_summaryPrompt; }
     QString translationPrompt() const { return m_translationPrompt; }
     QString tocPrompt()         const { return m_tocPrompt; }
     QString visionPrompt()      const { return m_visionPrompt; }
@@ -225,8 +223,6 @@ public:
     void setChatFontSize(int v);
 
     // Supports variable {{lang}}. Empty ⇒ built-in default.
-    void setSummaryPrompt(const QString &v);
-    // Supports variable {{lang}}. Empty ⇒ built-in default.
     void setTranslationPrompt(const QString &v);
     // No variables. Empty ⇒ built-in default.
     void setTocPrompt(const QString &v);
@@ -252,6 +248,12 @@ public:
     // -- has an address of its own. Keeping this in one place is what stops
     // a Base URL left over from an earlier provider from quietly sending
     // every request somewhere else.
+    // Bumped whenever anything that decides which endpoint, protocol or
+    // credential a request uses changes. LlmClientCache watches it, because
+    // switching provider needs a different client object, not a different
+    // field on the old one.
+    int configRevision() const { return m_configRevision; }
+
     Q_INVOKABLE static QString officialBaseUrl(const QString &provider);
     Q_INVOKABLE static bool providerTakesCustomUrl(const QString &provider);
     // What a client for `provider` will really talk to, given a configured
@@ -304,7 +306,6 @@ signals:
     void paragraphFontSizeChanged();
     void chatFontSizeChanged();
 
-    void summaryPromptChanged();
     void translationPromptChanged();
     void tocPromptChanged();
     void visionPromptChanged();
@@ -372,7 +373,6 @@ private:
     int     m_paragraphFontSize = 12;
     int     m_chatFontSize      = 14;
 
-    QString m_summaryPrompt;
     QString m_translationPrompt;
     QString m_tocPrompt;
     QString m_visionPrompt;
@@ -389,6 +389,8 @@ private:
     QString m_translationApiKey;
     int     m_analysisMaxTokens = 8192;
     int     m_analysisConcurrency = 2;
+
+    int     m_configRevision = 0;
 
     QNetworkAccessManager *m_nam = nullptr;
     QPointer<QNetworkReply> m_modelsReply;

@@ -177,8 +177,7 @@ AppDialog {
     readonly property var pageTitles: [
         qsTr("Model"),
         qsTr("Translation"),
-        qsTr("Interpretation"),
-        qsTr("Chat"),
+        qsTr("Interpretation & chat"),
         qsTr("Appearance"),
         qsTr("Documents"),
         qsTr("Updates & privacy")
@@ -531,7 +530,9 @@ AppDialog {
                 }
             }
 
-            // ── 3 · Interpretation ──────────────────────────────────
+            // ── 3 · Interpretation & chat ───────────────────────────
+            // Both are the model reading the paper and answering about it;
+            // they were two pages holding three controls between them.
             Page {
                 AppSectionLabel { text: qsTr("Interpretation") }
                 Card {
@@ -564,11 +565,11 @@ AppDialog {
                     text: qsTr("Interpretation runs on the main model. A close reading "
                                + "is nine separate requests, so give it room to answer.")
                 }
-            }
 
-            // ── 4 · Chat ────────────────────────────────────────────
-            Page {
-                AppSectionLabel { text: qsTr("Chat") }
+                AppSectionLabel {
+                    text: qsTr("Chat")
+                    Layout.topMargin: Theme.spaceS
+                }
                 Card {
                     AppFormLabel { text: qsTr("Send with") }
                     AppComboBox {
@@ -598,7 +599,7 @@ AppDialog {
                 }
             }
 
-            // ── 5 · Appearance ──────────────────────────────────────
+            // ── 4 · Appearance ──────────────────────────────────────
             Page {
                 AppSectionLabel { text: qsTr("Language") }
                 Card {
@@ -674,7 +675,7 @@ AppDialog {
                 }
             }
 
-            // ── 6 · Documents ───────────────────────────────────────
+            // ── 5 · Documents ───────────────────────────────────────
             Page {
                 AppSectionLabel { text: qsTr("Paragraph segmentation") }
                 Card {
@@ -730,7 +731,7 @@ AppDialog {
                 }
             }
 
-            // ── 7 · Updates & privacy ───────────────────────────────
+            // ── 6 · Updates & privacy ───────────────────────────────
             Page {
                 AppSectionLabel { text: qsTr("Updates") }
                 Card {
