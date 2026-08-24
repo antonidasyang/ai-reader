@@ -1048,16 +1048,16 @@ AppDialog {
             function onStateChanged() { root.rev = root.rev + 1 }
         }
 
-        TabBar {
+        AppTabBar {
             id: tabBar
             Layout.fillWidth: true
-            TabButton { text: qsTr("Categories"); font.pixelSize: root.fs - 1 }
-            TabButton { text: qsTr("Map");        font.pixelSize: root.fs - 1 }
-            TabButton { text: qsTr("Consensus");  font.pixelSize: root.fs - 1 }
-            TabButton { text: qsTr("Timeline");   font.pixelSize: root.fs - 1 }
-            TabButton { text: qsTr("Coverage");   font.pixelSize: root.fs - 1 }
-            TabButton { text: qsTr("Openings");   font.pixelSize: root.fs - 1 }
-            TabButton { text: qsTr("Next steps"); font.pixelSize: root.fs - 1 }
+            AppTabButton { text: qsTr("Categories") }
+            AppTabButton { text: qsTr("Map") }
+            AppTabButton { text: qsTr("Consensus") }
+            AppTabButton { text: qsTr("Timeline") }
+            AppTabButton { text: qsTr("Coverage") }
+            AppTabButton { text: qsTr("Openings") }
+            AppTabButton { text: qsTr("Next steps") }
         }
 
         StackLayout {
@@ -1682,14 +1682,10 @@ AppDialog {
 
                             Repeater {
                                 model: root.listAt(root.oppRes, "opportunities")
-                                delegate: Rectangle {
+                                delegate: AppSectionCard {
                                     id: opp
                                     required property var modelData
-                                    Layout.fillWidth: true
                                     implicitHeight: oppCol.implicitHeight + 16
-                                    radius: Theme.radiusM
-                                    color: Theme.cardBg
-                                    border.color: Theme.border
 
                                     ColumnLayout {
                                         id: oppCol

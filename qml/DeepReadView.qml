@@ -607,6 +607,10 @@ ColumnLayout {
     // ── the strip across the top ────────────────────────────────────
     RowLayout {
         Layout.fillWidth: true
+        // Breathing room under the tab bar: the button was sitting flush
+        // against it.
+        Layout.topMargin: 10
+        Layout.bottomMargin: 2
         spacing: 8
 
         Label {

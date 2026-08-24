@@ -3,12 +3,18 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import AiReader
 
+// Settings, as a list of subjects rather than one long scroll.
+//
+// The old single column had grown to seven headings deep, and things that
+// have nothing to do with the model — fonts, the chat input, segmentation,
+// updates — sat in the same card as the API key because that card came
+// first. Now each subject is a page, and the model page holds the model.
 AppDialog {
     id: dialog
     title: qsTr("Settings")
     standardButtons: Dialog.Ok | Dialog.Cancel
-    width: 600
-    height: Math.min(implicitHeight, parent ? parent.height - 48 : 700)
+    width: 820
+    height: Math.min(620, parent ? parent.height - 48 : 620)
 
     readonly property var providerOptions:
         ["anthropic", "openai", "deepseek", "openai-compatible"]
@@ -37,6 +43,19 @@ AppDialog {
     readonly property var translationProviderLabels:
         [qsTr("Same as the main provider")].concat(dialog.providerOptions)
 
+    // What the translation section resolves to, so its Fetch probes the
+    // endpoint translation will really use.
+    readonly property string translationProviderResolved:
+        translationProviderCodes[translationProviderBox.currentIndex]
+        || dialog.providerOptions[providerBox.currentIndex]
+    readonly property string translationBaseUrlResolved:
+        translationBaseUrlField.text.trim() || baseUrlField.text.trim()
+    readonly property string translationApiKeyResolved:
+        translationApiKeyField.text
+        || (translationBaseUrlField.text.trim().length === 0
+            || translationBaseUrlField.text.trim() === baseUrlField.text.trim()
+            ? apiKeyField.text : "")
+
     onOpened: {
         const idx = providerOptions.indexOf(settings.provider)
         providerBox.currentIndex = idx >= 0 ? idx : 0
@@ -53,7 +72,7 @@ AppDialog {
         languageBox.currentIndex = lidx >= 0 ? lidx : 0
         const aidx = translationProviderCodes.indexOf(settings.translationProvider)
         translationProviderBox.currentIndex = aidx >= 0 ? aidx : 0
-        translationModelField.text   = settings.translationModel
+        translationModelBox.assign(settings.translationModel)
         translationBaseUrlField.text = settings.translationBaseUrl
         translationApiKeyField.text  = settings.translationApiKey
         analysisMaxTokensField.value = settings.analysisMaxTokens
@@ -69,10 +88,9 @@ AppDialog {
         summaryFontSizeField.value   = settings.summaryFontSize
         paragraphFontSizeField.value = settings.paragraphFontSize
         chatFontSizeField.value      = settings.chatFontSize
-        const sidx = chatSendKeys.indexOf(settings.chatSendKey)
-        chatSendKeyBox.currentIndex  = sidx >= 0 ? sidx : 0
+        chatSendKeyBox.currentIndex  = chatSendKeys.indexOf(settings.chatSendKey) >= 0
+                                       ? chatSendKeys.indexOf(settings.chatSendKey) : 0
         chatInputHeightField.value   = settings.chatInputHeight
-        apiKeyField.forceActiveFocus()
     }
 
     onAccepted: {
@@ -88,7 +106,7 @@ AppDialog {
         settings.translationConcurrency = concurrencyField.value
         settings.uiLanguage        = languageCodes[languageBox.currentIndex]
         settings.translationProvider = translationProviderCodes[translationProviderBox.currentIndex]
-        settings.translationModel    = translationModelField.text.trim()
+        settings.translationModel    = translationModelBox.editText.trim()
         settings.translationBaseUrl  = translationBaseUrlField.text.trim()
         settings.translationApiKey   = translationApiKeyField.text
         settings.analysisMaxTokens = analysisMaxTokensField.value
@@ -108,68 +126,139 @@ AppDialog {
         settings.chatInputHeight    = chatInputHeightField.value
     }
 
-    // ── Shared dialog chrome ────────────────────────────────────────
-    component ActionButton: AppButton {}
-
-    component FieldText: AppTextField {}
-
-    component FieldCombo: AppComboBox {}
-
-    component FieldSpin: AppSpinBox {}
-
-    component FormLabel: AppFormLabel {}
-
-    component SectionLabel: AppSectionLabel {}
-
-    component SectionCard: AppSectionCard {}
-
-    component HintLabel: AppHintLabel {}
-
-    // ── Content ─────────────────────────────────────────────────────
-    contentItem: Flickable {
-        id: flick
-        implicitWidth: contentColumn.implicitWidth
-        implicitHeight: contentColumn.implicitHeight
-        contentWidth: width
-        contentHeight: contentColumn.implicitHeight
+    // ── Page scaffolding ────────────────────────────────────────────
+    // Every page is the same shape: a scrolling column of cards, so a page
+    // that outgrows the dialog scrolls on its own instead of stretching it.
+    component Page: ScrollView {
+        default property alias content: pageColumn.data
         clip: true
-        boundsBehavior: Flickable.StopAtBounds
-        flickableDirection: Flickable.VerticalFlick
+        contentWidth: availableWidth
         ScrollBar.vertical: ScrollBar { }
-
         ColumnLayout {
-            id: contentColumn
-            width: flick.width
+            id: pageColumn
+            width: parent.width
             spacing: Theme.spaceM
+        }
+    }
 
-            // ── Provider / model / generation settings ──────────────
-            SectionLabel {
-                text: qsTr("Model & language")
+    component Card: AppSectionCard {
+        default property alias content: cardBody.data
+        implicitHeight: cardBody.implicitHeight + 2 * Theme.spaceL
+        GridLayout {
+            id: cardBody
+            anchors.fill: parent
+            anchors.margins: Theme.spaceL
+            columns: 2
+            columnSpacing: Theme.spaceL
+            rowSpacing: Theme.spaceS
+        }
+    }
+
+    readonly property var pageTitles: [
+        qsTr("Model"),
+        qsTr("Translation"),
+        qsTr("Interpretation"),
+        qsTr("Chat"),
+        qsTr("Appearance"),
+        qsTr("Documents"),
+        qsTr("Updates & privacy")
+    ]
+
+    contentItem: RowLayout {
+        spacing: Theme.spaceL
+
+        // ── The subjects ────────────────────────────────────────────
+        ColumnLayout {
+            Layout.preferredWidth: 168
+            Layout.fillHeight: true
+            spacing: Theme.spaceS
+
+            ListView {
+                id: nav
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                model: dialog.pageTitles
+                currentIndex: 0
+                spacing: 2
+                delegate: ItemDelegate {
+                    required property int index
+                    required property var modelData
+                    width: ListView.view ? ListView.view.width : 0
+                    height: Theme.controlH
+                    onClicked: nav.currentIndex = index
+                    contentItem: Text {
+                        text: modelData
+                        font.pixelSize: 13
+                        font.weight: nav.currentIndex === index ? Font.DemiBold
+                                                                : Font.Normal
+                        color: nav.currentIndex === index ? Theme.onPrimary
+                               : (hovered ? Theme.text : Theme.bodyText)
+                        verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                    }
+                    background: Rectangle {
+                        radius: Theme.radiusS
+                        color: nav.currentIndex === index
+                               ? Theme.primaryBg
+                               : (hovered ? Theme.buttonHover : "transparent")
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                    }
+                }
             }
-            SectionCard {
-                implicitHeight: apiGrid.implicitHeight + 2 * Theme.spaceL
 
-                GridLayout {
-                    id: apiGrid
-                    anchors.fill: parent
-                    anchors.margins: Theme.spaceL
-                    columns: 2
-                    columnSpacing: Theme.spaceL
-                    rowSpacing: Theme.spaceS
+            // The version lives here rather than at the bottom of a page:
+            // it belongs to the app, not to any one subject.
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: 1
+                color: Theme.divider
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Theme.spaceXs
+                Label {
+                    text: qsTr("AI Reader")
+                    font.pixelSize: 11
+                    color: Theme.dimText
+                }
+                Label {
+                    text: "v" + settings.appVersion
+                    font.pixelSize: 11
+                    font.bold: true
+                    color: Theme.accent
+                }
+            }
+        }
 
-                    FormLabel { text: qsTr("Provider") }
-                    FieldCombo {
+        Rectangle {
+            Layout.fillHeight: true
+            implicitWidth: 1
+            color: Theme.divider
+        }
+
+        StackLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            currentIndex: nav.currentIndex
+
+            // ── 1 · Model ───────────────────────────────────────────
+            Page {
+                AppSectionLabel { text: qsTr("The model that reads") }
+                Card {
+                    AppFormLabel { text: qsTr("Provider") }
+                    AppComboBox {
                         id: providerBox
                         Layout.fillWidth: true
                         model: dialog.providerOptions
                     }
 
-                    FormLabel { text: qsTr("Model") }
+                    AppFormLabel { text: qsTr("Model") }
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.spaceS
-
-                        FieldCombo {
+                        AppComboBox {
                             id: modelBox
                             Layout.fillWidth: true
                             editable: true
@@ -183,8 +272,7 @@ AppDialog {
                                 currentIndex = idx
                             }
                         }
-                        ActionButton {
-                            id: fetchBtn
+                        AppButton {
                             text: settings.fetchingModels ? qsTr("Fetching…") : qsTr("Fetch")
                             enabled: !settings.fetchingModels && apiKeyField.text.length > 0
                             onClicked: settings.fetchModels(
@@ -194,8 +282,8 @@ AppDialog {
                         }
                     }
 
-                    FormLabel { text: qsTr("Base URL") }
-                    FieldText {
+                    AppFormLabel { text: qsTr("Base URL") }
+                    AppTextField {
                         id: baseUrlField
                         Layout.fillWidth: true
                         placeholderText: providerBox.currentText === "anthropic"
@@ -207,15 +295,15 @@ AppDialog {
                                              : qsTr("https://api.openai.com (default)")
                     }
 
-                    FormLabel { text: qsTr("API key") }
-                    FieldText {
+                    AppFormLabel { text: qsTr("API key") }
+                    AppTextField {
                         id: apiKeyField
                         Layout.fillWidth: true
                         echoMode: TextInput.Password
                         placeholderText: qsTr("sk-…")
                     }
 
-                    FormLabel { text: qsTr("Temperature") }
+                    AppFormLabel { text: qsTr("Temperature") }
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.spaceM
@@ -233,39 +321,145 @@ AppDialog {
                         }
                     }
 
-                    FormLabel { text: qsTr("Max output tokens") }
-                    FieldSpin {
+                    AppFormLabel { text: qsTr("Max output tokens") }
+                    AppSpinBox {
                         id: maxTokensField
                         Layout.fillWidth: true
                         from: 256; to: 131072; stepSize: 256
                     }
 
-                    FormLabel { text: qsTr("Context window") }
-                    FieldSpin {
+                    AppFormLabel { text: qsTr("Context window") }
+                    AppSpinBox {
                         id: contextWindowField
                         Layout.fillWidth: true
                         from: 0; to: 2000000; stepSize: 1024
                     }
+                }
 
-                    FormLabel { text: qsTr("Max tool calls per chat turn") }
-                    FieldSpin {
-                        id: toolBudgetField
+                AppHintLabel {
+                    text: qsTr("This model does the reading: interpretation, the "
+                               + "close reading, the project-wide analyses, chat, "
+                               + "summaries and vision. Only translation can be "
+                               + "pointed somewhere else.")
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    visible: text.length > 0
+                    font.pixelSize: 11
+                    color: settings.modelsError.length > 0 ? Theme.danger : Theme.success
+                    text: settings.modelsError.length > 0
+                          ? settings.modelsError
+                          : (settings.availableModels.length > 0
+                             ? qsTr("Loaded %1 models.").arg(settings.availableModels.length)
+                             : "")
+                }
+                AppHintLabel { text: settings.keychainStatus }
+                AppHintLabel {
+                    text: qsTr("Settings are stored per-user in the OS-native QSettings " +
+                               "location. The API key lives in the OS keychain " +
+                               "(Keychain on macOS, Credential Manager on Windows, " +
+                               "libsecret on Linux); when no keychain backend is " +
+                               "available it falls back to plaintext QSettings.")
+                }
+            }
+
+            // ── 2 · Translation ─────────────────────────────────────
+            Page {
+                AppSectionLabel { text: qsTr("Translation model") }
+                Card {
+                    AppFormLabel { text: qsTr("Provider") }
+                    AppComboBox {
+                        id: translationProviderBox
                         Layout.fillWidth: true
-                        from: 1; to: 100; stepSize: 1
+                        model: dialog.translationProviderLabels
                     }
 
-                    FormLabel { text: qsTr("Translate into") }
-                    FieldText {
+                    AppFormLabel { text: qsTr("Model") }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.spaceS
+                        AppComboBox {
+                            id: translationModelBox
+                            Layout.fillWidth: true
+                            editable: true
+                            model: settings.availableTranslationModels
+                            function assign(value) {
+                                editText = value || ""
+                                const idx = settings.availableTranslationModels.indexOf(value)
+                                currentIndex = idx
+                            }
+                        }
+                        AppButton {
+                            text: settings.fetchingTranslationModels
+                                  ? qsTr("Fetching…") : qsTr("Fetch")
+                            enabled: !settings.fetchingTranslationModels
+                                     && dialog.translationApiKeyResolved.length > 0
+                            onClicked: settings.fetchTranslationModels(
+                                dialog.translationProviderResolved,
+                                dialog.translationBaseUrlResolved,
+                                dialog.translationApiKeyResolved)
+                        }
+                    }
+
+                    AppFormLabel { text: qsTr("Base URL") }
+                    AppTextField {
+                        id: translationBaseUrlField
+                        Layout.fillWidth: true
+                        placeholderText: qsTr("Same as the main base URL")
+                    }
+
+                    AppFormLabel { text: qsTr("API key") }
+                    AppTextField {
+                        id: translationApiKeyField
+                        Layout.fillWidth: true
+                        echoMode: TextInput.Password
+                        placeholderText: qsTr("Same as the main API key")
+                    }
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    visible: text.length > 0
+                    font.pixelSize: 11
+                    color: settings.translationModelsError.length > 0 ? Theme.danger
+                                                                      : Theme.success
+                    text: settings.translationModelsError.length > 0
+                          ? settings.translationModelsError
+                          : (settings.availableTranslationModels.length > 0
+                             ? qsTr("Loaded %1 models.")
+                                   .arg(settings.availableTranslationModels.length)
+                             : "")
+                }
+                AppHintLabel {
+                    text: qsTr("Translation runs on every paragraph of every paper, so a "
+                               + "fast, cheap model usually serves it better than the one "
+                               + "doing the reading. Leave a field blank to use the main "
+                               + "setting.")
+                }
+                AppHintLabel {
+                    text: qsTr("Translation will run on: %1").arg(settings.translationModelInUse)
+                }
+
+                AppSectionLabel {
+                    text: qsTr("How it translates")
+                    Layout.topMargin: Theme.spaceS
+                }
+                Card {
+                    AppFormLabel { text: qsTr("Translate into") }
+                    AppTextField {
                         id: targetLangField
                         Layout.fillWidth: true
                         placeholderText: "zh-CN"
                     }
 
-                    FormLabel { text: qsTr("Paragraphs at once") }
+                    AppFormLabel { text: qsTr("Paragraphs at once") }
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.spaceM
-                        FieldSpin {
+                        AppSpinBox {
                             id: concurrencyField
                             from: 1; to: 16; stepSize: 1
                         }
@@ -279,130 +473,25 @@ AppDialog {
                                        + "will accept.")
                         }
                     }
-
-                    FormLabel { text: qsTr("UI language") }
-                    FieldCombo {
-                        id: languageBox
-                        Layout.fillWidth: true
-                        model: dialog.languageLabels
-                    }
                 }
             }
 
-            // Status line for the model fetch.
-            Label {
-                Layout.fillWidth: true
-                wrapMode: Text.Wrap
-                visible: text.length > 0
-                font.pixelSize: 11
-                color: settings.modelsError.length > 0 ? Theme.danger : Theme.success
-                text: settings.modelsError.length > 0
-                      ? settings.modelsError
-                      : (settings.availableModels.length > 0
-                         ? qsTr("Loaded %1 models.").arg(settings.availableModels.length)
-                         : "")
-            }
-
-            HintLabel { text: settings.keychainStatus }
-
-            HintLabel {
-                text: qsTr("Settings are stored per-user in the OS-native QSettings " +
-                           "location. The API key lives in the OS keychain " +
-                           "(Keychain on macOS, Credential Manager on Windows, " +
-                           "libsecret on Linux); when no keychain backend is " +
-                           "available it falls back to plaintext QSettings.")
-            }
-
-            // ── Translation model ───────────────────────────────────
-            // Translation is the odd job out: it runs on every paragraph of
-            // every paper, so it wants something fast and cheap, while
-            // reading, chatting and comparing want the best model there is.
-            // Field by field, whatever is left blank here falls through to
-            // the main configuration above.
-            SectionLabel {
-                text: qsTr("Translation model")
-                Layout.topMargin: Theme.spaceS
-            }
-            SectionCard {
-                implicitHeight: translationModelGrid.implicitHeight + 2 * Theme.spaceL
-
-                GridLayout {
-                    id: translationModelGrid
-                    anchors.fill: parent
-                    anchors.margins: Theme.spaceL
-                    columns: 2
-                    columnSpacing: Theme.spaceL
-                    rowSpacing: Theme.spaceS
-
-                    FormLabel { text: qsTr("Provider") }
-                    FieldCombo {
-                        id: translationProviderBox
-                        Layout.fillWidth: true
-                        model: dialog.translationProviderLabels
-                    }
-
-                    FormLabel { text: qsTr("Model") }
-                    FieldText {
-                        id: translationModelField
-                        Layout.fillWidth: true
-                        placeholderText: qsTr("Same as the main model")
-                    }
-
-                    FormLabel { text: qsTr("Base URL") }
-                    FieldText {
-                        id: translationBaseUrlField
-                        Layout.fillWidth: true
-                        placeholderText: qsTr("Same as the main base URL")
-                    }
-
-                    FormLabel { text: qsTr("API key") }
-                    FieldText {
-                        id: translationApiKeyField
-                        Layout.fillWidth: true
-                        echoMode: TextInput.Password
-                        placeholderText: qsTr("Same as the main API key")
-                    }
-                }
-            }
-            HintLabel {
-                text: qsTr("The main model above does the reading: interpretation, "
-                           + "chat, summaries and vision. Translation is the one job "
-                           + "that can be pointed somewhere else — it runs on every "
-                           + "paragraph, so a fast, cheap model usually serves it "
-                           + "better. Leave a field blank to use the main setting.")
-            }
-            HintLabel {
-                text: qsTr("Translation will run on: %1").arg(settings.translationModelInUse)
-            }
-
-            // ── Interpretation ──────────────────────────────────────
-            SectionLabel {
-                text: qsTr("Interpretation")
-                Layout.topMargin: Theme.spaceS
-            }
-            SectionCard {
-                implicitHeight: analysisGrid.implicitHeight + 2 * Theme.spaceL
-
-                GridLayout {
-                    id: analysisGrid
-                    anchors.fill: parent
-                    anchors.margins: Theme.spaceL
-                    columns: 2
-                    columnSpacing: Theme.spaceL
-                    rowSpacing: Theme.spaceS
-
-                    FormLabel { text: qsTr("Max output tokens") }
-                    FieldSpin {
+            // ── 3 · Interpretation ──────────────────────────────────
+            Page {
+                AppSectionLabel { text: qsTr("Interpretation") }
+                Card {
+                    AppFormLabel { text: qsTr("Max output tokens") }
+                    AppSpinBox {
                         id: analysisMaxTokensField
                         Layout.fillWidth: true
                         from: 512; to: 64000; stepSize: 512
                     }
 
-                    FormLabel { text: qsTr("Parallel interpretations") }
+                    AppFormLabel { text: qsTr("Parallel interpretations") }
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.spaceM
-                        FieldSpin {
+                        AppSpinBox {
                             id: analysisConcurrencyField
                             from: 1; to: 8; stepSize: 1
                         }
@@ -416,157 +505,155 @@ AppDialog {
                         }
                     }
                 }
-            }
-            HintLabel {
-                text: qsTr("Interpretation runs on the main model. A close reading "
-                           + "is nine separate requests, so give it room to answer.")
-            }
-
-            // ── Font sizes ──────────────────────────────────────────
-            // Per-pane body font size; headings/labels in each pane scale
-            // up relative to the value below. Range 8–32 px matches the
-            // qBound() guard in Settings.cpp.
-            SectionLabel {
-                text: qsTr("Font sizes (px)")
-                Layout.topMargin: Theme.spaceS
-            }
-            SectionCard {
-                implicitHeight: fontGrid.implicitHeight + 2 * Theme.spaceL
-
-                GridLayout {
-                    id: fontGrid
-                    anchors.fill: parent
-                    anchors.margins: Theme.spaceL
-                    columns: 4
-                    columnSpacing: Theme.spaceL
-                    rowSpacing: Theme.spaceS
-
-                    FormLabel { text: qsTr("Chapter menu") }
-                    FieldSpin {
-                        id: tocFontSizeField
-                        Layout.fillWidth: true
-                        from: 8; to: 32; stepSize: 1
-                    }
-
-                    FormLabel { text: qsTr("Interpretation") }
-                    FieldSpin {
-                        id: summaryFontSizeField
-                        Layout.fillWidth: true
-                        from: 8; to: 32; stepSize: 1
-                    }
-
-                    FormLabel { text: qsTr("Paragraphs") }
-                    FieldSpin {
-                        id: paragraphFontSizeField
-                        Layout.fillWidth: true
-                        from: 8; to: 32; stepSize: 1
-                    }
-
-                    FormLabel { text: qsTr("Chat") }
-                    FieldSpin {
-                        id: chatFontSizeField
-                        Layout.fillWidth: true
-                        from: 8; to: 32; stepSize: 1
-                    }
+                AppHintLabel {
+                    text: qsTr("Interpretation runs on the main model. A close reading "
+                               + "is nine separate requests, so give it room to answer.")
                 }
             }
 
-            // ── Chat input ──────────────────────────────────────────
-            SectionLabel {
-                text: qsTr("Chat input")
-                Layout.topMargin: Theme.spaceS
-            }
-            SectionCard {
-                implicitHeight: chatInputGrid.implicitHeight + 2 * Theme.spaceL
-
-                GridLayout {
-                    id: chatInputGrid
-                    anchors.fill: parent
-                    anchors.margins: Theme.spaceL
-                    columns: 2
-                    columnSpacing: Theme.spaceL
-                    rowSpacing: Theme.spaceS
-
-                    FormLabel { text: qsTr("Send with") }
-                    FieldCombo {
+            // ── 4 · Chat ────────────────────────────────────────────
+            Page {
+                AppSectionLabel { text: qsTr("Chat") }
+                Card {
+                    AppFormLabel { text: qsTr("Send with") }
+                    AppComboBox {
                         id: chatSendKeyBox
                         Layout.fillWidth: true
                         model: dialog.chatSendKeyLabels
                     }
 
-                    FormLabel { text: qsTr("Input box height (px)") }
-                    FieldSpin {
+                    AppFormLabel { text: qsTr("Input box height (px)") }
+                    AppSpinBox {
                         id: chatInputHeightField
                         Layout.fillWidth: true
                         from: 36; to: 400; stepSize: 8
                     }
+
+                    AppFormLabel { text: qsTr("Max tool calls per chat turn") }
+                    AppSpinBox {
+                        id: toolBudgetField
+                        Layout.fillWidth: true
+                        from: 1; to: 100; stepSize: 1
+                    }
+                }
+                AppHintLabel {
+                    text: qsTr("A tool call is the model reading a page, searching the "
+                               + "paper or looking at a figure. The budget stops a single "
+                               + "question from turning into a long chain of them.")
                 }
             }
 
-            // ── Paragraph segmentation ──────────────────────────────
-            SectionLabel {
-                text: qsTr("Paragraph segmentation")
-                Layout.topMargin: Theme.spaceS
+            // ── 5 · Appearance ──────────────────────────────────────
+            Page {
+                AppSectionLabel { text: qsTr("Language") }
+                Card {
+                    AppFormLabel { text: qsTr("UI language") }
+                    AppComboBox {
+                        id: languageBox
+                        Layout.fillWidth: true
+                        model: dialog.languageLabels
+                    }
+                }
+
+                AppSectionLabel {
+                    text: qsTr("Font sizes (px)")
+                    Layout.topMargin: Theme.spaceS
+                }
+                Card {
+                    AppFormLabel { text: qsTr("Chapter menu") }
+                    AppSpinBox {
+                        id: tocFontSizeField
+                        Layout.fillWidth: true
+                        from: 8; to: 32; stepSize: 1
+                    }
+
+                    AppFormLabel { text: qsTr("Interpretation") }
+                    AppSpinBox {
+                        id: summaryFontSizeField
+                        Layout.fillWidth: true
+                        from: 8; to: 32; stepSize: 1
+                    }
+
+                    AppFormLabel { text: qsTr("Paragraphs") }
+                    AppSpinBox {
+                        id: paragraphFontSizeField
+                        Layout.fillWidth: true
+                        from: 8; to: 32; stepSize: 1
+                    }
+
+                    AppFormLabel { text: qsTr("Chat") }
+                    AppSpinBox {
+                        id: chatFontSizeField
+                        Layout.fillWidth: true
+                        from: 8; to: 32; stepSize: 1
+                    }
+                }
+                AppHintLabel {
+                    text: qsTr("Each pane's body text. Headings in that pane scale with it.")
+                }
             }
-            SectionCard {
-                implicitHeight: grobidGrid.implicitHeight + 2 * Theme.spaceL
 
-                GridLayout {
-                    id: grobidGrid
-                    anchors.fill: parent
-                    anchors.margins: Theme.spaceL
-                    columns: 2
-                    columnSpacing: Theme.spaceL
-                    rowSpacing: Theme.spaceS
-
-                    FormLabel { text: qsTr("On open") }
+            // ── 6 · Documents ───────────────────────────────────────
+            Page {
+                AppSectionLabel { text: qsTr("Paragraph segmentation") }
+                Card {
+                    AppFormLabel { text: qsTr("On open") }
                     CheckBox {
                         id: autoSegmentBox
                         text: qsTr("Segment a paper automatically the first time it is opened")
                     }
 
-                    FormLabel { text: qsTr("GROBID service") }
+                    AppFormLabel { text: qsTr("GROBID service") }
                     CheckBox {
                         id: grobidEnabledBox
                         text: qsTr("Use GROBID for paragraph detection (best for academic papers)")
                     }
 
-                    FormLabel { text: qsTr("Service URL") }
-                    FieldText {
+                    AppFormLabel { text: qsTr("Service URL") }
+                    AppTextField {
                         id: grobidUrlField
                         Layout.fillWidth: true
                         enabled: grobidEnabledBox.checked
                         placeholderText: "https://aireader.d2ssoft.com/grobid"
                     }
                 }
-            }
-            HintLabel {
-                text: qsTr("Off by default, since segmenting a long paper costs seconds of "
-                           + "work a reader who only wants to page through it never asked "
-                           + "for — press Segment in the toolbar when you want paragraphs. "
-                           + "GROBID is applied to whichever run does the segmenting; it "
-                           + "falls back to the built-in splitter when the service is "
-                           + "unreachable. Self-host with: "
-                           + "docker run -d -p 8070:8070 grobid/grobid:0.9.1-crf")
+                AppHintLabel {
+                    text: qsTr("Off by default, since segmenting a long paper costs seconds of "
+                               + "work a reader who only wants to page through it never asked "
+                               + "for — press Segment in the toolbar when you want paragraphs. "
+                               + "GROBID is applied to whichever run does the segmenting; it "
+                               + "falls back to the built-in splitter when the service is "
+                               + "unreachable. Self-host with: "
+                               + "docker run -d -p 8070:8070 grobid/grobid:0.9.1-crf")
+                }
+
+                AppSectionLabel {
+                    text: qsTr("Sharing")
+                    Layout.topMargin: Theme.spaceS
+                }
+                Card {
+                    AppFormLabel { text: qsTr("Share with project") }
+                    CheckBox {
+                        id: sharePaperDataBox
+                        text: qsTr("Upload paragraph segmentation and translations")
+                    }
+                }
+                AppHintLabel {
+                    text: qsTr("Segmenting and translating a paper costs CPU seconds and "
+                               + "model tokens. Shared, that work is done once: your own "
+                               + "other machines get it back automatically, and so does "
+                               + "anyone in the research project who hasn't done it "
+                               + "themselves. What you segment or translate yourself always "
+                               + "wins over anything pulled down. Turn this off to keep a "
+                               + "paper's text on this machine.")
+                }
             }
 
-            // ── Updates & privacy ───────────────────────────────────
-            SectionLabel {
-                text: qsTr("Updates & privacy")
-                Layout.topMargin: Theme.spaceS
-            }
-            SectionCard {
-                implicitHeight: updatesGrid.implicitHeight + 2 * Theme.spaceL
-
-                GridLayout {
-                    id: updatesGrid
-                    anchors.fill: parent
-                    anchors.margins: Theme.spaceL
-                    columns: 2
-                    columnSpacing: Theme.spaceL
-                    rowSpacing: Theme.spaceS
-
-                    FormLabel { text: qsTr("Auto-check for updates") }
+            // ── 7 · Updates & privacy ───────────────────────────────
+            Page {
+                AppSectionLabel { text: qsTr("Updates") }
+                Card {
+                    AppFormLabel { text: qsTr("Auto-check for updates") }
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.spaceS
@@ -575,110 +662,71 @@ AppDialog {
                             text: qsTr("Check on launch")
                         }
                         Item { Layout.fillWidth: true }
-                        ActionButton {
+                        AppButton {
                             text: updates.checking ? qsTr("Checking…") : qsTr("Check now")
                             enabled: !updates.checking
                             onClicked: updates.checkNow()
                         }
                     }
 
-                    FormLabel { text: qsTr("Manifest URL") }
-                    FieldText {
+                    AppFormLabel { text: qsTr("Manifest URL") }
+                    AppTextField {
                         id: manifestUrlField
                         Layout.fillWidth: true
                         placeholderText: "https://aireader.d2ssoft.com/update/manifest"
                     }
+                }
 
-                    FormLabel { text: qsTr("Crash reports") }
+                // Check-result row. The download action lives HERE: the
+                // window-bottom banner is dimmed behind this modal dialog,
+                // so "see the banner" looked like the check did nothing.
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.spaceM
+                    visible: statusLabel.text.length > 0
+                    Label {
+                        id: statusLabel
+                        Layout.fillWidth: true
+                        wrapMode: Text.Wrap
+                        color: updates.lastError.length > 0 ? Theme.danger
+                                                            : Theme.dimText
+                        font.pixelSize: 11
+                        text: updates.lastError.length > 0
+                              ? qsTr("Update check failed: %1").arg(updates.lastError)
+                              : (updates.latestVersion.length > 0
+                                 ? (updates.updateAvailable
+                                    ? qsTr("v%1 is available.").arg(updates.latestVersion)
+                                    : qsTr("You're on the latest version (v%1).").arg(updates.latestVersion))
+                                 : "")
+                    }
+                    AppButton {
+                        visible: updates.updateAvailable
+                                 && updates.lastError.length === 0
+                        enabled: !updates.downloading && !updates.installing
+                        primary: true
+                        text: updates.installing
+                              ? qsTr("Restarting…")
+                              : updates.downloading
+                                ? qsTr("Downloading… %1%")
+                                      .arg(Math.round(updates.downloadProgress * 100))
+                                : qsTr("Update to v%1").arg(updates.latestVersion)
+                        onClicked: updates.downloadAndInstall()
+                    }
+                }
+
+                AppSectionLabel {
+                    text: qsTr("Privacy")
+                    Layout.topMargin: Theme.spaceS
+                }
+                Card {
+                    AppFormLabel { text: qsTr("Crash reports") }
                     CheckBox {
                         id: crashOptInBox
                         text: qsTr("Send anonymous crash reports (off by default)")
                     }
-
-                    FormLabel { text: qsTr("Share with project") }
-                    CheckBox {
-                        id: sharePaperDataBox
-                        text: qsTr("Upload paragraph segmentation and translations")
-                    }
                 }
-            }
-            HintLabel {
-                text: qsTr("Segmenting and translating a paper costs CPU seconds and "
-                           + "model tokens. Shared, that work is done once: your own "
-                           + "other machines get it back automatically, and so does "
-                           + "anyone in the research project who hasn't done it "
-                           + "themselves. What you segment or translate yourself always "
-                           + "wins over anything pulled down. Turn this off to keep a "
-                           + "paper's text on this machine.")
-            }
-
-            // Check-result row. The download action lives HERE: the
-            // window-bottom banner is dimmed behind this modal dialog,
-            // so "see the banner" looked like the check did nothing.
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Theme.spaceM
-                visible: statusLabel.text.length > 0
-                Label {
-                    id: statusLabel
-                    Layout.fillWidth: true
-                    wrapMode: Text.Wrap
-                    color: updates.lastError.length > 0 ? Theme.danger
-                                                        : Theme.dimText
-                    font.pixelSize: 11
-                    text: updates.lastError.length > 0
-                          ? qsTr("Update check failed: %1").arg(updates.lastError)
-                          : (updates.latestVersion.length > 0
-                             ? (updates.updateAvailable
-                                ? qsTr("v%1 is available.").arg(updates.latestVersion)
-                                : qsTr("You're on the latest version (v%1).").arg(updates.latestVersion))
-                             : "")
-                }
-                ActionButton {
-                    visible: updates.updateAvailable
-                             && updates.lastError.length === 0
-                    enabled: !updates.downloading && !updates.installing
-                    primary: true
-                    text: updates.installing
-                          ? qsTr("Restarting…")
-                          : updates.downloading
-                            ? qsTr("Downloading… %1%")
-                                  .arg(Math.round(updates.downloadProgress * 100))
-                            : qsTr("Update to v%1").arg(updates.latestVersion)
-                    onClicked: updates.downloadAndInstall()
-                }
-            }
-
-            // ── Version footer ──────────────────────────────────────
-            // settings.appVersion is sourced from AIREADER_VERSION baked in
-            // via CMake's target_compile_definitions, so it tracks
-            // PROJECT_VERSION automatically — no second number to keep in
-            // sync with CMakeLists.txt.
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.topMargin: Theme.spaceXs
-                implicitHeight: 1
-                color: Theme.divider
-            }
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Theme.spaceS
-                Label {
-                    text: qsTr("AI Reader")
-                    font.pixelSize: 11
-                    color: Theme.dimText
-                }
-                Label {
-                    text: "v" + settings.appVersion
-                    font.pixelSize: 11
-                    font.bold: true
-                    color: Theme.accent
-                }
-                Item { Layout.fillWidth: true }
-                Label {
+                AppHintLabel {
                     text: qsTr("github.com/antonidasyang/ai-reader")
-                    font.pixelSize: 11
-                    color: Theme.dimText
                 }
             }
         }

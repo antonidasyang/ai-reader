@@ -1,5 +1,27 @@
 # AI Reader changelog
 
+## v1.2.8 — 2026-08-24
+
+### Settings is a list of subjects, not one long scroll
+- **Categories down the left, one page each**: Model, Translation,
+  Interpretation, Chat, Appearance, Documents, Updates & privacy.
+- Things that were never about the model have left the model page. Fonts, the
+  UI language, the chat input, segmentation, sharing and update settings each
+  live where they belong; the Model page holds the model.
+- **The translation model has its own Fetch button**, and its own model list —
+  it may be a different gateway entirely, so the two lists no longer overwrite
+  each other.
+
+### Tabs look like the rest of the app
+- The tabs in the research window, the Interpret pane and the prompts dialog
+  are now a segmented control in the same language as the buttons: the
+  selected one filled, the rest quiet until hovered.
+- The close-reading tab's button no longer sits flush against the tabs above it.
+
+### Smaller things
+- **Edit project**: Save and Close swapped places, so the confirming button is
+  where it is in every other dialog. The research profile dialog follows.
+
 ## v1.2.7 — 2026-08-24
 
 ### The main model reads; only translation gets its own

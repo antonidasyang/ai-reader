@@ -67,10 +67,6 @@ AppDialog {
             spacing: 8
             Item { Layout.fillWidth: true }
             AppButton {
-                text: qsTr("Close")
-                onClicked: root.close()
-            }
-            AppButton {
                 id: saveBtn
                 text: qsTr("Save")
                 primary: true
@@ -85,6 +81,10 @@ AppDialog {
                                            descField.text)
                     root.close()
                 }
+            }
+            AppButton {
+                text: qsTr("Close")
+                onClicked: root.close()
             }
         }
 

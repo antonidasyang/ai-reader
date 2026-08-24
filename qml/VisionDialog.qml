@@ -62,13 +62,8 @@ AppDialog {
         }
 
         // Result card — readable Markdown output on a quiet surface.
-        Rectangle {
-            Layout.fillWidth: true
+        AppSectionCard {
             Layout.fillHeight: true
-            radius: Theme.radiusM
-            color: Theme.cardBg
-            border.width: 1
-            border.color: Theme.divider
             clip: true
 
             ScrollView {

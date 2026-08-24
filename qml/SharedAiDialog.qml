@@ -51,13 +51,9 @@ AppDialog {
             model: dlg.items
             spacing: Theme.spaceS
             ScrollBar.vertical: ScrollBar { active: true }
-            delegate: Rectangle {
+            delegate: AppSectionCard {
                 width: ListView.view ? ListView.view.width : 0
                 implicitHeight: entryCol.implicitHeight + 2 * Theme.spaceM
-                radius: Theme.radiusM
-                color: Theme.cardBg
-                border.width: 1
-                border.color: Theme.divider
 
                 ColumnLayout {
                     id: entryCol

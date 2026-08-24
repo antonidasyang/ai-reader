@@ -261,27 +261,27 @@ Rectangle {
         }
 
         // ── what to look at ─────────────────────────────────────────
-        TabBar {
+        AppTabBar {
             id: modeBar
             Layout.fillWidth: true
+            Layout.leftMargin: 10
+            Layout.rightMargin: 10
+            Layout.topMargin: 8
             currentIndex: root.mode
             onCurrentIndexChanged: root.mode = currentIndex
-            TabButton {
+            AppTabButton {
                 text: qsTr("Quick")
-                font.pixelSize: root.fs - 1
             }
-            TabButton {
+            AppTabButton {
                 text: analysis.deepDone > 0
                       ? qsTr("Close read (%1/%2)").arg(analysis.deepDone)
                                                   .arg(analysis.deepTotal)
                       : qsTr("Close read")
-                font.pixelSize: root.fs - 1
             }
-            TabButton {
+            AppTabButton {
                 text: analysis.notes.length > 0
                       ? qsTr("Notes (%1)").arg(analysis.notes.length)
                       : qsTr("Notes")
-                font.pixelSize: root.fs - 1
             }
         }
 

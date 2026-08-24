@@ -28,13 +28,8 @@ AppDialog {
         anchors.fill: parent
         spacing: Theme.spaceM
 
-        Rectangle {
-            Layout.fillWidth: true
+        AppSectionCard {
             Layout.preferredHeight: 220
-            radius: Theme.radiusM
-            color: Theme.cardBg
-            border.width: 1
-            border.color: Theme.divider
             clip: true
 
             ListView {

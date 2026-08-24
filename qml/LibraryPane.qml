@@ -77,7 +77,7 @@ Rectangle {
         }
 
         // Search bar
-        TextField {
+        AppTextField {
             id: searchField
             Layout.fillWidth: true
             placeholderText: search.available

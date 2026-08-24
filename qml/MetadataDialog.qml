@@ -69,13 +69,8 @@ AppDialog {
         spacing: Theme.spaceL
 
         // Auto-fill card: paste an identifier, fetch the rest.
-        Rectangle {
-            Layout.fillWidth: true
+        AppSectionCard {
             implicitHeight: fetchRow.implicitHeight + 2 * Theme.spaceM
-            radius: Theme.radiusM
-            color: Theme.cardBg
-            border.width: 1
-            border.color: Theme.divider
 
             RowLayout {
                 id: fetchRow

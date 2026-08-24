@@ -217,10 +217,6 @@ AppDialog {
             }
             Item { Layout.fillWidth: profile.updatedByEmail.length === 0 }
             AppButton {
-                text: qsTr("Close")
-                onClicked: root.close()
-            }
-            AppButton {
                 text: qsTr("Save")
                 primary: true
                 enabled: profile.canEdit
@@ -228,6 +224,10 @@ AppDialog {
                     profile.save(root.collect())
                     root.close()
                 }
+            }
+            AppButton {
+                text: qsTr("Close")
+                onClicked: root.close()
             }
         }
     }

@@ -405,20 +405,46 @@ LlmClient *Settings::createTranslationClient(QObject *parent) const
     return client;
 }
 
-void Settings::fetchModels(const QString &provider,
-                           const QString &baseUrl,
+void Settings::fetchModels(const QString &provider, const QString &baseUrl,
                            const QString &apiKey)
 {
-    if (m_modelsReply) {
-        QNetworkReply *r = m_modelsReply;
-        m_modelsReply.clear();
+    fetchModelsInto(ModelSlot::Main, provider, baseUrl, apiKey);
+}
+
+void Settings::fetchTranslationModels(const QString &provider,
+                                      const QString &baseUrl,
+                                      const QString &apiKey)
+{
+    fetchModelsInto(ModelSlot::Translation, provider, baseUrl, apiKey);
+}
+
+void Settings::fetchModelsInto(ModelSlot slot, const QString &provider,
+                               const QString &baseUrl, const QString &apiKey)
+{
+    const bool main = slot == ModelSlot::Main;
+    QPointer<QNetworkReply> &pending =
+        main ? m_modelsReply : m_translationModelsReply;
+    auto setBusy = [this, main](bool v) {
+        main ? setFetchingModels(v) : setFetchingTranslationModels(v);
+    };
+    auto setError = [this, main](const QString &e) {
+        main ? setModelsError(e) : setTranslationModelsError(e);
+    };
+    auto setList = [this, main](QStringList l) {
+        main ? setAvailableModels(std::move(l))
+             : setAvailableTranslationModels(std::move(l));
+    };
+
+    if (pending) {
+        QNetworkReply *r = pending;
+        pending.clear();
         r->disconnect(this);
         r->abort();
         r->deleteLater();
     }
 
     if (apiKey.isEmpty()) {
-        setModelsError(tr("Enter an API key first."));
+        setError(tr("Enter an API key first."));
         return;
     }
 
@@ -442,16 +468,19 @@ void Settings::fetchModels(const QString &provider,
                          QByteArrayLiteral("Bearer ") + apiKey.toUtf8());
     }
 
-    setModelsError({});
-    setFetchingModels(true);
+    setError({});
+    setBusy(true);
 
     QNetworkReply *reply = m_nam->get(req);
-    m_modelsReply = reply;
+    pending = reply;
 
-    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
-        setFetchingModels(false);
-        if (m_modelsReply == reply)
-            m_modelsReply.clear();
+    connect(reply, &QNetworkReply::finished, this,
+            [this, reply, main, setBusy, setError, setList]() {
+        setBusy(false);
+        QPointer<QNetworkReply> &slotReply =
+            main ? m_modelsReply : m_translationModelsReply;
+        if (slotReply == reply)
+            slotReply.clear();
 
         const QByteArray body = reply->readAll();
         const auto err = reply->error();
@@ -466,14 +495,14 @@ void Settings::fetchModels(const QString &provider,
                 msg = netErr;
             if (httpCode > 0)
                 msg = tr("HTTP %1: %2").arg(httpCode).arg(msg);
-            setModelsError(msg);
+            setError(msg);
             return;
         }
 
         QJsonParseError jerr{};
         const QJsonDocument doc = QJsonDocument::fromJson(body, &jerr);
         if (jerr.error != QJsonParseError::NoError) {
-            setModelsError(tr("Invalid JSON: %1").arg(jerr.errorString()));
+            setError(tr("Invalid JSON: %1").arg(jerr.errorString()));
             return;
         }
 
@@ -488,10 +517,10 @@ void Settings::fetchModels(const QString &provider,
         }
         ids.sort();
         if (ids.isEmpty()) {
-            setModelsError(tr("Endpoint returned no models."));
+            setError(tr("Endpoint returned no models."));
             return;
         }
-        setAvailableModels(std::move(ids));
+        setList(std::move(ids));
     });
 }
 
@@ -593,6 +622,27 @@ void Settings::setAvailableModels(QStringList list)
     if (list == m_availableModels) return;
     m_availableModels = std::move(list);
     emit availableModelsChanged();
+}
+
+void Settings::setFetchingTranslationModels(bool v)
+{
+    if (v == m_fetchingTranslationModels) return;
+    m_fetchingTranslationModels = v;
+    emit fetchingTranslationModelsChanged();
+}
+
+void Settings::setTranslationModelsError(const QString &err)
+{
+    if (err == m_translationModelsError) return;
+    m_translationModelsError = err;
+    emit translationModelsErrorChanged();
+}
+
+void Settings::setAvailableTranslationModels(QStringList list)
+{
+    if (list == m_availableTranslationModels) return;
+    m_availableTranslationModels = std::move(list);
+    emit availableTranslationModelsChanged();
 }
 
 void Settings::load()

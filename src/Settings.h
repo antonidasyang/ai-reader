@@ -117,6 +117,12 @@ class Settings : public QObject
     Q_PROPERTY(QStringList availableModels READ availableModels NOTIFY availableModelsChanged)
     Q_PROPERTY(bool    fetchingModels READ fetchingModels       NOTIFY fetchingModelsChanged)
     Q_PROPERTY(QString modelsError    READ modelsError          NOTIFY modelsErrorChanged)
+    // The translation endpoint gets its own list: it may be a different
+    // gateway entirely, and one shared list would have the two sections
+    // quietly overwriting each other's models.
+    Q_PROPERTY(QStringList availableTranslationModels READ availableTranslationModels NOTIFY availableTranslationModelsChanged)
+    Q_PROPERTY(bool    fetchingTranslationModels READ fetchingTranslationModels NOTIFY fetchingTranslationModelsChanged)
+    Q_PROPERTY(QString translationModelsError    READ translationModelsError    NOTIFY translationModelsErrorChanged)
     Q_PROPERTY(QString keychainStatus READ keychainStatus       NOTIFY keychainStatusChanged)
 
 public:
@@ -175,6 +181,9 @@ public:
     QStringList availableModels() const { return m_availableModels; }
     bool        fetchingModels()  const { return m_fetchingModels; }
     QString     modelsError()     const { return m_modelsError; }
+    QStringList availableTranslationModels() const { return m_availableTranslationModels; }
+    bool        fetchingTranslationModels() const { return m_fetchingTranslationModels; }
+    QString     translationModelsError() const { return m_translationModelsError; }
     QString     keychainStatus()  const { return m_keychainStatus; }
 
     void setProvider(const QString &v);
@@ -235,6 +244,11 @@ public:
     Q_INVOKABLE void fetchModels(const QString &provider,
                                  const QString &baseUrl,
                                  const QString &apiKey);
+    // Same probe against the translation section's endpoint. Blank fields
+    // there mean "the main one", so the caller passes what it resolved.
+    Q_INVOKABLE void fetchTranslationModels(const QString &provider,
+                                            const QString &baseUrl,
+                                            const QString &apiKey);
 
 signals:
     void providerChanged();
@@ -277,6 +291,9 @@ signals:
     void availableModelsChanged();
     void fetchingModelsChanged();
     void modelsErrorChanged();
+    void availableTranslationModelsChanged();
+    void fetchingTranslationModelsChanged();
+    void translationModelsErrorChanged();
     void keychainStatusChanged();
 
 private:
@@ -285,6 +302,13 @@ private:
     void setFetchingModels(bool v);
     void setModelsError(const QString &err);
     void setAvailableModels(QStringList list);
+    // Which of the two endpoints a /v1/models probe is for.
+    enum class ModelSlot { Main, Translation };
+    void fetchModelsInto(ModelSlot slot, const QString &provider,
+                         const QString &baseUrl, const QString &apiKey);
+    void setFetchingTranslationModels(bool v);
+    void setTranslationModelsError(const QString &err);
+    void setAvailableTranslationModels(QStringList list);
     void setKeychainStatus(const QString &s);
     void readApiKeyFromKeychain();
     void writeApiKeyToKeychain(const QString &value);
@@ -338,8 +362,12 @@ private:
 
     QNetworkAccessManager *m_nam = nullptr;
     QPointer<QNetworkReply> m_modelsReply;
+    QPointer<QNetworkReply> m_translationModelsReply;
     QStringList m_availableModels;
     bool m_fetchingModels = false;
     QString m_modelsError;
+    QStringList m_availableTranslationModels;
+    bool m_fetchingTranslationModels = false;
+    QString m_translationModelsError;
     QString m_keychainStatus;
 };

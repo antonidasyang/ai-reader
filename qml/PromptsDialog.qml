@@ -52,31 +52,7 @@ AppDialog {
     component ActionButton: AppButton {}
 
     // Underline-style tab: quiet text, accent indicator when current.
-    component PromptTab: TabButton {
-        id: pt
-        implicitHeight: 34
-        contentItem: Text {
-            text: pt.text
-            font.pixelSize: 13
-            font.weight: pt.checked ? Font.DemiBold : Font.Normal
-            color: pt.checked ? Theme.accent
-                   : (pt.hovered ? Theme.text : Theme.bodyText)
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            elide: Text.ElideRight
-            Behavior on color { ColorAnimation { duration: 120 } }
-        }
-        background: Rectangle {
-            color: "transparent"
-            Rectangle {
-                anchors.bottom: parent.bottom
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: parent.width
-                height: 2
-                color: pt.checked ? Theme.accent : "transparent"
-            }
-        }
-    }
+    component PromptTab: AppTabButton {}
 
     component PromptHint: Label {
         Layout.fillWidth: true
@@ -104,7 +80,7 @@ AppDialog {
     contentItem: ColumnLayout {
         spacing: Theme.spaceM
 
-        TabBar {
+        AppTabBar {
             id: tabBar
             Layout.fillWidth: true
             spacing: Theme.spaceXs
