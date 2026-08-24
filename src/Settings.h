@@ -80,6 +80,33 @@ class Settings : public QObject
     Q_PROPERTY(QString chatPrompt        READ chatPrompt        WRITE setChatPrompt        NOTIFY chatPromptChanged)
     Q_PROPERTY(bool    chatIncludePaperText READ chatIncludePaperText WRITE setChatIncludePaperText NOTIFY chatIncludePaperTextChanged)
 
+    // Per-feature model. The interpretation layer (quick read, deep read,
+    // the project-wide analyses) is where a weak model shows first: reading
+    // a paper critically and weighing two papers against each other asks
+    // more of a model than translating a paragraph does. So it can point at
+    // a different model, or at a different endpoint entirely. Every field
+    // left blank falls back to the main configuration above, which is what
+    // a user who never opens this section gets.
+    // How the chat input sends. "enter": Enter sends, Shift+Enter makes a
+    // newline. "ctrl-enter": Enter makes a newline, Ctrl+Enter sends.
+    Q_PROPERTY(QString chatSendKey     READ chatSendKey     WRITE setChatSendKey     NOTIFY chatSendKeyChanged)
+    // Height of the chat input box in px. It used to be one line tall,
+    // which is not enough room to see a question being written.
+    Q_PROPERTY(int     chatInputHeight READ chatInputHeight WRITE setChatInputHeight NOTIFY chatInputHeightChanged)
+
+    Q_PROPERTY(QString analysisProvider READ analysisProvider WRITE setAnalysisProvider NOTIFY analysisConfigChanged)
+    Q_PROPERTY(QString analysisModel    READ analysisModel    WRITE setAnalysisModel    NOTIFY analysisConfigChanged)
+    Q_PROPERTY(QString analysisBaseUrl  READ analysisBaseUrl  WRITE setAnalysisBaseUrl  NOTIFY analysisConfigChanged)
+    Q_PROPERTY(QString analysisApiKey   READ analysisApiKey   WRITE setAnalysisApiKey   NOTIFY analysisConfigChanged)
+    // What an interpretation would actually run on, after the fallbacks.
+    Q_PROPERTY(QString analysisModelInUse READ analysisModelInUse NOTIFY analysisConfigChanged)
+    Q_PROPERTY(bool    analysisOverridden READ analysisOverridden NOTIFY analysisConfigChanged)
+    // Whether an interpretation could run at all right now.
+    Q_PROPERTY(bool    analysisConfigured READ analysisConfigured NOTIFY analysisConfigChanged)
+    Q_PROPERTY(int     analysisMaxTokens  READ analysisMaxTokens  WRITE setAnalysisMaxTokens  NOTIFY analysisConfigChanged)
+    // How many interpretations may be in the air at once during a batch.
+    Q_PROPERTY(int     analysisConcurrency READ analysisConcurrency WRITE setAnalysisConcurrency NOTIFY analysisConfigChanged)
+
     // Compile-time version baked in via CMake's target_compile_definitions
     // (AIREADER_VERSION="${PROJECT_VERSION}"). CONSTANT — never changes
     // at runtime, so QML bindings don't need a NOTIFY signal.
@@ -129,6 +156,18 @@ public:
     QString chatPrompt()        const { return m_chatPrompt; }
     bool    chatIncludePaperText() const { return m_chatIncludePaperText; }
 
+    QString chatSendKey()     const { return m_chatSendKey; }
+    int     chatInputHeight() const { return m_chatInputHeight; }
+    QString analysisProvider() const { return m_analysisProvider; }
+    QString analysisModel()    const { return m_analysisModel; }
+    QString analysisBaseUrl()  const { return m_analysisBaseUrl; }
+    QString analysisApiKey()   const { return m_analysisApiKey; }
+    QString analysisModelInUse() const;
+    bool    analysisOverridden() const;
+    bool    analysisConfigured() const;
+    int     analysisMaxTokens()  const { return m_analysisMaxTokens; }
+    int     analysisConcurrency() const { return m_analysisConcurrency; }
+
     QStringList availableModels() const { return m_availableModels; }
     bool        fetchingModels()  const { return m_fetchingModels; }
     QString     modelsError()     const { return m_modelsError; }
@@ -171,7 +210,19 @@ public:
     void setChatPrompt(const QString &v);
     void setChatIncludePaperText(bool v);
 
+    void setChatSendKey(const QString &v);
+    void setChatInputHeight(int v);
+    void setAnalysisProvider(const QString &v);
+    void setAnalysisModel(const QString &v);
+    void setAnalysisBaseUrl(const QString &v);
+    void setAnalysisApiKey(const QString &v);
+    void setAnalysisMaxTokens(int v);
+    void setAnalysisConcurrency(int v);
+
     LlmClient *createClient(QObject *parent = nullptr) const;
+    // The client the interpretation layer talks to: the analysis override
+    // where one is set, the main configuration everywhere it is not.
+    LlmClient *createAnalysisClient(QObject *parent = nullptr) const;
 
     // Probe the provider's /v1/models endpoint with the *given* values
     // (so the dialog can preview using unsaved input).
@@ -212,6 +263,9 @@ signals:
     void visionPromptChanged();
     void chatPromptChanged();
     void chatIncludePaperTextChanged();
+    void chatSendKeyChanged();
+    void chatInputHeightChanged();
+    void analysisConfigChanged();
 
     void availableModelsChanged();
     void fetchingModelsChanged();
@@ -227,6 +281,10 @@ private:
     void setKeychainStatus(const QString &s);
     void readApiKeyFromKeychain();
     void writeApiKeyToKeychain(const QString &value);
+    // Same, for the interpretation layer's own key (kept under its own
+    // keychain entry so clearing one never disturbs the other).
+    void readAnalysisKeyFromKeychain();
+    void writeAnalysisKeyToKeychain(const QString &value);
 
     QSettings m_qs;
     QString m_provider;
@@ -261,6 +319,15 @@ private:
     QString m_visionPrompt;
     QString m_chatPrompt;
     bool    m_chatIncludePaperText = false;
+
+    QString m_chatSendKey = QStringLiteral("enter");
+    int     m_chatInputHeight = 88;
+    QString m_analysisProvider;
+    QString m_analysisModel;
+    QString m_analysisBaseUrl;
+    QString m_analysisApiKey;
+    int     m_analysisMaxTokens = 8192;
+    int     m_analysisConcurrency = 2;
 
     QNetworkAccessManager *m_nam = nullptr;
     QPointer<QNetworkReply> m_modelsReply;

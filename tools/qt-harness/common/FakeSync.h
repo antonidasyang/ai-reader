@@ -57,6 +57,19 @@ public:
     void setPushLimit(qint64 bytes) { m_pushLimit = bytes; }
 
     QList<QJsonObject> pushed() const { return m_pushed; }
+    // How many live objects of a type the server holds. Enough to assert
+    // that something really reached the project rather than only the local
+    // mirror.
+    int count(const QString &type) const
+    {
+        int n = 0;
+        for (const QJsonObject &o : m_store) {
+            if (o.value("type").toString() == type
+                && !o.value("deleted").toBool())
+                ++n;
+        }
+        return n;
+    }
     void clearPushed() { m_pushed.clear(); }
     int pullCount() const { return m_pulls; }
 

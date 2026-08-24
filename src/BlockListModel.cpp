@@ -207,6 +207,15 @@ int BlockListModel::pageOfRow(int row) const
     return m_blocks.at(row).page;
 }
 
+int BlockListModel::rowForBlockId(int id) const
+{
+    for (int i = 0; i < m_blocks.size(); ++i) {
+        if (m_blocks[i].id == id)
+            return i;
+    }
+    return -1;
+}
+
 int BlockListModel::nextBlockId() const
 {
     int id = 0;

@@ -34,7 +34,7 @@ Rectangle {
                 Label {
                     Layout.fillWidth: true
                     Layout.minimumWidth: 0
-                    text: qsTr("Interpretation")
+                    text: qsTr("Summary")
                     font.bold: true
                     elide: Text.ElideRight
                 }

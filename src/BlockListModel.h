@@ -56,6 +56,11 @@ public:
 
     Q_INVOKABLE int firstRowOnPage(int page) const;
     Q_INVOKABLE int pageOfRow(int row) const;
+    // Which row carries a given block id. Evidence citations name block
+    // ids, and jumping to one means scrolling the paragraph list to its
+    // row -- the two are not the same number once a paragraph has been
+    // split, merged or deleted.
+    Q_INVOKABLE int rowForBlockId(int id) const;
 
     // Manual paragraph editing — exposed to QML. Splits/merges/removes
     // operate on the row indices the view sees. Translations on edited

@@ -17,6 +17,9 @@
 #include "PaperSyncService.h"
 #include "FileSyncService.h"
 #include "ImportService.h"
+#include "AnalysisService.h"
+#include "AnalysisStore.h"
+#include "ProjectProfileController.h"
 #include "MarkdownRenderer.h"
 #include "PaperController.h"
 #include "PdfSelectionModel.h"
@@ -185,6 +188,9 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<UpdateChecker>(
         "AiReader", 1, 0, "UpdateChecker",
         QStringLiteral("Use the updates context property"));
+    qmlRegisterUncreatableType<AnalysisService>(
+        "AiReader", 1, 0, "AnalysisService",
+        QStringLiteral("Use the analysis context property"));
 
     Settings settings;
 
@@ -286,6 +292,15 @@ int main(int argc, char *argv[])
                              &syncEngine);
     ImportService importService(&libraryModel, &fileSync, &metadataService,
                                 &projectController);
+    // The interpretation layer (§2–§15 of the paper-interpretation spec):
+    // AnalysisStore persists every generated reading as an ordinary synced
+    // object, and the research profile steers every prompt so the answers
+    // are about this project rather than papers in general.
+    AnalysisStore analysisStore(&libraryDb, &projectController, &syncEngine,
+                                &auth);
+    ProjectProfileController projectProfile(&analysisStore);
+    AnalysisService analysisService(&settings, &paperController, &analysisStore,
+                                    &projectProfile);
 
     // Auto-segmentation is a Settings switch, but PaperController must not
     // depend on Settings (it predates it and is constructed first), so the
@@ -327,6 +342,14 @@ int main(int argc, char *argv[])
                          summary.setPaperTitle(title.isEmpty()
                                                    ? paperController.fileName()
                                                    : title);
+                     });
+    QObject::connect(&paperController, &PaperController::pdfSourceChanged,
+                     &analysisService, [&]() {
+                         const QString title =
+                             paperDisplayName(paperController.pdfSource());
+                         analysisService.setPaperTitle(
+                             title.isEmpty() ? paperController.fileName()
+                                             : title);
                      });
     // GROBID → TOC wiring: when StructureService successfully applies
     // a TEI segmentation it also extracts the section outline; hand it
@@ -383,6 +406,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("paperSync", &paperSync);
     engine.rootContext()->setContextProperty("fileSync", &fileSync);
     engine.rootContext()->setContextProperty("importer", &importService);
+    engine.rootContext()->setContextProperty("profile", &projectProfile);
+    engine.rootContext()->setContextProperty("analysis", &analysisService);
 
     QObject::connect(
         &engine,

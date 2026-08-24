@@ -1,5 +1,46 @@
 # AI Reader changelog
 
+## v1.2.0 — 2026-08-24
+
+### Papers can now be interpreted, not just summarised
+- **A new Interpret pane** reads the open paper and answers the questions you
+  actually have about it: what it is in one line, how relevant it is to *your*
+  project, what to read first, what it claims, what it showed, and where it is
+  weak.
+- **Every statement says where it comes from** — the authors, an experiment in
+  the paper, or the model's own reading. Nothing borrows the authors'
+  authority by accident.
+- **The little page chips are checked citations.** The model has to quote the
+  paragraph it is relying on, and the app re-reads that paragraph before
+  showing the chip. Click one and the PDF and the paragraph list both jump to
+  it. A quote that is not in the paper is shown greyed as unverified, and the
+  statement resting on it is knocked down to "AI reading" — so a confident
+  sentence with nothing behind it cannot pass for a finding.
+
+### A project can say what it is about
+- **Toolbar → Profile** describes the research project: the goal, the
+  questions, what is in and out of scope, where you are in the work. Every
+  interpretation is written against it, so relevance and reading advice are
+  about your work rather than about the field in general.
+- **Change the profile and existing interpretations say they may be out of
+  date** — as does re-segmenting the paper or switching model.
+
+### Interpretations are shared, not repeated
+- Interpretations are stored in the project like everything else, attributed
+  to whoever ran them. A collaborator's reading of a paper shows up on your
+  machine instead of costing you the tokens again.
+
+### The interpretation can run on a different model from everything else
+- **Settings → Interpretation model.** Reading a paper critically asks more of
+  a model than translating a paragraph does. Point it at a stronger model — or
+  a different endpoint entirely — and leave translation where it is. Anything
+  left blank falls back to the main configuration.
+
+### Chat input
+- **The input box is taller** (and its height is now a setting).
+- **Enter sends by default**, with Shift+Enter for a new line. If you prefer
+  the old behaviour, Settings → Chat input switches it back to Ctrl+Enter.
+
 ## v1.1.24 — 2026-08-23
 
 Carries v1.1.20 through v1.1.23 too — none of them were published, so an

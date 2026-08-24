@@ -149,6 +149,7 @@ ApplicationWindow {
     // Cloud-library dialogs (the toolbar account/project group drives these).
     MembersDialog { id: membersDialog }
     ProjectSettingsDialog { id: projectSettingsDialog }
+    ProjectProfileDialog { id: projectProfileDialog }
 
     Dialog {
         id: createProjectDialog
@@ -551,10 +552,24 @@ ApplicationWindow {
                 onClicked: translation.retryFailed()
             }
             ToolButton {
-                text: qsTr("Interpret")
+                // The older free-form summary. It and the structured
+                // interpretation next to it answer different questions, so
+                // they get names that say which is which.
+                text: qsTr("Summary")
                 checkable: true
                 checked: summaryPane.visible
                 onClicked: summaryPane.visible = !summaryPane.visible
+            }
+            ToolButton {
+                text: qsTr("Interpret")
+                checkable: true
+                checked: analysisPane.visible
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("Structured interpretation: relevance to this "
+                                   + "project, what to read first, and every "
+                                   + "statement traced back to the paper")
+                onClicked: analysisPane.visible = !analysisPane.visible
             }
             ToolButton {
                 text: qsTr("Read page (vision)")
@@ -743,6 +758,20 @@ ApplicationWindow {
                     projects.refreshMembers()
                     membersDialog.open()
                 }
+            }
+            ToolButton {
+                // The one place the reader tells the app what this project
+                // is for. Every interpretation is prompted with it, so the
+                // button carries a dot until it has been filled in.
+                text: profile.hasProfile ? qsTr("Profile") : qsTr("Profile •")
+                visible: auth.authenticated && projects.currentId.length > 0
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: profile.hasProfile
+                              ? qsTr("Research profile: %1").arg(profile.summary)
+                              : qsTr("Describe what this project is trying to find "
+                                     + "out — every interpretation is written against it")
+                onClicked: projectProfileDialog.open()
             }
             ToolButton {
                 id: accountBtn
@@ -1449,6 +1478,47 @@ ApplicationWindow {
                     anchors.leftMargin: 4
                     anchors.topMargin: 7
                     pane: summaryPane
+                    split: split
+                    marker: dropMarker
+                    onReordered: window.persistPaneOrder()
+                }
+            }
+
+            // ── Structured interpretation pane (toggleable) ────────────
+            AnalysisPane {
+                id: analysisPane
+                objectName: "analysis"
+                visible: layoutSettings.paneVisible("analysis", false)
+                onVisibleChanged: layoutSettings.setPaneVisible("analysis", visible)
+                SplitView.preferredWidth: layoutSettings.paneWidth("analysis", 380)
+                SplitView.minimumWidth: 260
+                onWidthChanged: layoutSettings.setPaneWidth("analysis", width)
+
+                // A citation names a paragraph; jumping means scrolling the
+                // paragraph list to it and taking the PDF to its page.
+                onEvidenceRequested: function(page, blockId) {
+                    let targetPage = page - 1
+                    if (blockId >= 0) {
+                        const row = paperController.blocks.rowForBlockId(blockId)
+                        if (row >= 0) {
+                            blockList.showRow(row)
+                            targetPage = paperController.blocks.pageOfRow(row)
+                        }
+                    }
+                    if (targetPage >= 0)
+                        pdfView.goToPage(targetPage)
+                }
+                onAskAiRequested: function(text) {
+                    chatPane.visible = true
+                    chatPane.prefillInput(text, 0)
+                }
+
+                DockGrip {
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.leftMargin: 4
+                    anchors.topMargin: 7
+                    pane: analysisPane
                     split: split
                     marker: dropMarker
                     onReordered: window.persistPaneOrder()

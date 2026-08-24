@@ -23,6 +23,17 @@ Rectangle {
     signal translateBlockRequested(int row)
     signal segmentRequested()
 
+    // Scroll to one specific paragraph. Evidence citations name a block,
+    // which is not the same as a page: a page holds several paragraphs and
+    // the reader needs the one that was actually quoted.
+    function showRow(row) {
+        if (!root.model || row < 0)
+            return
+        root.syncEnabled = false
+        list.positionViewAtIndex(row, ListView.Beginning)
+        Qt.callLater(function() { root.syncEnabled = true })
+    }
+
     function showPage(page) {
         if (!root.model)
             return

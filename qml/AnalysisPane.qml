@@ -1,0 +1,547 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
+// The quick interpretation of the open paper (§2 + §4).
+//
+// Everything here is rendered from a structured result, never from model
+// prose: each statement shows where it came from (the authors, an
+// experiment, or the model's own reading), and the little page chips next
+// to it are citations that have been checked against the paragraph they
+// name. Clicking one jumps the PDF and the paragraph list to it. A
+// citation that did not check out is shown greyed with a warning rather
+// than quietly dropped -- the reader should see that the model reached for
+// something that is not there.
+Rectangle {
+    id: root
+    color: Theme.paneBg
+
+    // page is 1-based (as shown to the reader); blockId identifies the
+    // paragraph, which is what actually gets scrolled to.
+    signal evidenceRequested(int page, int blockId)
+    signal askAiRequested(string text)
+
+    readonly property var d: analysis.quick
+    readonly property int fs: settings.summaryFontSize
+    readonly property var meta: d && d.meta ? d.meta : null
+
+    function sourceColor(code) {
+        switch (code) {
+        case "author_claim":  return Theme.accent
+        case "experimental":  return Theme.success
+        case "speculation":   return Theme.danger
+        default:              return Theme.dimText
+        }
+    }
+    function sourceLabel(code) {
+        switch (code) {
+        case "author_claim":  return qsTr("authors")
+        case "experimental":  return qsTr("experiment")
+        case "speculation":   return qsTr("speculation")
+        default:              return qsTr("AI reading")
+        }
+    }
+    function sourceHint(code) {
+        switch (code) {
+        case "author_claim":  return qsTr("The authors state this.")
+        case "experimental":  return qsTr("An experiment in this paper shows this.")
+        case "speculation":   return qsTr("A guess — nothing in the paper supports it.")
+        default:              return qsTr("The model's own reading, not stated in the paper.")
+        }
+    }
+    function adviceLabel(code) {
+        switch (code) {
+        case "read_full":               return qsTr("Read the whole paper")
+        case "read_method_experiments": return qsTr("Read method + experiments")
+        case "background":              return qsTr("Background / related work")
+        case "low_relevance":           return qsTr("Low relevance")
+        default:                        return qsTr("Not enough information")
+        }
+    }
+    function relevanceLabel(code) {
+        switch (code) {
+        case "high":   return qsTr("highly relevant")
+        case "medium": return qsTr("somewhat relevant")
+        case "low":    return qsTr("barely relevant")
+        default:       return qsTr("relevance unclear")
+        }
+    }
+    function contributionLabel(code) {
+        switch (code) {
+        case "problem":     return qsTr("new problem")
+        case "method":      return qsTr("new method")
+        case "system":      return qsTr("system")
+        case "dataset":     return qsTr("dataset / benchmark")
+        case "finding":     return qsTr("empirical finding")
+        case "theory":      return qsTr("theory")
+        case "engineering": return qsTr("engineering")
+        default:            return code || ""
+        }
+    }
+
+    // The digest as an ordered list of sections, so one Repeater renders
+    // them all and adding a section later is a one-line change.
+    readonly property var sectionList: {
+        const x = root.d
+        if (!x || !x.problem)
+            return []
+        return [
+            {"title": qsTr("The problem"),   "claims": [x.problem]},
+            {"title": qsTr("Why it matters"), "claims": [x.importance]},
+            {"title": qsTr("What they did"),  "claims": [x.method]},
+            {"title": qsTr("Main results"),   "claims": x.results || []},
+            {"title": qsTr("Contributions"),  "claims": x.contributions || []},
+            {"title": qsTr("Limitations"),    "claims": x.limitations || []}
+        ]
+    }
+
+    // ── small shared pieces ─────────────────────────────────────────
+    component Pill: Rectangle {
+        id: pillRoot
+        property string label: ""
+        property color tint: Theme.dimText
+        property string hint: ""
+        implicitWidth: pillText.implicitWidth + 12
+        implicitHeight: root.fs + 6
+        radius: height / 2
+        color: Qt.alpha(pillRoot.tint, Theme.dark ? 0.22 : 0.13)
+        border.color: Qt.alpha(pillRoot.tint, 0.5)
+        Label {
+            id: pillText
+            anchors.centerIn: parent
+            text: pillRoot.label
+            color: pillRoot.tint
+            font.pixelSize: root.fs - 2
+        }
+        ToolTip.visible: pillHover.hovered && pillRoot.hint.length > 0
+        ToolTip.text: pillRoot.hint
+        ToolTip.delay: 400
+        HoverHandler { id: pillHover }
+    }
+
+    ColumnLayout {
+        anchors.fill: parent
+        spacing: 0
+
+        // ── header ──────────────────────────────────────────────────
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 32
+            color: Theme.headerBg
+            clip: true
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 12
+                anchors.rightMargin: 8
+                spacing: 6
+                Label {
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                    text: qsTr("Interpretation")
+                    font.bold: true
+                    color: Theme.text
+                    elide: Text.ElideRight
+                }
+                BusyIndicator {
+                    running: analysis.status === AnalysisService.Running
+                    visible: running
+                    Layout.preferredWidth: 16
+                    Layout.preferredHeight: 16
+                }
+                ToolButton {
+                    text: analysis.status === AnalysisService.Running
+                          ? qsTr("Cancel")
+                          : (analysis.hasQuick ? qsTr("Regenerate")
+                                               : qsTr("Interpret"))
+                    enabled: analysis.status === AnalysisService.Running
+                             || analysis.canRun
+                    onClicked: {
+                        if (analysis.status === AnalysisService.Running)
+                            analysis.cancel()
+                        else
+                            analysis.generateQuick(true)
+                    }
+                }
+                ToolButton {
+                    text: "⋯"
+                    onClicked: paneMenu.popup()
+                    Menu {
+                        id: paneMenu
+                        MenuItem {
+                            text: qsTr("Discard this interpretation")
+                            enabled: analysis.hasQuick && analysis.quickIsMine
+                            onTriggered: analysis.discardQuick()
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── notices ─────────────────────────────────────────────────
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: noticeCol.implicitHeight + 10
+            // Spelled out rather than derived from the children: `children`
+            // is not a JS array, so there is nothing to fold over.
+            visible: !!(analysis.status === AnalysisService.Failed
+                        || analysis.quickStale
+                        || (analysis.hasQuick && !analysis.quickIsMine)
+                        || (analysis.hasQuick && !analysis.quickSaved)
+                        || (root.d && root.d.insufficient === true)
+                        || (root.meta && root.meta.truncated === true))
+            color: Theme.cardBg
+            ColumnLayout {
+                id: noticeCol
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: 12
+                anchors.rightMargin: 12
+                spacing: 2
+
+                Label {
+                    Layout.fillWidth: true
+                    visible: analysis.status === AnalysisService.Failed
+                    wrapMode: Text.Wrap
+                    color: Theme.danger
+                    font.pixelSize: root.fs - 1
+                    text: analysis.lastError
+                }
+                Label {
+                    Layout.fillWidth: true
+                    visible: analysis.quickStale
+                    wrapMode: Text.Wrap
+                    color: Theme.danger
+                    font.pixelSize: root.fs - 1
+                    text: qsTr("The paper, the research profile or the model has "
+                               + "changed since this was written — it may be out of date.")
+                }
+                Label {
+                    Layout.fillWidth: true
+                    visible: analysis.hasQuick && !analysis.quickIsMine
+                    wrapMode: Text.Wrap
+                    color: Theme.dimText
+                    font.pixelSize: root.fs - 1
+                    text: qsTr("Written by %1. Regenerate to make your own.")
+                          .arg(analysis.quickAuthorEmail)
+                }
+                Label {
+                    Layout.fillWidth: true
+                    visible: analysis.hasQuick && !analysis.quickSaved
+                    wrapMode: Text.Wrap
+                    color: Theme.dimText
+                    font.pixelSize: root.fs - 1
+                    text: qsTr("Not saved: sign in and pick a project you can "
+                               + "write to, and interpretations are kept and shared.")
+                }
+                Label {
+                    Layout.fillWidth: true
+                    visible: !!(root.d && root.d.insufficient === true)
+                    wrapMode: Text.Wrap
+                    color: Theme.danger
+                    font.pixelSize: root.fs - 1
+                    text: qsTr("Not enough usable text: %1")
+                          .arg(root.d && root.d.insufficientReason
+                               ? root.d.insufficientReason : "")
+                }
+                Label {
+                    Layout.fillWidth: true
+                    visible: !!(root.meta && root.meta.truncated === true)
+                    wrapMode: Text.Wrap
+                    color: Theme.dimText
+                    font.pixelSize: root.fs - 1
+                    text: qsTr("The paper was too long to send in full — only "
+                               + "the first %1 of %2 paragraphs were read.")
+                          .arg(root.meta ? root.meta.blocksIncluded : 0)
+                          .arg(root.meta ? root.meta.blocksTotal : 0)
+                }
+            }
+        }
+
+        // ── empty state ─────────────────────────────────────────────
+        ColumnLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.margins: 16
+            visible: !analysis.hasQuick
+            spacing: 10
+            Label {
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                color: Theme.dimText
+                font.pixelSize: root.fs
+                text: qsTr("A quick interpretation says what the paper is about, "
+                           + "how relevant it is to this project, what to read "
+                           + "first, and where each statement comes from — with "
+                           + "every citation checked against the paper itself.")
+            }
+            Label {
+                Layout.fillWidth: true
+                visible: !profile.hasProfile
+                wrapMode: Text.Wrap
+                color: Theme.dimText
+                font.pixelSize: root.fs - 1
+                text: qsTr("Tip: fill in the project's research profile first "
+                           + "(toolbar → Profile). Relevance and reading advice "
+                           + "are judged against it.")
+            }
+            Button {
+                text: qsTr("Interpret this paper")
+                enabled: analysis.canRun
+                onClicked: analysis.generateQuick(true)
+            }
+            Item { Layout.fillHeight: true }
+        }
+
+        // ── the interpretation ──────────────────────────────────────
+        ScrollView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            visible: analysis.hasQuick
+            clip: true
+            contentWidth: availableWidth
+
+            ColumnLayout {
+                width: parent.width
+                spacing: 10
+
+                Label {
+                    Layout.fillWidth: true
+                    Layout.topMargin: 12
+                    Layout.leftMargin: 12
+                    Layout.rightMargin: 12
+                    wrapMode: Text.Wrap
+                    font.pixelSize: root.fs + 2
+                    font.bold: true
+                    color: Theme.text
+                    text: root.d && root.d.oneLiner ? root.d.oneLiner : ""
+                }
+
+                // advice + relevance
+                Flow {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 12
+                    Layout.rightMargin: 12
+                    spacing: 6
+                    Pill {
+                        label: root.adviceLabel(root.d && root.d.advice
+                                                ? root.d.advice.code : "")
+                        tint: Theme.accent
+                        hint: root.d && root.d.advice ? root.d.advice.reason : ""
+                    }
+                    Pill {
+                        label: root.relevanceLabel(root.d && root.d.relevance
+                                                   ? root.d.relevance.level : "")
+                        tint: {
+                            const lv = root.d && root.d.relevance
+                                     ? root.d.relevance.level : ""
+                            return lv === "high" ? Theme.success
+                                 : lv === "low" ? Theme.dimText : Theme.accent
+                        }
+                        hint: root.d && root.d.relevance ? root.d.relevance.reason : ""
+                    }
+                }
+                Label {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 12
+                    Layout.rightMargin: 12
+                    wrapMode: Text.Wrap
+                    color: Theme.bodyText
+                    font.pixelSize: root.fs
+                    visible: text.length > 0
+                    text: root.d && root.d.relevance ? (root.d.relevance.reason || "") : ""
+                }
+
+                // where to start reading
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 12
+                    Layout.rightMargin: 12
+                    spacing: 2
+                    visible: !!(root.d && root.d.priority && root.d.priority.length > 0)
+                    Label {
+                        text: qsTr("Read first")
+                        color: Theme.heading
+                        font.bold: true
+                        font.pixelSize: root.fs
+                    }
+                    Repeater {
+                        model: root.d && root.d.priority ? root.d.priority : []
+                        delegate: ItemDelegate {
+                            required property var modelData
+                            Layout.fillWidth: true
+                            padding: 4
+                            contentItem: ColumnLayout {
+                                spacing: 0
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: "→ " + (modelData.what || "")
+                                    color: Theme.accent
+                                    font.pixelSize: root.fs
+                                    wrapMode: Text.Wrap
+                                }
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: modelData.why || ""
+                                    color: Theme.dimText
+                                    font.pixelSize: root.fs - 1
+                                    wrapMode: Text.Wrap
+                                }
+                            }
+                            onClicked: root.evidenceRequested(0, modelData.blockId || -1)
+                        }
+                    }
+                }
+
+                // the sections
+                Repeater {
+                    model: root.sectionList
+                    delegate: ColumnLayout {
+                        required property var modelData
+                        Layout.fillWidth: true
+                        Layout.leftMargin: 12
+                        Layout.rightMargin: 12
+                        spacing: 4
+                        visible: !!(modelData.claims && modelData.claims.length > 0)
+                        Label {
+                            text: modelData.title
+                            color: Theme.heading
+                            font.bold: true
+                            font.pixelSize: root.fs
+                        }
+                        Repeater {
+                            model: modelData.claims
+                            delegate: ColumnLayout {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                spacing: 2
+                                Label {
+                                    Layout.fillWidth: true
+                                    wrapMode: Text.Wrap
+                                    color: Theme.text
+                                    font.pixelSize: root.fs
+                                    text: "• " + (modelData.text || "")
+                                }
+                                Flow {
+                                    Layout.fillWidth: true
+                                    Layout.leftMargin: 10
+                                    spacing: 4
+                                    Pill {
+                                        label: root.sourceLabel(modelData.source)
+                                        tint: root.sourceColor(modelData.source)
+                                        hint: root.sourceHint(modelData.source)
+                                    }
+                                    Pill {
+                                        visible: modelData.type !== undefined
+                                                 && modelData.type !== ""
+                                        label: root.contributionLabel(modelData.type)
+                                        tint: Theme.heading
+                                    }
+                                    Pill {
+                                        visible: modelData.unsupported === true
+                                        label: qsTr("no evidence found")
+                                        tint: Theme.danger
+                                        hint: qsTr("This was presented as the authors' "
+                                                   + "or as an experimental result, but "
+                                                   + "nothing in the paper backed it up, "
+                                                   + "so it is shown as the model's own "
+                                                   + "reading.")
+                                    }
+                                    Repeater {
+                                        model: modelData.evidence || []
+                                        delegate: Button {
+                                            required property var modelData
+                                            implicitHeight: root.fs + 8
+                                            padding: 4
+                                            flat: true
+                                            enabled: modelData.verified === true
+                                            text: modelData.verified === true
+                                                  ? qsTr("p%1").arg(modelData.page)
+                                                  : qsTr("unverified")
+                                            font.pixelSize: root.fs - 2
+                                            palette.buttonText: modelData.verified === true
+                                                                ? Theme.accent : Theme.danger
+                                            ToolTip.visible: hovered
+                                            ToolTip.delay: 300
+                                            ToolTip.text: modelData.verified === true
+                                                          ? qsTr("“%1”\nClick to open this passage.")
+                                                            .arg(modelData.quote || "")
+                                                          : qsTr("The model cited a passage that "
+                                                                 + "is not in the paper: “%1”")
+                                                            .arg(modelData.quote || "")
+                                            onClicked: root.evidenceRequested(
+                                                           modelData.page || 0,
+                                                           modelData.blockId || -1)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // facets — the labels the project-wide analyses group on
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 12
+                    Layout.rightMargin: 12
+                    spacing: 4
+                    visible: !!(root.d && root.d.facets)
+                    Label {
+                        text: qsTr("At a glance")
+                        color: Theme.heading
+                        font.bold: true
+                        font.pixelSize: root.fs
+                    }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: 4
+                        Repeater {
+                            model: {
+                                const f = root.d ? root.d.facets : null
+                                if (!f) return []
+                                let out = []
+                                if (f.methodRoute) out.push(f.methodRoute)
+                                if (f.paperType) out.push(f.paperType)
+                                if (f.scenario) out.push(f.scenario)
+                                const lists = [f.datasets, f.metrics, f.baselines]
+                                for (const l of lists)
+                                    if (l) for (const v of l) if (v) out.push(v)
+                                return out
+                            }
+                            delegate: Pill {
+                                required property var modelData
+                                label: modelData
+                                tint: Theme.dimText
+                            }
+                        }
+                    }
+                }
+
+                // provenance footer
+                Label {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 12
+                    Layout.rightMargin: 12
+                    Layout.bottomMargin: 14
+                    wrapMode: Text.Wrap
+                    color: Theme.dimText
+                    font.pixelSize: root.fs - 2
+                    visible: root.meta !== null
+                    text: {
+                        if (!root.meta) return ""
+                        let parts = [qsTr("%1 of %2 citations check out")
+                                     .arg(root.meta.evidenceVerified)
+                                     .arg(root.meta.evidenceTotal)]
+                        if (root.meta.claimsDemoted > 0)
+                            parts.push(qsTr("%1 statement(s) demoted to AI reading")
+                                       .arg(root.meta.claimsDemoted))
+                        if (analysis.quickModel)
+                            parts.push(analysis.quickModel)
+                        return parts.join(" · ")
+                    }
+                }
+            }
+        }
+    }
+}

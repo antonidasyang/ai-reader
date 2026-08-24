@@ -27,6 +27,20 @@ Dialog {
         qsTr("中文 (Simplified)")
     ]
 
+    readonly property var chatSendKeys:
+        ["enter", "ctrl-enter"]
+    readonly property var chatSendKeyLabels: [
+        qsTr("Enter sends (Shift+Enter = newline)"),
+        qsTr("Ctrl+Enter sends (Enter = newline)")
+    ]
+
+    // Same providers as the main control, with a leading entry whose empty
+    // code means "whatever the main provider above is set to".
+    readonly property var analysisProviderCodes:
+        [""].concat(dialog.providerOptions)
+    readonly property var analysisProviderLabels:
+        [qsTr("Same as the main provider")].concat(dialog.providerOptions)
+
     onOpened: {
         const idx = providerOptions.indexOf(settings.provider)
         providerBox.currentIndex = idx >= 0 ? idx : 0
@@ -41,6 +55,13 @@ Dialog {
         concurrencyField.value  = settings.translationConcurrency
         const lidx = languageCodes.indexOf(settings.uiLanguage)
         languageBox.currentIndex = lidx >= 0 ? lidx : 0
+        const aidx = analysisProviderCodes.indexOf(settings.analysisProvider)
+        analysisProviderBox.currentIndex = aidx >= 0 ? aidx : 0
+        analysisModelField.text      = settings.analysisModel
+        analysisBaseUrlField.text    = settings.analysisBaseUrl
+        analysisApiKeyField.text     = settings.analysisApiKey
+        analysisMaxTokensField.value = settings.analysisMaxTokens
+        analysisConcurrencyField.value = settings.analysisConcurrency
         autoCheckBox.checked    = settings.autoCheckUpdates
         manifestUrlField.text   = settings.updateManifestUrl
         crashOptInBox.checked   = settings.crashReportsOptIn
@@ -52,6 +73,9 @@ Dialog {
         summaryFontSizeField.value   = settings.summaryFontSize
         paragraphFontSizeField.value = settings.paragraphFontSize
         chatFontSizeField.value      = settings.chatFontSize
+        const sidx = chatSendKeys.indexOf(settings.chatSendKey)
+        chatSendKeyBox.currentIndex  = sidx >= 0 ? sidx : 0
+        chatInputHeightField.value   = settings.chatInputHeight
         apiKeyField.forceActiveFocus()
     }
 
@@ -67,6 +91,12 @@ Dialog {
         settings.targetLang        = targetLangField.text.trim()
         settings.translationConcurrency = concurrencyField.value
         settings.uiLanguage        = languageCodes[languageBox.currentIndex]
+        settings.analysisProvider  = analysisProviderCodes[analysisProviderBox.currentIndex]
+        settings.analysisModel     = analysisModelField.text.trim()
+        settings.analysisBaseUrl   = analysisBaseUrlField.text.trim()
+        settings.analysisApiKey    = analysisApiKeyField.text
+        settings.analysisMaxTokens = analysisMaxTokensField.value
+        settings.analysisConcurrency = analysisConcurrencyField.value
         settings.autoCheckUpdates  = autoCheckBox.checked
         settings.updateManifestUrl = manifestUrlField.text.trim()
         settings.crashReportsOptIn = crashOptInBox.checked
@@ -78,6 +108,8 @@ Dialog {
         settings.summaryFontSize    = summaryFontSizeField.value
         settings.paragraphFontSize  = paragraphFontSizeField.value
         settings.chatFontSize       = chatFontSizeField.value
+        settings.chatSendKey        = chatSendKeys[chatSendKeyBox.currentIndex]
+        settings.chatInputHeight    = chatInputHeightField.value
     }
 
     // ── Shared dialog chrome ────────────────────────────────────────
@@ -542,6 +574,91 @@ Dialog {
                            "available it falls back to plaintext QSettings.")
             }
 
+            // ── Interpretation model ────────────────────────────────
+            // Field by field: whatever is left blank here falls through
+            // to the main configuration above, so pointing only the model
+            // name at a stronger model is a one-field change.
+            SectionLabel {
+                text: qsTr("Interpretation model")
+                Layout.topMargin: Theme.spaceS
+            }
+            SectionCard {
+                implicitHeight: analysisGrid.implicitHeight + 2 * Theme.spaceL
+
+                GridLayout {
+                    id: analysisGrid
+                    anchors.fill: parent
+                    anchors.margins: Theme.spaceL
+                    columns: 2
+                    columnSpacing: Theme.spaceL
+                    rowSpacing: Theme.spaceS
+
+                    FormLabel { text: qsTr("Provider") }
+                    FieldCombo {
+                        id: analysisProviderBox
+                        Layout.fillWidth: true
+                        model: dialog.analysisProviderLabels
+                    }
+
+                    FormLabel { text: qsTr("Model") }
+                    FieldText {
+                        id: analysisModelField
+                        Layout.fillWidth: true
+                        placeholderText: qsTr("Same as the main model")
+                    }
+
+                    FormLabel { text: qsTr("Base URL") }
+                    FieldText {
+                        id: analysisBaseUrlField
+                        Layout.fillWidth: true
+                        placeholderText: qsTr("Same as the main base URL")
+                    }
+
+                    FormLabel { text: qsTr("API key") }
+                    FieldText {
+                        id: analysisApiKeyField
+                        Layout.fillWidth: true
+                        echoMode: TextInput.Password
+                        placeholderText: qsTr("Same as the main API key")
+                    }
+
+                    FormLabel { text: qsTr("Max output tokens") }
+                    FieldSpin {
+                        id: analysisMaxTokensField
+                        Layout.fillWidth: true
+                        from: 512; to: 64000; stepSize: 512
+                    }
+
+                    FormLabel { text: qsTr("Parallel interpretations") }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.spaceM
+                        FieldSpin {
+                            id: analysisConcurrencyField
+                            from: 1; to: 8; stepSize: 1
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            wrapMode: Text.Wrap
+                            font.pixelSize: 11
+                            color: Theme.dimText
+                            text: qsTr("How many papers a batch interpretation "
+                                       + "reads at once.")
+                        }
+                    }
+                }
+            }
+            HintLabel {
+                text: qsTr("Reading a paper critically — and holding it against other "
+                           + "papers — asks more of a model than translating does, so "
+                           + "interpretation can run somewhere stronger than the "
+                           + "everyday translation model. Every field left blank falls "
+                           + "back to the main model configuration above.")
+            }
+            HintLabel {
+                text: qsTr("Interpretations will run on: %1").arg(settings.analysisModelInUse)
+            }
+
             // ── Font sizes ──────────────────────────────────────────
             // Per-pane body font size; headings/labels in each pane scale
             // up relative to the value below. Range 8–32 px matches the
@@ -587,6 +704,38 @@ Dialog {
                         id: chatFontSizeField
                         Layout.fillWidth: true
                         from: 8; to: 32; stepSize: 1
+                    }
+                }
+            }
+
+            // ── Chat input ──────────────────────────────────────────
+            SectionLabel {
+                text: qsTr("Chat input")
+                Layout.topMargin: Theme.spaceS
+            }
+            SectionCard {
+                implicitHeight: chatInputGrid.implicitHeight + 2 * Theme.spaceL
+
+                GridLayout {
+                    id: chatInputGrid
+                    anchors.fill: parent
+                    anchors.margins: Theme.spaceL
+                    columns: 2
+                    columnSpacing: Theme.spaceL
+                    rowSpacing: Theme.spaceS
+
+                    FormLabel { text: qsTr("Send with") }
+                    FieldCombo {
+                        id: chatSendKeyBox
+                        Layout.fillWidth: true
+                        model: dialog.chatSendKeyLabels
+                    }
+
+                    FormLabel { text: qsTr("Input box height (px)") }
+                    FieldSpin {
+                        id: chatInputHeightField
+                        Layout.fillWidth: true
+                        from: 36; to: 400; stepSize: 8
                     }
                 }
             }

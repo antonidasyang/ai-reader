@@ -13,3 +13,6 @@ installer/cache/
 CMakeUserPresets.json
 *.autosave
 .DS_Store
+
+# Internal deployment notes: server IPs and credentials, never published.
+docs/软件发布上传指南.md

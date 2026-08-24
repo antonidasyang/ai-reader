@@ -480,11 +480,12 @@ Rectangle {
                 anchors.margins: 6
                 spacing: 6
 
-                // Fixed input row height — both the text area and the
-                // square Send button bind to this. Long content (manually
-                // typed or prefilled via right-click → Ask AI) scrolls
-                // inside the ScrollView; the row itself never grows.
-                property int rowHeight: 36
+                // Input row height — the text area binds to this, the
+                // Send button stays square and sits at the bottom of it.
+                // Long content (typed, or prefilled via right-click → Ask
+                // AI) scrolls inside the ScrollView; the row itself never
+                // grows past the height the user chose in Settings.
+                property int rowHeight: settings.chatInputHeight
 
                 ScrollView {
                     Layout.fillWidth: true
@@ -494,13 +495,29 @@ Rectangle {
                         id: input
                         wrapMode: TextEdit.Wrap
                         placeholderText: paperController.status === PaperController.Ready
-                                         ? qsTr("Ask about the paper…  (Ctrl+Enter to send)")
+                                         ? (settings.chatSendKey === "ctrl-enter"
+                                            ? qsTr("Ask about the paper…  (Ctrl+Enter to send)")
+                                            : qsTr("Ask about the paper…  (Enter to send, Shift+Enter for a new line)"))
                                          : qsTr("Open a PDF first.")
                         enabled: paperController.status === PaperController.Ready
                                  && settings.isConfigured
                         Keys.onPressed: function(event) {
-                            if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter)
-                                && (event.modifiers & Qt.ControlModifier)) {
+                            if (event.key !== Qt.Key_Return && event.key !== Qt.Key_Enter)
+                                return
+                            const ctrl = (event.modifiers & Qt.ControlModifier) !== 0
+                            const shift = (event.modifiers & Qt.ShiftModifier) !== 0
+                            if (settings.chatSendKey === "ctrl-enter") {
+                                // Enter is for writing; only Ctrl+Enter sends.
+                                if (ctrl) {
+                                    sendCurrent()
+                                    event.accepted = true
+                                }
+                                return
+                            }
+                            // Enter sends. Shift+Enter is the escape hatch for
+                            // a deliberate line break; Ctrl+Enter still sends,
+                            // because that habit is hard to unlearn.
+                            if (!shift) {
                                 sendCurrent()
                                 event.accepted = true
                             }
@@ -511,8 +528,11 @@ Rectangle {
                     // Glyphs instead of words: ➤ for send, ■ for stop.
                     text: chat.busy ? "■" : "➤"
                     font.pixelSize: 16
-                    Layout.preferredWidth: inputRow.rowHeight
-                    Layout.preferredHeight: inputRow.rowHeight
+                    // Square, and pinned to the bottom of a now-taller
+                    // input so it doesn't stretch into a column.
+                    Layout.preferredWidth: 36
+                    Layout.preferredHeight: 36
+                    Layout.alignment: Qt.AlignBottom
                     enabled: paperController.status === PaperController.Ready
                              && settings.isConfigured
                              && (chat.busy || input.text.trim().length > 0)

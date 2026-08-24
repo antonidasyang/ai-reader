@@ -51,6 +51,13 @@ constexpr auto kKeyTocFontSize          = "fonts/toc";
 constexpr auto kKeySummaryFontSize      = "fonts/summary";
 constexpr auto kKeyParagraphFontSize    = "fonts/paragraph";
 constexpr auto kKeyChatFontSize         = "fonts/chat";
+constexpr auto kKeyChatSendKey          = "chat/sendKey";
+constexpr auto kKeyChatInputHeight      = "chat/inputHeight";
+constexpr auto kKeyAnalysisProvider     = "analysis/provider";
+constexpr auto kKeyAnalysisModel        = "analysis/model";
+constexpr auto kKeyAnalysisBaseUrl      = "analysis/baseUrl";
+constexpr auto kKeyAnalysisMaxTokens    = "analysis/maxTokens";
+constexpr auto kKeyAnalysisConcurrency  = "analysis/concurrency";
 
 QUrl defaultBaseUrlFor(const QString &providerLower)
 {
@@ -74,6 +81,7 @@ Settings::Settings(QObject *parent)
         writeApiKeyToKeychain(m_apiKey);
     else
         readApiKeyFromKeychain();
+    readAnalysisKeyFromKeychain();
 }
 
 Settings::~Settings() = default;
@@ -250,6 +258,145 @@ LlmClient *Settings::createClient(QObject *parent) const
     return client;
 }
 
+void Settings::setChatSendKey(const QString &v)
+{
+    const QString norm = v == QLatin1String("ctrl-enter")
+                             ? v
+                             : QStringLiteral("enter");
+    if (norm == m_chatSendKey) return;
+    m_chatSendKey = norm;
+    save();
+    emit chatSendKeyChanged();
+}
+
+void Settings::setChatInputHeight(int v)
+{
+    v = qBound(36, v, 400);
+    if (v == m_chatInputHeight) return;
+    m_chatInputHeight = v;
+    save();
+    emit chatInputHeightChanged();
+}
+
+void Settings::setAnalysisProvider(const QString &v)
+{
+    if (v == m_analysisProvider) return;
+    m_analysisProvider = v;
+    save();
+    emit analysisConfigChanged();
+}
+
+void Settings::setAnalysisModel(const QString &v)
+{
+    if (v == m_analysisModel) return;
+    m_analysisModel = v;
+    save();
+    emit analysisConfigChanged();
+}
+
+void Settings::setAnalysisBaseUrl(const QString &v)
+{
+    if (v == m_analysisBaseUrl) return;
+    m_analysisBaseUrl = v;
+    save();
+    emit analysisConfigChanged();
+}
+
+void Settings::setAnalysisApiKey(const QString &v)
+{
+    if (v == m_analysisApiKey) return;
+    m_analysisApiKey = v;
+    emit analysisConfigChanged();
+    if (m_analysisApiKey.isEmpty()) {
+        auto *job = new DeletePasswordJob(QStringLiteral("ai-reader"), this);
+        job->setKey(QStringLiteral("llm/analysisApiKey"));
+        job->setInsecureFallback(true);
+        connect(job, &Job::finished, this, [this](Job *j) {
+            if (j->error() != QKeychain::NoError
+                && j->error() != QKeychain::EntryNotFound)
+                setKeychainStatus(tr("Keychain delete failed: %1")
+                                      .arg(j->errorString()));
+        });
+        job->start();
+    } else {
+        writeAnalysisKeyToKeychain(m_analysisApiKey);
+    }
+}
+
+void Settings::setAnalysisMaxTokens(int v)
+{
+    v = qBound(512, v, 64000);
+    if (v == m_analysisMaxTokens) return;
+    m_analysisMaxTokens = v;
+    save();
+    emit analysisConfigChanged();
+}
+
+void Settings::setAnalysisConcurrency(int v)
+{
+    v = qBound(1, v, 8);
+    if (v == m_analysisConcurrency) return;
+    m_analysisConcurrency = v;
+    save();
+    emit analysisConfigChanged();
+}
+
+QString Settings::analysisModelInUse() const
+{
+    return m_analysisModel.isEmpty() ? m_model : m_analysisModel;
+}
+
+bool Settings::analysisOverridden() const
+{
+    return !m_analysisModel.isEmpty() || !m_analysisProvider.isEmpty()
+           || !m_analysisBaseUrl.isEmpty() || !m_analysisApiKey.isEmpty();
+}
+
+bool Settings::analysisConfigured() const
+{
+    if (analysisModelInUse().isEmpty())
+        return false;
+    // The key follows the endpoint: an override with its own base URL needs
+    // its own key, otherwise the main one applies.
+    if (!m_analysisBaseUrl.isEmpty() && m_analysisBaseUrl != m_baseUrl)
+        return !m_analysisApiKey.isEmpty();
+    return !m_analysisApiKey.isEmpty() || !m_apiKey.isEmpty();
+}
+
+LlmClient *Settings::createAnalysisClient(QObject *parent) const
+{
+    // Field by field: whatever the analysis section leaves blank comes
+    // from the main configuration, so pointing only the model name at a
+    // stronger model on the same gateway is a one-field change.
+    const QString provider =
+        m_analysisProvider.isEmpty() ? m_provider : m_analysisProvider;
+    const QString model =
+        m_analysisModel.isEmpty() ? m_model : m_analysisModel;
+    const QString baseUrl =
+        m_analysisBaseUrl.isEmpty() ? m_baseUrl : m_analysisBaseUrl;
+    // A key only travels with its own endpoint: reusing the main key
+    // against someone else's base URL would leak it.
+    QString apiKey = m_analysisApiKey;
+    if (apiKey.isEmpty()
+        && (m_analysisBaseUrl.isEmpty() || m_analysisBaseUrl == m_baseUrl))
+        apiKey = m_apiKey;
+
+    LlmClient *client = nullptr;
+    const QString p = provider.toLower();
+    if (p == QLatin1String("openai")
+        || p == QLatin1String("openai-compatible")
+        || p == QLatin1String("deepseek")) {
+        client = new OpenAiClient(parent);
+    } else {
+        client = new AnthropicClient(parent);
+    }
+    client->setApiKey(apiKey);
+    client->setModel(model);
+    if (!baseUrl.isEmpty())
+        client->setBaseUrl(QUrl(baseUrl));
+    return client;
+}
+
 void Settings::fetchModels(const QString &provider,
                            const QString &baseUrl,
                            const QString &apiKey)
@@ -380,6 +527,38 @@ void Settings::writeApiKeyToKeychain(const QString &value)
     job->start();
 }
 
+void Settings::readAnalysisKeyFromKeychain()
+{
+    auto *job = new ReadPasswordJob(QStringLiteral("ai-reader"), this);
+    job->setKey(QStringLiteral("llm/analysisApiKey"));
+    job->setInsecureFallback(true);
+    connect(job, &Job::finished, this, [this](Job *j) {
+        auto *r = static_cast<ReadPasswordJob *>(j);
+        if (r->error() != QKeychain::NoError)
+            return;                 // absent is the normal case
+        const QString text = r->textData();
+        if (text != m_analysisApiKey) {
+            m_analysisApiKey = text;
+            emit analysisConfigChanged();
+        }
+    });
+    job->start();
+}
+
+void Settings::writeAnalysisKeyToKeychain(const QString &value)
+{
+    auto *job = new WritePasswordJob(QStringLiteral("ai-reader"), this);
+    job->setKey(QStringLiteral("llm/analysisApiKey"));
+    job->setTextData(value);
+    job->setInsecureFallback(true);
+    connect(job, &Job::finished, this, [this](Job *j) {
+        if (j->error() != QKeychain::NoError)
+            setKeychainStatus(tr("Keychain write failed: %1")
+                                  .arg(j->errorString()));
+    });
+    job->start();
+}
+
 void Settings::setKeychainStatus(const QString &s)
 {
     if (s == m_keychainStatus) return;
@@ -455,6 +634,19 @@ void Settings::load()
     m_summaryFontSize      = qBound(8, m_qs.value(kKeySummaryFontSize,   13).toInt(), 32);
     m_paragraphFontSize    = qBound(8, m_qs.value(kKeyParagraphFontSize, 12).toInt(), 32);
     m_chatFontSize         = qBound(8, m_qs.value(kKeyChatFontSize,      14).toInt(), 32);
+    m_chatSendKey          = m_qs.value(kKeyChatSendKey,
+                                        QStringLiteral("enter")).toString();
+    if (m_chatSendKey != QLatin1String("ctrl-enter"))
+        m_chatSendKey = QStringLiteral("enter");
+    m_chatInputHeight      =
+        qBound(36, m_qs.value(kKeyChatInputHeight, 88).toInt(), 400);
+    m_analysisProvider     = m_qs.value(kKeyAnalysisProvider, QString{}).toString();
+    m_analysisModel        = m_qs.value(kKeyAnalysisModel,    QString{}).toString();
+    m_analysisBaseUrl      = m_qs.value(kKeyAnalysisBaseUrl,  QString{}).toString();
+    m_analysisMaxTokens    =
+        qBound(512, m_qs.value(kKeyAnalysisMaxTokens, 8192).toInt(), 64000);
+    m_analysisConcurrency  =
+        qBound(1, m_qs.value(kKeyAnalysisConcurrency, 2).toInt(), 8);
 }
 
 void Settings::save()
@@ -487,6 +679,13 @@ void Settings::save()
     m_qs.setValue(kKeySummaryFontSize,      m_summaryFontSize);
     m_qs.setValue(kKeyParagraphFontSize,    m_paragraphFontSize);
     m_qs.setValue(kKeyChatFontSize,         m_chatFontSize);
+    m_qs.setValue(kKeyChatSendKey,          m_chatSendKey);
+    m_qs.setValue(kKeyChatInputHeight,      m_chatInputHeight);
+    m_qs.setValue(kKeyAnalysisProvider,     m_analysisProvider);
+    m_qs.setValue(kKeyAnalysisModel,        m_analysisModel);
+    m_qs.setValue(kKeyAnalysisBaseUrl,      m_analysisBaseUrl);
+    m_qs.setValue(kKeyAnalysisMaxTokens,    m_analysisMaxTokens);
+    m_qs.setValue(kKeyAnalysisConcurrency,  m_analysisConcurrency);
     m_qs.sync();
 }
 
