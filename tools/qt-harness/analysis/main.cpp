@@ -621,6 +621,37 @@ int main(int argc, char **argv)
           exporter.save(md, QUrl::fromLocalFile(outPath))
               && QFile(outPath).size() > 100);
 
+    // ── everything it produces reaches the project ──────────────────
+    // The point of the whole layer is that the work is done once and the
+    // rest of the group has it. That means every object type has to be on
+    // the server, not only in this machine's mirror.
+    compare.add(digests.first().paperId, digests.first().title,
+                QStringLiteral("for the record"));
+    const bool synced = waitForSync(
+        [&] {
+            return backend.count(Analysis::TypeProjectProfile) == 1
+                   && backend.count(Analysis::TypeLibraryAnalysis) >= 1
+                   && backend.count(Analysis::TypeAnalysisNote) == 1
+                   && backend.count(Analysis::TypeCompareBasket) == 1;
+        },
+        sync, 15000);
+    check("the research profile reaches the project",
+          backend.count(Analysis::TypeProjectProfile) == 1);
+    check("the interpretations do",
+          backend.count(Analysis::TypePaperAnalysis) >= 3,
+          QStringLiteral("%1 on the server")
+              .arg(backend.count(Analysis::TypePaperAnalysis)));
+    check("the project-wide analyses do",
+          backend.count(Analysis::TypeLibraryAnalysis) >= 1);
+    check("a personal note does", backend.count(Analysis::TypeAnalysisNote) == 1);
+    check("and so does the comparison basket, which used to sit in this "
+          "machine's settings file",
+          backend.count(Analysis::TypeCompareBasket) == 1, synced ? "" : "timed out");
+    bool flagged = false;
+    for (const QJsonObject &item : backend.objectsOfType(QStringLiteral("item")))
+        flagged = flagged || item.value(QStringLiteral("toRead")).toBool();
+    check("marking a paper to read closely rides on the paper itself", flagged);
+
     // ── a settings change takes effect now, not after a restart ─────
     // Every service used to cache its client and patch its fields, so
     // switching provider kept talking to the previous endpoint until the

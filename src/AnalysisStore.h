@@ -105,6 +105,12 @@ public:
     QJsonObject note(const QString &paperId) const;
     bool putNote(const QString &paperId, const QJsonObject &payload);
 
+    // ── the papers a member has lined up to compare (§10.1) ──────────
+    // Synced like everything else, so the selection follows the account to
+    // another machine instead of living in this one's settings file.
+    QJsonArray compareBasket() const;
+    bool putCompareBasket(const QJsonArray &papers);
+
 signals:
     // Anything the store serves may have moved: a sync landed, the project
     // changed, or we just wrote something.

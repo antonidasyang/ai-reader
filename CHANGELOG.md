@@ -1,5 +1,17 @@
 # AI Reader changelog
 
+## v1.2.14 — 2026-08-25
+
+### The comparison basket follows your account
+- The papers you line up to compare were kept in this machine's settings
+  file, so they never reached your other machines. They are stored in the
+  project now, like everything else the interpretation layer produces — and
+  an existing basket is carried over the first time this version runs.
+- Everything else already synced: interpretations (yours and your
+  collaborators', each attributed), the project-wide analyses, the research
+  profile, your notes, and the *read closely* / *set aside* marks, which ride
+  on the paper itself and so are visible to the whole project.
+
 ## v1.2.13 — 2026-08-24
 
 ### The old Summary pane is gone

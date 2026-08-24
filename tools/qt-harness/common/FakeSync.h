@@ -60,6 +60,18 @@ public:
     // How many live objects of a type the server holds. Enough to assert
     // that something really reached the project rather than only the local
     // mirror.
+    // Every live object of a type, as the server holds it.
+    QList<QJsonObject> objectsOfType(const QString &type) const
+    {
+        QList<QJsonObject> out;
+        for (const QJsonObject &o : m_store) {
+            if (o.value("type").toString() == type
+                && !o.value("deleted").toBool())
+                out.append(o.value("data").toObject());
+        }
+        return out;
+    }
+
     int count(const QString &type) const
     {
         int n = 0;

@@ -33,6 +33,11 @@ CompareService::CompareService(Settings *settings, AnalysisStore *store,
         emit stateChanged();
     });
     connect(m_store, &AnalysisStore::changed, this, [this]() {
+        // A basket filled on another machine lands here with the sync.
+        const int before = m_basket.size();
+        load();
+        if (m_basket.size() != before)
+            emit basketChanged();
         emit stateChanged();
     });
     load();
@@ -119,9 +124,20 @@ void CompareService::load()
     const QString project = m_projects->currentId();
     if (project.isEmpty())
         return;
-    const QByteArray raw =
-        m_qs.value(QStringLiteral("compare/") + project).toByteArray();
-    const QJsonArray arr = QJsonDocument::fromJson(raw).array();
+
+    QJsonArray arr = m_store->compareBasket();
+    if (arr.isEmpty()) {
+        // Migration: the basket used to live in this machine's settings file,
+        // where it never reached the reader's other machines. Take it over
+        // once, then let the synced object own it.
+        const QByteArray raw =
+            m_qs.value(QStringLiteral("compare/") + project).toByteArray();
+        arr = QJsonDocument::fromJson(raw).array();
+        if (!arr.isEmpty())
+            m_store->putCompareBasket(arr);
+        m_qs.remove(QStringLiteral("compare/") + project);
+    }
+
     for (const QJsonValue &v : arr) {
         const QJsonObject o = v.toObject();
         Entry e;
@@ -137,9 +153,6 @@ void CompareService::load()
 
 void CompareService::save()
 {
-    const QString project = m_projects->currentId();
-    if (project.isEmpty())
-        return;
     QJsonArray arr;
     for (const Entry &e : m_basket) {
         QJsonArray notes;
@@ -149,8 +162,7 @@ void CompareService::save()
                                {QStringLiteral("title"), e.title},
                                {QStringLiteral("notes"), notes}});
     }
-    m_qs.setValue(QStringLiteral("compare/") + project,
-                  QJsonDocument(arr).toJson(QJsonDocument::Compact));
+    m_store->putCompareBasket(arr);
 }
 
 // ── the comparison ───────────────────────────────────────────────────

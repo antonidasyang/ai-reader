@@ -33,6 +33,7 @@ const QString TypePaperAnalysis   = QStringLiteral("paper_analysis");
 const QString TypeLibraryAnalysis = QStringLiteral("library_analysis");
 const QString TypeProjectProfile  = QStringLiteral("project_profile");
 const QString TypeAnalysisNote    = QStringLiteral("analysis_note");
+const QString TypeCompareBasket   = QStringLiteral("compare_basket");
 
 const QString KindQuick = QStringLiteral("quick");
 const QString KindDeep  = QStringLiteral("deep");
@@ -179,6 +180,11 @@ QString noteId(const QString &projectId, const QString &paperId,
 {
     return v5(projectId + QChar('|') + paperId + QStringLiteral("|note|")
               + author);
+}
+
+QString compareBasketId(const QString &projectId, const QString &author)
+{
+    return v5(projectId + QStringLiteral("|compare-basket|") + author);
 }
 
 QString scopeHash(QStringList paperIds)

@@ -17,6 +17,7 @@ extern const QString TypePaperAnalysis;    // one paper, one member
 extern const QString TypeLibraryAnalysis;  // whole project, shared
 extern const QString TypeProjectProfile;   // the research profile (§6)
 extern const QString TypeAnalysisNote;     // a member's own notes/edits
+extern const QString TypeCompareBasket;    // the papers a member lined up
 
 // ── per-paper analysis kinds ─────────────────────────────────────────
 extern const QString KindQuick;   // §2 quick interpretation → the digest
@@ -72,6 +73,7 @@ QString libraryAnalysisId(const QString &projectId, const QString &kind,
 QString projectProfileId(const QString &projectId);
 QString noteId(const QString &projectId, const QString &paperId,
                const QString &author);
+QString compareBasketId(const QString &projectId, const QString &author);
 
 // sha1 over the sorted paper ids — the key an ad-hoc comparison is filed
 // under, so re-comparing the same set updates one row instead of piling
