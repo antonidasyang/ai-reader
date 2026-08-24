@@ -1,6 +1,8 @@
 #pragma once
 
+#include <QJsonArray>
 #include <QJsonObject>
+#include <QStringList>
 #include <QString>
 
 // Prompts and JSON Schemas for the interpretation layer, kept together
@@ -31,5 +33,39 @@ QJsonObject quickDigestSchema();
 QString quickSystem(const QString &lang, const QString &profileBlock);
 QString quickUser(const QString &title, const QString &paperText,
                   bool truncated);
+
+// ── §3 deep read: one module at a time ───────────────────────────────
+// Nine modules, nine calls. One call cannot write §3.1 through §3.9 well and
+// would run out of output tokens trying; separate calls also give §5's
+// "regenerate just this part" for free, and let a partial run still be worth
+// something.
+QJsonObject deepModuleSchema(const QString &moduleId);
+QString deepSystem(const QString &lang, const QString &profileBlock,
+                   const QString &moduleId);
+QString deepUser(const QString &title, const QString &paperText, bool truncated,
+                 const QJsonObject &digest);
+
+// ── §10 comparing papers the reader picked ───────────────────────────
+// Reads the digests, not the papers: that is what makes twelve papers one
+// call. The schema forces the comparability warnings to be part of the
+// answer rather than an afterthought (§10.3).
+QJsonObject compareSchema();
+QString compareSystem(const QString &lang, const QString &profileBlock);
+QString compareUser(const QJsonArray &digests, const QStringList &notes);
+
+// A digest cut down to what a cross-paper analysis needs. Everything
+// library-level runs on these, never on paper text.
+QJsonObject digestBrief(const QString &paperId, const QString &title,
+                        const QJsonObject &digest);
+
+// ── §8–§15: everything that reads the whole project ──────────────────
+// One schema and one prompt per kind, all of them fed the same thing: the
+// digests, never the papers. That is the only reason a fifty-paper project
+// fits in one call.
+QJsonObject librarySchema(const QString &kind);
+QString librarySystem(const QString &kind, const QString &lang,
+                      const QString &profileBlock);
+QString libraryUser(const QString &kind, const QJsonArray &briefs,
+                    const QJsonObject &extra = QJsonObject());
 
 } // namespace AnalysisPrompts

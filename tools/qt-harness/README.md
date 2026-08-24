@@ -8,7 +8,7 @@ model. One directory per driver.
 cmake --build build                     # the drivers link against these objects
 tools/qt-harness/papersync/run.sh       # ~1 min, 34 checks
 tools/qt-harness/translation/run.sh     # ~30 s, 12 checks
-tools/qt-harness/analysis/run.sh        # ~1 min, 45 checks
+tools/qt-harness/analysis/run.sh        # ~2 min, 66 checks
 ```
 
 Exit status is non-zero if anything failed.
@@ -17,7 +17,7 @@ Exit status is non-zero if anything failed.
 |---|---|---|
 | `papersync` | segmentation and translations syncing into the project — who wins, what gets published, what gets attributed | `common/FakeSync.h`, a `QTcpServer` speaking the sync API |
 | `translation` | cancelling a translation run mid-stream | `common/FakeLlm.h`, a `QTcpServer` streaming OpenAI SSE that never finishes on its own |
-| `analysis` | the interpretation layer — citations checked against the paper, unsupported claims demoted, the research profile reaching the prompt, staleness, storage and attribution, and the batch that interprets papers nobody has opened | `common/FakeAnalysisLlm.h` (builds its answer out of the very paragraph markers it was sent) + `common/FakeSync.h` |
+| `analysis` | the interpretation layer — citations checked against the paper, unsupported claims demoted, the research profile reaching the prompt, staleness, storage and attribution, the batch that interprets papers nobody has opened, the nine-module close reading, and the cross-paper comparison | `common/FakeAnalysisLlm.h` (builds its answer out of the very paragraph markers it was sent) + `common/FakeSync.h` |
 
 ## What it actually runs
 

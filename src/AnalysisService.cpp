@@ -11,6 +11,8 @@
 #include "ProjectProfileController.h"
 #include "Settings.h"
 
+#include <QDateTime>
+
 AnalysisService::AnalysisService(Settings *settings, PaperController *paper,
                                  AnalysisStore *store,
                                  ProjectProfileController *profile,
@@ -84,7 +86,9 @@ void AnalysisService::onPaperChanged()
         return;                    // a paragraph edit, not a new paper
     m_lastPaperId = id;
     cancel();
+    cancelDeep();
     clearQuick();
+    clearDeep();
     m_contentHash.clear();
     emit paperChanged();
     reloadFromStore();
@@ -106,6 +110,20 @@ bool AnalysisService::quickStale() const
     if (now.isEmpty())
         return false;             // can't tell yet; don't cry wolf
     return now != m_quickInputHash;
+}
+
+void AnalysisService::clearDeep()
+{
+    m_deep = QJsonObject();
+    m_deepInputHash.clear();
+    m_deepAuthorEmail.clear();
+    m_deepUpdatedAt.clear();
+    m_deepIsMine = true;
+    m_deepSaved = false;
+    m_deepQueue.clear();
+    m_deepErrors.clear();
+    m_deepBusy.clear();
+    emit deepChanged();
 }
 
 void AnalysisService::clearQuick()
@@ -132,6 +150,27 @@ void AnalysisService::reloadFromStore()
     // (we just generated it and the project may be read-only).
     if (m_status == Running)
         return;
+
+    reloadNotes();
+
+    // The close reading, unless one is being written right now.
+    if (!deepRunning()) {
+        const AnalysisRecord deep =
+            m_store->paperAnalysis(id, Analysis::KindDeep);
+        if (deep.valid && !deep.payload.isEmpty()) {
+            if (deep.payload != m_deep || deep.updatedAt != m_deepUpdatedAt) {
+                m_deep = deep.payload;
+                m_deepInputHash = deep.inputHash;
+                m_deepAuthorEmail = deep.authorEmail;
+                m_deepUpdatedAt = deep.updatedAt;
+                m_deepIsMine = deep.mine;
+                m_deepSaved = true;
+                emit deepChanged();
+            }
+        } else if (m_deepSaved) {
+            clearDeep();
+        }
+    }
 
     const AnalysisRecord rec = m_store->paperAnalysis(id, Analysis::KindQuick);
     if (!rec.valid || rec.payload.isEmpty()) {
@@ -255,4 +294,241 @@ void AnalysisService::setStatus(Status s, const QString &err)
     m_status = s;
     m_lastError = err;
     emit stateChanged();
+}
+
+// ── the close reading (§3) ───────────────────────────────────────────
+
+QStringList AnalysisService::moduleIds() const { return Analysis::deepModules(); }
+
+QString AnalysisService::moduleTitle(const QString &id) const
+{
+    return Analysis::deepModuleTitle(id);
+}
+
+QVariantMap AnalysisService::module(const QString &id) const
+{
+    return m_deep.value(QStringLiteral("modules"))
+        .toObject()
+        .value(id)
+        .toObject()
+        .toVariantMap();
+}
+
+QString AnalysisService::moduleError(const QString &id) const
+{
+    return m_deepErrors.value(id);
+}
+
+bool AnalysisService::moduleBusy(const QString &id) const
+{
+    return m_deepBusy.contains(id);
+}
+
+bool AnalysisService::hasDeep() const
+{
+    return !m_deep.value(QStringLiteral("modules")).toObject().isEmpty();
+}
+
+int AnalysisService::deepDone() const
+{
+    return m_deep.value(QStringLiteral("modules")).toObject().size();
+}
+
+int AnalysisService::deepTotal() const { return Analysis::deepModules().size(); }
+
+bool AnalysisService::deepStale() const
+{
+    if (!hasDeep() || m_deepInputHash.isEmpty())
+        return false;
+    const QString now = currentInputHash();
+    if (now.isEmpty())
+        return false;
+    return now != m_deepInputHash;
+}
+
+void AnalysisService::generateDeep(bool force)
+{
+    if (!m_paper || !m_settings)
+        return;
+    if (!canRun()) {
+        setStatus(Failed,
+                  m_paper->blockCount() == 0
+                      ? tr("Open a paper and segment it first.")
+                      : tr("No model is configured for interpretations. Open "
+                           "Settings to pick one."));
+        return;
+    }
+    m_deepForce = force;
+    const QJsonObject modules =
+        m_deep.value(QStringLiteral("modules")).toObject();
+    for (const QString &id : Analysis::deepModules()) {
+        if (!force && modules.contains(id))
+            continue;             // keep what is already written
+        if (!m_deepQueue.contains(id) && !m_deepBusy.contains(id))
+            m_deepQueue.append(id);
+    }
+    m_deepErrors.clear();
+    emit deepChanged();
+    pumpDeep();
+}
+
+void AnalysisService::regenerateModule(const QString &id)
+{
+    if (!canRun() || id.isEmpty())
+        return;
+    if (m_deepBusy.contains(id) || m_deepQueue.contains(id))
+        return;
+    m_deepErrors.remove(id);
+    m_deepQueue.append(id);
+    emit deepChanged();
+    pumpDeep();
+}
+
+void AnalysisService::cancelDeep()
+{
+    m_deepQueue.clear();
+    // The jobs themselves are children of this object and abort with it;
+    // clearing the busy set is what stops their results from landing.
+    for (const QString &id : m_deepBusy)
+        m_deepErrors.remove(id);
+    m_deepBusy.clear();
+    m_deepInflight = 0;
+    emit deepChanged();
+}
+
+void AnalysisService::discardDeep()
+{
+    const QString id = paperId();
+    if (id.isEmpty())
+        return;
+    cancelDeep();
+    m_store->removePaperAnalysis(id, Analysis::KindDeep);
+    clearDeep();
+}
+
+void AnalysisService::pumpDeep()
+{
+    const int limit = m_settings ? m_settings->analysisConcurrency() : 2;
+    while (m_deepInflight < limit && !m_deepQueue.isEmpty())
+        startModule(m_deepQueue.takeFirst());
+    emit deepChanged();
+}
+
+void AnalysisService::startModule(const QString &id)
+{
+    if (!m_paper || !m_settings)
+        return;
+    if (!m_client)
+        m_client = m_settings->createAnalysisClient(this);
+
+    DeepModuleJob::Input in;
+    in.paperId = paperId();
+    in.title = m_paperTitle.isEmpty() ? m_paper->fileName() : m_paperTitle;
+    in.moduleId = id;
+    in.blocks = m_paper->blocks()->allBlocks();
+    in.lang = m_settings->targetLang();
+    in.profileBlock = m_profile->promptBlock();
+    in.digest = m_quick;
+    in.contextChars = contextChars();
+    in.maxTokens = m_settings->analysisMaxTokens();
+
+    m_deepBusy.insert(id);
+    ++m_deepInflight;
+    const QString paperAtStart = in.paperId;
+
+    auto *job = DeepModuleJob::start(m_client, in, this);
+    connect(job, &DeepModuleJob::succeeded, this,
+            [this, paperAtStart, job](const QString &moduleId,
+                                      const QJsonObject &result) {
+                --m_deepInflight;
+                m_deepBusy.remove(moduleId);
+                if (paperAtStart != paperId())
+                    return;
+                QJsonObject modules =
+                    m_deep.value(QStringLiteral("modules")).toObject();
+                modules.insert(moduleId, result);
+                m_deep.insert(QStringLiteral("modules"), modules);
+                m_contentHash = job->contentHash();
+                persistDeep();
+                emit deepChanged();
+                pumpDeep();
+            });
+    connect(job, &DeepModuleJob::failed, this,
+            [this, paperAtStart](const QString &moduleId,
+                                 const QString &error) {
+                --m_deepInflight;
+                m_deepBusy.remove(moduleId);
+                if (paperAtStart != paperId())
+                    return;
+                m_deepErrors.insert(moduleId, error);
+                emit deepChanged();
+                pumpDeep();
+            });
+    emit deepChanged();
+}
+
+void AnalysisService::persistDeep()
+{
+    const QString id = paperId();
+    if (id.isEmpty() || !hasDeep())
+        return;
+    m_deepInputHash = currentInputHash();
+    m_deepIsMine = true;
+    m_deepAuthorEmail = m_store->userEmail();
+    m_deep.insert(QStringLiteral("meta"),
+                  QJsonObject{{QStringLiteral("model"), modelInUse()},
+                              {QStringLiteral("modulesTotal"), deepTotal()}});
+    m_deepSaved = m_store->putPaperAnalysis(
+        id, Analysis::KindDeep, m_deep, modelInUse(), m_deepInputHash,
+        Analysis::StatusOk, QString(),
+        m_paperTitle.isEmpty() && m_paper ? m_paper->fileName() : m_paperTitle);
+    m_deepUpdatedAt =
+        m_store->paperAnalysis(id, Analysis::KindDeep).updatedAt;
+}
+
+// ── the reader's own notes (§5, §16) ─────────────────────────────────
+
+void AnalysisService::reloadNotes()
+{
+    const QJsonArray fresh =
+        m_store->note(paperId()).value(QStringLiteral("notes")).toArray();
+    if (fresh == m_notes)
+        return;
+    m_notes = fresh;
+    emit notesChanged();
+}
+
+QVariantList AnalysisService::notes() const
+{
+    QVariantList out;
+    for (const QJsonValue &v : m_notes)
+        out.append(v.toObject().toVariantMap());
+    return out;
+}
+
+void AnalysisService::saveNote(const QString &text, const QString &moduleId)
+{
+    const QString id = paperId();
+    if (id.isEmpty() || text.trimmed().isEmpty())
+        return;
+    QJsonObject note{
+        {QStringLiteral("text"), text.trimmed()},
+        {QStringLiteral("moduleId"), moduleId},
+        {QStringLiteral("createdAt"),
+         QDateTime::currentDateTimeUtc().toString(Qt::ISODate)}};
+    m_notes.append(note);
+    // Notes are the reader's, not the model's: they live in their own object
+    // so regenerating an interpretation never touches them.
+    m_store->putNote(id, QJsonObject{{QStringLiteral("notes"), m_notes}});
+    emit notesChanged();
+}
+
+void AnalysisService::removeNote(int index)
+{
+    if (index < 0 || index >= m_notes.size())
+        return;
+    m_notes.removeAt(index);
+    m_store->putNote(paperId(),
+                     QJsonObject{{QStringLiteral("notes"), m_notes}});
+    emit notesChanged();
 }

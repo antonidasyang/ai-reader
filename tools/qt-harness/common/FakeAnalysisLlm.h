@@ -90,7 +90,7 @@ private:
             m_buf.remove(s);
             ++m_requests;
             m_lastBody = body;
-            respond(s, buildAnswer());
+            respond(s, buildAnswer(toolName()));
         });
         connect(s, &QTcpSocket::disconnected, this, [this, s] {
             m_buf.remove(s);
@@ -122,8 +122,109 @@ private:
         return m.text.mid(4, 60).trimmed();
     }
 
-    QByteArray buildAnswer()
+    // Which of the three schemas the app is asking to have filled in.
+    QString toolName() const
     {
+        const QJsonArray tools = lastRequest().value("tools").toArray();
+        if (tools.isEmpty())
+            return QString();
+        return tools.first()
+            .toObject()
+            .value("function")
+            .toObject()
+            .value("name")
+            .toString();
+    }
+
+    // Ids the comparison prompt carried, in order.
+    QStringList paperIdsInPrompt() const
+    {
+        QStringList out;
+        static const QRegularExpression re(
+            QStringLiteral("\"paperId\": \"([^\"]+)\""));
+        auto it = re.globalMatch(lastPrompt());
+        while (it.hasNext()) {
+            const QString id = it.next().captured(1);
+            if (!out.contains(id))
+                out.append(id);
+        }
+        return out;
+    }
+
+    QByteArray buildModuleAnswer()
+    {
+        const QVector<Marker> ms = markers();
+        Q_ASSERT(ms.size() >= 2);
+        const Marker good = ms.at(qMin(1, ms.size() - 1));
+        const QJsonObject claim{
+            {"text", "A point in this section."},
+            {"source", "author_claim"},
+            {"evidence",
+             QJsonArray{QJsonObject{{"blockId", good.id},
+                                    {"quote", quoteOf(good)}}}}};
+        const QJsonObject fabricated{
+            {"text", "A point with nothing behind it."},
+            {"source", "experimental"},
+            {"evidence",
+             QJsonArray{QJsonObject{
+                 {"blockId", ms.at(0).id},
+                 {"quote", "measured on a dataset that is not in this paper"}}}}};
+        const QJsonObject module{
+            {"summary", "What this section is about, in a line."},
+            {"sections",
+             QJsonArray{QJsonObject{
+                 {"heading", "The first part"},
+                 {"items", QJsonArray{claim, fabricated}}}}},
+            {"terms",
+             QJsonArray{QJsonObject{{"term", "A term"},
+                                    {"plain", "What it means."},
+                                    {"roleInPaper", "What it does here."}}}},
+            {"coreQuestion", claim},
+            {"openQuestions", QJsonArray{"Something still unanswered."}},
+            {"checklist",
+             QJsonArray{QJsonObject{{"what", "code"},
+                                    {"status", "unclear"},
+                                    {"detail", ""},
+                                    {"evidence", QJsonArray{}}}}},
+            {"acknowledged", QJsonArray{claim}},
+            {"additional", QJsonArray{}},
+            {"contributions", QJsonArray{}},
+            {"dimensions", QJsonArray{}},
+            {"steps", QJsonArray{}}};
+        return QJsonDocument(module).toJson(QJsonDocument::Compact);
+    }
+
+    QByteArray buildCompareAnswer()
+    {
+        const QStringList ids = paperIdsInPrompt();
+        QJsonArray cells;
+        for (const QString &id : ids)
+            cells.append(QJsonObject{{"paperId", id}, {"text", "not stated"}});
+        const QJsonObject answer{
+            {"rows",
+             QJsonArray{QJsonObject{{"dimension", "research_problem"},
+                                    {"cells", cells}},
+                        QJsonObject{{"dimension", "metrics"},
+                                    {"cells", cells}}}},
+            {"comparability",
+             QJsonArray{QJsonObject{
+                 {"papers", QJsonArray::fromStringList(ids)},
+                 {"issue", "Different datasets; the numbers do not line up."},
+                 {"severity", "blocking"}}}},
+            {"takeaways",
+             QJsonArray{QJsonObject{{"text", "They answer different questions."},
+                                    {"source", "ai_analysis"},
+                                    {"evidence", QJsonArray{}}}}},
+            {"ranking", "These cannot be ranked against each other."}};
+        return QJsonDocument(answer).toJson(QJsonDocument::Compact);
+    }
+
+    QByteArray buildAnswer(const QString &tool)
+    {
+        if (tool == QLatin1String("emit_section"))
+            return buildModuleAnswer();
+        if (tool == QLatin1String("emit_comparison"))
+            return buildCompareAnswer();
         const QVector<Marker> ms = markers();
         Q_ASSERT(ms.size() >= 3);
         const Marker good = ms.at(qMin(1, ms.size() - 1));

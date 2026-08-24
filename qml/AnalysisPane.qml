@@ -20,35 +20,15 @@ Rectangle {
     // paragraph, which is what actually gets scrolled to.
     signal evidenceRequested(int page, int blockId)
     signal askAiRequested(string text)
+    signal compareRequested(string paperId, string title, string note)
+
+    // 0 = the quick read, 1 = the close reading, 2 = the reader's own notes.
+    property int mode: 0
 
     readonly property var d: analysis.quick
     readonly property int fs: settings.summaryFontSize
     readonly property var meta: d && d.meta ? d.meta : null
 
-    function sourceColor(code) {
-        switch (code) {
-        case "author_claim":  return Theme.accent
-        case "experimental":  return Theme.success
-        case "speculation":   return Theme.danger
-        default:              return Theme.dimText
-        }
-    }
-    function sourceLabel(code) {
-        switch (code) {
-        case "author_claim":  return qsTr("authors")
-        case "experimental":  return qsTr("experiment")
-        case "speculation":   return qsTr("speculation")
-        default:              return qsTr("AI reading")
-        }
-    }
-    function sourceHint(code) {
-        switch (code) {
-        case "author_claim":  return qsTr("The authors state this.")
-        case "experimental":  return qsTr("An experiment in this paper shows this.")
-        case "speculation":   return qsTr("A guess — nothing in the paper supports it.")
-        default:              return qsTr("The model's own reading, not stated in the paper.")
-        }
-    }
     function adviceLabel(code) {
         switch (code) {
         case "read_full":               return qsTr("Read the whole paper")
@@ -64,18 +44,6 @@ Rectangle {
         case "medium": return qsTr("somewhat relevant")
         case "low":    return qsTr("barely relevant")
         default:       return qsTr("relevance unclear")
-        }
-    }
-    function contributionLabel(code) {
-        switch (code) {
-        case "problem":     return qsTr("new problem")
-        case "method":      return qsTr("new method")
-        case "system":      return qsTr("system")
-        case "dataset":     return qsTr("dataset / benchmark")
-        case "finding":     return qsTr("empirical finding")
-        case "theory":      return qsTr("theory")
-        case "engineering": return qsTr("engineering")
-        default:            return code || ""
         }
     }
 
@@ -258,12 +226,37 @@ Rectangle {
             }
         }
 
+        // ── what to look at ─────────────────────────────────────────
+        TabBar {
+            id: modeBar
+            Layout.fillWidth: true
+            currentIndex: root.mode
+            onCurrentIndexChanged: root.mode = currentIndex
+            TabButton {
+                text: qsTr("Quick")
+                font.pixelSize: root.fs - 1
+            }
+            TabButton {
+                text: analysis.deepDone > 0
+                      ? qsTr("Close read (%1/%2)").arg(analysis.deepDone)
+                                                  .arg(analysis.deepTotal)
+                      : qsTr("Close read")
+                font.pixelSize: root.fs - 1
+            }
+            TabButton {
+                text: analysis.notes.length > 0
+                      ? qsTr("Notes (%1)").arg(analysis.notes.length)
+                      : qsTr("Notes")
+                font.pixelSize: root.fs - 1
+            }
+        }
+
         // ── empty state ─────────────────────────────────────────────
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.margins: 16
-            visible: !analysis.hasQuick
+            visible: root.mode === 0 && !analysis.hasQuick
             spacing: 10
             Label {
                 Layout.fillWidth: true
@@ -297,7 +290,7 @@ Rectangle {
         ScrollView {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: analysis.hasQuick
+            visible: root.mode === 0 && analysis.hasQuick
             clip: true
             contentWidth: availableWidth
 
@@ -411,69 +404,23 @@ Rectangle {
                         }
                         Repeater {
                             model: modelData.claims
-                            delegate: ColumnLayout {
+                            delegate: ClaimBlock {
                                 required property var modelData
                                 Layout.fillWidth: true
-                                spacing: 2
-                                Label {
-                                    Layout.fillWidth: true
-                                    wrapMode: Text.Wrap
-                                    color: Theme.text
-                                    font.pixelSize: root.fs
-                                    text: "• " + (modelData.text || "")
+                                claim: modelData
+                                fs: root.fs
+                                onEvidenceRequested: function(page, blockId) {
+                                    root.evidenceRequested(page, blockId)
                                 }
-                                Flow {
-                                    Layout.fillWidth: true
-                                    Layout.leftMargin: 10
-                                    spacing: 4
-                                    Pill {
-                                        label: root.sourceLabel(modelData.source)
-                                        tint: root.sourceColor(modelData.source)
-                                        hint: root.sourceHint(modelData.source)
-                                    }
-                                    Pill {
-                                        visible: modelData.type !== undefined
-                                                 && modelData.type !== ""
-                                        label: root.contributionLabel(modelData.type)
-                                        tint: Theme.heading
-                                    }
-                                    Pill {
-                                        visible: modelData.unsupported === true
-                                        label: qsTr("no evidence found")
-                                        tint: Theme.danger
-                                        hint: qsTr("This was presented as the authors' "
-                                                   + "or as an experimental result, but "
-                                                   + "nothing in the paper backed it up, "
-                                                   + "so it is shown as the model's own "
-                                                   + "reading.")
-                                    }
-                                    Repeater {
-                                        model: modelData.evidence || []
-                                        delegate: Button {
-                                            required property var modelData
-                                            implicitHeight: root.fs + 8
-                                            padding: 4
-                                            flat: true
-                                            enabled: modelData.verified === true
-                                            text: modelData.verified === true
-                                                  ? qsTr("p%1").arg(modelData.page)
-                                                  : qsTr("unverified")
-                                            font.pixelSize: root.fs - 2
-                                            palette.buttonText: modelData.verified === true
-                                                                ? Theme.accent : Theme.danger
-                                            ToolTip.visible: hovered
-                                            ToolTip.delay: 300
-                                            ToolTip.text: modelData.verified === true
-                                                          ? qsTr("“%1”\nClick to open this passage.")
-                                                            .arg(modelData.quote || "")
-                                                          : qsTr("The model cited a passage that "
-                                                                 + "is not in the paper: “%1”")
-                                                            .arg(modelData.quote || "")
-                                            onClicked: root.evidenceRequested(
-                                                           modelData.page || 0,
-                                                           modelData.blockId || -1)
-                                        }
-                                    }
+                                onAskAiRequested: function(text) {
+                                    root.askAiRequested(text)
+                                }
+                                onNoteRequested: function(text) {
+                                    analysis.saveNote(text, "quick")
+                                }
+                                onCompareRequested: function(text) {
+                                    root.compareRequested(analysis.paperId,
+                                                          analysis.paperTitle, text)
                                 }
                             }
                         }
@@ -539,6 +486,122 @@ Rectangle {
                         if (analysis.quickModel)
                             parts.push(analysis.quickModel)
                         return parts.join(" · ")
+                    }
+                }
+            }
+        }
+
+        // ── the close reading ───────────────────────────────────────
+        ScrollView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            visible: root.mode === 1
+            clip: true
+            contentWidth: availableWidth
+
+            DeepReadView {
+                width: parent.width
+                fs: root.fs
+                onEvidenceRequested: function(page, blockId) {
+                    root.evidenceRequested(page, blockId)
+                }
+                onAskAiRequested: function(text) { root.askAiRequested(text) }
+                onCompareRequested: function(text) {
+                    root.compareRequested(analysis.paperId, analysis.paperTitle,
+                                          text)
+                }
+            }
+        }
+
+        // ── the reader's own notes ──────────────────────────────────
+        ColumnLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.margins: 12
+            visible: root.mode === 2
+            spacing: 8
+
+            Label {
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                color: Theme.dimText
+                font.pixelSize: root.fs - 1
+                text: qsTr("Your own notes on this paper. They are kept in their "
+                           + "own place, so regenerating an interpretation never "
+                           + "touches them.")
+            }
+
+            ScrollView {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                contentWidth: availableWidth
+                ColumnLayout {
+                    width: parent.width
+                    spacing: 6
+                    Repeater {
+                        model: analysis.notes
+                        delegate: Rectangle {
+                            required property var modelData
+                            required property int index
+                            Layout.fillWidth: true
+                            implicitHeight: noteRow.implicitHeight + 12
+                            color: Theme.cardBg
+                            radius: 4
+                            RowLayout {
+                                id: noteRow
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.leftMargin: 8
+                                anchors.rightMargin: 4
+                                spacing: 6
+                                Label {
+                                    Layout.fillWidth: true
+                                    wrapMode: Text.Wrap
+                                    color: Theme.text
+                                    font.pixelSize: root.fs
+                                    text: modelData.text || ""
+                                }
+                                ToolButton {
+                                    text: "✕"
+                                    font.pixelSize: root.fs - 2
+                                    onClicked: analysis.removeNote(index)
+                                }
+                            }
+                        }
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        visible: analysis.notes.length === 0
+                        wrapMode: Text.Wrap
+                        color: Theme.dimText
+                        font.pixelSize: root.fs
+                        text: qsTr("Nothing yet. Any statement in an "
+                                   + "interpretation can be saved here from its "
+                                   + "⋯ menu.")
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 6
+                TextField {
+                    id: noteInput
+                    Layout.fillWidth: true
+                    placeholderText: qsTr("Write a note…")
+                    onAccepted: {
+                        analysis.saveNote(text, "")
+                        text = ""
+                    }
+                }
+                Button {
+                    text: qsTr("Add")
+                    enabled: noteInput.text.trim().length > 0
+                    onClicked: {
+                        analysis.saveNote(noteInput.text, "")
+                        noteInput.text = ""
                     }
                 }
             }

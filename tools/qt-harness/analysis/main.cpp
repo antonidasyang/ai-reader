@@ -15,6 +15,7 @@
 #include "AnalysisListModel.h"
 #include "AnalysisService.h"
 #include "BatchAnalysisService.h"
+#include "CompareService.h"
 #include "AnalysisStore.h"
 #include "AnalysisTypes.h"
 #include "ApiClient.h"
@@ -385,6 +386,99 @@ int main(int argc, char **argv)
     BlockCacheProbe probe(PaperController::paperIdForFile(fixtures.at(0)));
     check("the segmentation the batch paid for was kept for the reader",
           probe.hasBlocks, QStringLiteral("%1 paragraphs").arg(probe.count));
+
+    // ── §3: the close reading, module by module ─────────────────────
+    // Back to the reader's own paper, which still has its paragraphs.
+    analysis.generateQuick(true);
+    waitFor([&] { return analysis.status() != AnalysisService::Running; }, 30000);
+
+    analysis.generateDeep(false);
+    const bool deepDone = waitFor([&] { return !analysis.deepRunning(); }, 120000);
+    check("the close reading ran to the end", deepDone,
+          QStringLiteral("%1/%2 modules")
+              .arg(analysis.deepDone()).arg(analysis.deepTotal()));
+    check("every module was written",
+          analysis.deepDone() == analysis.deepTotal(),
+          QStringLiteral("got %1").arg(analysis.deepDone()));
+    check("one model call per module", analysis.moduleIds().size() == 9);
+
+    const QVariantMap methodModule = analysis.module(QStringLiteral("method"));
+    check("a module carries its sections",
+          !methodModule.value("sections").toList().isEmpty());
+    const QVariantMap mmeta = methodModule.value("meta").toMap();
+    // The fake answers every module with the same object, so its citations
+    // land in `sections`, in `coreQuestion` and in `acknowledged` — four in
+    // all, of which the one invented quote fails.
+    check("...and its citations were checked too",
+          mmeta.value("evidenceTotal").toInt() == 4
+              && mmeta.value("evidenceVerified").toInt() == 3,
+          QStringLiteral("%1 of %2")
+              .arg(mmeta.value("evidenceVerified").toInt())
+              .arg(mmeta.value("evidenceTotal").toInt()));
+    check("...with the unsupported claim demoted here as well",
+          mmeta.value("claimsDemoted").toInt() == 1);
+    check("the close reading was filed in the project", analysis.deepSaved());
+
+    // §5: redo one part without touching the rest.
+    const int callsBefore = gateway.requests();
+    analysis.regenerateModule(QStringLiteral("critique"));
+    waitFor([&] { return !analysis.deepRunning(); }, 60000);
+    check("regenerating one module costs exactly one call",
+          gateway.requests() - callsBefore == 1,
+          QStringLiteral("got %1").arg(gateway.requests() - callsBefore));
+    check("...and leaves the other modules in place",
+          analysis.deepDone() == analysis.deepTotal());
+
+    // §5 / §16: notes are the reader's and survive a regeneration.
+    analysis.saveNote(QStringLiteral("Ask about the sampling rate"),
+                      QStringLiteral("method"));
+    check("a note is kept", analysis.notes().size() == 1);
+    analysis.generateQuick(true);
+    waitFor([&] { return analysis.status() != AnalysisService::Running; }, 30000);
+    check("...and regenerating an interpretation does not touch it",
+          analysis.notes().size() == 1);
+
+    // ── §10: comparing papers the reader picked ─────────────────────
+    CompareService compare(&settings, &store, &projects, &profile);
+    compare.clearBasket();
+    check("an empty comparison cannot run", !compare.canRun());
+    const QList<AnalysisRecord> digests =
+        store.paperAnalyses(Analysis::KindQuick);
+    check("there are digests to compare", digests.size() >= 2);
+    for (const AnalysisRecord &d : digests) {
+        if (d.paperId == otherPaper)
+            continue;              // the seeded one has no facets to compare
+        compare.add(d.paperId, d.title, QStringLiteral("worth a look"));
+    }
+    check("papers can be put in the comparison basket", compare.count() >= 2,
+          QStringLiteral("got %1").arg(compare.count()));
+    check("...and the basket knows what is in it",
+          compare.contains(digests.first().paperId)
+              || compare.contains(digests.last().paperId));
+    check("a comparison can run once every paper has been interpreted",
+          compare.canRun());
+
+    compare.compare();
+    const bool compared = waitFor([&] { return compare.hasResult(); }, 60000);
+    check("the comparison came back", compared, compare.lastError());
+    const QVariantMap cres = compare.result();
+    check("it has a row per dimension", cres.value("rows").toList().size() == 2);
+    check("it names what cannot be compared",
+          cres.value("comparability").toList().size() == 1);
+    check("...and says so instead of ranking them",
+          cres.value("ranking").toString().contains(QStringLiteral("cannot")));
+    check("the comparison was filed in the project under its own paper set",
+          store.libraryAnalysis(Analysis::KindCompare,
+                                Analysis::scopeHash(
+                                    [&] {
+                                        QStringList ids;
+                                        for (const QVariant &v : compare.basket())
+                                            ids.append(v.toMap()
+                                                           .value("paperId")
+                                                           .toString());
+                                        return ids;
+                                    }()))
+              .valid);
 
     qInfo().noquote() << "";
     qInfo().noquote() << QStringLiteral("%1 passed, %2 failed")

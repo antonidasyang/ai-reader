@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.2.1 LANGUAGES CXX)
+project(ai-reader VERSION 1.2.2 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -329,6 +329,10 @@ qt_add_executable(ai-reader
     src/AnalysisListModel.cpp
     src/BatchAnalysisService.h
     src/BatchAnalysisService.cpp
+    src/CompareService.h
+    src/CompareService.cpp
+    src/LibraryAnalysisService.h
+    src/LibraryAnalysisService.cpp
 )
 
 target_compile_definitions(ai-reader PRIVATE
@@ -419,6 +423,9 @@ qt_add_qml_module(ai-reader
         qml/ProjectProfileDialog.qml
         qml/AnalysisPane.qml
         qml/BatchAnalysisDialog.qml
+        qml/ClaimBlock.qml
+        qml/CompareDialog.qml
+        qml/DeepReadView.qml
 )
 
 # Compile .ts → .qm and embed under :/i18n so QTranslator::load() in

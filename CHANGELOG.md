@@ -1,5 +1,40 @@
 # AI Reader changelog
 
+## v1.2.2 — 2026-08-24
+
+### Reading a paper closely, one part at a time
+- **The Interpret pane has a second tab: Close read.** Nine parts — what the
+  paper is, the background and terminology you need, the method step by step,
+  the experiments, the contributions, a critical reading, the limitations,
+  whether it could be reproduced, and what to do next.
+- **Each part is written on its own**, so a part that came out thin can be
+  rewritten in one request without touching the other eight, and a run you
+  stop halfway still leaves you the parts it finished.
+- The critical reading gives a verdict per dimension rather than general
+  praise; the reproducibility part answers "unclear" where the paper says
+  nothing, instead of inventing a repository link.
+
+### Every statement can be pushed on
+- **The ⋯ next to any statement**: explain it more simply, give me an example,
+  walk me through the equation or figure behind it, challenge it, or just ask
+  about it — each opens the chat with the question already written, against
+  the paper you are reading.
+- **Save as a note** keeps it in a Notes tab. Notes are yours: regenerating an
+  interpretation never touches them.
+- **Add to the comparison** puts the paper in a basket that survives restarts.
+
+### Comparing papers
+- **Toolbar → Compare** puts the papers you collected side by side across
+  eleven dimensions — problem, hypothesis, method, inputs and outputs, data,
+  baselines, metrics, results, contributions, limitations, reproducibility.
+- **The warnings come before the table.** Papers measured on different data,
+  with different metrics or on a different task cannot be ranked by their
+  numbers, and the comparison says so plainly rather than letting a tidy grid
+  imply a winner. Where an interpretation does not say, the cell says "not
+  stated" rather than guessing.
+- Comparisons are built from each paper's own interpretation, not from the
+  PDFs, so comparing a dozen papers is one request.
+
 ## v1.2.1 — 2026-08-24
 
 ### Interpret the whole library at once

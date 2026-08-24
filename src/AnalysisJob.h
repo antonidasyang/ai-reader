@@ -62,3 +62,48 @@ private:
     QPointer<StructuredCall> m_call;
     bool m_done = false;
 };
+
+// One module of the deep read (§3.1 … §3.9). Same shape as the quick job --
+// citable text in, checked JSON out -- but each module is its own call, which
+// is what makes "regenerate just this part" (§5) a single request instead of
+// re-reading the whole paper.
+class DeepModuleJob : public QObject
+{
+    Q_OBJECT
+public:
+    struct Input {
+        QString paperId;
+        QString title;
+        QString moduleId;
+        QVector<Block> blocks;
+        QString lang;
+        QString profileBlock;
+        // The quick interpretation, so a module does not restate it.
+        QJsonObject digest;
+        int contextChars = 180000;
+        int maxTokens = 8192;
+    };
+
+    static DeepModuleJob *start(LlmClient *client, const Input &in,
+                                QObject *parent = nullptr);
+    void abort();
+
+    QString moduleId() const { return m_in.moduleId; }
+    QString contentHash() const { return m_contentHash; }
+
+signals:
+    void succeeded(const QString &moduleId, const QJsonObject &result);
+    void failed(const QString &moduleId, const QString &error);
+
+private:
+    DeepModuleJob(const Input &in, QObject *parent);
+    void run(LlmClient *client);
+    void finishOk(const QJsonObject &result);
+    void finishErr(const QString &error);
+
+    Input m_in;
+    QString m_contentHash;
+    bool m_truncated = false;
+    QPointer<StructuredCall> m_call;
+    bool m_done = false;
+};

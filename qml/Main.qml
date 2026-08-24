@@ -151,6 +151,7 @@ ApplicationWindow {
     ProjectSettingsDialog { id: projectSettingsDialog }
     ProjectProfileDialog { id: projectProfileDialog }
     BatchAnalysisDialog { id: batchAnalysisDialog }
+    CompareDialog { id: compareDialog }
 
     Dialog {
         id: createProjectDialog
@@ -560,6 +561,16 @@ ApplicationWindow {
                 checkable: true
                 checked: summaryPane.visible
                 onClicked: summaryPane.visible = !summaryPane.visible
+            }
+            ToolButton {
+                text: compare.count > 0 ? qsTr("Compare (%1)").arg(compare.count)
+                                        : qsTr("Compare")
+                visible: auth.authenticated && projects.currentId.length > 0
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("Put papers side by side, with a warning "
+                                   + "where they cannot honestly be compared")
+                onClicked: compareDialog.open()
             }
             ToolButton {
                 text: qsTr("Interpret library")
@@ -1521,6 +1532,10 @@ ApplicationWindow {
                 onAskAiRequested: function(text) {
                     chatPane.visible = true
                     chatPane.prefillInput(text, 0)
+                }
+                onCompareRequested: function(paperId, title, note) {
+                    compare.add(paperId, title, note)
+                    compareDialog.open()
                 }
 
                 DockGrip {

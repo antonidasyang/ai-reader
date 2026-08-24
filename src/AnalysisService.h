@@ -1,6 +1,10 @@
 #pragma once
 
+#include <QHash>
+#include <QJsonArray>
 #include <QJsonObject>
+#include <QSet>
+#include <QStringList>
 #include <QObject>
 #include <QPointer>
 #include <QString>
@@ -10,6 +14,7 @@ class AnalysisStore;
 class LlmClient;
 class PaperController;
 class ProjectProfileController;
+class DeepModuleJob;
 class QuickAnalysisJob;
 class Settings;
 
@@ -50,6 +55,21 @@ class AnalysisService : public QObject
     Q_PROPERTY(QString quickModel READ quickModel NOTIFY quickChanged)
     Q_PROPERTY(QString quickUpdatedAt READ quickUpdatedAt NOTIFY quickChanged)
 
+    // ── the close reading (§3), module by module ─────────────────────
+    Q_PROPERTY(QVariantMap deep READ deep NOTIFY deepChanged)
+    Q_PROPERTY(bool hasDeep READ hasDeep NOTIFY deepChanged)
+    Q_PROPERTY(bool deepStale READ deepStale NOTIFY deepChanged)
+    Q_PROPERTY(bool deepSaved READ deepSaved NOTIFY deepChanged)
+    Q_PROPERTY(bool deepIsMine READ deepIsMine NOTIFY deepChanged)
+    Q_PROPERTY(QString deepAuthorEmail READ deepAuthorEmail NOTIFY deepChanged)
+    Q_PROPERTY(QStringList moduleIds READ moduleIds CONSTANT)
+    Q_PROPERTY(int deepDone READ deepDone NOTIFY deepChanged)
+    Q_PROPERTY(int deepTotal READ deepTotal NOTIFY deepChanged)
+    Q_PROPERTY(bool deepRunning READ deepRunning NOTIFY deepChanged)
+
+    // ── the reader's own notes (§5, §16) ─────────────────────────────
+    Q_PROPERTY(QVariantList notes READ notes NOTIFY notesChanged)
+
 public:
     enum Status { Idle, Running, Done, Failed };
     Q_ENUM(Status)
@@ -76,6 +96,24 @@ public:
     QString quickModel() const { return m_quickModel; }
     QString quickUpdatedAt() const { return m_quickUpdatedAt; }
 
+    QVariantMap deep() const { return m_deep.toVariantMap(); }
+    bool hasDeep() const;
+    bool deepStale() const;
+    bool deepSaved() const { return m_deepSaved; }
+    bool deepIsMine() const { return m_deepIsMine; }
+    QString deepAuthorEmail() const { return m_deepAuthorEmail; }
+    QStringList moduleIds() const;
+    int deepDone() const;
+    int deepTotal() const;
+    bool deepRunning() const { return !m_deepQueue.isEmpty() || m_deepInflight > 0; }
+    QVariantList notes() const;
+
+    // What one module produced, empty when it has not run.
+    Q_INVOKABLE QVariantMap module(const QString &id) const;
+    Q_INVOKABLE QString moduleTitle(const QString &id) const;
+    Q_INVOKABLE QString moduleError(const QString &id) const;
+    Q_INVOKABLE bool moduleBusy(const QString &id) const;
+
 public slots:
     // `force` regenerates even when a current interpretation exists.
     void generateQuick(bool force = false);
@@ -83,16 +121,34 @@ public slots:
     // Drops our own stored interpretation for this paper.
     void discardQuick();
 
+    // The close reading. `force` re-runs modules that already exist.
+    void generateDeep(bool force = false);
+    // §5: redo one part without touching the rest.
+    void regenerateModule(const QString &id);
+    void cancelDeep();
+    void discardDeep();
+
+    // §5 / §16: the reader's own notes, kept across regenerations.
+    void saveNote(const QString &text, const QString &moduleId = QString());
+    void removeNote(int index);
+
 signals:
     void stateChanged();
     void paperChanged();
     void quickChanged();
+    void deepChanged();
+    void notesChanged();
 
 private:
     void onPaperChanged();
     void reloadFromStore();
     void setStatus(Status s, const QString &err = QString());
     void clearQuick();
+    void clearDeep();
+    void pumpDeep();
+    void startModule(const QString &id);
+    void persistDeep();
+    void reloadNotes();
     QString currentInputHash() const;
     int contextChars() const;
 
@@ -117,6 +173,21 @@ private:
     QString m_quickUpdatedAt;
     bool m_quickIsMine = true;
     bool m_quickSaved = false;
+
+    // { "modules": { "<id>": {...} }, "meta": {...} }
+    QJsonObject m_deep;
+    QString m_deepInputHash;
+    QString m_deepAuthorEmail;
+    QString m_deepUpdatedAt;
+    bool m_deepIsMine = true;
+    bool m_deepSaved = false;
+    QStringList m_deepQueue;
+    QHash<QString, QString> m_deepErrors;
+    QSet<QString> m_deepBusy;
+    int m_deepInflight = 0;
+    bool m_deepForce = false;
+
+    QJsonArray m_notes;
 
     Status m_status = Idle;
     QString m_lastError;
