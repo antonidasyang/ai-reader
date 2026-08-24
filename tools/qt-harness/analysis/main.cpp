@@ -497,6 +497,23 @@ int main(int argc, char **argv)
           QStringLiteral("%1 calls").arg(gateway.requests() - beforeRefuse));
     gateway.setRefuseTools(false);
 
+    // A provider that rejects the request says why in the body. That text is
+    // what the reader has to see -- Qt's own "server replied with status code
+    // 400" names no cause and no cure.
+    gateway.setRefuseAll(QStringLiteral(
+        "This model's maximum context length is 65536 tokens."));
+    analysis.generateQuick(true);
+    waitFor([&] { return analysis.status() != AnalysisService::Running; }, 30000);
+    check("a rejected request reports what the server said",
+          analysis.lastError().contains(QStringLiteral("65536")),
+          analysis.lastError().left(120));
+    check("...with the HTTP status alongside it",
+          analysis.lastError().contains(QStringLiteral("400")));
+    check("...and what to do about it",
+          analysis.lastError().contains(QStringLiteral("Context window")),
+          analysis.lastError().right(80));
+    gateway.setRefuseAll(QString());
+
     // ── §8: the category system, and who owns it ────────────────────
     LibraryAnalysisService research(&settings, &store, &projects, &profile);
     check("a project-wide analysis can run once there are digests",

@@ -107,6 +107,13 @@ public:
     QUrl baseUrl() const { return m_baseUrl; }
     QString model() const { return m_model; }
 
+    // What the server actually said, out of the response body. Providers
+    // put their explanation in {"error":{"message":…}} (or a bare string,
+    // or an HTML page from a proxy); Qt's own errorString only ever says
+    // "server replied with status code 400", which is not a reason.
+    static QString describeHttpError(const QByteArray &body, int httpStatus,
+                                     const QString &fallback);
+
     void setApiKey(const QString &key) { m_apiKey = key; }
     void setBaseUrl(const QUrl &url) { m_baseUrl = url; }
     void setModel(const QString &model) { m_model = model; }

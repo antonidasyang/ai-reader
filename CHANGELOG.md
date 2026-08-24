@@ -1,5 +1,23 @@
 # AI Reader changelog
 
+## v1.2.9 — 2026-08-24
+
+### When the model refuses, it now says why
+- A failed request used to read *"Error transferring … — server replied with
+  status code 400"*, which names no cause and no cure. The provider's own
+  explanation was being thrown away: on a streaming request the error body
+  arrives through the same channel as the content, so by the time the request
+  finished there was nothing left to read.
+- The message now carries what the server actually said — *"HTTP 400: This
+  model's maximum context length is 65536 tokens"* — for both the OpenAI-style
+  and Anthropic clients.
+- And where there is an obvious fix, it is spelled out: a context overflow
+  points at *Settings → Model → Context window*, an output-length refusal at
+  *Settings → Interpretation → Max output tokens*.
+- Failures also log the request's shape (model, output budget, prompt size,
+  which attempt) to launch.log, so a report from the field can be diagnosed
+  without reproducing it.
+
 ## v1.2.8 — 2026-08-24
 
 ### Settings is a list of subjects, not one long scroll

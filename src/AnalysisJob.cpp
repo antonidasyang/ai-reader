@@ -1,5 +1,7 @@
 #include "AnalysisJob.h"
 
+#include <QCoreApplication>
+
 #include "AnalysisPrompts.h"
 #include "AnalysisTypes.h"
 #include "LlmClient.h"
@@ -8,6 +10,38 @@
 #include <QDateTime>
 #include <QJsonObject>
 #include <QTimer>
+
+namespace {
+
+// The two failures a reader can actually do something about. Everything else
+// is passed through untouched -- a guessed remedy is worse than none.
+QString withRemedy(const QString &error)
+{
+    const QString e = error.toLower();
+    const bool tokenish = e.contains(QStringLiteral("token"))
+                          || e.contains(QStringLiteral("context"))
+                          || e.contains(QStringLiteral("too long"))
+                          || e.contains(QStringLiteral("too large"));
+    if (!tokenish)
+        return error;
+    if (e.contains(QStringLiteral("max_tokens"))
+        || e.contains(QStringLiteral("max output"))) {
+        return error + QStringLiteral("\n\n")
+               + QCoreApplication::translate(
+                   "AnalysisJob",
+                   "This model accepts a smaller answer than we asked for. "
+                   "Lower \u201cMax output tokens\u201d in Settings \u2192 "
+                   "Interpretation.");
+    }
+    return error + QStringLiteral("\n\n")
+           + QCoreApplication::translate(
+               "AnalysisJob",
+               "The paper is longer than this model's context window. Lower "
+               "\u201cContext window\u201d in Settings \u2192 Model so less of "
+               "the paper is sent, or use a model with a bigger window.");
+}
+
+} // namespace
 
 QuickAnalysisJob::QuickAnalysisJob(const Input &in, QObject *parent)
     : QObject(parent)
@@ -101,7 +135,7 @@ void QuickAnalysisJob::finishErr(const QString &error)
     if (m_done)
         return;
     m_done = true;
-    emit failed(error);
+    emit failed(withRemedy(error));
     deleteLater();
 }
 
@@ -195,6 +229,6 @@ void DeepModuleJob::finishErr(const QString &error)
     if (m_done)
         return;
     m_done = true;
-    emit failed(m_in.moduleId, error);
+    emit failed(m_in.moduleId, withRemedy(error));
     deleteLater();
 }

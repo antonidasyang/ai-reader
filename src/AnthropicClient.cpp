@@ -222,8 +222,12 @@ LlmReply *AnthropicClient::send(const Request &req)
         request, QJsonDocument(body).toJson(QJsonDocument::Compact));
     reply->attachNetworkReply(netReply);
 
+    // Shared with the finished handler below: on an HTTP error the body
+    // arrives through readyRead like any other bytes, so by the time the
+    // request finishes there is nothing left to read and the only thing
+    // left to report was Qt's "status code 400".
+    auto buffer = QSharedPointer<QByteArray>::create();
     if (req.stream) {
-        auto buffer = QSharedPointer<QByteArray>::create();
         auto state  = QSharedPointer<StreamState>::create();
         QObject::connect(netReply, &QNetworkReply::readyRead, reply,
                          [netReply, reply, buffer, state]() {
@@ -244,17 +248,20 @@ LlmReply *AnthropicClient::send(const Request &req)
     }
 
     QObject::connect(netReply, &QNetworkReply::finished, reply,
-                     [netReply, reply, stream = req.stream]() {
+                     [netReply, reply, buffer, stream = req.stream]() {
         if (netReply->error() != QNetworkReply::NoError) {
+            const int status = netReply
+                                   ->attribute(QNetworkRequest::HttpStatusCodeAttribute)
+                                   .toInt();
             // An aborted reply (the transfer timeout) is already closed,
             // and reading it just logs "device not open" — take the body
-            // only when there is one to take.
-            QString msg = netReply->isReadable()
-                        ? QString::fromUtf8(netReply->readAll())
-                        : QString();
-            if (msg.isEmpty())
-                msg = netReply->errorString();
-            reply->setError(msg);
+            // only when there is one to take. Whatever the stream handler
+            // already swallowed counts as body too.
+            QByteArray body = status >= 400 ? *buffer : QByteArray();
+            if (netReply->isReadable())
+                body += netReply->readAll();
+            reply->setError(LlmClient::describeHttpError(
+                body, status, netReply->errorString()));
         } else if (!stream) {
             const QByteArray data = netReply->readAll();
             const QJsonDocument doc = QJsonDocument::fromJson(data);

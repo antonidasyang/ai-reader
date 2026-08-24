@@ -160,6 +160,14 @@ void StructuredCall::finishErr(const QString &e)
     if (m_done)
         return;
     m_done = true;
+    // The shape of what we asked for, so a failure in the field can be
+    // diagnosed from launch.log without reproducing it.
+    qWarning().noquote()
+        << "StructuredCall failed:" << e
+        << "| model:" << (m_client ? m_client->model() : QStringLiteral("-"))
+        << "| maxTokens:" << m_req.maxTokens
+        << "| promptChars:" << m_req.user.size()
+        << "| attempt:" << m_attempt;
     emit failed(e);
     deleteLater();
 }

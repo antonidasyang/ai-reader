@@ -52,6 +52,13 @@ public:
     // was deployed without a tool parser does. The app is supposed to fall
     // back to asking for JSON in prose rather than giving up.
     void setRefuseTools(bool on) { m_refuseTools = on; }
+    // Reject every request with a JSON error body, the way a provider does
+    // when the model name is wrong or the prompt is too long. What the app
+    // shows the reader has to be this text, not Qt's "status code 400".
+    void setRefuseAll(const QString &message)
+    {
+        m_refuseAll = message;
+    }
     // The last request body, for asserting what the prompt actually carried.
     QJsonObject lastRequest() const
     {
@@ -96,6 +103,21 @@ private:
             m_lastBody = body;
             const bool hasTools =
                 !lastRequest().value("tools").toArray().isEmpty();
+            if (!m_refuseAll.isEmpty()) {
+                const QByteArray err =
+                    QJsonDocument(QJsonObject{
+                                      {"error",
+                                       QJsonObject{{"message", m_refuseAll},
+                                                   {"type", "invalid_request_error"}}}})
+                        .toJson(QJsonDocument::Compact);
+                s->write("HTTP/1.1 400 Bad Request\r\nContent-Type: "
+                         "application/json\r\nConnection: close\r\n"
+                         "Content-Length: "
+                         + QByteArray::number(err.size()) + "\r\n\r\n" + err);
+                s->flush();
+                s->disconnectFromHost();
+                return;
+            }
             if (m_refuseTools && hasTools) {
                 const QByteArray err =
                     "{\"error\":{\"message\":\"This model does not support "
@@ -498,6 +520,7 @@ private:
     QByteArray m_lastBody;
     int m_requests = 0;
     bool m_refuseTools = false;
+    QString m_refuseAll;
     int m_citedGood = 0;
     int m_citedMissing = 0;
     int m_citedFabricated = 0;

@@ -1,5 +1,8 @@
 #include "LlmClient.h"
 
+#include <QJsonDocument>
+#include <QJsonObject>
+
 #include <QNetworkReply>
 
 #include <chrono>
@@ -73,3 +76,31 @@ LlmClient::LlmClient(QObject *parent)
 }
 
 LlmClient::~LlmClient() = default;
+
+QString LlmClient::describeHttpError(const QByteArray &body, int httpStatus,
+                                     const QString &fallback)
+{
+    QString detail;
+    const QJsonDocument doc = QJsonDocument::fromJson(body);
+    if (doc.isObject()) {
+        const QJsonObject o = doc.object();
+        const QJsonValue err = o.value(QStringLiteral("error"));
+        if (err.isObject())
+            detail = err.toObject().value(QStringLiteral("message")).toString();
+        else if (err.isString())
+            detail = err.toString();
+        if (detail.isEmpty())
+            detail = o.value(QStringLiteral("message")).toString();
+    }
+    if (detail.isEmpty()) {
+        // Not JSON -- an HTML error page from a proxy, most likely. Show a
+        // trimmed slice rather than a wall of markup.
+        detail = QString::fromUtf8(body).simplified();
+        if (detail.size() > 400)
+            detail = detail.left(400) + QStringLiteral("…");
+    }
+    if (detail.isEmpty())
+        return fallback;
+    return httpStatus > 0 ? tr("HTTP %1: %2").arg(httpStatus).arg(detail)
+                          : detail;
+}
