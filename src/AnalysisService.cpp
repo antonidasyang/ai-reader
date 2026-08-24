@@ -296,6 +296,40 @@ void AnalysisService::setStatus(Status s, const QString &err)
     emit stateChanged();
 }
 
+QVariantList AnalysisService::quickHistory() const
+{
+    QVariantList out;
+    for (const QJsonValue &v :
+         m_store->paperHistoryIndex(paperId(), Analysis::KindQuick))
+        out.append(v.toObject().toVariantMap());
+    return out;
+}
+
+bool AnalysisService::restoreQuick(int index)
+{
+    if (!m_store->restorePaperVersion(paperId(), Analysis::KindQuick, index))
+        return false;
+    reloadFromStore();
+    return true;
+}
+
+QVariantList AnalysisService::deepHistory() const
+{
+    QVariantList out;
+    for (const QJsonValue &v :
+         m_store->paperHistoryIndex(paperId(), Analysis::KindDeep))
+        out.append(v.toObject().toVariantMap());
+    return out;
+}
+
+bool AnalysisService::restoreDeep(int index)
+{
+    if (!m_store->restorePaperVersion(paperId(), Analysis::KindDeep, index))
+        return false;
+    reloadFromStore();
+    return true;
+}
+
 // ── the close reading (§3) ───────────────────────────────────────────
 
 QStringList AnalysisService::moduleIds() const { return Analysis::deepModules(); }

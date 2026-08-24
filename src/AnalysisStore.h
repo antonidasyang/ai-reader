@@ -76,6 +76,12 @@ public:
     // analysis reads (design decision A: digests, never full text).
     QList<AnalysisRecord> paperAnalyses(const QString &kind) const;
     void removePaperAnalysis(const QString &paperId, const QString &kind);
+    // The last couple of versions of our own interpretation of a paper, so
+    // regenerating one is recoverable (§16 历史版本).
+    QJsonArray paperHistoryIndex(const QString &paperId,
+                                 const QString &kind) const;
+    bool restorePaperVersion(const QString &paperId, const QString &kind,
+                             int index);
 
     // ── project-wide analyses ────────────────────────────────────────
     bool putLibraryAnalysis(const QString &kind, const QString &scopeHash,

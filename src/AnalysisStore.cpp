@@ -18,6 +18,10 @@ namespace {
 // without letting one object grow without bound.
 constexpr int kHistoryDepth = 3;
 
+// Per-paper analyses keep fewer: they are per member, so a regeneration only
+// ever costs the person who asked for it -- one step back is enough.
+constexpr int kPaperHistoryDepth = 2;
+
 QString nowIso()
 {
     return QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
@@ -69,6 +73,25 @@ bool AnalysisStore::putPaperAnalysis(const QString &paperId,
     const QString author = userId();
     const QString id = Analysis::paperAnalysisId(project, paperId, kind, author);
 
+    // Keep what is there now, so "regenerate" is not a one-way door.
+    QJsonArray history;
+    SyncObjectRow existing;
+    if (m_db->getObject(project, id, existing) && !existing.deleted) {
+        history = existing.data.value(QStringLiteral("history")).toArray();
+        const QString prev =
+            existing.data.value(QStringLiteral("payload")).toString();
+        if (!prev.isEmpty()) {
+            history.prepend(QJsonObject{
+                {QStringLiteral("updatedAt"),
+                 existing.data.value(QStringLiteral("updatedAt"))},
+                {QStringLiteral("model"), existing.data.value(QStringLiteral("model"))},
+                {QStringLiteral("codec"), existing.data.value(QStringLiteral("codec"))},
+                {QStringLiteral("payload"), prev}});
+        }
+        while (history.size() > kPaperHistoryDepth)
+            history.removeLast();
+    }
+
     QJsonObject data{
         {QStringLiteral("paperId"), paperId},
         {QStringLiteral("kind"), kind},
@@ -80,7 +103,8 @@ bool AnalysisStore::putPaperAnalysis(const QString &paperId,
         {QStringLiteral("title"), title},
         {QStringLiteral("codec"), PayloadCodec::codecName()},
         {QStringLiteral("payload"), PayloadCodec::encode(payload)},
-        {QStringLiteral("updatedAt"), nowIso()}};
+        {QStringLiteral("updatedAt"), nowIso()},
+        {QStringLiteral("history"), history}};
     if (!error.isEmpty())
         data.insert(QStringLiteral("error"), error);
 
@@ -184,6 +208,56 @@ void AnalysisStore::removePaperAnalysis(const QString &paperId,
         return;
     m_sync->putObject(Analysis::TypePaperAnalysis, id, existing.data, true);
     emit changed();
+}
+
+QJsonArray AnalysisStore::paperHistoryIndex(const QString &paperId,
+                                            const QString &kind) const
+{
+    const QString project = projectId();
+    if (project.isEmpty() || paperId.isEmpty())
+        return {};
+    SyncObjectRow row;
+    if (!m_db->getObject(project,
+                         Analysis::paperAnalysisId(project, paperId, kind,
+                                                   userId()),
+                         row)
+        || row.deleted)
+        return {};
+    QJsonArray out;
+    for (const QJsonValue &v : row.data.value(QStringLiteral("history")).toArray()) {
+        const QJsonObject h = v.toObject();
+        out.append(QJsonObject{
+            {QStringLiteral("updatedAt"), h.value(QStringLiteral("updatedAt"))},
+            {QStringLiteral("model"), h.value(QStringLiteral("model"))}});
+    }
+    return out;
+}
+
+bool AnalysisStore::restorePaperVersion(const QString &paperId,
+                                        const QString &kind, int index)
+{
+    const QString project = projectId();
+    if (project.isEmpty())
+        return false;
+    SyncObjectRow row;
+    if (!m_db->getObject(project,
+                         Analysis::paperAnalysisId(project, paperId, kind,
+                                                   userId()),
+                         row)
+        || row.deleted)
+        return false;
+    const QJsonArray hist = row.data.value(QStringLiteral("history")).toArray();
+    if (index < 0 || index >= hist.size())
+        return false;
+    const QJsonObject payload = PayloadCodec::decode(hist.at(index).toObject());
+    if (payload.isEmpty())
+        return false;
+    return putPaperAnalysis(
+        paperId, kind, payload,
+        row.data.value(QStringLiteral("model")).toString(),
+        row.data.value(QStringLiteral("inputHash")).toString(),
+        row.data.value(QStringLiteral("status")).toString(), QString(),
+        row.data.value(QStringLiteral("title")).toString());
 }
 
 // ── project-wide ─────────────────────────────────────────────────────

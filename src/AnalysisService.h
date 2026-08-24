@@ -109,6 +109,12 @@ public:
     QVariantList notes() const;
 
     // What one module produced, empty when it has not run.
+    // §16: the last couple of versions of this paper's interpretation.
+    Q_INVOKABLE QVariantList quickHistory() const;
+    Q_INVOKABLE bool restoreQuick(int index);
+    Q_INVOKABLE QVariantList deepHistory() const;
+    Q_INVOKABLE bool restoreDeep(int index);
+
     Q_INVOKABLE QVariantMap module(const QString &id) const;
     Q_INVOKABLE QString moduleTitle(const QString &id) const;
     Q_INVOKABLE QString moduleError(const QString &id) const;

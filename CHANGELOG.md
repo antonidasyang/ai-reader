@@ -1,5 +1,20 @@
 # AI Reader changelog
 
+## v1.2.5 — 2026-08-24
+
+### The whole interpretation layer speaks Chinese
+- All 984 interface strings are translated, including everything the new
+  Interpret pane, close reading, batch, comparison and Research views added.
+
+### Three smaller things the design was missing
+- **A citation now names its section, not just its page** — the tooltip and
+  the export both read "4.2 Experimental setup, page 6".
+- **Regenerating an interpretation is recoverable.** The previous version is
+  kept; Interpret pane → ⋯ → *Restore the previous version* brings it back.
+- **A category can be split**, not only merged: tick the papers that belong
+  apart and they move into a new category beside it — one that is yours, so
+  regenerating the category system leaves it alone.
+
 ## v1.2.4 — 2026-08-24
 
 ### What a whole project of papers adds up to

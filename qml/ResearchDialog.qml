@@ -40,6 +40,114 @@ Dialog {
         onAccepted: exporter.save(exporter.projectMarkdown(), selectedFile)
     }
 
+    // §8.3's other half: a category that turned out to be two categories.
+    function beginSplit(categoryId, categoryName) {
+        splitDialog.catId = categoryId
+        splitDialog.papers = research.categoryPapers(categoryId)
+        splitDialog.picked = []
+        splitDialog.newName = qsTr("%1 (part)").arg(categoryName)
+        splitDialog.open()
+    }
+
+    Dialog {
+        id: splitDialog
+        title: qsTr("Split a category")
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        width: 460
+        padding: 14
+        standardButtons: Dialog.NoButton
+
+        property string catId: ""
+        property var papers: []
+        property var picked: []
+        property string newName: ""
+
+        function toggle(paperId, on) {
+            let next = splitDialog.picked.filter(function(p) { return p !== paperId })
+            if (on)
+                next.push(paperId)
+            splitDialog.picked = next
+        }
+
+        palette.window: Theme.paneBg
+        palette.windowText: Theme.text
+        palette.base: Theme.fieldBg
+        palette.text: Theme.text
+        palette.button: Theme.buttonBg
+        palette.buttonText: Theme.text
+        palette.highlight: Theme.accent
+        palette.highlightedText: Theme.onAccent
+        palette.placeholderText: Theme.dimText
+        background: Rectangle {
+            color: Theme.paneBg
+            border.color: Theme.border
+            radius: 6
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 8
+            Label {
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                color: Theme.dimText
+                text: qsTr("The papers you tick move into a new category "
+                           + "beside this one. It becomes yours, so "
+                           + "regenerating the category system leaves it "
+                           + "alone.")
+            }
+            TextField {
+                id: splitName
+                Layout.fillWidth: true
+                text: splitDialog.newName
+                placeholderText: qsTr("Name for the new category")
+                onTextChanged: splitDialog.newName = text
+            }
+            ScrollView {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 220
+                clip: true
+                contentWidth: availableWidth
+                ColumnLayout {
+                    width: parent.width
+                    spacing: 2
+                    Repeater {
+                        model: splitDialog.papers
+                        delegate: CheckBox {
+                            required property var modelData
+                            Layout.fillWidth: true
+                            text: modelData.title
+                            onToggled: splitDialog.toggle(modelData.paperId, checked)
+                        }
+                    }
+                }
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                Item { Layout.fillWidth: true }
+                Button {
+                    text: qsTr("Cancel")
+                    Layout.preferredHeight: root.btnH
+                    onClicked: splitDialog.close()
+                }
+                Button {
+                    text: qsTr("Split")
+                    enabled: splitDialog.picked.length > 0
+                             && splitDialog.newName.trim().length > 0
+                             && splitDialog.picked.length < splitDialog.papers.length
+                    Layout.preferredHeight: root.btnH
+                    onClicked: {
+                        research.splitCategory(splitDialog.catId,
+                                               splitDialog.newName.trim(),
+                                               splitDialog.picked)
+                        splitDialog.close()
+                    }
+                }
+            }
+        }
+    }
+
     signal paperActivated(string paperId)
     // A follow-up question about a project-wide statement still goes to the
     // chat, against whatever paper is open.
@@ -883,6 +991,18 @@ Dialog {
                             onObjectRemoved: (i, obj) => mergeMenu.removeItem(obj)
                         }
                     }
+                }
+                ToolButton {
+                    implicitWidth: 22
+                    implicitHeight: 22
+                    font.pixelSize: 11
+                    text: "⑂"
+                    enabled: cr.catPapers.length > 1
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 400
+                    ToolTip.text: qsTr("Split some of these papers into a "
+                                       + "category of their own")
+                    onClicked: root.beginSplit(cr.catId, cr.catName)
                 }
                 ToolButton {
                     implicitWidth: 22

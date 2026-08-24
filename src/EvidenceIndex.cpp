@@ -66,6 +66,21 @@ struct Ctx {
     EvidenceIndex::VerifyStats *stats = nullptr;
 };
 
+// The heading a paragraph sits under. §4.1 asks a citation to name the
+// section as well as the page, and the section is not in the block itself --
+// it is the nearest heading above it.
+QString sectionFor(const QVector<Block> &blocks, int pos)
+{
+    for (int i = pos; i >= 0; --i) {
+        if (blocks[i].kind == Block::Heading) {
+            const QString t = blocks[i].text.trimmed();
+            if (!t.isEmpty())
+                return t;
+        }
+    }
+    return {};
+}
+
 QJsonValue walkValue(const QJsonValue &v, Ctx &ctx);
 
 // Checks one claim's evidence list, repairing block ids that are off by a
@@ -127,6 +142,9 @@ QJsonArray verifyEvidence(const QJsonArray &in, Ctx &ctx, int *verifiedCount)
             e[QStringLiteral("verified")] = true;
             e[QStringLiteral("page")] = b.page + 1;
             e[QStringLiteral("ord")] = b.ord;
+            const QString section = sectionFor(blocks, found);
+            if (!section.isEmpty())
+                e[QStringLiteral("section")] = section;
             if (ctx.stats)
                 ++ctx.stats->verified;
             if (verifiedCount)

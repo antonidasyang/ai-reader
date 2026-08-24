@@ -161,8 +161,12 @@ ColumnLayout {
                 ToolTip.visible: hovered
                 ToolTip.delay: 300
                 ToolTip.text: modelData.verified === true
-                              ? qsTr("“%1”\nClick to open this passage.")
-                                .arg(modelData.quote || "")
+                              ? (modelData.section
+                                 ? qsTr("%1, page %2\n“%3”\nClick to open this passage.")
+                                   .arg(modelData.section).arg(modelData.page)
+                                   .arg(modelData.quote || "")
+                                 : qsTr("“%1”\nClick to open this passage.")
+                                   .arg(modelData.quote || ""))
                               : qsTr("The model cited a passage that is not in "
                                      + "the paper: “%1”").arg(modelData.quote || "")
                 onClicked: root.evidenceRequested(modelData.page || 0,

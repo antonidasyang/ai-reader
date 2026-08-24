@@ -527,6 +527,76 @@ void LibraryAnalysisService::mergeCategories(const QString &intoId,
     saveTaxonomy(tax);
 }
 
+void LibraryAnalysisService::splitCategory(const QString &categoryId,
+                                           const QString &newName,
+                                           const QStringList &paperIds)
+{
+    if (newName.trimmed().isEmpty() || paperIds.isEmpty())
+        return;
+    QJsonObject tax = taxonomy();
+    QJsonArray dims = tax.value(QStringLiteral("dimensions")).toArray();
+    for (int i = 0; i < dims.size(); ++i) {
+        QJsonObject d = dims.at(i).toObject();
+        const QString dim = d.value(QStringLiteral("dimension")).toString();
+        QJsonArray cats = d.value(QStringLiteral("categories")).toArray();
+        for (int j = 0; j < cats.size(); ++j) {
+            QJsonObject c = cats.at(j).toObject();
+            if (c.value(QStringLiteral("id")).toString() != categoryId)
+                continue;
+            QJsonArray keep;
+            QJsonArray moved;
+            for (const QJsonValue &v : c.value(QStringLiteral("paperIds")).toArray()) {
+                if (paperIds.contains(v.toString()))
+                    moved.append(v);
+                else
+                    keep.append(v);
+            }
+            if (moved.isEmpty())
+                return;
+            c.insert(QStringLiteral("paperIds"), keep);
+            c.insert(QStringLiteral("confirmed"), true);
+            cats.replace(j, c);
+            cats.insert(j + 1,
+                        QJsonObject{
+                            {QStringLiteral("id"), newCategoryId()},
+                            {QStringLiteral("key"), normKey(dim, newName.trimmed())},
+                            {QStringLiteral("name"), newName.trimmed()},
+                            {QStringLiteral("description"),
+                             c.value(QStringLiteral("description"))},
+                            {QStringLiteral("paperIds"), moved},
+                            {QStringLiteral("locked"), true},
+                            {QStringLiteral("confirmed"), true},
+                            {QStringLiteral("source"), QStringLiteral("user")}});
+            d.insert(QStringLiteral("categories"), cats);
+            dims.replace(i, d);
+            tax.insert(QStringLiteral("dimensions"), dims);
+            saveTaxonomy(tax);
+            return;
+        }
+    }
+}
+
+QVariantList LibraryAnalysisService::categoryPapers(const QString &categoryId) const
+{
+    QVariantList out;
+    for (const QJsonValue &dv :
+         taxonomy().value(QStringLiteral("dimensions")).toArray()) {
+        for (const QJsonValue &cv :
+             dv.toObject().value(QStringLiteral("categories")).toArray()) {
+            const QJsonObject c = cv.toObject();
+            if (c.value(QStringLiteral("id")).toString() != categoryId)
+                continue;
+            for (const QJsonValue &p : c.value(QStringLiteral("paperIds")).toArray()) {
+                const QString id = p.toString();
+                out.append(QVariantMap{{QStringLiteral("paperId"), id},
+                                       {QStringLiteral("title"), paperTitle(id)}});
+            }
+            return out;
+        }
+    }
+    return out;
+}
+
 void LibraryAnalysisService::addCategory(const QString &dimension,
                                          const QString &name)
 {

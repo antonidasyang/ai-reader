@@ -62,7 +62,13 @@ QString AnalysisExporter::claimLine(const QJsonObject &claim, int indent) const
     for (const QJsonValue &v : claim.value(QStringLiteral("evidence")).toArray()) {
         const QJsonObject e = v.toObject();
         if (e.value(QStringLiteral("verified")).toBool()) {
-            cites << tr("p%1").arg(e.value(QStringLiteral("page")).toInt());
+            const QString section =
+                sanitize(e.value(QStringLiteral("section")).toString());
+            cites << (section.isEmpty()
+                          ? tr("p%1").arg(e.value(QStringLiteral("page")).toInt())
+                          : tr("%1, p%2")
+                                .arg(section)
+                                .arg(e.value(QStringLiteral("page")).toInt()));
         } else {
             // Exported as it is shown: a citation that did not check out is
             // not quietly dropped.

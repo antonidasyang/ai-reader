@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QPointer>
 #include <QString>
+#include <QStringList>
 #include <QVariantList>
 #include <QVariantMap>
 
@@ -74,6 +75,13 @@ public:
                                           bool confirmed);
     Q_INVOKABLE void mergeCategories(const QString &intoId,
                                      const QString &fromId);
+    // Split some papers out of a category into a new one beside it. The new
+    // category is the reader's, so a later regeneration leaves it alone.
+    Q_INVOKABLE void splitCategory(const QString &categoryId,
+                                   const QString &newName,
+                                   const QStringList &paperIds);
+    // The papers currently in a category, as {paperId, title}.
+    Q_INVOKABLE QVariantList categoryPapers(const QString &categoryId) const;
     Q_INVOKABLE void addCategory(const QString &dimension, const QString &name);
     Q_INVOKABLE void removeCategory(const QString &categoryId);
     Q_INVOKABLE void assignPaper(const QString &paperId,

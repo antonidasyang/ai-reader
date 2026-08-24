@@ -154,6 +154,21 @@ Rectangle {
                             onTriggered: analysis.discardQuick()
                         }
                         MenuItem {
+                            // §16: a regenerate is recoverable. The menu
+                            // re-reads the history each time it opens, so it
+                            // does not need a change signal of its own.
+                            text: qsTr("Restore the previous version")
+                            enabled: root.mode === 1
+                                     ? analysis.deepHistory().length > 0
+                                     : analysis.quickHistory().length > 0
+                            onTriggered: {
+                                if (root.mode === 1)
+                                    analysis.restoreDeep(0)
+                                else
+                                    analysis.restoreQuick(0)
+                            }
+                        }
+                        MenuItem {
                             text: qsTr("Export this paper as Markdown…")
                             enabled: analysis.hasQuick || analysis.hasDeep
                             onTriggered: exportDialog.open()
