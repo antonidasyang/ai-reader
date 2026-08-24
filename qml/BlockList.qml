@@ -523,8 +523,9 @@ Rectangle {
                                 ? qsTr("This paper hasn't been split into paragraphs yet.")
                                 : qsTr("Open a PDF to see extracted text.")
                 }
-                Button {
+                AppButton {
                     Layout.alignment: Qt.AlignHCenter
+                    primary: true
                     visible: root.paperStatus === PaperController.Ready
                              && !paperController.extracting
                     text: qsTr("Segment paragraphs")

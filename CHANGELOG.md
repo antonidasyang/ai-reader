@@ -1,5 +1,33 @@
 # AI Reader changelog
 
+## v1.2.7 — 2026-08-24
+
+### The main model reads; only translation gets its own
+- **The model at the top of Settings now does the reading** — interpretation,
+  close reading, the project-wide analyses, chat, summaries and vision all run
+  on it.
+- **Translation is the one job that can be pointed somewhere else.** It runs on
+  every paragraph of every paper, so a fast, cheap model usually serves it
+  better. Settings → *Translation model*; leave a field blank and it uses the
+  main configuration.
+
+### The paper you are reading is highlighted again
+- Both the **library** and the **folder** panes highlight the open paper. A
+  paper opened from a project plays out of the shared cache under a
+  sha256 name, so matching on the file path alone quietly failed for exactly
+  the papers a collaborator had added — the library now matches on the paper
+  itself, and the folder pane learns the file it came from.
+
+### One look for every dialog
+- Every popup in the app now wears the Settings/Prompts chrome: the same
+  surface, the same dimmed backdrop, the same titled header, the same footer.
+- **Every button is the same button** — the filled confirm and the outlined
+  cancel from those two dialogs, at one height, everywhere. Text fields,
+  drop-downs and spin boxes match too.
+- Under the hood these are shared components rather than a style copied into
+  each dialog, so the next dialog inherits the look instead of re-implementing
+  it.
+
 ## v1.2.6 — 2026-08-24
 
 ### Interpretation survives a model that cannot do tool calls

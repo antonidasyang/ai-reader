@@ -37,7 +37,7 @@ BatchAnalysisService::BatchAnalysisService(Settings *settings,
 
 bool BatchAnalysisService::canRun() const
 {
-    return m_settings && m_settings->analysisConfigured()
+    return m_settings && m_settings->isConfigured()
            && m_store->canWrite();
 }
 
@@ -140,7 +140,7 @@ void BatchAnalysisService::onSourceReady(const QString &itemId,
     }
 
     if (!m_client)
-        m_client = m_settings->createAnalysisClient(this);
+        m_client = m_settings->createClient(this);
 
     QuickAnalysisJob::Input in;
     in.paperId = paperId;
@@ -164,11 +164,11 @@ void BatchAnalysisService::onSourceReady(const QString &itemId,
                     digest.value(QStringLiteral("insufficient")).toBool();
                 m_store->putPaperAnalysis(
                     paperId, Analysis::KindQuick, digest,
-                    m_settings->analysisModelInUse(),
+                    m_settings->model(),
                     Analysis::inputHash(job->contentHash(),
                                         AnalysisPrompts::promptVersion(),
                                         m_profile->hash(),
-                                        m_settings->analysisModelInUse()),
+                                        m_settings->model()),
                     insufficient ? Analysis::StatusInsufficient
                                  : Analysis::StatusOk,
                     QString(), title);

@@ -3,16 +3,12 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import AiReader
 
-Dialog {
+AppDialog {
     id: dialog
     title: qsTr("Prompts")
-    modal: true
     standardButtons: Dialog.Ok | Dialog.Cancel | Dialog.Reset
-    closePolicy: Popup.CloseOnEscape
     width: Math.min(760, parent ? parent.width - 48 : 760)
     height: Math.min(620, parent ? parent.height - 48 : 620)
-    padding: Theme.dialogPadding
-    topPadding: Theme.spaceL
 
     // When the saved value is empty, pre-fill with the built-in default so
     // the user can see and edit from it. On accept, if the text still
@@ -53,119 +49,7 @@ Dialog {
     }
 
     // ── Shared dialog chrome ────────────────────────────────────────
-    palette.window: Theme.dialogBg
-    palette.windowText: Theme.text
-    palette.base: Theme.fieldBg
-    palette.text: Theme.text
-    palette.button: Theme.buttonBg
-    palette.buttonText: Theme.text
-    palette.highlight: Theme.accent
-    palette.highlightedText: Theme.onAccent
-    palette.placeholderText: Theme.dimText
-
-    background: Rectangle {
-        color: Theme.dialogBg
-        border.color: Theme.border
-        border.width: 1
-        radius: Theme.radiusL
-        Rectangle {
-            z: -1
-            x: 0; y: 2
-            width: parent.width
-            height: parent.height
-            radius: parent.radius + 1
-            color: Theme.dialogShadow
-        }
-    }
-
-    Overlay.modal: Rectangle {
-        color: Theme.overlayDim
-        Behavior on opacity { NumberAnimation { duration: 150 } }
-    }
-
-    enter: Transition {
-        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 140; easing.type: Easing.OutCubic }
-        NumberAnimation { property: "scale"; from: 0.97; to: 1; duration: 140; easing.type: Easing.OutCubic }
-    }
-    exit: Transition {
-        NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 100; easing.type: Easing.InCubic }
-    }
-
-    header: Item {
-        implicitHeight: headerTitle.implicitHeight + Theme.spaceL + Theme.spaceM + 1
-        Label {
-            id: headerTitle
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.leftMargin: Theme.dialogPadding
-            anchors.rightMargin: Theme.dialogPadding
-            anchors.topMargin: Theme.spaceL
-            text: dialog.title
-            elide: Text.ElideRight
-            font.pixelSize: 16
-            font.weight: Font.DemiBold
-            color: Theme.text
-        }
-        Rectangle {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            height: 1
-            color: Theme.divider
-        }
-    }
-
-    footer: DialogButtonBox {
-        visible: count > 0
-        alignment: Qt.AlignRight
-        spacing: Theme.spaceS
-        leftPadding: Theme.dialogPadding
-        rightPadding: Theme.dialogPadding
-        topPadding: Theme.spaceM
-        bottomPadding: Theme.spaceL
-        delegate: ActionButton {
-            primary: DialogButtonBox.buttonRole === DialogButtonBox.AcceptRole
-        }
-        background: Rectangle {
-            color: "transparent"
-            Rectangle {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: parent.top
-                height: 1
-                color: Theme.divider
-            }
-        }
-    }
-
-    component ActionButton: Button {
-        id: ab
-        property bool primary: false
-        implicitHeight: Theme.controlH
-        leftPadding: Theme.spaceL
-        rightPadding: Theme.spaceL
-        contentItem: Text {
-            text: ab.text
-            font.pixelSize: 13
-            font.weight: ab.primary ? Font.DemiBold : Font.Normal
-            color: ab.primary ? Theme.onPrimary : Theme.text
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            elide: Text.ElideRight
-            opacity: ab.enabled ? 1 : 0.45
-        }
-        background: Rectangle {
-            radius: Theme.radiusS
-            color: ab.primary
-                   ? (ab.down ? Theme.primaryPressed : ab.hovered ? Theme.primaryHover : Theme.primaryBg)
-                   : (ab.down ? Theme.buttonPressed : ab.hovered ? Theme.buttonHover : Theme.buttonBg)
-            border.width: ab.primary ? 0 : 1
-            border.color: ab.visualFocus ? Theme.accent : Theme.border
-            opacity: ab.enabled ? 1 : 0.45
-            Behavior on color { ColorAnimation { duration: 120 } }
-        }
-    }
+    component ActionButton: AppButton {}
 
     // Underline-style tab: quiet text, accent indicator when current.
     component PromptTab: TabButton {

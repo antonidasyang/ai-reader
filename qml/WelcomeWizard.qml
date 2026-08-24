@@ -96,39 +96,7 @@ Popup {
 
     // Same button language as the dialogs' footers (see e.g.
     // SettingsDialog): primary = accent-filled, ghost = quiet text.
-    component ActionButton: Button {
-        id: ab
-        property bool primary: false
-        property bool ghost: false
-        implicitHeight: Theme.controlH
-        leftPadding: Theme.spaceL
-        rightPadding: Theme.spaceL
-        contentItem: Text {
-            text: ab.text
-            font.pixelSize: 13
-            font.weight: ab.primary ? Font.DemiBold : Font.Normal
-            color: ab.primary ? Theme.onPrimary
-                   : ab.ghost ? (ab.hovered ? Theme.text : Theme.dimText)
-                   : Theme.text
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            elide: Text.ElideRight
-            opacity: ab.enabled ? 1 : 0.45
-            Behavior on color { ColorAnimation { duration: 120 } }
-        }
-        background: Rectangle {
-            radius: Theme.radiusS
-            color: ab.primary
-                   ? (ab.down ? Theme.primaryPressed : ab.hovered ? Theme.primaryHover : Theme.primaryBg)
-                   : ab.ghost
-                     ? (ab.down ? Theme.buttonPressed : ab.hovered ? Theme.buttonHover : "transparent")
-                     : (ab.down ? Theme.buttonPressed : ab.hovered ? Theme.buttonHover : Theme.buttonBg)
-            border.width: ab.primary || ab.ghost ? 0 : 1
-            border.color: ab.visualFocus ? Theme.accent : Theme.border
-            opacity: ab.enabled ? 1 : 0.45
-            Behavior on color { ColorAnimation { duration: 120 } }
-        }
-    }
+    component ActionButton: AppButton {}
 
     contentItem: Item {
         id: content

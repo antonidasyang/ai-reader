@@ -68,7 +68,7 @@ int LibraryAnalysisService::digestCount() const
 
 bool LibraryAnalysisService::canRun() const
 {
-    return m_settings && m_settings->analysisConfigured()
+    return m_settings && m_settings->isConfigured()
            && m_store->canWrite() && digestCount() >= 2 && m_call.isNull();
 }
 
@@ -99,7 +99,7 @@ QString LibraryAnalysisService::inputHashNow() const
     return Analysis::inputHash(sha1(parts.join(QChar(','))),
                                AnalysisPrompts::promptVersion(),
                                m_profile->hash(),
-                               m_settings ? m_settings->analysisModelInUse()
+                               m_settings ? m_settings->model()
                                           : QString());
 }
 
@@ -225,7 +225,7 @@ void LibraryAnalysisService::run(
         return;
     }
     if (!m_client)
-        m_client = m_settings->createAnalysisClient(this);
+        m_client = m_settings->createClient(this);
 
     StructuredCall::Request req;
     req.system = AnalysisPrompts::librarySystem(
@@ -258,7 +258,7 @@ void LibraryAnalysisService::run(
                                    Qt::ISODate));
                 m_store->putLibraryAnalysis(
                     storeKind, QString(), payload,
-                    m_settings->analysisModelInUse(), inputHashNow(), count);
+                    m_settings->model(), inputHashNow(), count);
                 emit resultChanged(storeKind);
                 emit stateChanged();
             });
@@ -301,7 +301,7 @@ void LibraryAnalysisService::saveTaxonomy(const QJsonObject &tax)
         m_store->libraryAnalysis(Analysis::KindTaxonomy);
     m_store->putLibraryAnalysis(
         Analysis::KindTaxonomy, QString(), tax,
-        m_settings ? m_settings->analysisModelInUse() : QString(),
+        m_settings ? m_settings->model() : QString(),
         cur.inputHash.isEmpty() ? inputHashNow() : cur.inputHash,
         digestCount());
     emit resultChanged(Analysis::KindTaxonomy);

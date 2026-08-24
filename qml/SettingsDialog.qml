@@ -3,16 +3,12 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import AiReader
 
-Dialog {
+AppDialog {
     id: dialog
     title: qsTr("Settings")
-    modal: true
     standardButtons: Dialog.Ok | Dialog.Cancel
-    closePolicy: Popup.CloseOnEscape
     width: 600
     height: Math.min(implicitHeight, parent ? parent.height - 48 : 700)
-    padding: Theme.dialogPadding
-    topPadding: Theme.spaceL
 
     readonly property var providerOptions:
         ["anthropic", "openai", "deepseek", "openai-compatible"]
@@ -36,9 +32,9 @@ Dialog {
 
     // Same providers as the main control, with a leading entry whose empty
     // code means "whatever the main provider above is set to".
-    readonly property var analysisProviderCodes:
+    readonly property var translationProviderCodes:
         [""].concat(dialog.providerOptions)
-    readonly property var analysisProviderLabels:
+    readonly property var translationProviderLabels:
         [qsTr("Same as the main provider")].concat(dialog.providerOptions)
 
     onOpened: {
@@ -55,11 +51,11 @@ Dialog {
         concurrencyField.value  = settings.translationConcurrency
         const lidx = languageCodes.indexOf(settings.uiLanguage)
         languageBox.currentIndex = lidx >= 0 ? lidx : 0
-        const aidx = analysisProviderCodes.indexOf(settings.analysisProvider)
-        analysisProviderBox.currentIndex = aidx >= 0 ? aidx : 0
-        analysisModelField.text      = settings.analysisModel
-        analysisBaseUrlField.text    = settings.analysisBaseUrl
-        analysisApiKeyField.text     = settings.analysisApiKey
+        const aidx = translationProviderCodes.indexOf(settings.translationProvider)
+        translationProviderBox.currentIndex = aidx >= 0 ? aidx : 0
+        translationModelField.text   = settings.translationModel
+        translationBaseUrlField.text = settings.translationBaseUrl
+        translationApiKeyField.text  = settings.translationApiKey
         analysisMaxTokensField.value = settings.analysisMaxTokens
         analysisConcurrencyField.value = settings.analysisConcurrency
         autoCheckBox.checked    = settings.autoCheckUpdates
@@ -91,10 +87,10 @@ Dialog {
         settings.targetLang        = targetLangField.text.trim()
         settings.translationConcurrency = concurrencyField.value
         settings.uiLanguage        = languageCodes[languageBox.currentIndex]
-        settings.analysisProvider  = analysisProviderCodes[analysisProviderBox.currentIndex]
-        settings.analysisModel     = analysisModelField.text.trim()
-        settings.analysisBaseUrl   = analysisBaseUrlField.text.trim()
-        settings.analysisApiKey    = analysisApiKeyField.text
+        settings.translationProvider = translationProviderCodes[translationProviderBox.currentIndex]
+        settings.translationModel    = translationModelField.text.trim()
+        settings.translationBaseUrl  = translationBaseUrlField.text.trim()
+        settings.translationApiKey   = translationApiKeyField.text
         settings.analysisMaxTokens = analysisMaxTokensField.value
         settings.analysisConcurrency = analysisConcurrencyField.value
         settings.autoCheckUpdates  = autoCheckBox.checked
@@ -113,278 +109,21 @@ Dialog {
     }
 
     // ── Shared dialog chrome ────────────────────────────────────────
-    palette.window: Theme.dialogBg
-    palette.windowText: Theme.text
-    palette.base: Theme.fieldBg
-    palette.text: Theme.text
-    palette.button: Theme.buttonBg
-    palette.buttonText: Theme.text
-    palette.highlight: Theme.accent
-    palette.highlightedText: Theme.onAccent
-    palette.placeholderText: Theme.dimText
+    component ActionButton: AppButton {}
 
-    background: Rectangle {
-        color: Theme.dialogBg
-        border.color: Theme.border
-        border.width: 1
-        radius: Theme.radiusL
-        Rectangle {
-            z: -1
-            x: 0; y: 2
-            width: parent.width
-            height: parent.height
-            radius: parent.radius + 1
-            color: Theme.dialogShadow
-        }
-    }
+    component FieldText: AppTextField {}
 
-    Overlay.modal: Rectangle {
-        color: Theme.overlayDim
-        Behavior on opacity { NumberAnimation { duration: 150 } }
-    }
+    component FieldCombo: AppComboBox {}
 
-    enter: Transition {
-        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 140; easing.type: Easing.OutCubic }
-        NumberAnimation { property: "scale"; from: 0.97; to: 1; duration: 140; easing.type: Easing.OutCubic }
-    }
-    exit: Transition {
-        NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 100; easing.type: Easing.InCubic }
-    }
+    component FieldSpin: AppSpinBox {}
 
-    header: Item {
-        implicitHeight: headerTitle.implicitHeight + Theme.spaceL + Theme.spaceM + 1
-        Label {
-            id: headerTitle
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.leftMargin: Theme.dialogPadding
-            anchors.rightMargin: Theme.dialogPadding
-            anchors.topMargin: Theme.spaceL
-            text: dialog.title
-            elide: Text.ElideRight
-            font.pixelSize: 16
-            font.weight: Font.DemiBold
-            color: Theme.text
-        }
-        Rectangle {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            height: 1
-            color: Theme.divider
-        }
-    }
+    component FormLabel: AppFormLabel {}
 
-    footer: DialogButtonBox {
-        visible: count > 0
-        alignment: Qt.AlignRight
-        spacing: Theme.spaceS
-        leftPadding: Theme.dialogPadding
-        rightPadding: Theme.dialogPadding
-        topPadding: Theme.spaceM
-        bottomPadding: Theme.spaceL
-        delegate: ActionButton {
-            primary: DialogButtonBox.buttonRole === DialogButtonBox.AcceptRole
-        }
-        background: Rectangle {
-            color: "transparent"
-            Rectangle {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: parent.top
-                height: 1
-                color: Theme.divider
-            }
-        }
-    }
+    component SectionLabel: AppSectionLabel {}
 
-    // ── Shared control styles (same look across all dialogs) ────────
-    component ActionButton: Button {
-        id: ab
-        property bool primary: false
-        implicitHeight: Theme.controlH
-        leftPadding: Theme.spaceL
-        rightPadding: Theme.spaceL
-        contentItem: Text {
-            text: ab.text
-            font.pixelSize: 13
-            font.weight: ab.primary ? Font.DemiBold : Font.Normal
-            color: ab.primary ? Theme.onPrimary : Theme.text
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            elide: Text.ElideRight
-            opacity: ab.enabled ? 1 : 0.45
-        }
-        background: Rectangle {
-            radius: Theme.radiusS
-            color: ab.primary
-                   ? (ab.down ? Theme.primaryPressed : ab.hovered ? Theme.primaryHover : Theme.primaryBg)
-                   : (ab.down ? Theme.buttonPressed : ab.hovered ? Theme.buttonHover : Theme.buttonBg)
-            border.width: ab.primary ? 0 : 1
-            border.color: ab.visualFocus ? Theme.accent : Theme.border
-            opacity: ab.enabled ? 1 : 0.45
-            Behavior on color { ColorAnimation { duration: 120 } }
-        }
-    }
+    component SectionCard: AppSectionCard {}
 
-    component FieldText: TextField {
-        id: ft
-        implicitHeight: Theme.controlH
-        leftPadding: Theme.spaceM - 2
-        rightPadding: Theme.spaceM - 2
-        font.pixelSize: 13
-        color: Theme.text
-        placeholderTextColor: Theme.dimText
-        selectionColor: Theme.accent
-        selectedTextColor: Theme.onAccent
-        background: Rectangle {
-            radius: Theme.radiusS
-            color: Theme.fieldBg
-            border.width: 1
-            border.color: ft.activeFocus ? Theme.accent : Theme.fieldBorder
-            Behavior on border.color { ColorAnimation { duration: 120 } }
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: -2
-                radius: parent.radius + 2
-                color: "transparent"
-                border.width: 2
-                border.color: Theme.focusRing
-                visible: ft.activeFocus
-            }
-        }
-    }
-
-    component FieldCombo: ComboBox {
-        id: fc
-        font.pixelSize: 13
-        implicitHeight: Theme.controlH
-        background: Rectangle {
-            implicitWidth: 120
-            implicitHeight: Theme.controlH
-            radius: Theme.radiusS
-            color: fc.down ? Theme.buttonPressed : fc.hovered ? Theme.buttonHover : Theme.fieldBg
-            border.width: 1
-            border.color: (fc.activeFocus || fc.visualFocus) ? Theme.accent : Theme.fieldBorder
-            Behavior on color { ColorAnimation { duration: 120 } }
-            Behavior on border.color { ColorAnimation { duration: 120 } }
-        }
-        contentItem: TextField {
-            leftPadding: Theme.spaceS + 2
-            rightPadding: Theme.spaceXs
-            text: fc.editable ? fc.editText : fc.displayText
-            enabled: fc.editable
-            autoScroll: fc.editable
-            readOnly: fc.down
-            inputMethodHints: fc.inputMethodHints
-            validator: fc.validator
-            selectByMouse: true
-            color: Theme.text
-            placeholderTextColor: Theme.dimText
-            selectionColor: Theme.accent
-            selectedTextColor: Theme.onAccent
-            verticalAlignment: Text.AlignVCenter
-            font.pixelSize: 13
-            background: null
-        }
-        delegate: ItemDelegate {
-            id: fcDel
-            required property var model
-            required property int index
-            width: ListView.view ? ListView.view.width : 0
-            height: 28
-            text: model.display !== undefined ? model.display : model.modelData
-            highlighted: fc.highlightedIndex === index
-            contentItem: Text {
-                text: fcDel.text
-                font.pixelSize: 13
-                color: Theme.text
-                verticalAlignment: Text.AlignVCenter
-                elide: Text.ElideRight
-            }
-            background: Rectangle {
-                radius: Theme.radiusS - 2
-                color: fcDel.highlighted ? Theme.hover : "transparent"
-            }
-        }
-        popup: Popup {
-            y: fc.height + 4
-            width: fc.width
-            padding: Theme.spaceXs
-            implicitHeight: Math.min(contentItem.implicitHeight
-                                     + topPadding + bottomPadding, 320)
-            contentItem: ListView {
-                clip: true
-                implicitHeight: contentHeight
-                model: fc.popup.visible ? fc.delegateModel : null
-                currentIndex: fc.highlightedIndex
-                ScrollBar.vertical: ScrollBar { }
-            }
-            background: Rectangle {
-                color: Theme.dialogBg
-                border.width: 1
-                border.color: Theme.border
-                radius: Theme.radiusM
-            }
-        }
-    }
-
-    component FieldSpin: SpinBox {
-        id: fs
-        editable: true
-        font.pixelSize: 13
-        background: Rectangle {
-            implicitWidth: 120
-            implicitHeight: Theme.controlH
-            radius: Theme.radiusS
-            color: Theme.fieldBg
-            border.width: 1
-            border.color: fs.activeFocus ? Theme.accent : Theme.fieldBorder
-            Behavior on border.color { ColorAnimation { duration: 120 } }
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: -2
-                radius: parent.radius + 2
-                color: "transparent"
-                border.width: 2
-                border.color: Theme.focusRing
-                visible: fs.activeFocus
-            }
-        }
-    }
-
-    component FormLabel: Label {
-        color: Theme.bodyText
-        font.pixelSize: 13
-        horizontalAlignment: Text.AlignRight
-        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-    }
-
-    component SectionLabel: Label {
-        color: Theme.dimText
-        font.pixelSize: 11
-        font.weight: Font.DemiBold
-        font.letterSpacing: 1
-        font.capitalization: Font.AllUppercase
-    }
-
-    component SectionCard: Rectangle {
-        Layout.fillWidth: true
-        radius: Theme.radiusM
-        color: Theme.cardBg
-        border.width: 1
-        border.color: Theme.divider
-    }
-
-    component HintLabel: Label {
-        Layout.fillWidth: true
-        wrapMode: Text.Wrap
-        visible: text.length > 0
-        font.pixelSize: 11
-        lineHeight: 1.25
-        color: Theme.dimText
-    }
+    component HintLabel: AppHintLabel {}
 
     // ── Content ─────────────────────────────────────────────────────
     contentItem: Flickable {
@@ -574,12 +313,71 @@ Dialog {
                            "available it falls back to plaintext QSettings.")
             }
 
-            // ── Interpretation model ────────────────────────────────
-            // Field by field: whatever is left blank here falls through
-            // to the main configuration above, so pointing only the model
-            // name at a stronger model is a one-field change.
+            // ── Translation model ───────────────────────────────────
+            // Translation is the odd job out: it runs on every paragraph of
+            // every paper, so it wants something fast and cheap, while
+            // reading, chatting and comparing want the best model there is.
+            // Field by field, whatever is left blank here falls through to
+            // the main configuration above.
             SectionLabel {
-                text: qsTr("Interpretation model")
+                text: qsTr("Translation model")
+                Layout.topMargin: Theme.spaceS
+            }
+            SectionCard {
+                implicitHeight: translationModelGrid.implicitHeight + 2 * Theme.spaceL
+
+                GridLayout {
+                    id: translationModelGrid
+                    anchors.fill: parent
+                    anchors.margins: Theme.spaceL
+                    columns: 2
+                    columnSpacing: Theme.spaceL
+                    rowSpacing: Theme.spaceS
+
+                    FormLabel { text: qsTr("Provider") }
+                    FieldCombo {
+                        id: translationProviderBox
+                        Layout.fillWidth: true
+                        model: dialog.translationProviderLabels
+                    }
+
+                    FormLabel { text: qsTr("Model") }
+                    FieldText {
+                        id: translationModelField
+                        Layout.fillWidth: true
+                        placeholderText: qsTr("Same as the main model")
+                    }
+
+                    FormLabel { text: qsTr("Base URL") }
+                    FieldText {
+                        id: translationBaseUrlField
+                        Layout.fillWidth: true
+                        placeholderText: qsTr("Same as the main base URL")
+                    }
+
+                    FormLabel { text: qsTr("API key") }
+                    FieldText {
+                        id: translationApiKeyField
+                        Layout.fillWidth: true
+                        echoMode: TextInput.Password
+                        placeholderText: qsTr("Same as the main API key")
+                    }
+                }
+            }
+            HintLabel {
+                text: qsTr("The main model above does the reading: interpretation, "
+                           + "chat, summaries and vision. Translation is the one job "
+                           + "that can be pointed somewhere else — it runs on every "
+                           + "paragraph, so a fast, cheap model usually serves it "
+                           + "better. Leave a field blank to use the main setting.")
+            }
+            HintLabel {
+                text: qsTr("Translation will run on: %1").arg(settings.translationModelInUse)
+            }
+
+            // ── Interpretation ──────────────────────────────────────
+            SectionLabel {
+                text: qsTr("Interpretation")
                 Layout.topMargin: Theme.spaceS
             }
             SectionCard {
@@ -592,35 +390,6 @@ Dialog {
                     columns: 2
                     columnSpacing: Theme.spaceL
                     rowSpacing: Theme.spaceS
-
-                    FormLabel { text: qsTr("Provider") }
-                    FieldCombo {
-                        id: analysisProviderBox
-                        Layout.fillWidth: true
-                        model: dialog.analysisProviderLabels
-                    }
-
-                    FormLabel { text: qsTr("Model") }
-                    FieldText {
-                        id: analysisModelField
-                        Layout.fillWidth: true
-                        placeholderText: qsTr("Same as the main model")
-                    }
-
-                    FormLabel { text: qsTr("Base URL") }
-                    FieldText {
-                        id: analysisBaseUrlField
-                        Layout.fillWidth: true
-                        placeholderText: qsTr("Same as the main base URL")
-                    }
-
-                    FormLabel { text: qsTr("API key") }
-                    FieldText {
-                        id: analysisApiKeyField
-                        Layout.fillWidth: true
-                        echoMode: TextInput.Password
-                        placeholderText: qsTr("Same as the main API key")
-                    }
 
                     FormLabel { text: qsTr("Max output tokens") }
                     FieldSpin {
@@ -649,14 +418,8 @@ Dialog {
                 }
             }
             HintLabel {
-                text: qsTr("Reading a paper critically — and holding it against other "
-                           + "papers — asks more of a model than translating does, so "
-                           + "interpretation can run somewhere stronger than the "
-                           + "everyday translation model. Every field left blank falls "
-                           + "back to the main model configuration above.")
-            }
-            HintLabel {
-                text: qsTr("Interpretations will run on: %1").arg(settings.analysisModelInUse)
+                text: qsTr("Interpretation runs on the main model. A close reading "
+                           + "is nine separate requests, so give it room to answer.")
             }
 
             // ── Font sizes ──────────────────────────────────────────

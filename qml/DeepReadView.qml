@@ -624,12 +624,13 @@ ColumnLayout {
             Layout.preferredWidth: 16
             Layout.preferredHeight: 16
         }
-        Button {
+        AppButton {
             // Once all nine are written there is nothing left to continue;
             // rewriting lives in the ⋯ menu, where it cannot be hit by
             // accident.
             visible: analysis.deepRunning || analysis.deepDone < analysis.deepTotal
             enabled: analysis.deepRunning || analysis.canRun
+            primary: true
             text: analysis.deepRunning
                   ? qsTr("Cancel")
                   : (analysis.deepDone > 0 ? qsTr("Continue")

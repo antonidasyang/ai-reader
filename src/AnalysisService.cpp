@@ -63,12 +63,12 @@ bool AnalysisService::canRun() const
         return false;
     if (m_paper->blockCount() == 0)
         return false;
-    return m_settings->analysisConfigured();
+    return m_settings->isConfigured();
 }
 
 QString AnalysisService::modelInUse() const
 {
-    return m_settings ? m_settings->analysisModelInUse() : QString();
+    return m_settings ? m_settings->model() : QString();
 }
 
 int AnalysisService::contextChars() const
@@ -286,7 +286,7 @@ void AnalysisService::refreshClient()
     if (!m_settings)
         return;
     if (!m_client) {
-        m_client = m_settings->createAnalysisClient(this);
+        m_client = m_settings->createClient(this);
         return;
     }
     // Settings may have moved since it was made -- but every LlmReply is a
@@ -296,7 +296,7 @@ void AnalysisService::refreshClient()
     if (m_job || m_deepInflight > 0)
         return;
     m_client->deleteLater();
-    m_client = m_settings->createAnalysisClient(this);
+    m_client = m_settings->createClient(this);
 }
 
 void AnalysisService::setStatus(Status s, const QString &err)

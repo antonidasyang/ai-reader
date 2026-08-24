@@ -156,7 +156,7 @@ void CompareService::save()
 
 bool CompareService::canRun() const
 {
-    if (!m_settings || !m_settings->analysisConfigured())
+    if (!m_settings || !m_settings->isConfigured())
         return false;
     if (m_basket.size() < 2)
         return false;
@@ -216,7 +216,7 @@ void CompareService::compare()
     }
 
     if (!m_client)
-        m_client = m_settings->createAnalysisClient(this);
+        m_client = m_settings->createClient(this);
 
     StructuredCall::Request req;
     req.system = AnalysisPrompts::compareSystem(
@@ -247,7 +247,7 @@ void CompareService::compare()
                 m_resultAuthor = m_store->userEmail();
                 m_store->putLibraryAnalysis(Analysis::KindCompare, scope,
                                             stored,
-                                            m_settings->analysisModelInUse(),
+                                            m_settings->model(),
                                             scope, m_basket.size());
                 m_resultUpdatedAt =
                     m_store->libraryAnalysis(Analysis::KindCompare, scope)

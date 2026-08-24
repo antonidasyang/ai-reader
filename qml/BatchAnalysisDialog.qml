@@ -10,32 +10,12 @@ import QtQuick.Layouts
 // are showing is what the batch buttons act on, so "everything the model
 // called low-relevance" can be excluded in one go, and "everything worth a
 // close read" can be marked for one.
-Dialog {
+AppDialog {
     id: root
     title: qsTr("Interpret the library")
-    modal: true
-    anchors.centerIn: Overlay.overlay
     width: Math.min(820, Overlay.overlay ? Overlay.overlay.width - 80 : 820)
     height: Math.min(640, Overlay.overlay ? Overlay.overlay.height - 60 : 640)
-    padding: 14
     standardButtons: Dialog.NoButton
-
-    readonly property int btnH: 30
-
-    palette.window: Theme.paneBg
-    palette.windowText: Theme.text
-    palette.base: Theme.fieldBg
-    palette.text: Theme.text
-    palette.button: Theme.buttonBg
-    palette.buttonText: Theme.text
-    palette.highlight: Theme.accent
-    palette.highlightedText: Theme.onAccent
-    palette.placeholderText: Theme.dimText
-    background: Rectangle {
-        color: Theme.paneBg
-        border.color: Theme.border
-        radius: 6
-    }
 
     onOpened: analysisList.reload()
 
@@ -103,7 +83,7 @@ Dialog {
             Layout.fillWidth: true
             spacing: 6
             Label { text: qsTr("Show"); color: Theme.dimText }
-            ComboBox {
+            AppComboBox {
                 id: stateFilter
                 Layout.preferredWidth: 150
                 model: [qsTr("everything"), qsTr("not read"), qsTr("interpreted"),
@@ -117,7 +97,7 @@ Dialog {
                 }
             }
             Label { text: qsTr("relevance"); color: Theme.dimText }
-            ComboBox {
+            AppComboBox {
                 id: relFilter
                 Layout.preferredWidth: 120
                 model: [qsTr("any"), qsTr("high"), qsTr("medium"), qsTr("low"),
@@ -126,7 +106,7 @@ Dialog {
                 onActivated: function(i) { analysisList.filterRelevance = codes[i] }
             }
             Label { text: qsTr("advice"); color: Theme.dimText }
-            ComboBox {
+            AppComboBox {
                 id: adviceFilter
                 Layout.preferredWidth: 180
                 model: [qsTr("any"), qsTr("read in full"),
@@ -166,10 +146,9 @@ Dialog {
                         .arg(batchAnalysis.status)
                       : batchAnalysis.status
             }
-            Button {
+            AppButton {
                 text: qsTr("Stop")
                 visible: batchAnalysis.busy
-                Layout.preferredHeight: root.btnH
                 onClicked: batchAnalysis.cancel()
             }
         }
@@ -316,37 +295,33 @@ Dialog {
         Flow {
             Layout.fillWidth: true
             spacing: 6
-            Button {
+            AppButton {
+                primary: true
                 text: qsTr("Interpret the %1 unread").arg(analysisList.pendingCount)
                 enabled: batchAnalysis.canRun && analysisList.pendingCount > 0
                          && !batchAnalysis.busy
-                height: root.btnH
                 onClicked: batchAnalysis.startPending()
             }
-            Button {
+            AppButton {
                 text: qsTr("Interpret what's shown")
                 enabled: batchAnalysis.canRun && analysisList.count > 0
                          && !batchAnalysis.busy
-                height: root.btnH
                 onClicked: batchAnalysis.startItems(analysisList.visibleItemIds(), false)
             }
-            Button {
+            AppButton {
                 text: qsTr("Retry the %1 that failed").arg(batchAnalysis.failed)
                 visible: batchAnalysis.failed > 0
                 enabled: !batchAnalysis.busy
-                height: root.btnH
                 onClicked: batchAnalysis.retryFailed()
             }
-            Button {
+            AppButton {
                 text: qsTr("Mark all shown to read closely")
                 enabled: analysisList.count > 0
-                height: root.btnH
                 onClicked: analysisList.applyToRead(analysisList.visibleItemIds(), true)
             }
-            Button {
+            AppButton {
                 text: qsTr("Set all shown aside")
                 enabled: analysisList.count > 0
-                height: root.btnH
                 onClicked: analysisList.applyExcluded(analysisList.visibleItemIds(), true)
             }
         }
@@ -362,9 +337,8 @@ Dialog {
                            + "collaborator — are skipped, so a project pays for "
                            + "each paper once.")
             }
-            Button {
+            AppButton {
                 text: qsTr("Close")
-                Layout.preferredHeight: root.btnH
                 onClicked: root.close()
             }
         }

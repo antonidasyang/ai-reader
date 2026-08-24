@@ -80,13 +80,6 @@ class Settings : public QObject
     Q_PROPERTY(QString chatPrompt        READ chatPrompt        WRITE setChatPrompt        NOTIFY chatPromptChanged)
     Q_PROPERTY(bool    chatIncludePaperText READ chatIncludePaperText WRITE setChatIncludePaperText NOTIFY chatIncludePaperTextChanged)
 
-    // Per-feature model. The interpretation layer (quick read, deep read,
-    // the project-wide analyses) is where a weak model shows first: reading
-    // a paper critically and weighing two papers against each other asks
-    // more of a model than translating a paragraph does. So it can point at
-    // a different model, or at a different endpoint entirely. Every field
-    // left blank falls back to the main configuration above, which is what
-    // a user who never opens this section gets.
     // How the chat input sends. "enter": Enter sends, Shift+Enter makes a
     // newline. "ctrl-enter": Enter makes a newline, Ctrl+Enter sends.
     Q_PROPERTY(QString chatSendKey     READ chatSendKey     WRITE setChatSendKey     NOTIFY chatSendKeyChanged)
@@ -94,15 +87,24 @@ class Settings : public QObject
     // which is not enough room to see a question being written.
     Q_PROPERTY(int     chatInputHeight READ chatInputHeight WRITE setChatInputHeight NOTIFY chatInputHeightChanged)
 
-    Q_PROPERTY(QString analysisProvider READ analysisProvider WRITE setAnalysisProvider NOTIFY analysisConfigChanged)
-    Q_PROPERTY(QString analysisModel    READ analysisModel    WRITE setAnalysisModel    NOTIFY analysisConfigChanged)
-    Q_PROPERTY(QString analysisBaseUrl  READ analysisBaseUrl  WRITE setAnalysisBaseUrl  NOTIFY analysisConfigChanged)
-    Q_PROPERTY(QString analysisApiKey   READ analysisApiKey   WRITE setAnalysisApiKey   NOTIFY analysisConfigChanged)
-    // What an interpretation would actually run on, after the fallbacks.
-    Q_PROPERTY(QString analysisModelInUse READ analysisModelInUse NOTIFY analysisConfigChanged)
-    Q_PROPERTY(bool    analysisOverridden READ analysisOverridden NOTIFY analysisConfigChanged)
-    // Whether an interpretation could run at all right now.
-    Q_PROPERTY(bool    analysisConfigured READ analysisConfigured NOTIFY analysisConfigChanged)
+    // Per-feature model. Translation is the one job with a different shape
+    // from the rest: it runs on every paragraph of every paper, so it wants
+    // something fast and cheap, while reading a paper closely, chatting about
+    // it and comparing papers all want the best model available. So the main
+    // configuration above drives interpretation, chat, summaries and vision,
+    // and translation alone can be pointed somewhere else. Every field left
+    // blank here falls back to the main configuration, which is what a user
+    // who never opens this section gets.
+    Q_PROPERTY(QString translationProvider READ translationProvider WRITE setTranslationProvider NOTIFY translationConfigChanged)
+    Q_PROPERTY(QString translationModel    READ translationModel    WRITE setTranslationModel    NOTIFY translationConfigChanged)
+    Q_PROPERTY(QString translationBaseUrl  READ translationBaseUrl  WRITE setTranslationBaseUrl  NOTIFY translationConfigChanged)
+    Q_PROPERTY(QString translationApiKey   READ translationApiKey   WRITE setTranslationApiKey   NOTIFY translationConfigChanged)
+    // What a translation would actually run on, after the fallbacks.
+    Q_PROPERTY(QString translationModelInUse READ translationModelInUse NOTIFY translationConfigChanged)
+    Q_PROPERTY(bool    translationOverridden READ translationOverridden NOTIFY translationConfigChanged)
+
+    // Interpretation runs on the main model; these two are about the work,
+    // not about which endpoint does it.
     Q_PROPERTY(int     analysisMaxTokens  READ analysisMaxTokens  WRITE setAnalysisMaxTokens  NOTIFY analysisConfigChanged)
     // How many interpretations may be in the air at once during a batch.
     Q_PROPERTY(int     analysisConcurrency READ analysisConcurrency WRITE setAnalysisConcurrency NOTIFY analysisConfigChanged)
@@ -158,13 +160,15 @@ public:
 
     QString chatSendKey()     const { return m_chatSendKey; }
     int     chatInputHeight() const { return m_chatInputHeight; }
-    QString analysisProvider() const { return m_analysisProvider; }
-    QString analysisModel()    const { return m_analysisModel; }
-    QString analysisBaseUrl()  const { return m_analysisBaseUrl; }
-    QString analysisApiKey()   const { return m_analysisApiKey; }
-    QString analysisModelInUse() const;
-    bool    analysisOverridden() const;
-    bool    analysisConfigured() const;
+    QString translationProvider() const { return m_translationProvider; }
+    QString translationModel()    const { return m_translationModel; }
+    QString translationBaseUrl()  const { return m_translationBaseUrl; }
+    QString translationApiKey()   const { return m_translationApiKey; }
+    QString translationModelInUse() const;
+    QString translationProviderInUse() const;
+    QString translationBaseUrlInUse() const;
+    QString translationApiKeyInUse() const;
+    bool    translationOverridden() const;
     int     analysisMaxTokens()  const { return m_analysisMaxTokens; }
     int     analysisConcurrency() const { return m_analysisConcurrency; }
 
@@ -212,17 +216,19 @@ public:
 
     void setChatSendKey(const QString &v);
     void setChatInputHeight(int v);
-    void setAnalysisProvider(const QString &v);
-    void setAnalysisModel(const QString &v);
-    void setAnalysisBaseUrl(const QString &v);
-    void setAnalysisApiKey(const QString &v);
+    void setTranslationProvider(const QString &v);
+    void setTranslationModel(const QString &v);
+    void setTranslationBaseUrl(const QString &v);
+    void setTranslationApiKey(const QString &v);
     void setAnalysisMaxTokens(int v);
     void setAnalysisConcurrency(int v);
 
     LlmClient *createClient(QObject *parent = nullptr) const;
-    // The client the interpretation layer talks to: the analysis override
-    // where one is set, the main configuration everywhere it is not.
-    LlmClient *createAnalysisClient(QObject *parent = nullptr) const;
+    // The client TranslationService talks to: the translation override where
+    // one is set, the main configuration everywhere it is not. Everything
+    // else in the app -- interpretation, chat, summaries, vision -- uses
+    // createClient() above.
+    LlmClient *createTranslationClient(QObject *parent = nullptr) const;
 
     // Probe the provider's /v1/models endpoint with the *given* values
     // (so the dialog can preview using unsaved input).
@@ -266,6 +272,7 @@ signals:
     void chatSendKeyChanged();
     void chatInputHeightChanged();
     void analysisConfigChanged();
+    void translationConfigChanged();
 
     void availableModelsChanged();
     void fetchingModelsChanged();
@@ -281,10 +288,10 @@ private:
     void setKeychainStatus(const QString &s);
     void readApiKeyFromKeychain();
     void writeApiKeyToKeychain(const QString &value);
-    // Same, for the interpretation layer's own key (kept under its own
+    // Same, for the translation override's own key (kept under its own
     // keychain entry so clearing one never disturbs the other).
-    void readAnalysisKeyFromKeychain();
-    void writeAnalysisKeyToKeychain(const QString &value);
+    void readTranslationKeyFromKeychain();
+    void writeTranslationKeyToKeychain(const QString &value);
 
     QSettings m_qs;
     QString m_provider;
@@ -322,10 +329,10 @@ private:
 
     QString m_chatSendKey = QStringLiteral("enter");
     int     m_chatInputHeight = 88;
-    QString m_analysisProvider;
-    QString m_analysisModel;
-    QString m_analysisBaseUrl;
-    QString m_analysisApiKey;
+    QString m_translationProvider;
+    QString m_translationModel;
+    QString m_translationBaseUrl;
+    QString m_translationApiKey;
     int     m_analysisMaxTokens = 8192;
     int     m_analysisConcurrency = 2;
 

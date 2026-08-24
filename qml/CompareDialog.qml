@@ -10,34 +10,15 @@ import QtQuick.Layouts
 // do not — different task, different data, different metric. The point of this
 // window is to compare honestly, which sometimes means saying these cannot be
 // ranked at all.
-Dialog {
+AppDialog {
     id: root
     title: qsTr("Compare papers")
-    modal: true
-    anchors.centerIn: Overlay.overlay
     width: Math.min(900, Overlay.overlay ? Overlay.overlay.width - 60 : 900)
     height: Math.min(660, Overlay.overlay ? Overlay.overlay.height - 60 : 660)
-    padding: 14
     standardButtons: Dialog.NoButton
 
-    readonly property int btnH: 30
     readonly property var res: compare.result
     readonly property var papers: res && res.papers ? res.papers : []
-
-    palette.window: Theme.paneBg
-    palette.windowText: Theme.text
-    palette.base: Theme.fieldBg
-    palette.text: Theme.text
-    palette.button: Theme.buttonBg
-    palette.buttonText: Theme.text
-    palette.highlight: Theme.accent
-    palette.highlightedText: Theme.onAccent
-    palette.placeholderText: Theme.dimText
-    background: Rectangle {
-        color: Theme.paneBg
-        border.color: Theme.border
-        radius: 6
-    }
 
     onOpened: compare.loadStored()
 
@@ -134,12 +115,12 @@ Dialog {
         RowLayout {
             Layout.fillWidth: true
             spacing: 6
-            Button {
+            AppButton {
+                primary: true
                 text: compare.busy ? qsTr("Cancel")
                                    : (compare.hasResult ? qsTr("Compare again")
                                                         : qsTr("Compare"))
                 enabled: compare.busy || compare.canRun
-                Layout.preferredHeight: root.btnH
                 onClicked: compare.busy ? compare.cancel() : compare.compare()
             }
             BusyIndicator {
@@ -148,10 +129,9 @@ Dialog {
                 implicitWidth: 18
                 implicitHeight: 18
             }
-            Button {
+            AppButton {
                 text: qsTr("Clear")
                 enabled: compare.count > 0 && !compare.busy
-                Layout.preferredHeight: root.btnH
                 onClicked: compare.clearBasket()
             }
             Label {
@@ -314,16 +294,14 @@ Dialog {
 
         RowLayout {
             Layout.fillWidth: true
-            Button {
+            AppButton {
                 text: qsTr("Export as Markdown…")
                 visible: compare.hasResult
-                Layout.preferredHeight: root.btnH
                 onClicked: exportCompareDialog.open()
             }
             Item { Layout.fillWidth: true }
-            Button {
+            AppButton {
                 text: qsTr("Close")
-                Layout.preferredHeight: root.btnH
                 onClicked: root.close()
             }
         }

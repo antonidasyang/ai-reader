@@ -311,7 +311,7 @@ void TranslationService::rehydrateFromCache()
     if (!m_settings || !m_model) return;
     if (m_cache.paperId().isEmpty()) return;
 
-    const QString model      = m_settings->model();
+    const QString model      = m_settings->translationModelInUse();
     const QString promptHash = TranslationCache::sha(systemPrompt());
     const QString lang       = m_settings->targetLang();
 
@@ -516,7 +516,7 @@ TranslationService::Job TranslationService::jobForRow(int row) const
     job.paperId = paperId;
     job.blockId = b->id;
     job.text = b->text;
-    job.model = m_settings->model();
+    job.model = m_settings->translationModelInUse();
     job.promptHash = TranslationCache::sha(systemPrompt());
     job.lang = m_settings->targetLang();
     job.row = row;
@@ -594,14 +594,23 @@ void TranslationService::refreshClient()
 {
     if (!m_settings) return;
     if (!m_client) {
-        m_client = m_settings->createClient(this);
+        m_client = m_settings->createTranslationClient(this);
         return;
     }
-    // Settings may have changed since the client was built.
-    m_client->setApiKey(m_settings->apiKey());
-    m_client->setModel(m_settings->model());
-    if (!m_settings->baseUrl().isEmpty())
-        m_client->setBaseUrl(QUrl(m_settings->baseUrl()));
+    // Settings may have changed since the client was built. With nothing in
+    // flight it is rebuilt outright, so a change of provider takes effect
+    // too; mid-run only the fields can be refreshed, because every LlmReply
+    // is a child of the client and replacing it would strand them.
+    if (m_inflight == 0) {
+        m_client->deleteLater();
+        m_client = m_settings->createTranslationClient(this);
+        return;
+    }
+    m_client->setApiKey(m_settings->translationApiKeyInUse());
+    m_client->setModel(m_settings->translationModelInUse());
+    const QString base = m_settings->translationBaseUrlInUse();
+    if (!base.isEmpty())
+        m_client->setBaseUrl(QUrl(base));
 }
 
 void TranslationService::scheduleNext()
@@ -941,7 +950,7 @@ void TranslationService::translateSelectionAdHoc(int snippetId, const QString &t
     }
 
     const QString promptHash = TranslationCache::sha(systemPrompt());
-    const QString model = m_settings->model();
+    const QString model = m_settings->translationModelInUse();
     const QString lang  = m_settings->targetLang();
 
     const QString cached =

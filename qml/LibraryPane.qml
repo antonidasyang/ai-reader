@@ -109,12 +109,16 @@ Rectangle {
                     width: ListView.view ? ListView.view.width : 0
                     height: 52
                     onClicked: fileSync.openItem(model.itemId, model.localPath)
-                    // Naming pdfSource is what makes this re-evaluate when
-                    // the reader opens a different paper; isCurrentFile is a
-                    // plain call and would otherwise never be re-run.
+                    // Match on the paper id first: a paper opened from the
+                    // project plays out of the blob cache under a sha256
+                    // name, so its path is not the one the library recorded.
+                    // Naming paperId/pdfSource is what makes this re-evaluate
+                    // when the reader opens a different paper.
                     readonly property bool _isOpen:
-                        (paperController.pdfSource,
-                         paperController.isCurrentFile(model.localPath))
+                        (paperController.paperId, paperController.pdfSource,
+                         (model.paperId && model.paperId.length > 0
+                          && paperController.paperId === model.paperId)
+                         || paperController.isCurrentFile(model.localPath))
                     background: Rectangle {
                         color: _isOpen  ? Theme.activeRow
                              : hovered  ? Theme.hover
@@ -210,8 +214,10 @@ Rectangle {
                     onClicked: fileSync.openItem(modelData.itemId,
                                                  modelData.localPath)
                     readonly property bool _isOpen:
-                        (paperController.pdfSource,
-                         paperController.isCurrentFile(modelData.localPath || ""))
+                        (paperController.paperId, paperController.pdfSource,
+                         (modelData.paperId
+                          && paperController.paperId === modelData.paperId)
+                         || paperController.isCurrentFile(modelData.localPath || ""))
                     background: Rectangle {
                         color: _isOpen  ? Theme.activeRow
                              : hovered  ? Theme.hover

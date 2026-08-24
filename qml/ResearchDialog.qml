@@ -20,14 +20,11 @@ import QtQuick.Layouts
 // classification belongs to them, not to the model — renaming, merging,
 // locking and confirming are all here, and a locked category survives the next
 // regeneration untouched.
-Dialog {
+AppDialog {
     id: root
     title: qsTr("Research this library")
-    modal: true
-    anchors.centerIn: Overlay.overlay
     width: Math.min(880, Overlay.overlay ? Overlay.overlay.width - 60 : 880)
     height: Math.min(660, Overlay.overlay ? Overlay.overlay.height - 60 : 660)
-    padding: 14
     standardButtons: Dialog.NoButton
 
     // Main.qml opens the paper.
@@ -49,13 +46,10 @@ Dialog {
         splitDialog.open()
     }
 
-    Dialog {
+    AppDialog {
         id: splitDialog
         title: qsTr("Split a category")
-        modal: true
-        anchors.centerIn: Overlay.overlay
         width: 460
-        padding: 14
         standardButtons: Dialog.NoButton
 
         property string catId: ""
@@ -70,21 +64,6 @@ Dialog {
             splitDialog.picked = next
         }
 
-        palette.window: Theme.paneBg
-        palette.windowText: Theme.text
-        palette.base: Theme.fieldBg
-        palette.text: Theme.text
-        palette.button: Theme.buttonBg
-        palette.buttonText: Theme.text
-        palette.highlight: Theme.accent
-        palette.highlightedText: Theme.onAccent
-        palette.placeholderText: Theme.dimText
-        background: Rectangle {
-            color: Theme.paneBg
-            border.color: Theme.border
-            radius: 6
-        }
-
         ColumnLayout {
             anchors.fill: parent
             spacing: 8
@@ -97,7 +76,7 @@ Dialog {
                            + "regenerating the category system leaves it "
                            + "alone.")
             }
-            TextField {
+            AppTextField {
                 id: splitName
                 Layout.fillWidth: true
                 text: splitDialog.newName
@@ -126,17 +105,16 @@ Dialog {
             RowLayout {
                 Layout.fillWidth: true
                 Item { Layout.fillWidth: true }
-                Button {
+                AppButton {
                     text: qsTr("Cancel")
-                    Layout.preferredHeight: root.btnH
                     onClicked: splitDialog.close()
                 }
-                Button {
+                AppButton {
+                    primary: true
                     text: qsTr("Split")
                     enabled: splitDialog.picked.length > 0
                              && splitDialog.newName.trim().length > 0
                              && splitDialog.picked.length < splitDialog.papers.length
-                    Layout.preferredHeight: root.btnH
                     onClicked: {
                         research.splitCategory(splitDialog.catId,
                                                splitDialog.newName.trim(),
@@ -153,7 +131,6 @@ Dialog {
     // chat, against whatever paper is open.
     signal askAiRequested(string text)
 
-    readonly property int btnH: 30
     readonly property int fs: 13
 
     // result(), has(), history() and friends are plain calls with no change
@@ -162,21 +139,6 @@ Dialog {
     // `rev`, which the Connections block bumps — that read is what ties the
     // binding to the service's signals.
     property int rev: 0
-
-    palette.window: Theme.paneBg
-    palette.windowText: Theme.text
-    palette.base: Theme.fieldBg
-    palette.text: Theme.text
-    palette.button: Theme.buttonBg
-    palette.buttonText: Theme.text
-    palette.highlight: Theme.accent
-    palette.highlightedText: Theme.onAccent
-    palette.placeholderText: Theme.dimText
-    background: Rectangle {
-        color: Theme.paneBg
-        border.color: Theme.border
-        radius: 6
-    }
 
     onOpened: root.rev = root.rev + 1
 
@@ -734,8 +696,8 @@ Dialog {
                 implicitWidth: 18
                 implicitHeight: 18
             }
-            Button {
-                Layout.preferredHeight: root.btnH
+            AppButton {
+                primary: true
                 enabled: research.runningKind === th.kind || research.canRun
                 text: research.runningKind === th.kind
                       ? qsTr("Cancel")
@@ -830,8 +792,7 @@ Dialog {
                        + "from the PDFs — %1 interpreted so far.")
                   .arg(research.digestCount)
         }
-        Button {
-            Layout.preferredHeight: root.btnH
+        AppButton {
             enabled: research.canRun
             text: qsTr("Generate")
             onClicked: research.generate(es.kind)
@@ -906,7 +867,7 @@ Dialog {
                         onDoubleTapped: cr.beginRename()
                     }
                 }
-                TextField {
+                AppTextField {
                     id: renameField
                     Layout.fillWidth: true
                     Layout.preferredHeight: root.fs + 12
@@ -1138,8 +1099,7 @@ Dialog {
                                 Layout.fillWidth: true
                                 spacing: 6
                                 visible: !!(root.unclassified(root.rev).length > 0)
-                                Button {
-                                    Layout.preferredHeight: root.btnH
+                                AppButton {
                                     enabled: research.canRun
                                     text: qsTr("Place %1 new papers")
                                           .arg(root.unclassified(root.rev).length)
@@ -1186,7 +1146,7 @@ Dialog {
                                         Layout.fillWidth: true
                                         Layout.leftMargin: 6
                                         spacing: 4
-                                        TextField {
+                                        AppTextField {
                                             id: newCatField
                                             Layout.preferredWidth: 220
                                             Layout.preferredHeight: root.fs + 12
@@ -1202,8 +1162,7 @@ Dialog {
                                                 text = ""
                                             }
                                         }
-                                        Button {
-                                            Layout.preferredHeight: root.btnH
+                                        AppButton {
                                             enabled: newCatField.text.trim().length > 0
                                             text: qsTr("+ new category")
                                             onClicked: {
@@ -1928,14 +1887,12 @@ Dialog {
                            + "interpretations, never from the PDFs, and is "
                            + "shared with everyone in the project.")
             }
-            Button {
+            AppButton {
                 text: qsTr("Export report…")
-                Layout.preferredHeight: root.btnH
                 onClicked: exportReportDialog.open()
             }
-            Button {
+            AppButton {
                 text: qsTr("Close")
-                Layout.preferredHeight: root.btnH
                 onClicked: root.close()
             }
         }

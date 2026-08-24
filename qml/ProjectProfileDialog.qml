@@ -11,18 +11,12 @@ import QtQuick.Layouts
 // fields are deliberately plain text: they are pasted into the prompt as
 // written, so a sentence the reader would say out loud works better here
 // than a keyword.
-Dialog {
+AppDialog {
     id: root
     title: qsTr("Research profile")
-    modal: true
-    anchors.centerIn: Overlay.overlay
     width: 560
     height: Math.min(660, Overlay.overlay ? Overlay.overlay.height - 60 : 660)
-    padding: 14
     standardButtons: Dialog.NoButton
-
-    readonly property int btnH: 30
-    readonly property int btnW: 88
 
     // One label style for the nine fields below. Inline components have to
     // live on the file's root object, which is why it sits up here rather
@@ -34,19 +28,17 @@ Dialog {
         wrapMode: Text.Wrap
     }
 
-    palette.window: Theme.paneBg
-    palette.windowText: Theme.text
-    palette.base: Theme.fieldBg
-    palette.text: Theme.text
-    palette.button: Theme.buttonBg
-    palette.buttonText: Theme.text
-    palette.highlight: Theme.accent
-    palette.highlightedText: Theme.onAccent
-    palette.placeholderText: Theme.dimText
-    background: Rectangle {
-        color: Theme.paneBg
-        border.color: Theme.border
-        radius: 6
+    // The multi-line fields: a scrolling TextArea wearing AppTextField's
+    // frame, so they sit flush with the single-line AppTextFields.
+    component FieldBox: ScrollView {
+        Layout.fillWidth: true
+        clip: true
+        background: Rectangle {
+            radius: Theme.radiusS
+            color: Theme.fieldBg
+            border.width: 1
+            border.color: Theme.fieldBorder
+        }
     }
 
     // Re-read on every open: a collaborator may have edited the profile
@@ -103,33 +95,31 @@ Dialog {
                 spacing: 4
 
                 FieldLabel { text: qsTr("Research goal") }
-                ScrollView {
-                    Layout.fillWidth: true
+                FieldBox {
                     Layout.preferredHeight: 54
-                    clip: true
                     TextArea {
                         id: goalField
                         wrapMode: TextEdit.Wrap
+                        background: null
                         enabled: profile.canEdit
                         placeholderText: qsTr("What are you trying to find out or build?")
                     }
                 }
 
                 FieldLabel { text: qsTr("Core questions (one per line)") }
-                ScrollView {
-                    Layout.fillWidth: true
+                FieldBox {
                     Layout.preferredHeight: 66
-                    clip: true
                     TextArea {
                         id: questionsField
                         wrapMode: TextEdit.Wrap
+                        background: null
                         enabled: profile.canEdit
                         placeholderText: qsTr("The questions this project has to answer")
                     }
                 }
 
                 FieldLabel { text: qsTr("Application setting") }
-                TextField {
+                AppTextField {
                     id: scenariosField
                     Layout.fillWidth: true
                     enabled: profile.canEdit
@@ -137,39 +127,36 @@ Dialog {
                 }
 
                 FieldLabel { text: qsTr("Current hypotheses (one per line)") }
-                ScrollView {
-                    Layout.fillWidth: true
+                FieldBox {
                     Layout.preferredHeight: 54
-                    clip: true
                     TextArea {
                         id: hypothesesField
                         wrapMode: TextEdit.Wrap
+                        background: null
                         enabled: profile.canEdit
                         placeholderText: qsTr("What you currently believe, and want tested")
                     }
                 }
 
                 FieldLabel { text: qsTr("In scope") }
-                ScrollView {
-                    Layout.fillWidth: true
+                FieldBox {
                     Layout.preferredHeight: 48
-                    clip: true
                     TextArea {
                         id: scopeField
                         wrapMode: TextEdit.Wrap
+                        background: null
                         enabled: profile.canEdit
                         placeholderText: qsTr("Methods, settings or data this project covers")
                     }
                 }
 
                 FieldLabel { text: qsTr("Explicitly out of scope") }
-                ScrollView {
-                    Layout.fillWidth: true
+                FieldBox {
                     Layout.preferredHeight: 48
-                    clip: true
                     TextArea {
                         id: outOfScopeField
                         wrapMode: TextEdit.Wrap
+                        background: null
                         enabled: profile.canEdit
                         placeholderText: qsTr("What you have decided not to pursue — this keeps "
                                               + "papers from being recommended back at you")
@@ -177,13 +164,12 @@ Dialog {
                 }
 
                 FieldLabel { text: qsTr("Dimensions to pay attention to") }
-                ScrollView {
-                    Layout.fillWidth: true
+                FieldBox {
                     Layout.preferredHeight: 48
-                    clip: true
                     TextArea {
                         id: dimensionsField
                         wrapMode: TextEdit.Wrap
+                        background: null
                         enabled: profile.canEdit
                         placeholderText: qsTr("e.g. inference cost, data requirements, "
                                               + "reproducibility, real-world validation")
@@ -191,7 +177,7 @@ Dialog {
                 }
 
                 FieldLabel { text: qsTr("Where you are in the work") }
-                TextField {
+                AppTextField {
                     id: stageField
                     Layout.fillWidth: true
                     enabled: profile.canEdit
@@ -199,7 +185,7 @@ Dialog {
                 }
 
                 FieldLabel { text: qsTr("Your background") }
-                TextField {
+                AppTextField {
                     id: backgroundField
                     Layout.fillWidth: true
                     enabled: profile.canEdit
@@ -230,33 +216,14 @@ Dialog {
                 text: qsTr("Last edited by %1").arg(profile.updatedByEmail)
             }
             Item { Layout.fillWidth: profile.updatedByEmail.length === 0 }
-            Button {
+            AppButton {
                 text: qsTr("Close")
-                Layout.preferredWidth: root.btnW
-                Layout.preferredHeight: root.btnH
                 onClicked: root.close()
             }
-            Button {
-                id: saveBtn
+            AppButton {
                 text: qsTr("Save")
-                Layout.preferredWidth: root.btnW
-                Layout.preferredHeight: root.btnH
+                primary: true
                 enabled: profile.canEdit
-                contentItem: Label {
-                    text: saveBtn.text
-                    color: saveBtn.enabled ? Theme.onPrimary : Theme.dimText
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-                background: Rectangle {
-                    implicitWidth: root.btnW
-                    implicitHeight: root.btnH
-                    radius: 4
-                    color: saveBtn.enabled
-                           ? (saveBtn.down ? Theme.accentPressed : Theme.accent)
-                           : Theme.buttonBg
-                    border.color: saveBtn.enabled ? "transparent" : Theme.border
-                }
                 onClicked: {
                     profile.save(root.collect())
                     root.close()

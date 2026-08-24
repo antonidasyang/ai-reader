@@ -3,7 +3,8 @@ import QtQuick.Controls
 import QtQuick.Dialogs
 import QtQuick.Layouts
 
-// The quick interpretation of the open paper (§2 + §4).
+// The interpretation of the open paper: the quick read (§2 + §4), the close
+// reading in nine parts (§3, in DeepReadView), and the reader's own notes.
 //
 // Everything here is rendered from a structured result, never from model
 // prose: each statement shows where it came from (the authors, an
@@ -311,8 +312,9 @@ Rectangle {
                            + "(toolbar → Profile). Relevance and reading advice "
                            + "are judged against it.")
             }
-            Button {
+            AppButton {
                 text: qsTr("Interpret this paper")
+                primary: true
                 enabled: analysis.canRun
                 onClicked: analysis.generateQuick(true)
             }
@@ -620,7 +622,7 @@ Rectangle {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 6
-                TextField {
+                AppTextField {
                     id: noteInput
                     Layout.fillWidth: true
                     placeholderText: qsTr("Write a note…")
@@ -629,8 +631,9 @@ Rectangle {
                         text = ""
                     }
                 }
-                Button {
+                AppButton {
                     text: qsTr("Add")
+                    primary: true
                     enabled: noteInput.text.trim().length > 0
                     onClicked: {
                         analysis.saveNote(noteInput.text, "")

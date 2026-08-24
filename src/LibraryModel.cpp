@@ -125,6 +125,17 @@ QString LibraryModel::addPaper(const QString &title,
     return id;
 }
 
+QString LibraryModel::localPathForPaperId(const QString &paperId) const
+{
+    if (paperId.isEmpty())
+        return {};
+    for (const SyncObjectRow &row : m_items) {
+        if (row.data.value(QStringLiteral("paperId")).toString() == paperId)
+            return row.data.value(QStringLiteral("localPath")).toString();
+    }
+    return {};
+}
+
 QVariantMap LibraryModel::itemFields(const QString &id) const
 {
     SyncObjectRow row;

@@ -168,31 +168,11 @@ ApplicationWindow {
         }
     }
 
-    Dialog {
+    AppDialog {
         id: createProjectDialog
         title: qsTr("New project")
-        modal: true
-        anchors.centerIn: Overlay.overlay
         width: 360
-        padding: 14
         standardButtons: Dialog.Ok | Dialog.Cancel
-        // Pin the palette to Theme tokens like the other dialogs, so the
-        // stock buttons/fields inside can never fall back to a palette
-        // that disagrees with the themed background.
-        palette.window: Theme.paneBg
-        palette.windowText: Theme.text
-        palette.base: Theme.fieldBg
-        palette.text: Theme.text
-        palette.button: Theme.buttonBg
-        palette.buttonText: Theme.text
-        palette.highlight: Theme.accent
-        palette.highlightedText: Theme.onAccent
-        palette.placeholderText: Theme.dimText
-        background: Rectangle {
-            color: Theme.paneBg
-            border.color: Theme.border
-            radius: 6
-        }
         onAccepted: {
             if (newProjName.text.trim().length > 0)
                 projects.createProject(newProjName.text.trim(), newProjDesc.text)
@@ -202,12 +182,12 @@ ApplicationWindow {
         ColumnLayout {
             anchors.fill: parent
             spacing: 8
-            TextField {
+            AppTextField {
                 id: newProjName
                 Layout.fillWidth: true
                 placeholderText: qsTr("Project name")
             }
-            TextField {
+            AppTextField {
                 id: newProjDesc
                 Layout.fillWidth: true
                 placeholderText: qsTr("Description (optional)")
@@ -219,28 +199,11 @@ ApplicationWindow {
     // translations: filling the gaps and starting over are both reasonable,
     // and which one is meant isn't guessable. A paper with nothing translated
     // never gets here — the button just goes.
-    Dialog {
+    AppDialog {
         id: translateChoiceDialog
         title: qsTr("Translate this paper")
-        modal: true
-        anchors.centerIn: Overlay.overlay
         width: 420
-        padding: 14
         standardButtons: Dialog.Cancel
-        palette.window: Theme.paneBg
-        palette.windowText: Theme.text
-        palette.base: Theme.fieldBg
-        palette.text: Theme.text
-        palette.button: Theme.buttonBg
-        palette.buttonText: Theme.text
-        palette.highlight: Theme.accent
-        palette.highlightedText: Theme.onAccent
-        palette.placeholderText: Theme.dimText
-        background: Rectangle {
-            color: Theme.paneBg
-            border.color: Theme.border
-            radius: 6
-        }
 
         // Sampled when the dialog opens, so the numbers can't shift under the
         // reader while they are looking at them.
@@ -268,8 +231,9 @@ ApplicationWindow {
                       : qsTr("All %1 paragraphs are already translated.")
                             .arg(translateChoiceDialog.doneCount)
             }
-            Button {
+            AppButton {
                 Layout.fillWidth: true
+                primary: true
                 visible: translateChoiceDialog.leftCount > 0
                 text: qsTr("Translate the remaining %1")
                           .arg(translateChoiceDialog.leftCount)
@@ -278,7 +242,7 @@ ApplicationWindow {
                     translation.translateAll()
                 }
             }
-            Button {
+            AppButton {
                 Layout.fillWidth: true
                 text: qsTr("Start over — re-translate all %1")
                           .arg(translateChoiceDialog.doneCount
@@ -893,6 +857,13 @@ ApplicationWindow {
             // open; auto-hidden otherwise so first-launch isn't crowded.
             FolderPane {
                 id: folderPane
+                // The library knows which file on disk a paper came from,
+                // which is how a paper opened out of the project (and so
+                // playing from a sha256-named blob) still highlights its own
+                // row here. Naming paperId re-runs the lookup on each open.
+                openPaperPath: (paperController.paperId,
+                                libraryModel.localPathForPaperId(
+                                    paperController.paperId))
                 objectName: "folder"
                 // Default: visible iff the user has a folder open
                 // already (so a brand-new install with no library

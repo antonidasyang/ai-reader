@@ -49,6 +49,11 @@ public:
     // import skip files the project already has instead of piling up
     // duplicates on every re-run over the same folder.
     Q_INVOKABLE QString findByPaperId(const QString &paperId) const;
+    // The path a paper was imported from, or empty. A paper opened out of
+    // the project's blob cache is playing from a sha256-named file, so
+    // "is this row the paper on screen" cannot be answered by comparing
+    // paths alone -- this is the other end of that comparison.
+    Q_INVOKABLE QString localPathForPaperId(const QString &paperId) const;
     Q_INVOKABLE QVariantMap itemFields(const QString &id) const;
     Q_INVOKABLE void updateItem(const QString &id, const QVariantMap &fields);
     Q_INVOKABLE void removeItem(const QString &id);

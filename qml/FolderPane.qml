@@ -12,6 +12,13 @@ Rectangle {
     // PaperController.openPdf in Main.qml so a single click loads it.
     signal pdfChosen(url path)
 
+    // Where the paper on screen came from, when it is not being played from
+    // the file it was imported from. A paper opened out of the project plays
+    // from the blob cache under a sha256 name, and without this the row for
+    // that very paper would not highlight. Set by Main.qml; one lookup per
+    // paper change, not per row.
+    property string openPaperPath: ""
+
     // ── Batch selection ─────────────────────────────────────────────
     // Ticked PDFs, as a path → true map. `selectedCount` is the change
     // notifier: a plain JS object mutates without notifying, so every
@@ -231,7 +238,9 @@ Rectangle {
                     readonly property bool _isActiveFile:
                         !_isDir
                         && (paperController.pdfSource,
-                            paperController.isCurrentFile(_path))
+                            paperController.isCurrentFile(_path)
+                            || (root.openPaperPath.length > 0
+                                && root.openPaperPath === _path))
 
                     // Every PDF this row stands for: the file itself, or
                     // everything under the folder — including the parts

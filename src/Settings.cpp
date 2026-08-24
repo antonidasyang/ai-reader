@@ -53,11 +53,17 @@ constexpr auto kKeyParagraphFontSize    = "fonts/paragraph";
 constexpr auto kKeyChatFontSize         = "fonts/chat";
 constexpr auto kKeyChatSendKey          = "chat/sendKey";
 constexpr auto kKeyChatInputHeight      = "chat/inputHeight";
-constexpr auto kKeyAnalysisProvider     = "analysis/provider";
-constexpr auto kKeyAnalysisModel        = "analysis/model";
-constexpr auto kKeyAnalysisBaseUrl      = "analysis/baseUrl";
+constexpr auto kKeyTranslationProvider  = "translation/provider";
+constexpr auto kKeyTranslationModel     = "translation/model";
+constexpr auto kKeyTranslationBaseUrl   = "translation/baseUrl";
 constexpr auto kKeyAnalysisMaxTokens    = "analysis/maxTokens";
 constexpr auto kKeyAnalysisConcurrency  = "analysis/concurrency";
+// Retired in 1.2.7: the per-feature override used to hang off interpretation
+// and now hangs off translation. The old keys are cleared on load so a stale
+// endpoint cannot quietly stay in the file.
+constexpr auto kKeyRetiredAnalysisProvider = "analysis/provider";
+constexpr auto kKeyRetiredAnalysisModel    = "analysis/model";
+constexpr auto kKeyRetiredAnalysisBaseUrl  = "analysis/baseUrl";
 
 QUrl defaultBaseUrlFor(const QString &providerLower)
 {
@@ -81,7 +87,7 @@ Settings::Settings(QObject *parent)
         writeApiKeyToKeychain(m_apiKey);
     else
         readApiKeyFromKeychain();
-    readAnalysisKeyFromKeychain();
+    readTranslationKeyFromKeychain();
 }
 
 Settings::~Settings() = default;
@@ -278,38 +284,38 @@ void Settings::setChatInputHeight(int v)
     emit chatInputHeightChanged();
 }
 
-void Settings::setAnalysisProvider(const QString &v)
+void Settings::setTranslationProvider(const QString &v)
 {
-    if (v == m_analysisProvider) return;
-    m_analysisProvider = v;
+    if (v == m_translationProvider) return;
+    m_translationProvider = v;
     save();
-    emit analysisConfigChanged();
+    emit translationConfigChanged();
 }
 
-void Settings::setAnalysisModel(const QString &v)
+void Settings::setTranslationModel(const QString &v)
 {
-    if (v == m_analysisModel) return;
-    m_analysisModel = v;
+    if (v == m_translationModel) return;
+    m_translationModel = v;
     save();
-    emit analysisConfigChanged();
+    emit translationConfigChanged();
 }
 
-void Settings::setAnalysisBaseUrl(const QString &v)
+void Settings::setTranslationBaseUrl(const QString &v)
 {
-    if (v == m_analysisBaseUrl) return;
-    m_analysisBaseUrl = v;
+    if (v == m_translationBaseUrl) return;
+    m_translationBaseUrl = v;
     save();
-    emit analysisConfigChanged();
+    emit translationConfigChanged();
 }
 
-void Settings::setAnalysisApiKey(const QString &v)
+void Settings::setTranslationApiKey(const QString &v)
 {
-    if (v == m_analysisApiKey) return;
-    m_analysisApiKey = v;
-    emit analysisConfigChanged();
-    if (m_analysisApiKey.isEmpty()) {
+    if (v == m_translationApiKey) return;
+    m_translationApiKey = v;
+    emit translationConfigChanged();
+    if (m_translationApiKey.isEmpty()) {
         auto *job = new DeletePasswordJob(QStringLiteral("ai-reader"), this);
-        job->setKey(QStringLiteral("llm/analysisApiKey"));
+        job->setKey(QStringLiteral("llm/translationApiKey"));
         job->setInsecureFallback(true);
         connect(job, &Job::finished, this, [this](Job *j) {
             if (j->error() != QKeychain::NoError
@@ -319,7 +325,7 @@ void Settings::setAnalysisApiKey(const QString &v)
         });
         job->start();
     } else {
-        writeAnalysisKeyToKeychain(m_analysisApiKey);
+        writeTranslationKeyToKeychain(m_translationApiKey);
     }
 }
 
@@ -341,45 +347,47 @@ void Settings::setAnalysisConcurrency(int v)
     emit analysisConfigChanged();
 }
 
-QString Settings::analysisModelInUse() const
+QString Settings::translationModelInUse() const
 {
-    return m_analysisModel.isEmpty() ? m_model : m_analysisModel;
+    return m_translationModel.isEmpty() ? m_model : m_translationModel;
 }
 
-bool Settings::analysisOverridden() const
+QString Settings::translationProviderInUse() const
 {
-    return !m_analysisModel.isEmpty() || !m_analysisProvider.isEmpty()
-           || !m_analysisBaseUrl.isEmpty() || !m_analysisApiKey.isEmpty();
+    return m_translationProvider.isEmpty() ? m_provider : m_translationProvider;
 }
 
-bool Settings::analysisConfigured() const
+QString Settings::translationBaseUrlInUse() const
 {
-    if (analysisModelInUse().isEmpty())
-        return false;
-    // The key follows the endpoint: an override with its own base URL needs
-    // its own key, otherwise the main one applies.
-    if (!m_analysisBaseUrl.isEmpty() && m_analysisBaseUrl != m_baseUrl)
-        return !m_analysisApiKey.isEmpty();
-    return !m_analysisApiKey.isEmpty() || !m_apiKey.isEmpty();
+    return m_translationBaseUrl.isEmpty() ? m_baseUrl : m_translationBaseUrl;
 }
 
-LlmClient *Settings::createAnalysisClient(QObject *parent) const
+QString Settings::translationApiKeyInUse() const
 {
-    // Field by field: whatever the analysis section leaves blank comes
+    // A key only travels with its own endpoint: reusing the main key against
+    // someone else's base URL would leak it.
+    if (!m_translationApiKey.isEmpty())
+        return m_translationApiKey;
+    if (m_translationBaseUrl.isEmpty() || m_translationBaseUrl == m_baseUrl)
+        return m_apiKey;
+    return {};
+}
+
+bool Settings::translationOverridden() const
+{
+    return !m_translationModel.isEmpty() || !m_translationProvider.isEmpty()
+           || !m_translationBaseUrl.isEmpty() || !m_translationApiKey.isEmpty();
+}
+
+LlmClient *Settings::createTranslationClient(QObject *parent) const
+{
+    // Field by field: whatever the translation section leaves blank comes
     // from the main configuration, so pointing only the model name at a
-    // stronger model on the same gateway is a one-field change.
-    const QString provider =
-        m_analysisProvider.isEmpty() ? m_provider : m_analysisProvider;
-    const QString model =
-        m_analysisModel.isEmpty() ? m_model : m_analysisModel;
-    const QString baseUrl =
-        m_analysisBaseUrl.isEmpty() ? m_baseUrl : m_analysisBaseUrl;
-    // A key only travels with its own endpoint: reusing the main key
-    // against someone else's base URL would leak it.
-    QString apiKey = m_analysisApiKey;
-    if (apiKey.isEmpty()
-        && (m_analysisBaseUrl.isEmpty() || m_analysisBaseUrl == m_baseUrl))
-        apiKey = m_apiKey;
+    // cheaper model on the same gateway is a one-field change.
+    const QString provider = translationProviderInUse();
+    const QString model = translationModelInUse();
+    const QString baseUrl = translationBaseUrlInUse();
+    const QString apiKey = translationApiKeyInUse();
 
     LlmClient *client = nullptr;
     const QString p = provider.toLower();
@@ -527,28 +535,28 @@ void Settings::writeApiKeyToKeychain(const QString &value)
     job->start();
 }
 
-void Settings::readAnalysisKeyFromKeychain()
+void Settings::readTranslationKeyFromKeychain()
 {
     auto *job = new ReadPasswordJob(QStringLiteral("ai-reader"), this);
-    job->setKey(QStringLiteral("llm/analysisApiKey"));
+    job->setKey(QStringLiteral("llm/translationApiKey"));
     job->setInsecureFallback(true);
     connect(job, &Job::finished, this, [this](Job *j) {
         auto *r = static_cast<ReadPasswordJob *>(j);
         if (r->error() != QKeychain::NoError)
             return;                 // absent is the normal case
         const QString text = r->textData();
-        if (text != m_analysisApiKey) {
-            m_analysisApiKey = text;
-            emit analysisConfigChanged();
+        if (text != m_translationApiKey) {
+            m_translationApiKey = text;
+            emit translationConfigChanged();
         }
     });
     job->start();
 }
 
-void Settings::writeAnalysisKeyToKeychain(const QString &value)
+void Settings::writeTranslationKeyToKeychain(const QString &value)
 {
     auto *job = new WritePasswordJob(QStringLiteral("ai-reader"), this);
-    job->setKey(QStringLiteral("llm/analysisApiKey"));
+    job->setKey(QStringLiteral("llm/translationApiKey"));
     job->setTextData(value);
     job->setInsecureFallback(true);
     connect(job, &Job::finished, this, [this](Job *j) {
@@ -640,9 +648,16 @@ void Settings::load()
         m_chatSendKey = QStringLiteral("enter");
     m_chatInputHeight      =
         qBound(36, m_qs.value(kKeyChatInputHeight, 88).toInt(), 400);
-    m_analysisProvider     = m_qs.value(kKeyAnalysisProvider, QString{}).toString();
-    m_analysisModel        = m_qs.value(kKeyAnalysisModel,    QString{}).toString();
-    m_analysisBaseUrl      = m_qs.value(kKeyAnalysisBaseUrl,  QString{}).toString();
+    m_translationProvider  = m_qs.value(kKeyTranslationProvider, QString{}).toString();
+    m_translationModel     = m_qs.value(kKeyTranslationModel,    QString{}).toString();
+    m_translationBaseUrl   = m_qs.value(kKeyTranslationBaseUrl,  QString{}).toString();
+    // Drop the retired interpretation override rather than leaving a model
+    // name in the file that nothing reads any more.
+    for (const char *k : {kKeyRetiredAnalysisProvider, kKeyRetiredAnalysisModel,
+                          kKeyRetiredAnalysisBaseUrl}) {
+        if (m_qs.contains(QString::fromLatin1(k)))
+            m_qs.remove(QString::fromLatin1(k));
+    }
     m_analysisMaxTokens    =
         qBound(512, m_qs.value(kKeyAnalysisMaxTokens, 8192).toInt(), 64000);
     m_analysisConcurrency  =
@@ -681,9 +696,9 @@ void Settings::save()
     m_qs.setValue(kKeyChatFontSize,         m_chatFontSize);
     m_qs.setValue(kKeyChatSendKey,          m_chatSendKey);
     m_qs.setValue(kKeyChatInputHeight,      m_chatInputHeight);
-    m_qs.setValue(kKeyAnalysisProvider,     m_analysisProvider);
-    m_qs.setValue(kKeyAnalysisModel,        m_analysisModel);
-    m_qs.setValue(kKeyAnalysisBaseUrl,      m_analysisBaseUrl);
+    m_qs.setValue(kKeyTranslationProvider,  m_translationProvider);
+    m_qs.setValue(kKeyTranslationModel,     m_translationModel);
+    m_qs.setValue(kKeyTranslationBaseUrl,   m_translationBaseUrl);
     m_qs.setValue(kKeyAnalysisMaxTokens,    m_analysisMaxTokens);
     m_qs.setValue(kKeyAnalysisConcurrency,  m_analysisConcurrency);
     m_qs.sync();

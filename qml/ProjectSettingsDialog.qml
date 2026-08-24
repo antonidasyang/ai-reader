@@ -7,39 +7,13 @@ import QtQuick.Layouts
 // item, annotation and note, for every member), so it lives in a
 // visually separate danger zone behind a second confirmation that
 // spells out what disappears.
-Dialog {
+AppDialog {
     id: root
     title: qsTr("Project settings")
-    modal: true
-    anchors.centerIn: Overlay.overlay
     width: 420
-    padding: 14
     standardButtons: Dialog.NoButton
 
     readonly property bool owner: projects.currentRole === "owner"
-
-    // One size for every button in this dialog. The primary/danger
-    // buttons carry a custom background, which sizes itself from its
-    // own implicit size rather than the control's padding, so without
-    // a shared figure they end up taller and narrower than the plain
-    // ones sitting next to them.
-    readonly property int btnH: 30
-    readonly property int btnW: 88
-
-    palette.window: Theme.paneBg
-    palette.windowText: Theme.text
-    palette.base: Theme.fieldBg
-    palette.text: Theme.text
-    palette.button: Theme.buttonBg
-    palette.buttonText: Theme.text
-    palette.highlight: Theme.accent
-    palette.highlightedText: Theme.onAccent
-    palette.placeholderText: Theme.dimText
-    background: Rectangle {
-        color: Theme.paneBg
-        border.color: Theme.border
-        radius: 6
-    }
 
     // Load the current values every time the dialog opens, so it never
     // shows a stale name after someone else renamed the project.
@@ -58,7 +32,7 @@ Dialog {
             text: qsTr("Name")
             color: Theme.dimText
         }
-        TextField {
+        AppTextField {
             id: nameField
             Layout.fillWidth: true
             enabled: projects.canWrite
@@ -71,7 +45,7 @@ Dialog {
             text: qsTr("Description")
             color: Theme.dimText
         }
-        TextField {
+        AppTextField {
             id: descField
             Layout.fillWidth: true
             enabled: projects.canWrite
@@ -92,39 +66,19 @@ Dialog {
             Layout.fillWidth: true
             spacing: 8
             Item { Layout.fillWidth: true }
-            Button {
+            AppButton {
                 text: qsTr("Close")
-                Layout.preferredWidth: root.btnW
-                Layout.preferredHeight: root.btnH
                 onClicked: root.close()
             }
-            Button {
+            AppButton {
                 id: saveBtn
                 text: qsTr("Save")
-                Layout.preferredWidth: root.btnW
-                Layout.preferredHeight: root.btnH
+                primary: true
                 enabled: projects.canWrite
                          && nameField.text.trim().length > 0
                          && (nameField.text.trim() !== projects.currentName
                              || descField.text
                                 !== projects.descriptionOf(projects.currentId))
-                // Primary action styling, matching the other dialogs.
-                contentItem: Label {
-                    text: saveBtn.text
-                    color: saveBtn.enabled ? Theme.onPrimary : Theme.dimText
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-                background: Rectangle {
-                    implicitWidth: root.btnW
-                    implicitHeight: root.btnH
-                    radius: 4
-                    color: !saveBtn.enabled ? Theme.buttonBg
-                         : saveBtn.pressed  ? Theme.primaryPressed
-                         : saveBtn.hovered  ? Theme.primaryHover
-                                            : Theme.primaryBg
-                    border.color: saveBtn.enabled ? "transparent" : Theme.border
-                }
                 onClicked: {
                     projects.updateProject(projects.currentId,
                                            nameField.text.trim(),
@@ -164,9 +118,8 @@ Dialog {
                                + "for you and for every member. This can't "
                                + "be undone.")
                 }
-                Button {
+                AppButton {
                     text: qsTr("Delete project…")
-                    Layout.preferredHeight: root.btnH
                     onClicked: {
                         confirmDelete.pending = projects.currentId
                         confirmDelete.pendingName = projects.currentName
@@ -179,31 +132,15 @@ Dialog {
         }
     }
 
-    Dialog {
+    AppDialog {
         id: confirmDelete
         title: qsTr("Delete project?")
-        modal: true
-        anchors.centerIn: Overlay.overlay
         width: 400
-        padding: 14
         standardButtons: Dialog.NoButton
 
         property string pending: ""
         property string pendingName: ""
         property int unsynced: 0
-
-        palette.window: Theme.paneBg
-        palette.windowText: Theme.text
-        palette.base: Theme.fieldBg
-        palette.text: Theme.text
-        palette.button: Theme.buttonBg
-        palette.buttonText: Theme.text
-        palette.placeholderText: Theme.dimText
-        background: Rectangle {
-            color: Theme.paneBg
-            border.color: Theme.border
-            radius: 6
-        }
 
         onOpened: confirmField.text = ""
 
@@ -232,7 +169,7 @@ Dialog {
                 color: Theme.dimText
                 text: qsTr("Type the project name to confirm.")
             }
-            TextField {
+            AppTextField {
                 id: confirmField
                 Layout.fillWidth: true
                 placeholderText: confirmDelete.pendingName
@@ -241,37 +178,18 @@ Dialog {
                 Layout.fillWidth: true
                 spacing: 8
                 Item { Layout.fillWidth: true }
-                Button {
+                AppButton {
                     text: qsTr("Cancel")
-                    Layout.preferredWidth: root.btnW
-                    Layout.preferredHeight: root.btnH
                     onClicked: confirmDelete.close()
                 }
-                Button {
+                AppButton {
                     id: reallyDeleteBtn
                     text: qsTr("Delete")
-                    Layout.preferredWidth: root.btnW
-                    Layout.preferredHeight: root.btnH
+                    // Red, not the ordinary blue confirm: this cascades the
+                    // whole project for every member.
+                    danger: true
                     enabled: confirmField.text.trim()
                              === confirmDelete.pendingName
-                    contentItem: Label {
-                        text: reallyDeleteBtn.text
-                        color: reallyDeleteBtn.enabled ? Theme.onPrimary
-                                                       : Theme.dimText
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                    background: Rectangle {
-                        implicitWidth: root.btnW
-                        implicitHeight: root.btnH
-                        radius: 4
-                        color: !reallyDeleteBtn.enabled ? Theme.buttonBg
-                             : reallyDeleteBtn.pressed  ? Qt.darker(Theme.danger, 1.3)
-                             : reallyDeleteBtn.hovered  ? Qt.lighter(Theme.danger, 1.1)
-                                                        : Theme.danger
-                        border.color: reallyDeleteBtn.enabled ? "transparent"
-                                                              : Theme.border
-                    }
                     onClicked: {
                         projects.deleteProject(confirmDelete.pending)
                         confirmDelete.close()
