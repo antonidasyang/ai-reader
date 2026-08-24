@@ -1,5 +1,20 @@
 # AI Reader changelog
 
+## v1.2.10 — 2026-08-24
+
+### The endpoint follows the provider
+- **Anthropic, OpenAI and DeepSeek each have exactly one address**, and it is
+  no longer yours to type: pick the provider and the app talks to it. The
+  Base URL box only appears for **openai-compatible**, which is what that
+  entry is for.
+- This was a real bug, not just clutter. A Base URL left behind by an earlier
+  provider kept being used after switching, so every request went to the
+  wrong server — with a model name that server had never heard of, which is
+  what produced an unexplained *400* no matter what else was changed.
+- **openai-compatible with no Base URL now counts as unconfigured** instead of
+  quietly falling back to OpenAI's endpoint.
+- Fetching the model list goes to the same place the requests will.
+
 ## v1.2.9 — 2026-08-24
 
 ### When the model refuses, it now says why

@@ -621,6 +621,34 @@ int main(int argc, char **argv)
           exporter.save(md, QUrl::fromLocalFile(outPath))
               && QFile(outPath).size() > 100);
 
+    // ── the endpoint follows the provider, not the field ────────────
+    // A Base URL left behind by an earlier provider used to keep being
+    // used, so every request went to the wrong server.
+    check("a named provider ignores a leftover Base URL",
+          Settings::resolveBaseUrl(QStringLiteral("deepseek"),
+                                   QStringLiteral("http://127.0.0.1:9/ghost"))
+              == QStringLiteral("https://api.deepseek.com"));
+    check("...for each of the three that have one",
+          Settings::resolveBaseUrl(QStringLiteral("anthropic"), QString())
+                  == QStringLiteral("https://api.anthropic.com")
+              && Settings::resolveBaseUrl(QStringLiteral("openai"),
+                                          QStringLiteral("http://stale"))
+                     == QStringLiteral("https://api.openai.com"));
+    check("...while openai-compatible uses the address it was given",
+          Settings::resolveBaseUrl(QStringLiteral("openai-compatible"),
+                                   QStringLiteral("http://gateway.local:8080"))
+              == QStringLiteral("http://gateway.local:8080"));
+    check("...and only it may be told one",
+          !Settings::providerTakesCustomUrl(QStringLiteral("openai"))
+              && Settings::providerTakesCustomUrl(
+                  QStringLiteral("openai-compatible")));
+
+    settings.setBaseUrl(QString());
+    check("openai-compatible with no address counts as unconfigured",
+          !settings.isConfigured());
+    settings.setBaseUrl(gateway.baseUrl());
+    check("...and configured again once it has one", settings.isConfigured());
+
     qInfo().noquote() << "";
     qInfo().noquote() << QStringLiteral("%1 passed, %2 failed")
                              .arg(g_pass)

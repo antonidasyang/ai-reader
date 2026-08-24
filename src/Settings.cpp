@@ -65,15 +65,32 @@ constexpr auto kKeyRetiredAnalysisProvider = "analysis/provider";
 constexpr auto kKeyRetiredAnalysisModel    = "analysis/model";
 constexpr auto kKeyRetiredAnalysisBaseUrl  = "analysis/baseUrl";
 
-QUrl defaultBaseUrlFor(const QString &providerLower)
-{
-    if (providerLower == QLatin1String("anthropic"))
-        return QUrl(QStringLiteral("https://api.anthropic.com"));
-    if (providerLower == QLatin1String("deepseek"))
-        return QUrl(QStringLiteral("https://api.deepseek.com"));
-    return QUrl(QStringLiteral("https://api.openai.com"));
-}
 } // namespace
+
+QString Settings::officialBaseUrl(const QString &provider)
+{
+    const QString p = provider.toLower();
+    if (p == QLatin1String("anthropic"))
+        return QStringLiteral("https://api.anthropic.com");
+    if (p == QLatin1String("deepseek"))
+        return QStringLiteral("https://api.deepseek.com");
+    if (p == QLatin1String("openai"))
+        return QStringLiteral("https://api.openai.com");
+    return {};                     // openai-compatible has no home address
+}
+
+bool Settings::providerTakesCustomUrl(const QString &provider)
+{
+    return officialBaseUrl(provider).isEmpty();
+}
+
+QString Settings::resolveBaseUrl(const QString &provider,
+                                 const QString &customUrl)
+{
+    if (providerTakesCustomUrl(provider))
+        return customUrl.trimmed();
+    return officialBaseUrl(provider);
+}
 
 Settings::Settings(QObject *parent)
     : QObject(parent)
@@ -94,7 +111,14 @@ Settings::~Settings() = default;
 
 bool Settings::isConfigured() const
 {
-    return !m_apiKey.isEmpty() && !m_model.isEmpty() && !m_provider.isEmpty();
+    if (m_apiKey.isEmpty() || m_model.isEmpty() || m_provider.isEmpty())
+        return false;
+    // "openai-compatible" means "an endpoint I will name". Without the name
+    // the client would fall back to its built-in default and talk to the
+    // wrong server -- which is worse than saying it is not configured.
+    if (providerTakesCustomUrl(m_provider) && m_baseUrl.trimmed().isEmpty())
+        return false;
+    return true;
 }
 
 void Settings::setProvider(const QString &v)
@@ -259,8 +283,9 @@ LlmClient *Settings::createClient(QObject *parent) const
     }
     client->setApiKey(m_apiKey);
     client->setModel(m_model);
-    if (!m_baseUrl.isEmpty())
-        client->setBaseUrl(QUrl(m_baseUrl));
+    const QString base = resolveBaseUrl(m_provider, m_baseUrl);
+    if (!base.isEmpty())
+        client->setBaseUrl(QUrl(base));
     return client;
 }
 
@@ -359,7 +384,13 @@ QString Settings::translationProviderInUse() const
 
 QString Settings::translationBaseUrlInUse() const
 {
-    return m_translationBaseUrl.isEmpty() ? m_baseUrl : m_translationBaseUrl;
+    const QString provider = translationProviderInUse();
+    // Only a provider that takes an address of its own can be pointed at
+    // one; for the rest the endpoint follows the provider.
+    if (!providerTakesCustomUrl(provider))
+        return officialBaseUrl(provider);
+    return m_translationBaseUrl.isEmpty() ? m_baseUrl.trimmed()
+                                          : m_translationBaseUrl.trimmed();
 }
 
 QString Settings::translationApiKeyInUse() const
@@ -449,9 +480,13 @@ void Settings::fetchModelsInto(ModelSlot slot, const QString &provider,
     }
 
     const QString providerLower = provider.toLower();
-    QUrl base = baseUrl.trimmed().isEmpty()
-                ? defaultBaseUrlFor(providerLower)
-                : QUrl(baseUrl.trimmed());
+    const QString resolved = resolveBaseUrl(provider, baseUrl);
+    if (resolved.isEmpty()) {
+        setError(tr("Enter the endpoint's Base URL first."));
+        setBusy(false);
+        return;
+    }
+    QUrl base(resolved);
     QString path = base.path();
     if (path.endsWith(QChar('/')))
         path.chop(1);

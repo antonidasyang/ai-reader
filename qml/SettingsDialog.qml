@@ -19,6 +19,13 @@ AppDialog {
     readonly property var providerOptions:
         ["anthropic", "openai", "deepseek", "openai-compatible"]
 
+    // The three named providers have one endpoint each and it is not the
+    // reader's to type; only "openai-compatible" has an address of its own.
+    readonly property string providerNow:
+        providerOptions[providerBox.currentIndex]
+    readonly property bool customUrlAllowed:
+        settings.providerTakesCustomUrl(dialog.providerNow)
+
     // Parallel arrays — display label shown in the combo, code persisted
     // to QSettings. Empty code = follow QLocale::system().
     readonly property var languageCodes:
@@ -47,9 +54,13 @@ AppDialog {
     // endpoint translation will really use.
     readonly property string translationProviderResolved:
         translationProviderCodes[translationProviderBox.currentIndex]
-        || dialog.providerOptions[providerBox.currentIndex]
+        || dialog.providerNow
+    readonly property bool translationCustomUrlAllowed:
+        settings.providerTakesCustomUrl(dialog.translationProviderResolved)
     readonly property string translationBaseUrlResolved:
-        translationBaseUrlField.text.trim() || baseUrlField.text.trim()
+        dialog.translationCustomUrlAllowed
+        ? (translationBaseUrlField.text.trim() || baseUrlField.text.trim())
+        : settings.officialBaseUrl(dialog.translationProviderResolved)
     readonly property string translationApiKeyResolved:
         translationApiKeyField.text
         || (translationBaseUrlField.text.trim().length === 0
@@ -274,7 +285,10 @@ AppDialog {
                         }
                         AppButton {
                             text: settings.fetchingModels ? qsTr("Fetching…") : qsTr("Fetch")
-                            enabled: !settings.fetchingModels && apiKeyField.text.length > 0
+                            enabled: !settings.fetchingModels
+                                     && apiKeyField.text.length > 0
+                                     && (!dialog.customUrlAllowed
+                                         || baseUrlField.text.trim().length > 0)
                             onClicked: settings.fetchModels(
                                 dialog.providerOptions[providerBox.currentIndex],
                                 baseUrlField.text,
@@ -283,16 +297,28 @@ AppDialog {
                     }
 
                     AppFormLabel { text: qsTr("Base URL") }
-                    AppTextField {
-                        id: baseUrlField
+                    RowLayout {
                         Layout.fillWidth: true
-                        placeholderText: providerBox.currentText === "anthropic"
-                                         ? qsTr("https://api.anthropic.com (default)")
-                                         : providerBox.currentText === "deepseek"
-                                           ? "https://api.deepseek.com"
-                                           : providerBox.currentText === "openai-compatible"
-                                             ? "http://localhost:8080"
-                                             : qsTr("https://api.openai.com (default)")
+                        spacing: Theme.spaceS
+                        // Editable only where it means something. For a named
+                        // provider the endpoint is shown, not typed — a URL
+                        // left behind by an earlier provider used to keep
+                        // being used, and every request went to the wrong
+                        // server with no way to tell.
+                        AppTextField {
+                            id: baseUrlField
+                            Layout.fillWidth: true
+                            visible: dialog.customUrlAllowed
+                            placeholderText: qsTr("http://localhost:8080")
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            visible: !dialog.customUrlAllowed
+                            elide: Text.ElideRight
+                            font.pixelSize: 13
+                            color: Theme.dimText
+                            text: settings.officialBaseUrl(dialog.providerNow)
+                        }
                     }
 
                     AppFormLabel { text: qsTr("API key") }
@@ -336,6 +362,12 @@ AppDialog {
                     }
                 }
 
+                AppHintLabel {
+                    visible: !dialog.customUrlAllowed
+                    text: qsTr("The endpoint follows the provider. Pick "
+                               + "“openai-compatible” to point at a gateway of "
+                               + "your own.")
+                }
                 AppHintLabel {
                     text: qsTr("This model does the reading: interpretation, the "
                                + "close reading, the project-wide analyses, chat, "
@@ -404,10 +436,24 @@ AppDialog {
                     }
 
                     AppFormLabel { text: qsTr("Base URL") }
-                    AppTextField {
-                        id: translationBaseUrlField
+                    RowLayout {
                         Layout.fillWidth: true
-                        placeholderText: qsTr("Same as the main base URL")
+                        spacing: Theme.spaceS
+                        AppTextField {
+                            id: translationBaseUrlField
+                            Layout.fillWidth: true
+                            visible: dialog.translationCustomUrlAllowed
+                            placeholderText: qsTr("Same as the main base URL")
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            visible: !dialog.translationCustomUrlAllowed
+                            elide: Text.ElideRight
+                            font.pixelSize: 13
+                            color: Theme.dimText
+                            text: settings.officialBaseUrl(
+                                      dialog.translationProviderResolved)
+                        }
                     }
 
                     AppFormLabel { text: qsTr("API key") }

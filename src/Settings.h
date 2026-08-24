@@ -232,6 +232,19 @@ public:
     void setAnalysisMaxTokens(int v);
     void setAnalysisConcurrency(int v);
 
+    // Where a provider's API actually lives. The three named providers have
+    // exactly one endpoint each and it is not the reader's business to type
+    // it; only "openai-compatible" -- which is the whole point of that entry
+    // -- has an address of its own. Keeping this in one place is what stops
+    // a Base URL left over from an earlier provider from quietly sending
+    // every request somewhere else.
+    Q_INVOKABLE static QString officialBaseUrl(const QString &provider);
+    Q_INVOKABLE static bool providerTakesCustomUrl(const QString &provider);
+    // What a client for `provider` will really talk to, given a configured
+    // custom URL that only counts when the provider allows one.
+    Q_INVOKABLE static QString resolveBaseUrl(const QString &provider,
+                                              const QString &customUrl);
+
     LlmClient *createClient(QObject *parent = nullptr) const;
     // The client TranslationService talks to: the translation override where
     // one is set, the main configuration everywhere it is not. Everything
