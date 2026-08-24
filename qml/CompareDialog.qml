@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 import QtQuick.Layouts
 
 // Putting several papers side by side (§10).
@@ -39,6 +40,15 @@ Dialog {
     }
 
     onOpened: compare.loadStored()
+
+    FileDialog {
+        id: exportCompareDialog
+        title: qsTr("Export comparison")
+        fileMode: FileDialog.SaveFile
+        defaultSuffix: "md"
+        nameFilters: [qsTr("Markdown files (*.md)"), qsTr("All files (*)")]
+        onAccepted: exporter.save(exporter.comparisonMarkdown(), selectedFile)
+    }
 
     function dimensionLabel(code) {
         switch (code) {
@@ -304,6 +314,12 @@ Dialog {
 
         RowLayout {
             Layout.fillWidth: true
+            Button {
+                text: qsTr("Export as Markdown…")
+                visible: compare.hasResult
+                Layout.preferredHeight: root.btnH
+                onClicked: exportCompareDialog.open()
+            }
             Item { Layout.fillWidth: true }
             Button {
                 text: qsTr("Close")

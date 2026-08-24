@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 import QtQuick.Layouts
 
 // The quick interpretation of the open paper (§2 + §4).
@@ -87,6 +88,18 @@ Rectangle {
         HoverHandler { id: pillHover }
     }
 
+    // Its own save dialog: ids are file-scoped, so a pane cannot reach one
+    // declared in the window.
+    FileDialog {
+        id: exportDialog
+        title: qsTr("Export interpretation")
+        fileMode: FileDialog.SaveFile
+        defaultSuffix: "md"
+        nameFilters: [qsTr("Markdown files (*.md)"), qsTr("All files (*)")]
+        onAccepted: exporter.save(exporter.paperMarkdown(analysis.paperId),
+                                  selectedFile)
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -139,6 +152,11 @@ Rectangle {
                             text: qsTr("Discard this interpretation")
                             enabled: analysis.hasQuick && analysis.quickIsMine
                             onTriggered: analysis.discardQuick()
+                        }
+                        MenuItem {
+                            text: qsTr("Export this paper as Markdown…")
+                            enabled: analysis.hasQuick || analysis.hasDeep
+                            onTriggered: exportDialog.open()
                         }
                     }
                 }

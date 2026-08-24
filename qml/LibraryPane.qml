@@ -120,14 +120,47 @@ Rectangle {
                              : hovered  ? Theme.hover
                                         : "transparent"
                     }
+                    // §17: whether this paper has been interpreted, right
+                    // where the reader is looking. The revision is named so
+                    // the invokable below re-runs when the join changes.
+                    readonly property string _analysisState:
+                        (analysisList.revision,
+                         analysisList.stateForPaper(model.paperId))
+                    readonly property string _relevance:
+                        (analysisList.revision,
+                         analysisList.relevanceForPaper(model.paperId))
                     contentItem: ColumnLayout {
                         spacing: 2
-                        Label {
-                            text: model.title
-                            color: Theme.text
-                            font.bold: true
-                            elide: Text.ElideRight
+                        RowLayout {
                             Layout.fillWidth: true
+                            spacing: 5
+                            Rectangle {
+                                width: 7
+                                height: 7
+                                radius: 3.5
+                                Layout.alignment: Qt.AlignVCenter
+                                visible: _analysisState !== "none"
+                                color: _analysisState === "failed"
+                                       || _analysisState === "insufficient"
+                                       ? Theme.danger
+                                       : (_relevance === "high" ? Theme.success
+                                                                : Theme.accent)
+                                ToolTip.visible: dotHover.hovered
+                                ToolTip.delay: 400
+                                ToolTip.text: _analysisState === "failed"
+                                              ? qsTr("Interpreting this failed")
+                                              : (_analysisState === "insufficient"
+                                                 ? qsTr("Not enough text to interpret")
+                                                 : qsTr("Interpreted"))
+                                HoverHandler { id: dotHover }
+                            }
+                            Label {
+                                text: model.title
+                                color: Theme.text
+                                font.bold: true
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
                         }
                         Label {
                             text: [model.creators, model.year, model.publication]

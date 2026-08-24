@@ -2,6 +2,7 @@
 
 #include <QAbstractListModel>
 #include <QHash>
+#include <QTimer>
 #include <QString>
 
 #include "LibraryDb.h"
@@ -31,6 +32,10 @@ class AnalysisListModel : public QAbstractListModel
     Q_PROPERTY(int failedCount READ failedCount NOTIFY countsChanged)
     Q_PROPERTY(int excludedCount READ excludedCount NOTIFY countsChanged)
     Q_PROPERTY(int toReadCount READ toReadCount NOTIFY countsChanged)
+    // Bumped whenever the join is rebuilt. Bind it alongside a
+    // stateForPaper() call to make that call re-run: it is an invokable,
+    // and an invokable notifies nothing on its own.
+    Q_PROPERTY(int revision READ revision NOTIFY countsChanged)
 
     // "" = no filter. relevance: high|medium|low|unclear.
     Q_PROPERTY(QString filterRelevance READ filterRelevance WRITE setFilterRelevance NOTIFY filtersChanged)
@@ -71,6 +76,12 @@ public:
     int failedCount() const;
     int excludedCount() const;
     int toReadCount() const;
+    int revision() const { return m_revision; }
+
+    // §17, where the reader actually looks: the state of one paper's
+    // interpretation, for the library list.
+    Q_INVOKABLE QString stateForPaper(const QString &paperId) const;
+    Q_INVOKABLE QString relevanceForPaper(const QString &paperId) const;
 
     QString filterRelevance() const { return m_filterRelevance; }
     QString filterAdvice() const { return m_filterAdvice; }
@@ -130,8 +141,14 @@ private:
     QHash<QString, QString> m_runtime;    // itemId -> queued|running
     QHash<QString, QString> m_runtimeError;
 
+    // A batch writes one analysis per paper, and every write is a store
+    // change; rebuilding the whole join on each one made a hundred-paper run
+    // quadratic in decompressions.
+    QTimer m_reloadTimer;
+
     QString m_filterRelevance;
     QString m_filterAdvice;
     QString m_filterState;
     bool m_hideExcluded = true;
+    int m_revision = 0;
 };

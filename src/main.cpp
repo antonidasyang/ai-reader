@@ -21,6 +21,7 @@
 #include "AnalysisService.h"
 #include "BatchAnalysisService.h"
 #include "CompareService.h"
+#include "AnalysisExporter.h"
 #include "LibraryAnalysisService.h"
 #include "PaperSource.h"
 #include "AnalysisStore.h"
@@ -321,6 +322,9 @@ int main(int argc, char *argv[])
                                   &projectProfile);
     LibraryAnalysisService libraryAnalysis(&settings, &analysisStore,
                                            &projectController, &projectProfile);
+    AnalysisExporter analysisExporter(&analysisStore, &projectController,
+                                      &projectProfile, &libraryAnalysis,
+                                      &compareService);
 
     // Auto-segmentation is a Settings switch, but PaperController must not
     // depend on Settings (it predates it and is constructed first), so the
@@ -432,6 +436,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("batchAnalysis", &batchAnalysis);
     engine.rootContext()->setContextProperty("compare", &compareService);
     engine.rootContext()->setContextProperty("research", &libraryAnalysis);
+    engine.rootContext()->setContextProperty("exporter", &analysisExporter);
 
     QObject::connect(
         &engine,

@@ -20,8 +20,11 @@ AnalysisListModel::AnalysisListModel(LibraryDb *db, LibraryModel *library,
         clearRuntime();
         reload();
     });
+    m_reloadTimer.setSingleShot(true);
+    m_reloadTimer.setInterval(250);
+    connect(&m_reloadTimer, &QTimer::timeout, this, &AnalysisListModel::reload);
     connect(m_store, &AnalysisStore::changed, this,
-            &AnalysisListModel::reload);
+            [this]() { m_reloadTimer.start(); });
     reload();
 }
 
@@ -154,6 +157,7 @@ void AnalysisListModel::rebuildVisible()
             m_visible.append(i);
     }
     endResetModel();
+    ++m_revision;
     emit countsChanged();
 }
 
@@ -230,6 +234,27 @@ int AnalysisListModel::toReadCount() const
         if (r.toRead)
             ++n;
     return n;
+}
+
+QString AnalysisListModel::stateForPaper(const QString &paperId) const
+{
+    if (paperId.isEmpty())
+        return QStringLiteral("none");
+    for (const Row &r : m_all) {
+        if (r.paperId == paperId)
+            return stateOf(r);
+    }
+    const AnalysisRecord rec = m_digests.value(paperId);
+    return rec.valid ? QStringLiteral("done") : QStringLiteral("none");
+}
+
+QString AnalysisListModel::relevanceForPaper(const QString &paperId) const
+{
+    return m_digests.value(paperId)
+        .payload.value(QStringLiteral("relevance"))
+        .toObject()
+        .value(QStringLiteral("level"))
+        .toString();
 }
 
 QStringList AnalysisListModel::visibleItemIds() const

@@ -219,12 +219,86 @@ private:
         return QJsonDocument(answer).toJson(QJsonDocument::Compact);
     }
 
+    // The library-level calls all use one tool name, so which analysis is
+    // being asked for is read off the schema it was handed.
+    QStringList schemaKeys() const
+    {
+        const QJsonArray tools = lastRequest().value("tools").toArray();
+        if (tools.isEmpty())
+            return {};
+        return tools.first()
+            .toObject()
+            .value("function")
+            .toObject()
+            .value("parameters")
+            .toObject()
+            .value("properties")
+            .toObject()
+            .keys();
+    }
+
+    // Ids of the categories the prompt carried (classification only).
+    QStringList categoryIdsInPrompt() const
+    {
+        QStringList out;
+        static const QRegularExpression re(
+            QStringLiteral("\"id\": \"([^\"]+)\""));
+        auto it = re.globalMatch(lastPrompt());
+        while (it.hasNext())
+            out.append(it.next().captured(1));
+        return out;
+    }
+
+    QByteArray buildTaxonomyAnswer()
+    {
+        const QStringList ids = paperIdsInPrompt();
+        QJsonArray cats;
+        for (int i = 0; i < ids.size() && i < 2; ++i) {
+            cats.append(QJsonObject{
+                {"name", i == 0 ? "route A" : "route B"},
+                {"description", "A way of doing it."},
+                {"paperIds", QJsonArray{ids.at(i)}}});
+        }
+        return QJsonDocument(
+                   QJsonObject{
+                       {"dimensions",
+                        QJsonArray{QJsonObject{{"dimension", "method_route"},
+                                               {"categories", cats}}}},
+                       {"ambiguous", QJsonArray{}}})
+            .toJson(QJsonDocument::Compact);
+    }
+
+    QByteArray buildClassifyAnswer()
+    {
+        const QStringList cats = categoryIdsInPrompt();
+        const QStringList papers = paperIdsInPrompt();
+        QJsonArray assignments;
+        for (const QString &p : papers) {
+            if (cats.contains(p))
+                continue;
+            assignments.append(QJsonObject{
+                {"paperId", p},
+                {"categoryIds",
+                 cats.isEmpty() ? QJsonArray{} : QJsonArray{cats.first()}},
+                {"ambiguous", false},
+                {"note", ""}});
+        }
+        return QJsonDocument(QJsonObject{{"assignments", assignments}})
+            .toJson(QJsonDocument::Compact);
+    }
+
     QByteArray buildAnswer(const QString &tool)
     {
         if (tool == QLatin1String("emit_section"))
             return buildModuleAnswer();
         if (tool == QLatin1String("emit_comparison"))
             return buildCompareAnswer();
+        if (tool == QLatin1String("emit_analysis")) {
+            const QStringList keys = schemaKeys();
+            if (keys.contains(QStringLiteral("assignments")))
+                return buildClassifyAnswer();
+            return buildTaxonomyAnswer();
+        }
         const QVector<Marker> ms = markers();
         Q_ASSERT(ms.size() >= 3);
         const Marker good = ms.at(qMin(1, ms.size() - 1));

@@ -333,6 +333,8 @@ qt_add_executable(ai-reader
     src/CompareService.cpp
     src/LibraryAnalysisService.h
     src/LibraryAnalysisService.cpp
+    src/AnalysisExporter.h
+    src/AnalysisExporter.cpp
 )
 
 target_compile_definitions(ai-reader PRIVATE

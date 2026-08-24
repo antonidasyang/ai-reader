@@ -15,7 +15,9 @@
 #include "AnalysisListModel.h"
 #include "AnalysisService.h"
 #include "BatchAnalysisService.h"
+#include "AnalysisExporter.h"
 #include "CompareService.h"
+#include "LibraryAnalysisService.h"
 #include "AnalysisStore.h"
 #include "AnalysisTypes.h"
 #include "ApiClient.h"
@@ -37,6 +39,7 @@
 #include <QDateTime>
 #include <QDeadlineTimer>
 #include <QDir>
+#include <QFile>
 #include <QGuiApplication>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -479,6 +482,113 @@ int main(int argc, char **argv)
                                         return ids;
                                     }()))
               .valid);
+
+    // ── §8: the category system, and who owns it ────────────────────
+    LibraryAnalysisService research(&settings, &store, &projects, &profile);
+    check("a project-wide analysis can run once there are digests",
+          research.canRun(), QStringLiteral("%1 digests").arg(research.digestCount()));
+
+    research.generate(QStringLiteral("taxonomy"));
+    waitFor([&] { return research.runningKind().isEmpty(); }, 60000);
+    check("the category system came back", research.has(QStringLiteral("taxonomy")),
+          research.lastError());
+
+    auto categories = [&]() {
+        QVariantList out;
+        const QVariantMap tax = research.result(QStringLiteral("taxonomy"));
+        for (const QVariant &dv : tax.value("dimensions").toList())
+            for (const QVariant &cv : dv.toMap().value("categories").toList())
+                out.append(cv);
+        return out;
+    };
+    check("it has categories with ids", categories().size() == 2,
+          QStringLiteral("got %1").arg(categories().size()));
+
+    const QString catA = categories().value(0).toMap().value("id").toString();
+    check("...that are stable identifiers, not names", !catA.isEmpty());
+
+    research.renameCategory(catA, QStringLiteral("my own name"));
+    check("the reader can rename a category",
+          categories().value(0).toMap().value("name").toString()
+              == QStringLiteral("my own name"));
+    check("...which counts as confirming it",
+          categories().value(0).toMap().value("confirmed").toBool());
+
+    research.setCategoryLocked(catA, true);
+    research.addCategory(QStringLiteral("method_route"),
+                         QStringLiteral("a category of mine"));
+    check("the reader can add their own category", categories().size() == 3);
+
+    // Regenerating must not undo any of that (§8.3).
+    research.generate(QStringLiteral("taxonomy"));
+    waitFor([&] { return research.runningKind().isEmpty(); }, 60000);
+    const QVariantList after = categories();
+    bool keptRename = false, keptOwn = false;
+    for (const QVariant &c : after) {
+        const QVariantMap m = c.toMap();
+        if (m.value("name").toString() == QStringLiteral("my own name"))
+            keptRename = true;
+        if (m.value("name").toString() == QStringLiteral("a category of mine"))
+            keptOwn = true;
+    }
+    check("a rename survives regenerating the category system", keptRename);
+    check("...and so does a category the reader made", keptOwn);
+    check("...without the system doubling in size", after.size() == 3,
+          QStringLiteral("got %1").arg(after.size()));
+
+    // §8.2: a paper can sit in several categories.
+    const QString somePaper = digests.first().paperId;
+    const QString catB = after.value(1).toMap().value("id").toString();
+    research.assignPaper(somePaper, catB, true);
+    int inTwo = 0;
+    for (const QVariant &c : categories()) {
+        const QVariantList ids = c.toMap().value("paperIds").toList();
+        for (const QVariant &v : ids)
+            if (v.toString() == somePaper)
+                ++inTwo;
+    }
+    check("a paper can belong to more than one category", inTwo >= 2,
+          QStringLiteral("in %1").arg(inTwo));
+
+    // §8.4: papers the system has never seen get placed into it.
+    const QStringList unplaced = research.unclassifiedPapers();
+    check("papers outside the system are noticed", !unplaced.isEmpty(),
+          QStringLiteral("%1 unplaced").arg(unplaced.size()));
+    research.classifyNewPapers();
+    waitFor([&] { return research.runningKind().isEmpty(); }, 60000);
+    check("...and get placed without redrawing the system",
+          research.unclassifiedPapers().size() < unplaced.size()
+              && categories().size() == 3,
+          QStringLiteral("%1 left, %2 categories")
+              .arg(research.unclassifiedPapers().size())
+              .arg(categories().size()));
+
+    check("the analysis knows when papers moved under it",
+          !research.isStale(QStringLiteral("taxonomy")));
+
+    // §16: getting it back out.
+    AnalysisExporter exporter(&store, &projects, &profile, &research, &compare);
+    const QString md = exporter.paperMarkdown(paperA);
+    check("a paper exports as Markdown", md.startsWith(QStringLiteral("# ")));
+    check("...carrying where each statement came from",
+          md.contains(QStringLiteral("AI reading"))
+              || md.contains(QStringLiteral("authors")));
+    check("...and marking the citation that did not check out",
+          md.contains(QStringLiteral("unverified")));
+    check("...and the reader's own notes",
+          md.contains(QStringLiteral("sampling rate")));
+    const QString cmd = exporter.comparisonMarkdown();
+    check("a comparison exports as a Markdown table",
+          cmd.contains(QStringLiteral("| ")) &&
+          cmd.contains(QStringLiteral("Not directly comparable")));
+    const QString rmd = exporter.projectMarkdown();
+    check("the project exports as a report", rmd.contains(QStringLiteral("# ")));
+    check("...saying out loud that it describes this library, not the field",
+          rmd.contains(QStringLiteral("not work that does not exist")));
+    const QString outPath = root + QStringLiteral("/export.md");
+    check("the export writes a file",
+          exporter.save(md, QUrl::fromLocalFile(outPath))
+              && QFile(outPath).size() > 100);
 
     qInfo().noquote() << "";
     qInfo().noquote() << QStringLiteral("%1 passed, %2 failed")
