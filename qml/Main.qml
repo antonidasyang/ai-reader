@@ -150,6 +150,7 @@ ApplicationWindow {
     MembersDialog { id: membersDialog }
     ProjectSettingsDialog { id: projectSettingsDialog }
     ProjectProfileDialog { id: projectProfileDialog }
+    BatchAnalysisDialog { id: batchAnalysisDialog }
 
     Dialog {
         id: createProjectDialog
@@ -559,6 +560,15 @@ ApplicationWindow {
                 checkable: true
                 checked: summaryPane.visible
                 onClicked: summaryPane.visible = !summaryPane.visible
+            }
+            ToolButton {
+                text: qsTr("Interpret library")
+                visible: auth.authenticated && projects.currentId.length > 0
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("Interpret every paper in this project, "
+                                   + "then filter by relevance")
+                onClicked: batchAnalysisDialog.open()
             }
             ToolButton {
                 text: qsTr("Interpret")

@@ -17,7 +17,10 @@
 #include "PaperSyncService.h"
 #include "FileSyncService.h"
 #include "ImportService.h"
+#include "AnalysisListModel.h"
 #include "AnalysisService.h"
+#include "BatchAnalysisService.h"
+#include "PaperSource.h"
 #include "AnalysisStore.h"
 #include "ProjectProfileController.h"
 #include "MarkdownRenderer.h"
@@ -301,6 +304,17 @@ int main(int argc, char *argv[])
     ProjectProfileController projectProfile(&analysisStore);
     AnalysisService analysisService(&settings, &paperController, &analysisStore,
                                     &projectProfile);
+    // Interpreting papers nobody has opened (§7): PaperSource fetches and
+    // segments them one at a time behind the reader's back, the batch runs
+    // several model calls over the results, and the list model is what the
+    // dialog shows.
+    PaperSource paperSource(&libraryDb, &libraryModel, &projectController,
+                            &fileSync);
+    AnalysisListModel analysisList(&libraryDb, &libraryModel,
+                                   &projectController, &analysisStore);
+    BatchAnalysisService batchAnalysis(&settings, &analysisStore,
+                                       &projectProfile, &paperSource,
+                                       &analysisList);
 
     // Auto-segmentation is a Settings switch, but PaperController must not
     // depend on Settings (it predates it and is constructed first), so the
@@ -408,6 +422,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("importer", &importService);
     engine.rootContext()->setContextProperty("profile", &projectProfile);
     engine.rootContext()->setContextProperty("analysis", &analysisService);
+    engine.rootContext()->setContextProperty("analysisList", &analysisList);
+    engine.rootContext()->setContextProperty("batchAnalysis", &batchAnalysis);
 
     QObject::connect(
         &engine,

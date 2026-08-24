@@ -59,6 +59,12 @@ public:
     // doesn't turn it into ours to re-publish.
     void updateBlocks(const QVector<Block> &blocks);
 
+    // Write a pending debounced save out now. A short-lived cache (the
+    // batch interpreter fills one per paper and lets it go) would
+    // otherwise be destroyed with the timer still pending and lose the
+    // segmentation it just paid seconds of CPU for.
+    void flush();
+
     // Drop the in-memory + on-disk cache for the current paper.
     // Called when the user asks to re-extract from scratch.
     void clear();

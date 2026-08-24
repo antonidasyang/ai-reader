@@ -1,5 +1,24 @@
 # AI Reader changelog
 
+## v1.2.1 — 2026-08-24
+
+### Interpret the whole library at once
+- **Toolbar → Interpret library** reads every paper in the project, without
+  opening any of them. Papers whose PDF this machine has never seen are
+  fetched from the project first, segmented in the background, and interpreted
+  — the paper you are reading is left alone throughout.
+- **Progress, and failures you can act on.** Each paper shows queued /
+  working / interpreted / failed, a failure says what went wrong on the row
+  itself, and *Retry the N that failed* runs just those again.
+- **Then filter.** Once a library has been interpreted, filter it by how
+  relevant the papers came out and by what the reading advice was — and act on
+  what is left: mark everything shown for a close read, or set it all aside.
+- **Nothing is interpreted twice.** A paper that already carries an
+  interpretation — yours or a collaborator's — is skipped, so a project pays
+  for each paper once.
+- Segmentation done for a batch is kept, so opening one of those papers later
+  is instant.
+
 ## v1.2.0 — 2026-08-24
 
 ### Papers can now be interpreted, not just summarised

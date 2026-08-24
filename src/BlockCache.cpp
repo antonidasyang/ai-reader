@@ -30,13 +30,18 @@ QString BlockCache::filePath() const
     return m_cacheDir + QChar('/') + m_paperId + QStringLiteral(".json");
 }
 
-void BlockCache::setPaperId(const QString &paperId)
+void BlockCache::flush()
 {
-    if (paperId == m_paperId) return;
     if (m_saveTimer.isActive()) {
         m_saveTimer.stop();
         saveNow();
     }
+}
+
+void BlockCache::setPaperId(const QString &paperId)
+{
+    if (paperId == m_paperId) return;
+    flush();
     if (!m_paperId.isEmpty())
         emit aboutToSwitch(m_paperId);
     m_paperId = paperId;

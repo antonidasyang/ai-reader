@@ -343,25 +343,40 @@ QString FileSyncService::titleForFile(const QString &path) const
 
 void FileSyncService::openItem(const QString &itemId, const QString &localPath)
 {
+    ensureLocal(itemId, localPath,
+                [this](bool ok, const QString &path, const QString &error) {
+                    if (!ok) {
+                        if (!error.isEmpty())
+                            setStatus(error);
+                        return;
+                    }
+                    emit openReady(QUrl::fromLocalFile(path).toString());
+                });
+}
+
+void FileSyncService::ensureLocal(const QString &itemId,
+                                  const QString &localPath, LocalReady done)
+{
     const QString path = toLocalPath(localPath);
     if (!path.isEmpty() && QFileInfo::exists(path)) {
-        emit openReady(QUrl::fromLocalFile(path).toString());
+        done(true, path, QString());
         return;
     }
     QString key, sha;
     if (!findAttachment(itemId, key, sha)) {
-        setStatus(tr("This paper's PDF isn't available yet."));
+        done(false, QString(), tr("This paper's PDF isn't available yet."));
         return;
     }
     const QString cache = blobCachePath(sha);
     if (QFileInfo::exists(cache)) {
-        emit openReady(QUrl::fromLocalFile(cache).toString());
+        done(true, cache, QString());
         return;
     }
-    downloadBlob(key, sha);
+    downloadBlob(key, sha, std::move(done));
 }
 
-void FileSyncService::downloadBlob(const QString &key, const QString &sha256)
+void FileSyncService::downloadBlob(const QString &key, const QString &sha256,
+                                   LocalReady done)
 {
     setBusy(true);
     setStatus(tr("Downloading PDF…"));
@@ -372,28 +387,37 @@ void FileSyncService::downloadBlob(const QString &key, const QString &sha256)
     m_api->get(
         QStringLiteral("/projects/") + m_projects->currentId()
             + QStringLiteral("/attachments/blob-status?sha256=") + sha256,
-        [this, key, sha256](bool ok, int status, const QJsonDocument &doc) {
+        [this, key, sha256, done](bool ok, int status,
+                                  const QJsonDocument &doc) {
             if (!ok) {
                 setBusy(false);
-                setStatus(tr("Download failed (HTTP %1)").arg(status));
+                const QString e = tr("Download failed (HTTP %1)").arg(status);
+                setStatus(e);
+                done(false, QString(), e);
                 return;
             }
             if (!doc.object().value(QStringLiteral("exists")).toBool()) {
                 setBusy(false);
-                setStatus(tr("This paper's PDF isn't in storage yet."));
+                const QString e = tr("This paper's PDF isn't in storage yet.");
+                setStatus(e);
+                done(false, QString(), e);
                 return;
             }
             QNetworkReply *reply = m_nam.get(blobRequest(
                 QStringLiteral("/projects/") + m_projects->currentId()
                 + QStringLiteral("/attachments/blob?key=") + key));
-            connect(reply, &QNetworkReply::finished, this, [this, reply, sha256] {
+            connect(reply, &QNetworkReply::finished, this,
+                    [this, reply, sha256, done] {
                 const QByteArray bytes = reply->readAll();
                 const int s = reply->attribute(
                     QNetworkRequest::HttpStatusCodeAttribute).toInt();
                 reply->deleteLater();
                 setBusy(false);
                 if (s < 200 || s >= 300 || bytes.isEmpty()) {
-                    setStatus(tr("PDF download failed (HTTP %1)").arg(s));
+                    const QString e =
+                        tr("PDF download failed (HTTP %1)").arg(s);
+                    setStatus(e);
+                    done(false, QString(), e);
                     return;
                 }
                 const QString cache = blobCachePath(sha256);
@@ -401,9 +425,11 @@ void FileSyncService::downloadBlob(const QString &key, const QString &sha256)
                 if (f.open(QIODevice::WriteOnly) && f.write(bytes) == bytes.size()) {
                     f.close();
                     setStatus(tr("PDF downloaded."));
-                    emit openReady(QUrl::fromLocalFile(cache).toString());
+                    done(true, cache, QString());
                 } else {
-                    setStatus(tr("Could not save the downloaded PDF."));
+                    const QString e = tr("Could not save the downloaded PDF.");
+                    setStatus(e);
+                    done(false, QString(), e);
                 }
             });
         });

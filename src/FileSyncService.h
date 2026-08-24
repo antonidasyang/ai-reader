@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QString>
 
+#include <functional>
+
 #include "LibraryDb.h"
 
 class ApiClient;
@@ -42,6 +44,15 @@ public:
     Q_INVOKABLE QString titleForFile(const QString &path) const;
 
     Q_INVOKABLE void openItem(const QString &itemId, const QString &localPath);
+
+    // Make sure the PDF bytes are on this machine, without opening anything.
+    // Answers with the local path, downloading from the project's storage
+    // first when this machine has never seen the file -- which is the normal
+    // case for a batch that interprets papers nobody here has opened.
+    using LocalReady = std::function<void(bool ok, const QString &path,
+                                          const QString &error)>;
+    void ensureLocal(const QString &itemId, const QString &localPath,
+                     LocalReady done);
     // Walk the current project's attachments and reconcile them with
     // what storage actually holds: re-upload anything whose bytes are
     // missing but whose file is still on this machine, and retire the
@@ -78,7 +89,8 @@ private:
     void uploadOne(const QString &itemId, const QString &path, UploadDone done);
     void putBlob(const QString &sha256, const QString &localPath,
                  std::function<void(bool)> done);
-    void downloadBlob(const QString &key, const QString &sha256);
+    void downloadBlob(const QString &key, const QString &sha256,
+                      LocalReady done);
     void repairStep();
     void setStatus(const QString &s);
     void setBusy(bool v);

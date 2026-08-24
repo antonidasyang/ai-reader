@@ -12,14 +12,20 @@
 #include "FakeAnalysisLlm.h"
 #include "FakeSync.h"
 
+#include "AnalysisListModel.h"
 #include "AnalysisService.h"
+#include "BatchAnalysisService.h"
 #include "AnalysisStore.h"
 #include "AnalysisTypes.h"
 #include "ApiClient.h"
 #include "AuthController.h"
+#include "BlockCache.h"
 #include "BlockListModel.h"
 #include "LibraryDb.h"
 #include "PaperController.h"
+#include "FileSyncService.h"
+#include "LibraryModel.h"
+#include "PaperSource.h"
 #include "PayloadCodec.h"
 #include "ProjectController.h"
 #include "ProjectProfileController.h"
@@ -73,6 +79,20 @@ static bool waitForSync(F cond, SyncEngine &sync, int ms)
     }
     return cond();
 }
+
+// Reads a paper's cached paragraphs off disk, the way the reader's own
+// window would when opening that paper later.
+struct BlockCacheProbe {
+    explicit BlockCacheProbe(const QString &paperId)
+    {
+        BlockCache cache;
+        cache.setPaperId(paperId);
+        hasBlocks = cache.hasBlocks();
+        count = cache.count();
+    }
+    bool hasBlocks = false;
+    int count = 0;
+};
 
 int main(int argc, char **argv)
 {
@@ -275,6 +295,96 @@ int main(int argc, char **argv)
 
     analysis.discardQuick();
     check("discarding drops it from the pane", !analysis.hasQuick());
+
+    // ── §7: the same thing over a library nobody has opened ──────────
+    LibraryModel library(&db, &projects, &sync);
+    FileSyncService files(&api, &db, &projects, &sync);
+    PaperSource source(&db, &library, &projects, &files);
+    AnalysisListModel list(&db, &library, &projects, &store);
+    BatchAnalysisService batch(&settings, &store, &profile, &source, &list);
+
+    const QStringList fixtures = {
+        QString::fromLocal8Bit(qgetenv("PDF_B")),
+        QString::fromLocal8Bit(qgetenv("PDF_C"))};
+    for (int i = 0; i < fixtures.size(); ++i) {
+        library.addPaper(QStringLiteral("Batch paper %1").arg(i + 1),
+                         PaperController::paperIdForFile(fixtures.at(i)),
+                         fixtures.at(i));
+    }
+    // One entry whose PDF is not there at all, so the failure path is
+    // exercised rather than assumed.
+    library.addPaper(QStringLiteral("Missing paper"),
+                     QStringLiteral("no-such-paper-id"),
+                     QStringLiteral("/nowhere/missing.pdf"));
+    list.reload();
+    check("the library lists every paper in the project",
+          list.totalPapers() == 3,
+          QStringLiteral("got %1").arg(list.totalPapers()));
+    check("...and knows none of them has been read",
+          list.pendingCount() == 3,
+          QStringLiteral("got %1").arg(list.pendingCount()));
+
+    const int before = gateway.requests();
+    batch.startPending();
+    const bool batchDone =
+        waitFor([&] { return !batch.busy() && batch.total() > 0; }, 120000);
+    check("the batch ran to the end", batchDone, batch.status());
+    check("both real papers were interpreted without being opened",
+          batch.done() == 2,
+          QStringLiteral("done=%1 failed=%2 skipped=%3")
+              .arg(batch.done()).arg(batch.failed()).arg(batch.skipped()));
+    check("the missing PDF failed instead of hanging the batch",
+          batch.failed() == 1);
+    check("...with a reason the row can show",
+          !batch.errorFor(batch.failedItems().value(0)).isEmpty(),
+          batch.errorFor(batch.failedItems().value(0)));
+    check("the reader's own paper was never touched by the batch",
+          paper.paperId() == paperA);
+    check("one model call per paper", gateway.requests() - before == 2,
+          QStringLiteral("got %1").arg(gateway.requests() - before));
+
+    list.reload();
+    check("the list shows what came back", list.interpretedCount() == 2,
+          QStringLiteral("got %1").arg(list.interpretedCount()));
+
+    // Filters: the fake gateway always answers "high" and
+    // "read_method_experiments", so these are the two ends of the check.
+    list.setFilterRelevance(QStringLiteral("high"));
+    check("filtering by relevance keeps the interpreted ones",
+          list.rowCount() == 2, QStringLiteral("got %1").arg(list.rowCount()));
+    list.setFilterRelevance(QStringLiteral("low"));
+    check("...and drops everything else", list.rowCount() == 0);
+    list.setFilterRelevance(QString());
+    list.setFilterAdvice(QStringLiteral("read_method_experiments"));
+    check("filtering by reading advice works the same way",
+          list.rowCount() == 2);
+    list.setFilterAdvice(QString());
+
+    // §7's two bulk actions.
+    list.setFilterState(QStringLiteral("done"));
+    const QStringList shown = list.visibleItemIds();
+    list.applyToRead(shown, true);
+    check("a filtered set can be marked for a close read in one go",
+          list.toReadCount() == 2);
+    list.applyExcluded(shown, true);
+    list.setFilterState(QString());
+    check("...or set aside in one go", list.excludedCount() == 2);
+    check("set-aside papers drop out of the default view",
+          list.rowCount() == 1, QStringLiteral("got %1").arg(list.rowCount()));
+    list.applyExcluded(shown, false);
+
+    // Re-running must not pay for the same papers twice.
+    const int before2 = gateway.requests();
+    batch.startItems(shown, false);
+    waitFor([&] { return !batch.busy(); }, 30000);
+    check("a second run skips papers that already have an interpretation",
+          gateway.requests() == before2 && batch.skipped() == 2,
+          QStringLiteral("skipped=%1").arg(batch.skipped()));
+
+    // A paper the batch segmented is cached, so opening it later is free.
+    BlockCacheProbe probe(PaperController::paperIdForFile(fixtures.at(0)));
+    check("the segmentation the batch paid for was kept for the reader",
+          probe.hasBlocks, QStringLiteral("%1 paragraphs").arg(probe.count));
 
     qInfo().noquote() << "";
     qInfo().noquote() << QStringLiteral("%1 passed, %2 failed")
