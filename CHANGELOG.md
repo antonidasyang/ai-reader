@@ -1,5 +1,25 @@
 # AI Reader changelog
 
+## v1.2.3 — 2026-08-24
+
+### Interpretations come back out as Markdown
+- **Export a paper** (Interpret pane -> ... -> Export as Markdown) writes the
+  quick interpretation, the close reading and your own notes to one file --
+  with the provenance intact. A statement that was the authors' still says so,
+  a statement the model reached for and could not support still says *no
+  evidence found*, and a citation that did not check out is exported as
+  unverified rather than quietly dropped.
+- **Export a comparison** writes a real Markdown table, with the
+  comparability warnings above it.
+- A whole-project report is available too, and it carries the sentence that
+  matters: what this library does not cover is not the same as work that does
+  not exist.
+
+### The library list says what has been read
+- A small dot next to each paper: interpreted (green when it came out highly
+  relevant), or red when interpreting it failed or the PDF had too little
+  text. Hovering says which.
+
 ## v1.2.2 — 2026-08-24
 
 ### Reading a paper closely, one part at a time
