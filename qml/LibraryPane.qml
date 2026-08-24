@@ -135,8 +135,8 @@ Rectangle {
                             Layout.fillWidth: true
                             spacing: 5
                             Rectangle {
-                                width: 7
-                                height: 7
+                                Layout.preferredWidth: 7
+                                Layout.preferredHeight: 7
                                 radius: 3.5
                                 Layout.alignment: Qt.AlignVCenter
                                 visible: _analysisState !== "none"

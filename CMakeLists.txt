@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.2.3 LANGUAGES CXX)
+project(ai-reader VERSION 1.2.4 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -428,6 +428,7 @@ qt_add_qml_module(ai-reader
         qml/ClaimBlock.qml
         qml/CompareDialog.qml
         qml/DeepReadView.qml
+        qml/ResearchDialog.qml
 )
 
 # Compile .ts → .qm and embed under :/i18n so QTranslator::load() in

@@ -1,5 +1,7 @@
 #include "PaperSyncService.h"
 
+#include "PayloadCodec.h"
+
 #include "AuthController.h"
 #include "BlockCache.h"
 #include "PaperController.h"
@@ -20,7 +22,7 @@ namespace {
 const QString kType     = QStringLiteral("paper_data");
 const QString kBlocks   = QStringLiteral("blocks");
 const QString kTransl   = QStringLiteral("translations");
-const QString kCodec    = QStringLiteral("zlib-b64");
+const QString kCodec    = PayloadCodec::codecName();
 
 // Fixed namespace: the same (project, paper, kind, author) must map to the
 // same object id on every machine, so one member keeps exactly one artifact
@@ -38,25 +40,17 @@ constexpr int kPublishThrottleMs = 15000;
 // server's own limit caps it further when that is the smaller of the two.
 constexpr qint64 kMaxPayloadChars = 4 * 1024 * 1024;
 
+// The codec itself lives in PayloadCodec.h: the interpretation layer stores
+// the same kind of oversized inner document, and two copies of a wire format
+// is one copy too many.
 QString encodePayload(const QJsonObject &inner)
 {
-    const QByteArray raw = QJsonDocument(inner).toJson(QJsonDocument::Compact);
-    return QString::fromLatin1(qCompress(raw, 9).toBase64());
+    return PayloadCodec::encode(inner);
 }
 
 QJsonObject decodePayload(const QJsonObject &data)
 {
-    const QString payload = data.value(QStringLiteral("payload")).toString();
-    if (payload.isEmpty())
-        return {};
-    const QByteArray b64 = QByteArray::fromBase64(payload.toLatin1());
-    const QByteArray raw =
-        data.value(QStringLiteral("codec")).toString() == kCodec
-            ? qUncompress(b64)
-            : b64;
-    if (raw.isEmpty())
-        return {};
-    return QJsonDocument::fromJson(raw).object();
+    return PayloadCodec::decode(data);
 }
 
 } // namespace

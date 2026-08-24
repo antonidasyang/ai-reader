@@ -50,6 +50,8 @@ public:
         PaperIdRole,
         TitleRole,
         StateRole,          // none|queued|running|done|failed|insufficient
+                            // exposed as "analysisState": plain "state"
+                            // collides with Item.state in a delegate
         StaleRole,
         ErrorRole,
         OneLinerRole,

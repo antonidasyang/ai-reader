@@ -1,5 +1,44 @@
 # AI Reader changelog
 
+## v1.2.4 — 2026-08-24
+
+### What a whole project of papers adds up to
+**Toolbar → Research** opens seven views over the papers you have interpreted.
+All of them are written from those interpretations, never from the PDFs, and
+all of them are shared with the project.
+
+- **Categories** sorts the library along whatever dimensions actually cut it —
+  research problem, method route, task, data, metric, contribution, main
+  limitation, relevance — and a paper sits in as many as it belongs to. The
+  system is yours: rename a category, lock it, merge two, add your own, drag a
+  paper out of one. **Locked and renamed categories survive a regeneration**,
+  and papers added later are placed into the system you confirmed rather than
+  the system being redrawn under you.
+- **Map** — the questions this library circles, the routes taken at each, which
+  papers take which, and where each route stops.
+- **Consensus** — what several papers independently support, what rests on one
+  source, what is repeated but never independently tested, and what actually
+  conflicts, with real conflicts told apart from ones that are only different
+  conditions.
+- **Timeline** — how the questions, methods, data and standards of evidence
+  moved, and what has stayed unsolved throughout.
+- **Coverage** — what this collection covers well and what it barely covers,
+  which conclusions rest on thin evidence, what has never been compared
+  fairly or tested outside a benchmark. The warning that this describes *your
+  library and not the field* is pinned to the top and travels with the export.
+- **Openings** — candidate research questions read out of the limitations and
+  conflicts, each with the smallest experiment that would test it, what to
+  measure against, the risks, and an honest difficulty and confidence. Each
+  says whether it is a question a paper left open, a gap in this library, or
+  something that still needs a literature search.
+- **Next steps** — what to read closely, what to search for, what to
+  reproduce, what to compare, what small experiment to run, what to ask a
+  supervisor.
+
+Every paper named anywhere in these views opens with a click. Each view keeps
+its last few versions, so regenerating one is never a silent loss for the rest
+of the project, and the whole thing exports as one Markdown report.
+
 ## v1.2.3 — 2026-08-24
 
 ### Interpretations come back out as Markdown

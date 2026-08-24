@@ -194,7 +194,7 @@ Dialog {
                 delegate: Rectangle {
                     required property string itemId
                     required property string title
-                    required property string state
+                    required property string analysisState
                     required property string error
                     required property string oneLiner
                     required property string relevance
@@ -228,8 +228,8 @@ Dialog {
                                 text: title
                             }
                             Label {
-                                text: root.stateLabel(state)
-                                color: root.stateColor(state)
+                                text: root.stateLabel(analysisState)
+                                color: root.stateColor(analysisState)
                                 font.pixelSize: 11
                             }
                             Label {
@@ -265,7 +265,7 @@ Dialog {
                                 enabled: batchAnalysis.canRun
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 400
-                                ToolTip.text: state === "done"
+                                ToolTip.text: analysisState === "done"
                                               ? qsTr("Interpret again")
                                               : qsTr("Interpret this one")
                                 onClicked: batchAnalysis.startItems([itemId], true)
@@ -288,7 +288,7 @@ Dialog {
                         }
                         Label {
                             Layout.fillWidth: true
-                            visible: state === "failed" && error.length > 0
+                            visible: analysisState === "failed" && error.length > 0
                             wrapMode: Text.Wrap
                             color: Theme.danger
                             font.pixelSize: 11

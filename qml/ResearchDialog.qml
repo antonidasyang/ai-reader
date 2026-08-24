@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 import QtQuick.Layouts
 
 // Everything that looks at the whole project at once (§8–§15).
@@ -30,7 +31,19 @@ Dialog {
     standardButtons: Dialog.NoButton
 
     // Main.qml opens the paper.
+    FileDialog {
+        id: exportReportDialog
+        title: qsTr("Export research report")
+        fileMode: FileDialog.SaveFile
+        defaultSuffix: "md"
+        nameFilters: [qsTr("Markdown files (*.md)"), qsTr("All files (*)")]
+        onAccepted: exporter.save(exporter.projectMarkdown(), selectedFile)
+    }
+
     signal paperActivated(string paperId)
+    // A follow-up question about a project-wide statement still goes to the
+    // chat, against whatever paper is open.
+    signal askAiRequested(string text)
 
     readonly property int btnH: 30
     readonly property int fs: 13
@@ -440,6 +453,11 @@ Dialog {
                     Layout.fillWidth: true
                     claim: root.asClaim(gi.modelData)
                     fs: root.fs
+                    // Nothing here is about one paper, so the two actions
+                    // that need one are hidden rather than left inert.
+                    allowNotes: false
+                    allowCompare: false
+                    onAskAiRequested: (text) => root.askAiRequested(text)
                 }
                 Label {
                     Layout.fillWidth: true
@@ -482,6 +500,9 @@ Dialog {
                     Layout.fillWidth: true
                     claim: root.asClaim(ci.modelData)
                     fs: root.fs
+                    allowNotes: false
+                    allowCompare: false
+                    onAskAiRequested: (text) => root.askAiRequested(text)
                 }
                 Flow {
                     Layout.fillWidth: true
@@ -924,7 +945,7 @@ Dialog {
                     }
                 }
                 Label {
-                    visible: cr.catPapers.length === 0
+                    visible: !!(cr.catPapers.length === 0)
                     color: Theme.dimText
                     font.pixelSize: root.fs - 2
                     text: qsTr("Nothing in here yet.")
@@ -1786,6 +1807,11 @@ Dialog {
                 text: qsTr("Every tab here is written from the papers' "
                            + "interpretations, never from the PDFs, and is "
                            + "shared with everyone in the project.")
+            }
+            Button {
+                text: qsTr("Export report…")
+                Layout.preferredHeight: root.btnH
+                onClicked: exportReportDialog.open()
             }
             Button {
                 text: qsTr("Close")

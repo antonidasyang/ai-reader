@@ -38,7 +38,7 @@ QHash<int, QByteArray> AnalysisListModel::roleNames() const
     return {{ItemIdRole, "itemId"},
             {PaperIdRole, "paperId"},
             {TitleRole, "title"},
-            {StateRole, "state"},
+            {StateRole, "analysisState"},
             {StaleRole, "stale"},
             {ErrorRole, "error"},
             {OneLinerRole, "oneLiner"},

@@ -152,6 +152,21 @@ ApplicationWindow {
     ProjectProfileDialog { id: projectProfileDialog }
     BatchAnalysisDialog { id: batchAnalysisDialog }
     CompareDialog { id: compareDialog }
+    ResearchDialog {
+        id: researchDialog
+        // A paper named anywhere in a project-wide analysis opens from there.
+        onPaperActivated: function(paperId) {
+            const id = libraryModel.findByPaperId(paperId)
+            if (!id || id.length === 0)
+                return
+            const fields = libraryModel.itemFields(id)
+            fileSync.openItem(id, fields.localPath ? fields.localPath : "")
+        }
+        onAskAiRequested: function(text) {
+            chatPane.visible = true
+            chatPane.prefillInput(text, 0)
+        }
+    }
 
     Dialog {
         id: createProjectDialog
@@ -561,6 +576,17 @@ ApplicationWindow {
                 checkable: true
                 checked: summaryPane.visible
                 onClicked: summaryPane.visible = !summaryPane.visible
+            }
+            ToolButton {
+                text: qsTr("Research")
+                visible: auth.authenticated && projects.currentId.length > 0
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: qsTr("What this whole project adds up to: "
+                                   + "categories, the research map, consensus "
+                                   + "and conflict, coverage, and what to do "
+                                   + "next")
+                onClicked: researchDialog.open()
             }
             ToolButton {
                 text: compare.count > 0 ? qsTr("Compare (%1)").arg(compare.count)

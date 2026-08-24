@@ -16,6 +16,11 @@ ColumnLayout {
     property var claim: null
     property int fs: 13
     property string bullet: "• "
+    // A project-wide statement is not about one paper, so "save as a note"
+    // and "add to the comparison" have nothing to attach to. The follow-up
+    // questions still make sense, so only these two are gated.
+    property bool allowNotes: true
+    property bool allowCompare: true
 
     signal evidenceRequested(int page, int blockId)
     signal askAiRequested(string text)
@@ -206,13 +211,19 @@ ColumnLayout {
                     onTriggered: root.askAiRequested(
                         qsTr("About this point:\n\n%1\n\n").arg(root.claimText))
                 }
-                MenuSeparator {}
+                MenuSeparator {
+                    visible: root.allowNotes || root.allowCompare
+                }
                 MenuItem {
                     text: qsTr("Save as a note")
+                    visible: root.allowNotes
+                    height: visible ? implicitHeight : 0
                     onTriggered: root.noteRequested(root.claimText)
                 }
                 MenuItem {
                     text: qsTr("Add to the comparison")
+                    visible: root.allowCompare
+                    height: visible ? implicitHeight : 0
                     onTriggered: root.compareRequested(root.claimText)
                 }
             }
