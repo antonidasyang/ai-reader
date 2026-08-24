@@ -25,7 +25,7 @@ Button {
         color: (ab.primary || ab.danger) ? Theme.onPrimary
                : ab.ghost ? (ab.hovered ? Theme.text : Theme.dimText)
                : Theme.text
-        Behavior on color { ColorAnimation { duration: 120 } }
+        Behavior on color { ColorAnimation { duration: Theme.animMs } }
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
@@ -44,6 +44,6 @@ Button {
         border.width: (ab.primary || ab.ghost || ab.danger) ? 0 : 1
         border.color: ab.visualFocus ? Theme.accent : Theme.border
         opacity: ab.enabled ? 1 : 0.45
-        Behavior on color { ColorAnimation { duration: 120 } }
+        Behavior on color { ColorAnimation { duration: Theme.animMs } }
     }
 }

@@ -41,6 +41,10 @@
 #include <QDir>
 #include <QFile>
 #include <QGuiApplication>
+
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
 #include <QIcon>
 #include <QLibraryInfo>
 #include <QLocale>
@@ -127,14 +131,65 @@ void installLaunchLogger()
                       << "starting up; log:" << g_launchLogPath;
 }
 
+
+// ── Remote sessions ────────────────────────────────────────────────
+// Qt Quick composes the whole window on the GPU. Inside an RDP session
+// there is no GPU: Direct3D falls back to WARP, every frame is rendered
+// in software into a full-window surface, and RDP then has to encode and
+// ship that whole surface -- which is the opposite of what the protocol
+// is good at (small dirty rectangles). The Qt Quick *software* renderer
+// repaints only the regions that changed, which maps onto RDP properly,
+// and the basic render loop stops the app from chasing vsync it can
+// never hit.
+//
+// Both are environment variables read by Qt during QGuiApplication
+// construction, so this has to run before the application object exists
+// -- which is also why the choice is read straight out of QSettings
+// rather than through Settings.
+bool g_remoteRendering = false;
+
+bool detectRemoteSession()
+{
+#ifdef Q_OS_WIN
+    return GetSystemMetrics(SM_REMOTESESSION) != 0;
+#else
+    // X11 forwarding and the like: no reliable signal, and the local case
+    // must not pay for a guess.
+    return false;
+#endif
+}
+
+void applyRemoteRenderingHints()
+{
+    const QString mode =
+        QSettings().value(QStringLiteral("ui/remoteMode"),
+                          QStringLiteral("auto")).toString();
+    const bool remote = mode == QLatin1String("on")
+                        || (mode != QLatin1String("off") && detectRemoteSession());
+    if (!remote)
+        return;
+    g_remoteRendering = true;
+    // An explicit environment variable always wins: it is how someone
+    // debugs this from a command line.
+    if (!qEnvironmentVariableIsSet("QT_QUICK_BACKEND"))
+        qputenv("QT_QUICK_BACKEND", "software");
+    if (!qEnvironmentVariableIsSet("QSG_RENDER_LOOP"))
+        qputenv("QSG_RENDER_LOOP", "basic");
+}
+
 } // namespace
 
 int main(int argc, char *argv[])
 {
+    // Before the application object: the org/app names make QSettings
+    // resolvable, and the rendering hints below are environment variables
+    // Qt reads while QGuiApplication is being constructed.
+    QCoreApplication::setOrganizationName(QStringLiteral("ai-reader"));
+    QCoreApplication::setOrganizationDomain(QStringLiteral("ai-reader.local"));
+    QCoreApplication::setApplicationName(QStringLiteral("AI Reader"));
+    applyRemoteRenderingHints();
+
     QGuiApplication app(argc, argv);
-    app.setOrganizationName("ai-reader");
-    app.setOrganizationDomain("ai-reader.local");
-    app.setApplicationName("AI Reader");
     app.setWindowIcon(loadAppIcon());
 
     // QStandardPaths needs the org/app names above to resolve the
@@ -147,6 +202,11 @@ int main(int argc, char *argv[])
     // when "I deleted the cache and it's still there" turns out to
     // mean the data lives somewhere unexpected (registry, keychain,
     // a different AppData root in a different Qt version).
+    if (g_remoteRendering) {
+        qInfo().noquote() << "Remote session: using the software renderer and "
+                             "the basic render loop (Settings -> Appearance to "
+                             "change)";
+    }
     qInfo().noquote() << "Storage:";
     qInfo().noquote() << "  AppData       :"
                       << QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
@@ -199,6 +259,7 @@ int main(int argc, char *argv[])
         QStringLiteral("Use the analysis context property"));
 
     Settings settings;
+    settings.setRemoteRenderingActive(g_remoteRendering);
 
     // Start Sentry as early as possible so it can catch crashes that
     // happen during the rest of bootstrap. Internally it's a no-op

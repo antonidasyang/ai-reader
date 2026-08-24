@@ -14,8 +14,8 @@ ComboBox {
         color: fc.down ? Theme.buttonPressed : fc.hovered ? Theme.buttonHover : Theme.fieldBg
         border.width: 1
         border.color: (fc.activeFocus || fc.visualFocus) ? Theme.accent : Theme.fieldBorder
-        Behavior on color { ColorAnimation { duration: 120 } }
-        Behavior on border.color { ColorAnimation { duration: 120 } }
+        Behavior on color { ColorAnimation { duration: Theme.animMs } }
+        Behavior on border.color { ColorAnimation { duration: Theme.animMs } }
     }
     contentItem: TextField {
         leftPadding: Theme.spaceS + 2

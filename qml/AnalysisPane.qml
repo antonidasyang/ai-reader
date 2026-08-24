@@ -27,6 +27,26 @@ Rectangle {
     // 0 = the quick read, 1 = the close reading, 2 = the reader's own notes.
     property int mode: 0
 
+    // True while a splitter handle is being dragged. Re-wrapping a whole
+    // interpretation on every mouse move is expensive, so the content holds
+    // the width it had and catches up on a timer (the same trick the
+    // paragraph and summary panes use).
+    property bool resizing: false
+    property real layoutWidth: width
+    onResizingChanged: if (!resizing) {
+        reflow.stop()
+        root.layoutWidth = root.width
+    }
+    onWidthChanged: {
+        if (!root.resizing) { root.layoutWidth = root.width; return }
+        if (!reflow.running) reflow.start()
+    }
+    Timer {
+        id: reflow
+        interval: 32
+        onTriggered: root.layoutWidth = root.width
+    }
+
     readonly property var d: analysis.quick
     readonly property int fs: settings.summaryFontSize
     readonly property var meta: d && d.meta ? d.meta : null
@@ -330,7 +350,7 @@ Rectangle {
             contentWidth: availableWidth
 
             ColumnLayout {
-                width: parent.width
+                width: root.layoutWidth
                 spacing: 10
 
                 Label {
@@ -535,7 +555,7 @@ Rectangle {
             contentWidth: availableWidth
 
             DeepReadView {
-                width: parent.width
+                width: root.layoutWidth
                 fs: root.fs
                 onEvidenceRequested: function(page, blockId) {
                     root.evidenceRequested(page, blockId)
@@ -572,7 +592,7 @@ Rectangle {
                 clip: true
                 contentWidth: availableWidth
                 ColumnLayout {
-                    width: parent.width
+                    width: root.layoutWidth
                     spacing: 6
                     Repeater {
                         model: analysis.notes

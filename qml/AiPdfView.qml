@@ -84,6 +84,23 @@ Item {
     // -------------------------------- page scaling
 
     property real renderScale: 1
+
+    // True while a splitter handle is being dragged. Re-laying out the page
+    // table is the single most expensive thing this view does, and doing it
+    // on every mouse move made a drag crawl -- worst of all over a remote
+    // desktop, where each frame is an encoded bitmap. While the handle is
+    // moving the layout is coalesced onto a timer, and settled once on
+    // release.
+    property bool resizing: false
+    onResizingChanged: if (!resizing) {
+        relayout.stop()
+        tableView.forceLayout()
+    }
+    Timer {
+        id: relayout
+        interval: 48
+        onTriggered: tableView.forceLayout()
+    }
     property real pageRotation: 0
     function resetScale() { root.renderScale = 1 }
 
@@ -216,7 +233,10 @@ Item {
         property bool rot90: rotationNorm == 90 || rotationNorm == 270
         onRot90Changed: forceLayout()
         onHeightChanged: forceLayout()
-        onWidthChanged: forceLayout()
+        onWidthChanged: {
+            if (!root.resizing) { forceLayout(); return }
+            if (!relayout.running) relayout.start()
+        }
         property size firstPagePointSize: root.pageSizeAt(0)
         // The column is exactly the viewport, or the page when the page
         // is wider — so content overflows horizontally only when there is

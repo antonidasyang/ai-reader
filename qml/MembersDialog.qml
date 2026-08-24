@@ -77,13 +77,13 @@ AppDialog {
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                                 opacity: rmBtn.enabled ? 1 : 0.4
-                                Behavior on color { ColorAnimation { duration: 120 } }
+                                Behavior on color { ColorAnimation { duration: Theme.animMs } }
                             }
                             background: Rectangle {
                                 radius: Theme.radiusS
                                 color: rmBtn.down ? Theme.buttonPressed
                                        : rmBtn.hovered ? Theme.hover : "transparent"
-                                Behavior on color { ColorAnimation { duration: 120 } }
+                                Behavior on color { ColorAnimation { duration: Theme.animMs } }
                             }
                             onClicked: projects.removeMember(modelData.userId)
                         }

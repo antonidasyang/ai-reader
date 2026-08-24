@@ -282,8 +282,8 @@ Popup {
                             height: 7
                             radius: 3.5
                             color: index === root.stepIndex ? Theme.accent : Theme.fieldBorder
-                            Behavior on color { ColorAnimation { duration: 120 } }
-                            Behavior on width { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                            Behavior on color { ColorAnimation { duration: Theme.animMs } }
+                            Behavior on width { NumberAnimation { duration: Theme.animMs; easing.type: Easing.OutCubic } }
                         }
                     }
                 }

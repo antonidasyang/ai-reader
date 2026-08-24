@@ -417,6 +417,11 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
+        // A remote desktop pays for every animated frame in encoded pixels,
+        // so this session does without the small fades.
+        if (settings.remoteRenderingActive)
+            Theme.animMs = 0
+
         applySavedPaneOrder()
 
         // Pane sizes are restored automatically: each pane binds
@@ -1210,6 +1215,9 @@ ApplicationWindow {
 
                         AiPdfView {
                             id: pdfView
+                            // Relaying out the page table per mouse move is
+                            // what made dragging a handle crawl.
+                            resizing: split.resizing
                             anchors.fill: parent
                             document: pdfDoc
                             visible: pdfDoc.status === PdfDocument.Ready
@@ -1506,6 +1514,7 @@ ApplicationWindow {
             AnalysisPane {
                 id: analysisPane
                 objectName: "analysis"
+                resizing: split.resizing
                 visible: layoutSettings.paneVisible("analysis", false)
                 onVisibleChanged: layoutSettings.setPaneVisible("analysis", visible)
                 SplitView.preferredWidth: layoutSettings.paneWidth("analysis", 380)

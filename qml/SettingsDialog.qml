@@ -36,6 +36,13 @@ AppDialog {
         qsTr("中文 (Simplified)")
     ]
 
+    readonly property var remoteModes: ["auto", "on", "off"]
+    readonly property var remoteModeLabels: [
+        qsTr("Automatic (detect a remote desktop)"),
+        qsTr("Always"),
+        qsTr("Never")
+    ]
+
     readonly property var chatSendKeys:
         ["enter", "ctrl-enter"]
     readonly property var chatSendKeyLabels: [
@@ -102,6 +109,7 @@ AppDialog {
         chatSendKeyBox.currentIndex  = chatSendKeys.indexOf(settings.chatSendKey) >= 0
                                        ? chatSendKeys.indexOf(settings.chatSendKey) : 0
         chatInputHeightField.value   = settings.chatInputHeight
+        remoteModeBox.currentIndex   = Math.max(0, remoteModes.indexOf(settings.remoteMode))
     }
 
     onAccepted: {
@@ -135,6 +143,7 @@ AppDialog {
         settings.chatFontSize       = chatFontSizeField.value
         settings.chatSendKey        = chatSendKeys[chatSendKeyBox.currentIndex]
         settings.chatInputHeight    = chatInputHeightField.value
+        settings.remoteMode         = remoteModes[remoteModeBox.currentIndex]
     }
 
     // ── Page scaffolding ────────────────────────────────────────────
@@ -207,14 +216,14 @@ AppDialog {
                                : (hovered ? Theme.text : Theme.bodyText)
                         verticalAlignment: Text.AlignVCenter
                         elide: Text.ElideRight
-                        Behavior on color { ColorAnimation { duration: 120 } }
+                        Behavior on color { ColorAnimation { duration: Theme.animMs } }
                     }
                     background: Rectangle {
                         radius: Theme.radiusS
                         color: nav.currentIndex === index
                                ? Theme.primaryBg
                                : (hovered ? Theme.buttonHover : "transparent")
-                        Behavior on color { ColorAnimation { duration: 120 } }
+                        Behavior on color { ColorAnimation { duration: Theme.animMs } }
                     }
                 }
             }
@@ -636,6 +645,32 @@ AppDialog {
                 }
                 AppHintLabel {
                     text: qsTr("Each pane's body text. Headings in that pane scale with it.")
+                }
+
+                AppSectionLabel {
+                    text: qsTr("Remote desktop")
+                    Layout.topMargin: Theme.spaceS
+                }
+                Card {
+                    AppFormLabel { text: qsTr("Draw in software") }
+                    AppComboBox {
+                        id: remoteModeBox
+                        Layout.fillWidth: true
+                        model: dialog.remoteModeLabels
+                    }
+                }
+                AppHintLabel {
+                    text: qsTr("Over Remote Desktop there is no graphics card to "
+                               + "draw with, so the usual path renders every frame "
+                               + "as one big picture and sends the whole thing. "
+                               + "Drawing in software instead repaints only what "
+                               + "changed, and the small hover animations are "
+                               + "switched off. Takes effect the next time the app "
+                               + "starts.")
+                }
+                AppHintLabel {
+                    visible: settings.remoteRenderingActive
+                    text: qsTr("This session is drawing in software.")
                 }
             }
 

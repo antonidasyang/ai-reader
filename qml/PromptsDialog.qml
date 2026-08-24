@@ -73,7 +73,7 @@ AppDialog {
         border.width: 1
         border.color: editor && editor.activeFocus ? Theme.accent : Theme.fieldBorder
         clip: true
-        Behavior on border.color { ColorAnimation { duration: 120 } }
+        Behavior on border.color { ColorAnimation { duration: Theme.animMs } }
     }
 
     // ── Content ─────────────────────────────────────────────────────

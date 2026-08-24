@@ -1,5 +1,28 @@
 # AI Reader changelog
 
+## v1.2.11 — 2026-08-24
+
+### Usable over Remote Desktop
+- **The app now notices it is running in a remote session** (Windows) and
+  draws in software instead of through the graphics card. There is no card to
+  draw with inside RDP: the normal path renders every frame as one full-window
+  picture that then has to be encoded and sent, which is the opposite of what
+  the protocol is good at. Software drawing repaints only the parts that
+  changed.
+- **The small hover and open/close animations are switched off** in that mode.
+  A 120 ms colour fade is nothing locally and is a stream of full-window
+  frames over a remote desktop.
+- Settings → Appearance → **Remote desktop** to force it on or off; it applies
+  at the next start, and says when a session is drawing in software.
+
+### Dragging a splitter
+- **The interpretation pane now holds its layout while a handle is moving**,
+  the way the paragraph, summary and chat panes already did — re-wrapping a
+  whole interpretation on every mouse move was the expensive part. Measured on
+  the paragraph pane: 100 drag steps cost 294 ms live and 2 ms held.
+- The PDF view no longer re-lays out its page table on every pixel of a drag,
+  settling once when the handle is released.
+
 ## v1.2.10 — 2026-08-24
 
 ### The endpoint follows the provider

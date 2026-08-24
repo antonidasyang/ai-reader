@@ -65,6 +65,13 @@ QtObject {
     // ── Status ─────────────────────────────────────────────────────────
     readonly property color success: dark ? "#7bc67e" : "#2e7d32"
 
+    // How long the small hover/press transitions run. Set to 0 by Main.qml
+    // when this session renders in software for a remote desktop: there,
+    // every animated frame is a full-window bitmap that has to be encoded
+    // and sent, so a 120 ms colour fade is the most expensive decoration
+    // in the app.
+    property int animMs: 120
+
     // ── Metrics (shared spacing / radius scale for dialogs) ────────────
     readonly property int radiusL: 12   // dialog corners
     readonly property int radiusM: 8    // cards, popups

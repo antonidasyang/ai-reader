@@ -14,7 +14,7 @@ SpinBox {
         color: Theme.fieldBg
         border.width: 1
         border.color: fs.activeFocus ? Theme.accent : Theme.fieldBorder
-        Behavior on border.color { ColorAnimation { duration: 120 } }
+        Behavior on border.color { ColorAnimation { duration: Theme.animMs } }
         Rectangle {
             anchors.fill: parent
             anchors.margins: -2

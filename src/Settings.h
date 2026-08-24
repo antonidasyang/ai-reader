@@ -80,6 +80,14 @@ class Settings : public QObject
     Q_PROPERTY(QString chatPrompt        READ chatPrompt        WRITE setChatPrompt        NOTIFY chatPromptChanged)
     Q_PROPERTY(bool    chatIncludePaperText READ chatIncludePaperText WRITE setChatIncludePaperText NOTIFY chatIncludePaperTextChanged)
 
+    // Rendering for a remote desktop: "auto" (detect an RDP session),
+    // "on", "off". Read straight out of QSettings before the application
+    // object exists, since it decides environment variables Qt consumes
+    // while starting up -- so a change only takes effect on the next run.
+    Q_PROPERTY(QString remoteMode READ remoteMode WRITE setRemoteMode NOTIFY remoteModeChanged)
+    // Whether this run actually took that path.
+    Q_PROPERTY(bool remoteRenderingActive READ remoteRenderingActive CONSTANT)
+
     // How the chat input sends. "enter": Enter sends, Shift+Enter makes a
     // newline. "ctrl-enter": Enter makes a newline, Ctrl+Enter sends.
     Q_PROPERTY(QString chatSendKey     READ chatSendKey     WRITE setChatSendKey     NOTIFY chatSendKeyChanged)
@@ -164,6 +172,11 @@ public:
     QString chatPrompt()        const { return m_chatPrompt; }
     bool    chatIncludePaperText() const { return m_chatIncludePaperText; }
 
+    QString remoteMode() const { return m_remoteMode; }
+    bool remoteRenderingActive() const { return m_remoteRenderingActive; }
+    // Told by main(), which is the only place that knows.
+    void setRemoteRenderingActive(bool v) { m_remoteRenderingActive = v; }
+
     QString chatSendKey()     const { return m_chatSendKey; }
     int     chatInputHeight() const { return m_chatInputHeight; }
     QString translationProvider() const { return m_translationProvider; }
@@ -223,6 +236,7 @@ public:
     void setChatPrompt(const QString &v);
     void setChatIncludePaperText(bool v);
 
+    void setRemoteMode(const QString &v);
     void setChatSendKey(const QString &v);
     void setChatInputHeight(int v);
     void setTranslationProvider(const QString &v);
@@ -296,6 +310,7 @@ signals:
     void visionPromptChanged();
     void chatPromptChanged();
     void chatIncludePaperTextChanged();
+    void remoteModeChanged();
     void chatSendKeyChanged();
     void chatInputHeightChanged();
     void analysisConfigChanged();
@@ -364,6 +379,8 @@ private:
     QString m_chatPrompt;
     bool    m_chatIncludePaperText = false;
 
+    QString m_remoteMode = QStringLiteral("auto");
+    bool    m_remoteRenderingActive = false;
     QString m_chatSendKey = QStringLiteral("enter");
     int     m_chatInputHeight = 88;
     QString m_translationProvider;

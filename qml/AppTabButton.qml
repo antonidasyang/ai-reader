@@ -17,7 +17,7 @@ TabButton {
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
-        Behavior on color { ColorAnimation { duration: 120 } }
+        Behavior on color { ColorAnimation { duration: Theme.animMs } }
     }
     background: Rectangle {
         radius: Theme.radiusS
@@ -25,6 +25,6 @@ TabButton {
                ? (tb.down ? Theme.primaryPressed : Theme.primaryBg)
                : (tb.down ? Theme.buttonPressed
                           : tb.hovered ? Theme.buttonHover : "transparent")
-        Behavior on color { ColorAnimation { duration: 120 } }
+        Behavior on color { ColorAnimation { duration: Theme.animMs } }
     }
 }

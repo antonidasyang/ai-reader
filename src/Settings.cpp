@@ -51,6 +51,7 @@ constexpr auto kKeyTocFontSize          = "fonts/toc";
 constexpr auto kKeySummaryFontSize      = "fonts/summary";
 constexpr auto kKeyParagraphFontSize    = "fonts/paragraph";
 constexpr auto kKeyChatFontSize         = "fonts/chat";
+constexpr auto kKeyRemoteMode           = "ui/remoteMode";
 constexpr auto kKeyChatSendKey          = "chat/sendKey";
 constexpr auto kKeyChatInputHeight      = "chat/inputHeight";
 constexpr auto kKeyTranslationProvider  = "translation/provider";
@@ -287,6 +288,17 @@ LlmClient *Settings::createClient(QObject *parent) const
     if (!base.isEmpty())
         client->setBaseUrl(QUrl(base));
     return client;
+}
+
+void Settings::setRemoteMode(const QString &v)
+{
+    const QString norm = (v == QLatin1String("on") || v == QLatin1String("off"))
+                             ? v
+                             : QStringLiteral("auto");
+    if (norm == m_remoteMode) return;
+    m_remoteMode = norm;
+    save();
+    emit remoteModeChanged();
 }
 
 void Settings::setChatSendKey(const QString &v)
@@ -727,6 +739,10 @@ void Settings::load()
     m_summaryFontSize      = qBound(8, m_qs.value(kKeySummaryFontSize,   13).toInt(), 32);
     m_paragraphFontSize    = qBound(8, m_qs.value(kKeyParagraphFontSize, 12).toInt(), 32);
     m_chatFontSize         = qBound(8, m_qs.value(kKeyChatFontSize,      14).toInt(), 32);
+    m_remoteMode           = m_qs.value(kKeyRemoteMode,
+                                        QStringLiteral("auto")).toString();
+    if (m_remoteMode != QLatin1String("on") && m_remoteMode != QLatin1String("off"))
+        m_remoteMode = QStringLiteral("auto");
     m_chatSendKey          = m_qs.value(kKeyChatSendKey,
                                         QStringLiteral("enter")).toString();
     if (m_chatSendKey != QLatin1String("ctrl-enter"))
@@ -779,6 +795,7 @@ void Settings::save()
     m_qs.setValue(kKeySummaryFontSize,      m_summaryFontSize);
     m_qs.setValue(kKeyParagraphFontSize,    m_paragraphFontSize);
     m_qs.setValue(kKeyChatFontSize,         m_chatFontSize);
+    m_qs.setValue(kKeyRemoteMode,           m_remoteMode);
     m_qs.setValue(kKeyChatSendKey,          m_chatSendKey);
     m_qs.setValue(kKeyChatInputHeight,      m_chatInputHeight);
     m_qs.setValue(kKeyTranslationProvider,  m_translationProvider);
