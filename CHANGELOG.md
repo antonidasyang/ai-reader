@@ -1,5 +1,17 @@
 # AI Reader changelog
 
+## v1.2.6 — 2026-08-24
+
+### Interpretation survives a model that cannot do tool calls
+- The interpretation asks for its structured answer by calling a tool, which
+  is the reliable way to get one — but a gateway whose model was deployed
+  without a tool parser rejects the request outright. That used to end the
+  interpretation. It now asks again in plain prose and reads the JSON out of
+  the answer, so a weaker or older endpoint still works.
+- Fixed a crash-shaped hang: changing the interpretation model while a close
+  reading was running could destroy the connection under it, and the run
+  would wait forever instead of finishing or failing.
+
 ## v1.2.5 — 2026-08-24
 
 ### The whole interpretation layer speaks Chinese

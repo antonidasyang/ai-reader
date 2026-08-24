@@ -483,6 +483,20 @@ int main(int argc, char **argv)
                                     }()))
               .valid);
 
+    // A gateway whose model has no tool parser answers 400 to anything
+    // carrying `tools`. The interpretation must still land, via prose.
+    gateway.setRefuseTools(true);
+    const int beforeRefuse = gateway.requests();
+    analysis.generateQuick(true);
+    waitFor([&] { return analysis.status() != AnalysisService::Running; }, 30000);
+    check("a gateway that refuses tools does not kill the interpretation",
+          analysis.status() == AnalysisService::Done && analysis.hasQuick(),
+          analysis.lastError());
+    check("...it asks again in prose, and digs the JSON out of the answer",
+          gateway.requests() - beforeRefuse == 2,
+          QStringLiteral("%1 calls").arg(gateway.requests() - beforeRefuse));
+    gateway.setRefuseTools(false);
+
     // ── §8: the category system, and who owns it ────────────────────
     LibraryAnalysisService research(&settings, &store, &projects, &profile);
     check("a project-wide analysis can run once there are digests",

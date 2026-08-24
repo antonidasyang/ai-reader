@@ -4,6 +4,7 @@
 
 #include <QJsonDocument>
 #include <QJsonParseError>
+#include <QDebug>
 #include <QTimer>
 
 StructuredCall *StructuredCall::start(LlmClient *client, const Request &req,
@@ -94,6 +95,17 @@ void StructuredCall::attempt(int n)
                 if (m_reply) {
                     m_reply->deleteLater();
                     m_reply.clear();
+                }
+                // Some gateways reject a request that carries `tools` at all
+                // -- a model deployed without a tool parser answers 400
+                // rather than ignoring them. That is not a reason to give up
+                // on the whole call: ask again in prose.
+                if (m_attempt == 0) {
+                    qInfo().noquote()
+                        << "StructuredCall: tool call refused (" << message
+                        << "); retrying without tools";
+                    attempt(1);
+                    return;
                 }
                 finishErr(message);
             });

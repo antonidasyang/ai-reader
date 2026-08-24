@@ -149,6 +149,8 @@ private:
     void onPaperChanged();
     void reloadFromStore();
     void setStatus(Status s, const QString &err = QString());
+    // Point m_client at the current settings, unless a job is using it.
+    void refreshClient();
     void clearQuick();
     void clearDeep();
     void pumpDeep();

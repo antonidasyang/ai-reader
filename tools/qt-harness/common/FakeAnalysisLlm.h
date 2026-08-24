@@ -48,6 +48,10 @@ public:
     }
 
     int requests() const { return m_requests; }
+    // Answer 400 to anything carrying `tools`, the way a gateway whose model
+    // was deployed without a tool parser does. The app is supposed to fall
+    // back to asking for JSON in prose rather than giving up.
+    void setRefuseTools(bool on) { m_refuseTools = on; }
     // The last request body, for asserting what the prompt actually carried.
     QJsonObject lastRequest() const
     {
@@ -90,6 +94,26 @@ private:
             m_buf.remove(s);
             ++m_requests;
             m_lastBody = body;
+            const bool hasTools =
+                !lastRequest().value("tools").toArray().isEmpty();
+            if (m_refuseTools && hasTools) {
+                const QByteArray err =
+                    "{\"error\":{\"message\":\"This model does not support "
+                    "tools\"}}";
+                s->write("HTTP/1.1 400 Bad Request\r\nContent-Type: "
+                         "application/json\r\nConnection: close\r\n"
+                         "Content-Length: "
+                         + QByteArray::number(err.size()) + "\r\n\r\n" + err);
+                s->flush();
+                s->disconnectFromHost();
+                return;
+            }
+            // Without tools the answer has to come back as prose, which is
+            // the path a schema-blind model takes.
+            if (!hasTools) {
+                respondProse(s, buildAnswerForSchemaless());
+                return;
+            }
             respond(s, buildAnswer(toolName()));
         });
         connect(s, &QTcpSocket::disconnected, this, [this, s] {
@@ -364,6 +388,61 @@ private:
         return QJsonDocument(digest).toJson(QJsonDocument::Compact);
     }
 
+    // The retry drops the tools, so the schema has to be recognised from the
+    // system prompt instead.
+    QByteArray buildAnswerForSchemaless()
+    {
+        const QString sys = lastRequest()
+                                .value("messages")
+                                .toArray()
+                                .first()
+                                .toObject()
+                                .value("content")
+                                .toString();
+        if (sys.contains(QStringLiteral("\"assignments\"")))
+            return buildClassifyAnswer();
+        if (sys.contains(QStringLiteral("\"dimensions\""))
+            && sys.contains(QStringLiteral("\"categories\"")))
+            return buildTaxonomyAnswer();
+        if (sys.contains(QStringLiteral("\"comparability\"")))
+            return buildCompareAnswer();
+        if (sys.contains(QStringLiteral("\"sections\"")))
+            return buildModuleAnswer();
+        return buildAnswer(QString());
+    }
+
+    void respondProse(QTcpSocket *s, const QByteArray &json)
+    {
+        auto frame = [](const QJsonObject &o) {
+            return QByteArray("data: ")
+                   + QJsonDocument(o).toJson(QJsonDocument::Compact) + "\n\n";
+        };
+        QByteArray out = "HTTP/1.1 200 OK\r\n"
+                         "Content-Type: text/event-stream\r\n"
+                         "Connection: close\r\n\r\n";
+        // Wrapped in prose and a code fence, the way a chatty model answers.
+        const QByteArray body =
+            "Sure! Here is the result:\n\n```json\n" + json + "\n```\n";
+        for (int i = 0; i < body.size(); i += 400) {
+            out += frame(QJsonObject{
+                {"choices",
+                 QJsonArray{QJsonObject{
+                     {"index", 0},
+                     {"delta",
+                      QJsonObject{{"content",
+                                   QString::fromUtf8(body.mid(i, 400))}}},
+                     {"finish_reason", QJsonValue::Null}}}}});
+        }
+        out += frame(QJsonObject{
+            {"choices", QJsonArray{QJsonObject{{"index", 0},
+                                               {"delta", QJsonObject{}},
+                                               {"finish_reason", "stop"}}}}});
+        out += "data: [DONE]\n\n";
+        s->write(out);
+        s->flush();
+        s->disconnectFromHost();
+    }
+
     void respond(QTcpSocket *s, const QByteArray &args)
     {
         auto frame = [](const QJsonObject &o) {
@@ -418,6 +497,7 @@ private:
     QHash<QTcpSocket *, QByteArray> m_buf;
     QByteArray m_lastBody;
     int m_requests = 0;
+    bool m_refuseTools = false;
     int m_citedGood = 0;
     int m_citedMissing = 0;
     int m_citedFabricated = 0;

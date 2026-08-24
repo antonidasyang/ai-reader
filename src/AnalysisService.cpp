@@ -219,13 +219,7 @@ void AnalysisService::generateQuick(bool force)
     in.contextChars = contextChars();
     in.maxTokens = m_settings->analysisMaxTokens();
 
-    if (!m_client)
-        m_client = m_settings->createAnalysisClient(this);
-    else {
-        // Settings may have moved since the client was made.
-        delete m_client;
-        m_client = m_settings->createAnalysisClient(this);
-    }
+    refreshClient();
 
     setStatus(Running);
     const QString paperAtStart = in.paperId;
@@ -285,6 +279,24 @@ void AnalysisService::discardQuick()
     m_store->removePaperAnalysis(id, Analysis::KindQuick);
     clearQuick();
     setStatus(Idle);
+}
+
+void AnalysisService::refreshClient()
+{
+    if (!m_settings)
+        return;
+    if (!m_client) {
+        m_client = m_settings->createAnalysisClient(this);
+        return;
+    }
+    // Settings may have moved since it was made -- but every LlmReply is a
+    // child of the client, so replacing it while a job is in flight would
+    // destroy that job's reply with no finished and no error, and the job
+    // would wait forever. Only swap it when nothing is running.
+    if (m_job || m_deepInflight > 0)
+        return;
+    m_client->deleteLater();
+    m_client = m_settings->createAnalysisClient(this);
 }
 
 void AnalysisService::setStatus(Status s, const QString &err)
@@ -452,8 +464,7 @@ void AnalysisService::startModule(const QString &id)
 {
     if (!m_paper || !m_settings)
         return;
-    if (!m_client)
-        m_client = m_settings->createAnalysisClient(this);
+    refreshClient();
 
     DeepModuleJob::Input in;
     in.paperId = paperId();
