@@ -24,6 +24,7 @@
 #include "LibraryDb.h"
 #include "LibraryModel.h"
 #include "LibraryAnalysisService.h"
+#include "TaskManager.h"
 #include "MarkdownRenderer.h"
 #include "MetadataService.h"
 #include "PaperController.h"
@@ -203,6 +204,8 @@ int main(int argc, char **argv)
     ctx->setContextProperty("compare", &compareService);
     ctx->setContextProperty("research", &libraryAnalysis);
     ctx->setContextProperty("exporter", &analysisExporter);
+    TaskManager taskManager(&settings);
+    ctx->setContextProperty("tasks", &taskManager);
     engine.addImportPath(QStringLiteral(":/"));
 
     g_prev = qInstallMessageHandler(collect);
@@ -228,6 +231,7 @@ int main(int argc, char **argv)
         QStringLiteral("ProjectProfileDialog"),
         QStringLiteral("VisionDialog"),     QStringLiteral("ChangelogDialog"),
         QStringLiteral("BatchAnalysisDialog"), QStringLiteral("CompareDialog"),
+        QStringLiteral("QuitTasksDialog"), QStringLiteral("ResumeTasksDialog"),
     };
 
     int opened = 0;
@@ -264,11 +268,44 @@ int main(int argc, char **argv)
         pump(60);
     }
 
+    // A pane with an empty model never instantiates its delegate, so the
+    // interesting half of TasksPane would go unexercised. Give it one task
+    // in each state a row can be drawn in.
+    {
+        Tasks::Request running;
+        running.kind = Tasks::Kind::Translate;
+        running.title = QStringLiteral("Translate");
+        running.paperId = QStringLiteral("paper-a");
+        running.paperTitle = QStringLiteral("Attention Is All You Need");
+        running.steps = 40;
+        const QString a = taskManager.submit(running, [] {}, [] {});
+        taskManager.setProgress(a, 12);
+        taskManager.setNote(a, QStringLiteral("Paragraph 12"));
+
+        Tasks::Request queued;
+        queued.kind = Tasks::Kind::DeepInterpret;
+        queued.title = QStringLiteral("Close read");
+        queued.paperId = QStringLiteral("paper-b");
+        queued.paperTitle = QStringLiteral("Deep Residual Learning");
+        queued.steps = 9;
+        taskManager.submit(queued, [] {}, [] {});
+
+        Tasks::Request failed;
+        failed.kind = Tasks::Kind::LibraryAnalysis;
+        failed.title = QStringLiteral("Research map");
+        failed.paperId = QStringLiteral("paper-c");
+        const QString c = taskManager.submit(failed, [] {}, [] {});
+        pump(60);
+        taskManager.finish(c, false, QStringLiteral("the gateway returned 502"));
+    }
+    pump(120);
+
     // Panes are not dialogs -- they are docked into the split view rather
     // than opened -- but they are built out of the same shared controls and
     // break the same way, so they are instantiated here too. Every tab's
     // subtree is declared inline, so creating one exercises all of them.
-    const QStringList panes = { QStringLiteral("ResearchPane") };
+    const QStringList panes = { QStringLiteral("ResearchPane"),
+                                QStringLiteral("TasksPane") };
     int built = 0;
     for (const QString &name : panes) {
         const int before = g_problems.size();

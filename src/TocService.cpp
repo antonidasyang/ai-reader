@@ -5,12 +5,14 @@
 #include "LlmClient.h"
 #include "PaperController.h"
 #include "Settings.h"
+#include "TaskManager.h"
 
 #include <QAbstractItemModel>
 #include <QDebug>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QTimer>
 
 namespace {
 
@@ -112,8 +114,8 @@ void TocService::adoptStructuredOutline(const QVector<Section> &sections)
     // overwrites, so the rule is simply "latest result wins".
     if (sections.size() < 2)
         return;                    // unusable outline — leave TOC alone
-    if (m_status == Generating)
-        return;                    // explicit LLM generation wins
+    if (m_status == Generating || !m_taskId.isEmpty())
+        return;                    // explicit LLM generation wins, queued or not
 
     // Keep blockId → page resolvable, same as after a generate().
     m_blockIdToPage.clear();
@@ -156,7 +158,7 @@ void TocService::clear()
     emit sectionsChanged();
 }
 
-void TocService::cancel()
+void TocService::cancelReply()
 {
     if (m_reply) {
         m_reply->disconnect(this);
@@ -168,21 +170,170 @@ void TocService::cancel()
         setStatus(Idle);
 }
 
-void TocService::generate()
+void TocService::cancel()
 {
-    if (!m_settings || !m_blocks) return;
+    cancelReply();
+    // A generation still waiting its turn in the queue is over too:
+    // whatever came next -- another paper, another request -- has
+    // overtaken it, and nothing would ever collect its answer.
+    if (m_tasks && !m_taskId.isEmpty()) {
+        const QString id = m_taskId;
+        m_taskId.clear();
+        m_taskPaperId.clear();
+        m_tasks->cancel(id);
+    }
+}
 
+void TocService::setTasks(TaskManager *tasks)
+{
+    m_tasks = tasks;
+    if (!m_tasks)
+        return;
+
+    // A generation the app closed on can be started again from nothing --
+    // but only where its paper is the one on screen, since the sections it
+    // produces refer to that paper's blocks.
+    m_tasks->registerResumer(Tasks::Kind::Toc,
+                             [this](const QJsonObject &resume) {
+        if (!m_paper)
+            return false;
+        if (m_paper->paperId()
+            != resume.value(QStringLiteral("paperId")).toString())
+            return false;
+        // A resumer that cannot start says no and leaves the screen alone:
+        // generate() would refuse a launch with no paragraphs loaded by
+        // painting "No paper open." into the sidebar, for a generation the
+        // user never watched start.
+        if (!couldGenerate())
+            return false;
+        generate();
+        return true;
+    });
+}
+
+void TocService::finishTask(bool ok, const QString &error)
+{
+    if (!m_tasks || m_taskId.isEmpty())
+        return;
+    const QString id = m_taskId;
+    m_taskId.clear();
+    m_taskPaperId.clear();
+    m_tasks->finish(id, ok, error);
+}
+
+void TocService::cancelTask()
+{
+    if (!m_tasks || m_taskId.isEmpty())
+        return;
+    const QString id = m_taskId;
+    m_taskId.clear();
+    m_taskPaperId.clear();
+    m_tasks->markCanceled(id);
+}
+
+bool TocService::couldGenerate() const
+{
+    // The silent twin of canGenerate() below; the two refuse on the same
+    // three grounds and have to stay in step.
+    return m_settings && m_blocks && m_settings->isConfigured()
+        && m_blocks->blockCount() > 0;
+}
+
+bool TocService::canGenerate()
+{
+    if (!m_settings || !m_blocks)
+        return false;
     if (!m_settings->isConfigured()) {
         setStatus(Failed,
                   tr("LLM is not configured. Open Settings to add a model and API key."));
-        return;
+        return false;
     }
     if (m_blocks->blockCount() == 0) {
         setStatus(Failed, tr("No paper open."));
+        return false;
+    }
+    return true;
+}
+
+void TocService::generate()
+{
+    // The refusals stay in front of the queue: a request that could only
+    // fail should say so at once rather than wait its turn to do it.
+    if (!canGenerate())
+        return;
+
+    if (!m_tasks) {
+        runGenerate();
         return;
     }
 
-    cancel();
+    Tasks::Request req;
+    req.kind = Tasks::Kind::Toc;
+    req.title = tr("Extract contents");
+    req.paperId = m_paper ? m_paper->paperId() : QString();
+    req.paperTitle = m_paper ? m_paper->fileName() : QString();
+    // One request over the whole paper: there is nothing to count off
+    // until the model answers.
+    req.steps = 0;
+    req.resume = QJsonObject{
+        {QStringLiteral("paperId"), req.paperId},
+        {QStringLiteral("path"),
+         m_paper ? m_paper->pdfSource().toLocalFile() : QString()},
+    };
+
+    const QString id = m_tasks->submit(req,
+        [this, paperId = req.paperId] {
+            // submit() only hands the id back when it returns, and it may
+            // call this from inside itself -- one turn of the event loop
+            // and the generation has its id on record.
+            QTimer::singleShot(0, this, [this, paperId] {
+                // Cancelled in the turn between being admitted and
+                // starting: the stop callback has already dropped the id,
+                // or another paper's generation has taken its place. The
+                // id on record is not ours to settle either way.
+                if (m_taskId.isEmpty() || m_taskPaperId != paperId)
+                    return;
+                if (!m_paper || m_paper->paperId() != paperId) {
+                    // Admitted after the reader moved on; the sections it
+                    // would produce belong to a paper that is not open.
+                    // Nothing failed — the paper closed under it.
+                    cancelTask();
+                    return;
+                }
+                runGenerate();
+            });
+        },
+        [this, paperId = req.paperId] {
+            // The manager is stopping us; it owns the outcome from here, so
+            // drop the id rather than finishing the task ourselves -- and
+            // only while the id is still this generation's, since a newer
+            // one may already have taken its place and that one's id is not
+            // ours to drop. The request in flight is aborted either way.
+            if (m_taskPaperId == paperId) {
+                m_taskId.clear();
+                m_taskPaperId.clear();
+            }
+            cancelReply();
+        });
+    if (id.isEmpty())
+        return;             // this paper's contents are already being read
+    m_taskId = id;
+    m_taskPaperId = req.paperId;
+}
+
+void TocService::runGenerate()
+{
+    if (!canGenerate()) {
+        // canGenerate() puts its own reason on screen for the two refusals
+        // it knows; with no settings or no block list at all it says
+        // nothing, and the task still has to be told something honest.
+        finishTask(false, m_lastError.isEmpty() ? tr("No paper open.")
+                                                : m_lastError);
+        return;
+    }
+
+    // Only the reply, never the task: this is the task's own body.
+    cancelReply();
     m_buffer.clear();
     m_blockIdToPage.clear();
     setStatus(Generating);
@@ -194,6 +345,9 @@ void TocService::generate()
         setStatus(Failed, tr("No model is configured."));
         return;
     }
+    if (m_tasks && !m_taskId.isEmpty())
+        m_tasks->setNote(m_taskId,
+                         tr("Reading %n paragraph(s)", "", m_blocks->blockCount()));
 
     LlmClient::Request req;
     req.system = systemPrompt();
@@ -453,4 +607,16 @@ void TocService::setStatus(Status s, const QString &err)
     m_status = s;
     m_lastError = err;
     emit statusChanged();
+
+    // Every way a generation can end goes through here -- parsed, refused,
+    // aborted -- so this is the one place the task has to be told.
+    switch (s) {
+    case Done:   finishTask(true);        break;
+    case Failed: finishTask(false, err);  break;
+    // Back to Idle means the generation was stopped rather than lost: the
+    // Cancel button, or the paper being closed under it. Nothing went
+    // wrong, so the row ends Canceled instead of Failed.
+    case Idle:   cancelTask();            break;
+    case Generating: break;
+    }
 }

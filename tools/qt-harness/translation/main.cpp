@@ -16,6 +16,9 @@
 #include "PaperController.h"
 #include "Settings.h"
 #include "Tabs.h"
+#include "TaskListModel.h"
+#include "TaskManager.h"
+#include "TaskTypes.h"
 #include "TranslationService.h"
 
 #include <QCoreApplication>
@@ -30,6 +33,7 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QUrl>
+#include <QVariant>
 #include <QtGlobal>
 
 static int g_pass = 0, g_fail = 0;
@@ -427,6 +431,166 @@ int main(int argc, char **argv)
 
     translation.cancelPaper(paperA);
     translation.cancelPaper(paperB);
+    waitFor([&] { return llm.openStreams() == 0; }, 5000);
+
+    // ── the same run, seen from the one queue ─────────────────────────
+    // Everything above ran with no TaskManager, which is the path that has
+    // to keep working exactly as it always did. Wired to a real manager a
+    // run becomes a task: a row that says what it is doing and to which
+    // paper, one row per paper and never two, a bar the finished paragraphs
+    // move, and a Cancel at either end — the pane's button or the viewer's —
+    // that settles it. The manager admits a task and then calls back through
+    // a queued connection, so nothing here may look before the event loop
+    // has had its turn.
+    TaskManager taskManager(&settings);
+    translation.setTasks(&taskManager);
+    TaskListModel *taskRows = taskManager.model();
+
+    // Reading the model the way the viewer does, and no other way.
+    const auto taskRow = [&](const QString &id) {
+        for (int i = 0; i < taskRows->rowCount(); ++i) {
+            if (taskRows->data(taskRows->index(i), TaskListModel::IdRole)
+                    .toString() == id)
+                return i;
+        }
+        return -1;
+    };
+    const auto roleOf = [&](const QString &id, int role) {
+        const int row = taskRow(id);
+        return row < 0 ? QVariant()
+                       : taskRows->data(taskRows->index(row), role);
+    };
+    const auto stateOf = [&](const QString &id) {
+        const QVariant v = roleOf(id, TaskListModel::StateRole);
+        return v.isValid() ? v.toInt() : -1;
+    };
+    const auto stateName = [&](int s) {
+        return s < 0 ? QStringLiteral("<no row>")
+                     : Tasks::stateKey(static_cast<Tasks::State>(s));
+    };
+    const QString kTranslate = QStringLiteral("translate");
+
+    // One paragraph in the air at a time and short answers: slow enough that
+    // a run can be looked at mid-flight, quick enough that paragraphs land.
+    settings.setTranslationConcurrency(1);
+    llm.setChunkLimit(3);
+
+    tabs.openPaper(QUrl::fromLocalFile(pdf));
+    waitFor([&] { return paper.paperId() == paperA; }, 20000);
+
+    // Retranslate, not translateAll: A has been translated already, and a
+    // run with nothing to do is over before anyone can look at it. This one
+    // queues every paragraph the paper has.
+    translation.retranslateAll();
+    pump(200);
+    const QString runId = taskManager.activeId(kTranslate, paperA);
+    check("starting a run puts it on the queue as a task",
+          !runId.isEmpty() && taskRow(runId) >= 0
+              && taskManager.activeCount() == 1,
+          QStringLiteral("id=%1, %2 active, %3 rows")
+              .arg(runId).arg(taskManager.activeCount())
+              .arg(taskRows->rowCount()));
+    check("and the row is a translation, running",
+          stateOf(runId) == static_cast<int>(Tasks::State::Running)
+              && roleOf(runId, TaskListModel::KindRole).toString() == kTranslate,
+          QStringLiteral("kind=%1 state=%2")
+              .arg(roleOf(runId, TaskListModel::KindRole).toString(),
+                   stateName(stateOf(runId))));
+    check("the row names the paper it is working on",
+          !paper.fileName().isEmpty()
+              && roleOf(runId, TaskListModel::PaperTitleRole).toString()
+                     == paper.fileName()
+              && roleOf(runId, TaskListModel::PaperIdRole).toString() == paperA,
+          QStringLiteral("%1 (%2)")
+              .arg(roleOf(runId, TaskListModel::PaperTitleRole).toString(),
+                   roleOf(runId, TaskListModel::PaperIdRole).toString()));
+
+    // ── one paper is never translated twice at once ───────────────────
+    const int rowsBefore = taskRows->rowCount();
+    translation.retranslateAll();   // the same button, pressed again
+    translation.translateAll();     // and the other way into the same paper
+    pump(300);
+    check("asking for the same paper again does not open a second task",
+          taskRows->rowCount() == rowsBefore
+              && taskManager.activeCount() == 1,
+          QStringLiteral("%1 → %2 rows, %3 active").arg(rowsBefore)
+              .arg(taskRows->rowCount()).arg(taskManager.activeCount()));
+    check("and the run already under way is left alone",
+          taskManager.activeId(kTranslate, paperA) == runId
+              && stateOf(runId) == static_cast<int>(Tasks::State::Running)
+              && translation.busy(),
+          QStringLiteral("state=%1 busy=%2")
+              .arg(stateName(stateOf(runId))).arg(translation.busy()));
+
+    // ── the bar means something ───────────────────────────────────────
+    const bool counted = waitFor([&] {
+        return roleOf(runId, TaskListModel::DoneRole).toInt() >= 2;
+    }, 60000);
+    const int taskDone  = roleOf(runId, TaskListModel::DoneRole).toInt();
+    const int taskTotal = roleOf(runId, TaskListModel::TotalRole).toInt();
+    const double taskProgress =
+        roleOf(runId, TaskListModel::ProgressRole).toDouble();
+    check("the paragraphs the model answers move the task's own count",
+          counted && taskDone >= 2 && taskTotal >= taskDone,
+          QStringLiteral("%1/%2").arg(taskDone).arg(taskTotal));
+    check("and its bar sits between empty and full",
+          taskProgress > 0.0 && taskProgress < 1.0,
+          QStringLiteral("progress=%1").arg(taskProgress));
+
+    // ── Cancel, from the pane ─────────────────────────────────────────
+    // The service reports the end of a run through finish(ok=false), and
+    // Failed is the only outcome that has; the row therefore reads
+    // "failed — Canceled." rather than Canceled. What is checked is what a
+    // reader would notice: the row stops instead of spinning for ever.
+    translation.cancel();
+    pump(200);
+    const int afterPaneCancel = stateOf(runId);
+    check("Cancel in the pane settles its task instead of leaving it running",
+          afterPaneCancel >= 0
+              && afterPaneCancel != static_cast<int>(Tasks::State::Running)
+              && afterPaneCancel != static_cast<int>(Tasks::State::Queued),
+          QStringLiteral("state=%1 %2").arg(stateName(afterPaneCancel),
+                   roleOf(runId, TaskListModel::ErrorRole).toString()));
+    waitFor([&] { return llm.openStreams() == 0; }, 5000);
+
+    // ── a settled run does not hold the paper for ever ────────────────
+    translation.translateAll();
+    pump(200);
+    const QString secondId = taskManager.activeId(kTranslate, paperA);
+    const bool secondRan = waitFor([&] {
+        return !secondId.isEmpty() && translation.busy()
+               && stateOf(secondId) == static_cast<int>(Tasks::State::Running);
+    }, 30000);
+    check("the same paper can be translated again once the first run is over",
+          secondRan && secondId != runId,
+          QStringLiteral("id=%1 state=%2 busy=%3").arg(secondId,
+                   stateName(stateOf(secondId))).arg(translation.busy()));
+
+    // ── Cancel, from the task viewer ──────────────────────────────────
+    taskManager.cancel(secondId);
+    const bool stopped = waitFor([&] { return !translation.busy(); }, 5000);
+    check("cancelling the task stops the run", stopped,
+          QStringLiteral("busy=%1, %2 streams")
+              .arg(translation.busy()).arg(llm.openStreams()));
+    check("and that row ends canceled",
+          stateOf(secondId) == static_cast<int>(Tasks::State::Canceled),
+          QStringLiteral("state=%1").arg(stateName(stateOf(secondId))));
+    const bool letGo = waitFor([&] { return llm.openStreams() == 0; }, 5000);
+    check("with no request left running for it", letGo,
+          QStringLiteral("%1 open").arg(llm.openStreams()));
+
+    // A run the manager stopped drops the service's record of it from the
+    // other side, so it is worth asking the same question again: the
+    // exclusion is about two runs at once, not a paper used up.
+    translation.translateAll();
+    pump(200);
+    const QString thirdId = taskManager.activeId(kTranslate, paperA);
+    check("a paper the viewer cancelled is not locked out either",
+          !thirdId.isEmpty() && thirdId != secondId
+              && stateOf(thirdId) == static_cast<int>(Tasks::State::Running),
+          QStringLiteral("id=%1 state=%2").arg(thirdId,
+                   stateName(stateOf(thirdId))));
+    translation.cancel();
     waitFor([&] { return llm.openStreams() == 0; }, 5000);
 
     QDir(root).removeRecursively();

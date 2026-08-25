@@ -10,8 +10,11 @@
 #include "PaperController.h"
 #include "ProjectProfileController.h"
 #include "Settings.h"
+#include "TaskManager.h"
+#include "TaskTypes.h"
 
 #include <QDateTime>
+#include <QTimer>
 
 AnalysisService::AnalysisService(Settings *settings, PaperController *paper,
                                  AnalysisStore *store,
@@ -43,6 +46,86 @@ AnalysisService::AnalysisService(Settings *settings, PaperController *paper,
         connect(m_settings, &Settings::configurationChanged, this,
                 &AnalysisService::stateChanged);
     }
+}
+
+void AnalysisService::setTasks(TaskManager *tasks)
+{
+    m_tasks = tasks;
+    if (!m_tasks)
+        return;
+
+    // A task stopped while it was still queued never calls its stop callback
+    // -- there was nothing to stop -- so this is the only word the service
+    // gets that the id it is holding is dead. Without it the pane would sit
+    // at Running for ever and refuse to start the reading again.
+    connect(m_tasks, &TaskManager::taskFinished, this,
+            [this](const QString &id, bool, const QString &) {
+                if (id.isEmpty())
+                    return;
+                if (id == m_quickTaskId) {
+                    m_quickTaskId.clear();
+                    if (m_status == Running && !m_job)
+                        setStatus(Idle);
+                    return;
+                }
+                if (id == m_deepTaskId) {
+                    m_deepTaskId.clear();
+                    m_deepTaskTotal = 0;
+                    m_deepTaskStarted = false;
+                    m_deepRunModules.clear();
+                    return;
+                }
+                for (auto it = m_moduleTaskIds.begin();
+                     it != m_moduleTaskIds.end(); ++it) {
+                    if (it.value() != id)
+                        continue;
+                    m_moduleTaskIds.erase(it);
+                    emit deepChanged();
+                    return;
+                }
+            });
+
+    // Both readings are of whatever paper is open -- the paragraphs come from
+    // PaperController, not from the payload -- so a task the last session
+    // left behind can only be picked up again when the reader is back on that
+    // same paper. Refusing is the right answer otherwise: interpreting one
+    // paper into another's row would be worse than not resuming at all.
+    m_tasks->registerResumer(
+        Tasks::Kind::QuickInterpret, [this](const QJsonObject &resume) {
+            const QString id = resume.value(QStringLiteral("paperId")).toString();
+            if (id.isEmpty() || id != paperId() || !canRun())
+                return false;
+            // This paper is already being interpreted. generateQuick() would
+            // return without starting anything and leave m_quickTaskId set
+            // from the run that is under way, so answering from it would
+            // claim a run this one never made -- and the pending task would
+            // be dropped for nothing.
+            if (!m_quickTaskId.isEmpty() || m_status == Running)
+                return false;
+            const QString title = resume.value(QStringLiteral("title")).toString();
+            if (!title.isEmpty() && m_paperTitle.isEmpty())
+                setPaperTitle(title);
+            generateQuick(true);
+            return !m_quickTaskId.isEmpty();
+        });
+
+    m_tasks->registerResumer(
+        Tasks::Kind::DeepInterpret, [this](const QJsonObject &resume) {
+            const QString id = resume.value(QStringLiteral("paperId")).toString();
+            if (id.isEmpty() || id != paperId() || !canRun())
+                return false;
+            // A close reading of this paper is already open; there is
+            // nothing here for a second one to start.
+            if (!m_deepTaskId.isEmpty())
+                return false;
+            QStringList modules;
+            for (const QJsonValue &v :
+                 resume.value(QStringLiteral("modules")).toArray())
+                modules.append(v.toString());
+            // Whatever landed before the app closed stays where it is; only
+            // the modules that never made it run again.
+            return beginDeepRun(deepModulesToRun(false, modules), false);
+        });
 }
 
 QString AnalysisService::paperId() const
@@ -124,6 +207,7 @@ void AnalysisService::clearDeep()
     m_deepQueue.clear();
     m_deepErrors.clear();
     m_deepBusy.clear();
+    m_deepRunModules.clear();
     emit deepChanged();
 }
 
@@ -210,6 +294,65 @@ void AnalysisService::generateQuick(bool force)
     if (!force && hasQuick() && !quickStale())
         return;
 
+    if (!m_tasks) {
+        startQuickRun();
+        return;
+    }
+
+    Tasks::Request req;
+    req.kind = Tasks::Kind::QuickInterpret;
+    req.title = tr("Interpret");
+    req.paperId = paperId();
+    req.paperTitle =
+        m_paperTitle.isEmpty() ? m_paper->fileName() : m_paperTitle;
+    req.projectId = m_store->projectId();
+    req.steps = 1;
+    // The exclusion key is left at its default, "<kind>|<paperId>": one
+    // digest per paper at a time is exactly the rule we want.
+    req.resume = QJsonObject{{QStringLiteral("paperId"), req.paperId},
+                             {QStringLiteral("title"), req.paperTitle}};
+
+    const QString paper = req.paperId;
+    const QString id = m_tasks->submit(
+        req,
+        // submit() may call this before it returns, so the work hops through
+        // the event loop: the id has to be on record before anything can
+        // report progress or finish against it. The paper is checked again on
+        // the way in -- a queued task can wait out the reader moving on.
+        [this, paper] {
+            QTimer::singleShot(0, this, [this, paper] {
+                // Cancelled while it waited, or the reader moved on: either
+                // way there is nothing left to run.
+                if (m_quickTaskId.isEmpty())
+                    return;
+                if (paper != paperId()) {
+                    // The paper was closed under a task that waited. That is
+                    // not a failure and there is no reason to show; the row
+                    // ends Canceled.
+                    cancelQuickTask();
+                    return;
+                }
+                startQuickRun();
+            });
+        },
+        [this] { cancel(); });
+    if (id.isEmpty())
+        return;                    // the same digest is already on its way
+    m_quickTaskId = id;
+    // Queued counts as running to the pane: the reader asked for it, and the
+    // button should not invite them to ask again.
+    setStatus(Running);
+}
+
+void AnalysisService::startQuickRun()
+{
+    if (!m_paper || !m_settings) {
+        // A real failure, so it is reported as one -- but with something the
+        // row can show, rather than a Failed task with nothing under it.
+        finishQuickTask(false, tr("There is no paper to interpret."));
+        return;
+    }
+
     const QVector<Block> blocks = m_paper->blocks()->allBlocks();
     QuickAnalysisJob::Input in;
     in.paperId = paperId();
@@ -229,6 +372,9 @@ void AnalysisService::generateQuick(bool force)
             [this, paperAtStart](const QJsonObject &digest) {
                 QuickAnalysisJob *job = m_job;
                 m_job.clear();
+                // The task is over either way; whether we keep the answer is
+                // a separate question.
+                finishQuickTask(true);
                 if (paperAtStart != paperId())
                     return;        // the reader moved on
                 m_contentHash = job ? job->contentHash() : QString();
@@ -256,6 +402,7 @@ void AnalysisService::generateQuick(bool force)
     connect(m_job, &QuickAnalysisJob::failed, this,
             [this, paperAtStart](const QString &error) {
                 m_job.clear();
+                finishQuickTask(false, error);
                 if (paperAtStart != paperId())
                     return;
                 setStatus(Failed, error);
@@ -268,8 +415,36 @@ void AnalysisService::cancel()
         m_job->abort();
         m_job.clear();
     }
+    // The reader stopped it, or the paper was closed: nothing went wrong, so
+    // the row must not read Failed with no reason under it.
+    cancelQuickTask();
     if (m_status == Running)
         setStatus(Idle);
+}
+
+QString AnalysisService::takeQuickTaskId()
+{
+    if (!m_tasks || m_quickTaskId.isEmpty())
+        return {};
+    // Cleared first: the manager must never be told twice about one task,
+    // and cancel() and a job's own answer can race for the same one.
+    const QString id = m_quickTaskId;
+    m_quickTaskId.clear();
+    return id;
+}
+
+void AnalysisService::finishQuickTask(bool ok, const QString &error)
+{
+    const QString id = takeQuickTaskId();
+    if (!id.isEmpty())
+        m_tasks->finish(id, ok, error);
+}
+
+void AnalysisService::cancelQuickTask()
+{
+    const QString id = takeQuickTaskId();
+    if (!id.isEmpty())
+        m_tasks->markCanceled(id);
 }
 
 void AnalysisService::discardQuick()
@@ -358,7 +533,10 @@ QString AnalysisService::moduleError(const QString &id) const
 
 bool AnalysisService::moduleBusy(const QString &id) const
 {
-    return m_deepBusy.contains(id);
+    // A module whose own task is still waiting its turn counts as busy: the
+    // reader asked for it, and the button should not invite them to ask
+    // again. (Without a manager there are no such tasks, so nothing moves.)
+    return m_deepBusy.contains(id) || m_moduleTaskIds.contains(id);
 }
 
 bool AnalysisService::hasDeep() const
@@ -395,12 +573,99 @@ void AnalysisService::generateDeep(bool force)
                            "Settings to pick one."));
         return;
     }
-    m_deepForce = force;
-    const QJsonObject modules =
-        m_deep.value(QStringLiteral("modules")).toObject();
+    beginDeepRun(deepModulesToRun(force, QStringList()), force);
+}
+
+QStringList AnalysisService::deepModulesToRun(bool force,
+                                              const QStringList &only) const
+{
+    const QJsonObject have = m_deep.value(QStringLiteral("modules")).toObject();
+    QStringList out;
     for (const QString &id : Analysis::deepModules()) {
-        if (!force && modules.contains(id))
+        if (!only.isEmpty() && !only.contains(id))
+            continue;
+        if (!force && have.contains(id))
             continue;             // keep what is already written
+        if (m_deepQueue.contains(id) || m_deepBusy.contains(id))
+            continue;
+        if (m_moduleTaskIds.contains(id))
+            continue;             // spoken for by a §5 task of its own
+        out.append(id);
+    }
+    return out;
+}
+
+bool AnalysisService::beginDeepRun(const QStringList &modules, bool force)
+{
+    if (modules.isEmpty()) {
+        // Nothing left to run still clears the errors and tells the pane,
+        // the way it always did -- but not while a task of ours is open:
+        // startDeepRun() marks the run started, and a task the manager has
+        // not admitted yet would then be declared finished by pumpDeep()
+        // without a single module having been asked for.
+        if (m_deepTaskId.isEmpty())
+            startDeepRun(modules, force);
+        return false;
+    }
+    if (!m_tasks) {
+        startDeepRun(modules, force);
+        return true;
+    }
+
+    Tasks::Request req;
+    req.kind = Tasks::Kind::DeepInterpret;
+    req.title = tr("Close read");
+    req.paperId = paperId();
+    req.paperTitle =
+        m_paperTitle.isEmpty() && m_paper ? m_paper->fileName() : m_paperTitle;
+    req.projectId = m_store->projectId();
+    req.steps = modules.size();
+    QJsonArray wanted;
+    for (const QString &id : modules)
+        wanted.append(id);
+    // The modules go into the payload so a resumed run picks up where this
+    // one stopped instead of paying for the nine all over again.
+    req.resume = QJsonObject{{QStringLiteral("paperId"), req.paperId},
+                             {QStringLiteral("modules"), wanted}};
+
+    const QString paper = req.paperId;
+    const QString id = m_tasks->submit(
+        req,
+        // As with the digest: submit() may call this before it returns, the
+        // id has to exist before the first module reports back, and the
+        // reader may have moved to another paper while this waited.
+        [this, modules, force, paper] {
+            QTimer::singleShot(0, this, [this, modules, force, paper] {
+                if (m_deepTaskId.isEmpty())
+                    return;       // cancelled while it waited
+                if (paper != paperId()) {
+                    // The paper was closed while this waited: canceled, not
+                    // failed, and nothing to explain.
+                    cancelDeepTask();
+                    return;
+                }
+                startDeepRun(modules, force);
+            });
+        },
+        [this] { cancelDeep(); });
+    if (id.isEmpty())
+        return false;              // this paper is already being read
+    m_deepTaskId = id;
+    m_deepTaskTotal = modules.size();
+    m_deepTaskStarted = false;
+    return true;
+}
+
+void AnalysisService::startDeepRun(const QStringList &modules, bool force)
+{
+    m_deepTaskStarted = true;
+    m_deepForce = force;
+    // What this run is answerable for. A module being redone on its own
+    // travels through the same queue but is not one of these, so it neither
+    // moves this run's bar nor decides whether it succeeded.
+    m_deepRunModules.clear();
+    for (const QString &id : modules) {
+        m_deepRunModules.insert(id);
         if (!m_deepQueue.contains(id) && !m_deepBusy.contains(id))
             m_deepQueue.append(id);
     }
@@ -415,8 +680,74 @@ void AnalysisService::regenerateModule(const QString &id)
         return;
     if (m_deepBusy.contains(id) || m_deepQueue.contains(id))
         return;
+    if (m_moduleTaskIds.contains(id))
+        return;                    // this module is already being redone
     m_deepErrors.remove(id);
-    m_deepQueue.append(id);
+
+    if (!m_tasks) {
+        startModuleRun(id);
+        return;
+    }
+
+    Tasks::Request req;
+    req.kind = Tasks::Kind::DeepInterpret;
+    // The module's own title: a row reading "Close read" beside the whole
+    // run's would say nothing about which of the two the reader stopped.
+    req.title = moduleTitle(id);
+    req.paperId = paperId();
+    req.paperTitle =
+        m_paperTitle.isEmpty() && m_paper ? m_paper->fileName() : m_paperTitle;
+    req.projectId = m_store->projectId();
+    // Not the default "<kind>|<paperId>": redoing one part is not the whole
+    // reading, so it must not be refused because the nine are running -- only
+    // because this same module already is.
+    req.exclusiveKey = QStringLiteral("deep_interpret|") + req.paperId
+                       + QChar('|') + id;
+    req.steps = 1;
+    req.resume = QJsonObject{{QStringLiteral("paperId"), req.paperId},
+                             {QStringLiteral("modules"), QJsonArray{id}}};
+
+    const QString paper = req.paperId;
+    const QString taskId = m_tasks->submit(
+        req,
+        // As everywhere else here: submit() may call this before it returns,
+        // and the id has to be on record before the module reports back.
+        [this, id, paper] {
+            QTimer::singleShot(0, this, [this, id, paper] {
+                if (!m_moduleTaskIds.contains(id))
+                    return;        // cancelled while it waited
+                if (paper != paperId()) {
+                    cancelModuleTask(id);
+                    return;
+                }
+                startModuleRun(id);
+            });
+        },
+        [this, id] { cancelModule(id); });
+    if (taskId.isEmpty())
+        return;                    // this module is already on its way
+    m_moduleTaskIds.insert(id, taskId);
+    emit deepChanged();
+}
+
+void AnalysisService::startModuleRun(const QString &id)
+{
+    // A whole run may have swept this module up while its own task waited.
+    // One call answers both rows -- the job's own handler closes whichever
+    // tasks are watching this module -- so it is not asked for twice.
+    if (!m_deepQueue.contains(id) && !m_deepBusy.contains(id))
+        m_deepQueue.append(id);
+    emit deepChanged();
+    pumpDeep();
+}
+
+void AnalysisService::cancelModule(const QString &id)
+{
+    // What the viewer's stop button means for one module: drop it if it is
+    // still waiting. One already at the model is left to land -- there is no
+    // handle here to abort a single job with -- but its row is over.
+    m_deepQueue.removeAll(id);
+    cancelModuleTask(id);
     emit deepChanged();
     pumpDeep();
 }
@@ -430,7 +761,105 @@ void AnalysisService::cancelDeep()
         m_deepErrors.remove(id);
     m_deepBusy.clear();
     m_deepInflight = 0;
+    // The reader stopped it, or the paper was closed: canceled, not failed.
+    cancelDeepTask();
+    // A module being redone on its own has a task of its own, and the queue
+    // it was waiting in has just been emptied -- its row would sit at
+    // Running for ever if it were not ended here too.
+    const QStringList redoing = m_moduleTaskIds.keys();
+    for (const QString &id : redoing)
+        cancelModuleTask(id);
     emit deepChanged();
+}
+
+QString AnalysisService::firstDeepError(const QSet<QString> &only) const
+{
+    // In display order, so the reader is told about the first module that
+    // failed rather than whichever one the hash happens to yield.
+    for (const QString &id : Analysis::deepModules()) {
+        if (!only.isEmpty() && !only.contains(id))
+            continue;
+        if (m_deepErrors.contains(id))
+            return m_deepErrors.value(id);
+    }
+    return {};
+}
+
+int AnalysisService::deepRunLeft() const
+{
+    int left = 0;
+    for (const QString &id : m_deepRunModules) {
+        if (m_deepQueue.contains(id) || m_deepBusy.contains(id))
+            ++left;
+    }
+    return left;
+}
+
+void AnalysisService::reportDeepProgress()
+{
+    // A module being redone on its own is one step of a task of its own,
+    // reported where it starts and where it ends; there is nothing in
+    // between for this to say about it.
+    if (!m_tasks || m_deepTaskId.isEmpty())
+        return;
+    const int left = deepRunLeft();
+    if (left > m_deepTaskTotal)
+        m_deepTaskTotal = left;    // more modules joined this run
+    m_tasks->setProgress(m_deepTaskId, m_deepTaskTotal - left, m_deepTaskTotal);
+    for (const QString &id : Analysis::deepModules()) {
+        if (m_deepRunModules.contains(id) && m_deepBusy.contains(id)) {
+            m_tasks->setNote(m_deepTaskId, moduleTitle(id));
+            break;
+        }
+    }
+}
+
+QString AnalysisService::takeDeepTaskId()
+{
+    if (!m_tasks || m_deepTaskId.isEmpty())
+        return {};
+    const QString id = m_deepTaskId;
+    m_deepTaskId.clear();
+    m_deepTaskTotal = 0;
+    m_deepTaskStarted = false;
+    m_deepRunModules.clear();
+    return id;
+}
+
+void AnalysisService::finishDeepTask(bool ok, const QString &error)
+{
+    const QString id = takeDeepTaskId();
+    if (!id.isEmpty())
+        m_tasks->finish(id, ok, error);
+}
+
+void AnalysisService::cancelDeepTask()
+{
+    const QString id = takeDeepTaskId();
+    if (!id.isEmpty())
+        m_tasks->markCanceled(id);
+}
+
+QString AnalysisService::takeModuleTaskId(const QString &moduleId)
+{
+    if (!m_tasks)
+        return {};
+    return m_moduleTaskIds.take(moduleId);
+}
+
+void AnalysisService::finishModuleTask(const QString &moduleId, bool ok,
+                                       const QString &error)
+{
+    const QString id = takeModuleTaskId(moduleId);
+    if (!id.isEmpty())
+        m_tasks->finish(id, ok, error);
+}
+
+void AnalysisService::cancelModuleTask(const QString &moduleId)
+{
+    const QString id = takeModuleTaskId(moduleId);
+    if (!id.isEmpty())
+        m_tasks->markCanceled(id);
 }
 
 void AnalysisService::discardDeep()
@@ -449,12 +878,28 @@ void AnalysisService::pumpDeep()
     while (m_deepInflight < limit && !m_deepQueue.isEmpty())
         startModule(m_deepQueue.takeFirst());
     emit deepChanged();
+    reportDeepProgress();
+    // The run is over the moment none of its own modules is left; the ones
+    // that failed decide whether it counts as a success. A task still
+    // waiting in the queue has not begun and cannot be over.
+    if (m_deepTaskStarted && deepRunLeft() <= 0) {
+        const QString err = firstDeepError(m_deepRunModules);
+        finishDeepTask(err.isEmpty(), err);
+    }
 }
 
 void AnalysisService::startModule(const QString &id)
 {
-    if (!m_paper || !m_settings)
+    if (!m_paper || !m_settings) {
+        // pumpDeep() has already taken this module off the queue. Returning
+        // here used to drop it without a word, and the run that was missing
+        // it was reported as a success; it is recorded as the failure it is
+        // instead, so whichever task owns it ends saying so.
+        const QString why = tr("The paper is no longer open.");
+        m_deepErrors.insert(id, why);
+        finishModuleTask(id, false, why);
         return;
+    }
     refreshClient();
 
     DeepModuleJob::Input in;
@@ -471,6 +916,10 @@ void AnalysisService::startModule(const QString &id)
     m_deepBusy.insert(id);
     ++m_deepInflight;
     const QString paperAtStart = in.paperId;
+    if (m_tasks && m_moduleTaskIds.contains(id)) {
+        m_tasks->setProgress(m_moduleTaskIds.value(id), 0, 1);
+        m_tasks->setNote(m_moduleTaskIds.value(id), moduleTitle(id));
+    }
 
     auto *job = DeepModuleJob::start(m_client, in, this);
     connect(job, &DeepModuleJob::succeeded, this,
@@ -478,14 +927,19 @@ void AnalysisService::startModule(const QString &id)
                                       const QJsonObject &result) {
                 --m_deepInflight;
                 m_deepBusy.remove(moduleId);
-                if (paperAtStart != paperId())
+                if (paperAtStart != paperId()) {
+                    // The reader moved on while this was at the model; the
+                    // answer is for a paper that is no longer open.
+                    cancelModuleTask(moduleId);
                     return;
+                }
                 QJsonObject modules =
                     m_deep.value(QStringLiteral("modules")).toObject();
                 modules.insert(moduleId, result);
                 m_deep.insert(QStringLiteral("modules"), modules);
                 m_contentHash = job->contentHash();
                 persistDeep();
+                finishModuleTask(moduleId, true);
                 emit deepChanged();
                 pumpDeep();
             });
@@ -494,9 +948,12 @@ void AnalysisService::startModule(const QString &id)
                                  const QString &error) {
                 --m_deepInflight;
                 m_deepBusy.remove(moduleId);
-                if (paperAtStart != paperId())
+                if (paperAtStart != paperId()) {
+                    cancelModuleTask(moduleId);
                     return;
+                }
                 m_deepErrors.insert(moduleId, error);
+                finishModuleTask(moduleId, false, error);
                 emit deepChanged();
                 pumpDeep();
             });

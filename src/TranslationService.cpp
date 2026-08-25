@@ -5,8 +5,11 @@
 #include "LlmClient.h"
 #include "PaperController.h"
 #include "Settings.h"
+#include "TaskManager.h"
 
+#include <QJsonObject>
 #include <QSet>
+#include <QTimer>
 
 namespace {
 
@@ -348,6 +351,16 @@ void TranslationService::cancel()
 
 void TranslationService::cancelPaper(const QString &paperId)
 {
+    cancelPaperJobs(paperId);
+    // Whatever stopped the run — the tab closing, the Cancel button, a
+    // paragraph edited out from under it — the task is over with it. None
+    // of those is a failure: the user stopped the work, so the row ends
+    // Canceled and carries no error.
+    cancelRun(paperId);
+}
+
+void TranslationService::cancelPaperJobs(const QString &paperId)
+{
     if (paperId.isEmpty() || !hasWorkFor(paperId))
         return;
 
@@ -414,23 +427,248 @@ void TranslationService::cancelPaper(const QString &paperId)
     scheduleNext();
 }
 
+void TranslationService::setTasks(TaskManager *tasks)
+{
+    m_tasks = tasks;
+    if (!m_tasks)
+        return;
+
+    // A run the app closed on can be started again from nothing: the paper
+    // and what it was asked to do is all of it. The paper has to be the one
+    // on screen, since that is the only block list a run can work through.
+    m_tasks->registerResumer(Tasks::Kind::Translate,
+                             [this](const QJsonObject &resume) {
+        if (!m_paper)
+            return false;
+        if (m_paper->paperId()
+            != resume.value(QStringLiteral("paperId")).toString())
+            return false;
+        const QString mode = resume.value(QStringLiteral("mode")).toString();
+        const RunMode runMode = (mode == QLatin1String("failed"))
+                                    ? RunMode::Failed
+                                    : RunMode::All;
+        // A resumer that cannot start says no and leaves the screen alone.
+        // On a launch where the paragraphs are not loaded yet, the model is
+        // no longer configured, or there is nothing left to translate,
+        // starting anyway would put a failure in the pane for a run the
+        // user never saw begin.
+        if (!m_model || m_model->blockCount() == 0)
+            return false;
+        if (!m_settings || !m_settings->isConfigured())
+            return false;
+        if (plannedSteps(runMode) == 0)
+            return false;
+        // A run that was interrupted picks up where it stopped: what is
+        // already translated stays translated, whichever way it started.
+        startRun(runMode);
+        return true;
+    });
+}
+
+void TranslationService::startRun(RunMode mode)
+{
+    if (!m_model)
+        return;
+    const QString paperId = currentPaperId();
+    // With no manager -- and with no paper, where there is nothing to
+    // submit but the body still has its say about why -- this is the old
+    // code path, unchanged.
+    if (!m_tasks || paperId.isEmpty()) {
+        runRun(mode, paperId);
+        return;
+    }
+
+    Tasks::Request req;
+    req.kind = Tasks::Kind::Translate;
+    switch (mode) {
+    case RunMode::All:         req.title = tr("Translate");             break;
+    case RunMode::Retranslate: req.title = tr("Retranslate");           break;
+    case RunMode::Failed:      req.title = tr("Retry failed paragraphs"); break;
+    }
+    req.paperId = paperId;
+    req.paperTitle = m_paper ? m_paper->fileName() : QString();
+    // The paragraphs are this task's steps. One run, one task: the cap on
+    // how many paragraphs are in the air at once is the service's own and
+    // has nothing to do with how many tasks may run.
+    req.steps = plannedSteps(mode);
+    // The default exclusion key (kind|paperId) is exactly what is wanted
+    // here: two runs over one paper would ask for the same paragraphs
+    // twice and race each other into the same cache.
+    req.resume = QJsonObject{
+        {QStringLiteral("paperId"), paperId},
+        {QStringLiteral("path"),
+         m_paper ? m_paper->pdfSource().toLocalFile() : QString()},
+        {QStringLiteral("mode"), mode == RunMode::Failed
+                                     ? QStringLiteral("failed")
+                                     : QStringLiteral("all")},
+    };
+
+    const QString id = m_tasks->submit(req,
+        [this, mode, paperId] {
+            // submit() only hands the id back when it returns, and it may
+            // call this from inside itself -- one turn of the event loop
+            // and the run has its id on record to report against.
+            QTimer::singleShot(0, this, [this, mode, paperId] {
+                // Cancelled in the turn between being admitted and
+                // starting: the stop callback has already taken the run
+                // off the books and the manager owns the outcome, so
+                // there is nothing left here to do or to report.
+                if (!m_runs.contains(paperId))
+                    return;
+                if (currentPaperId() != paperId) {
+                    // Admitted after the reader moved on. A run works
+                    // through the paragraphs on screen, and those are
+                    // another paper's now — the reader moved on, nothing
+                    // went wrong.
+                    cancelRun(paperId);
+                    return;
+                }
+                runRun(mode, paperId);
+            });
+        },
+        [this, paperId] {
+            // The manager is stopping us; it owns the outcome from here,
+            // so drop the record rather than finishing the task ourselves.
+            m_runs.remove(paperId);
+            cancelPaperJobs(paperId);
+        });
+    if (id.isEmpty())
+        return;             // this paper is already being translated
+
+    Run &run = m_runs[paperId];
+    run.taskId = id;
+    run.total  = req.steps;
+    run.done   = 0;
+    run.failed = 0;
+}
+
+void TranslationService::runRun(RunMode mode, const QString &paperId)
+{
+    switch (mode) {
+    case RunMode::Retranslate:
+        clearTranslations();
+        Q_FALLTHROUGH();
+    case RunMode::All:
+        runTranslateAll(paperId);
+        break;
+    case RunMode::Failed:
+        runRetryFailed(paperId);
+        break;
+    }
+}
+
+int TranslationService::plannedSteps(RunMode mode) const
+{
+    if (!m_model)
+        return 0;
+    int n = 0;
+    for (int row = 0; row < m_model->blockCount(); ++row) {
+        const Block *b = m_model->blockAt(row);
+        if (!b)
+            continue;
+        if (mode == RunMode::Failed) {
+            if (b->translationStatus == Block::Failed)
+                ++n;
+            continue;
+        }
+        // Pass-through paragraphs are resolved on the spot and never go to
+        // the model, so they are not steps.
+        if (shouldSkip(b->text))
+            continue;
+        // Retranslate throws everything away first, so everything counts.
+        if (mode == RunMode::All
+            && b->translationStatus == Block::Translated)
+            continue;
+        ++n;
+    }
+    return n;
+}
+
+void TranslationService::noteRunProgress(const QString &paperId, bool failed)
+{
+    auto it = m_runs.find(paperId);
+    if (it == m_runs.end())
+        return;
+    if (failed)
+        ++it->failed;
+    // A run can outgrow its estimate — a paragraph translated by hand from
+    // the right-click menu lands in the same queue — so the bar is never
+    // pushed past its end.
+    ++it->done;
+    if (it->total > 0 && it->done > it->total)
+        it->done = it->total;
+    if (m_tasks)
+        m_tasks->setProgress(it->taskId, it->done, it->total);
+}
+
+void TranslationService::finishRun(const QString &paperId, bool ok,
+                                   const QString &error)
+{
+    auto it = m_runs.find(paperId);
+    if (it == m_runs.end())
+        return;
+    const Run run = *it;
+    m_runs.erase(it);
+    if (!m_tasks)
+        return;
+    // A run that got through every paragraph but lost some of them is not
+    // a success: the pane still shows a Retry button.
+    if (ok && run.failed > 0) {
+        m_tasks->finish(run.taskId, false,
+                        tr("%n paragraph(s) could not be translated",
+                           "", run.failed));
+        return;
+    }
+    m_tasks->finish(run.taskId, ok, error);
+}
+
+void TranslationService::cancelRun(const QString &paperId)
+{
+    auto it = m_runs.find(paperId);
+    if (it == m_runs.end())
+        return;
+    const Run run = *it;
+    m_runs.erase(it);
+    if (m_tasks)
+        m_tasks->markCanceled(run.taskId);
+}
+
 void TranslationService::translateAll()
 {
-    if (!m_settings || !m_model) return;
+    startRun(RunMode::All);
+}
+
+void TranslationService::runTranslateAll(const QString &paperId)
+{
+    // The task was admitted before any of this was looked at, so every way
+    // out of here has to settle it: a body that returns quietly leaves its
+    // row at 0/N in the viewer for the rest of the session.
+    if (!m_settings || !m_model) {
+        finishRun(paperId, false,
+                  tr("The paper's paragraphs are no longer loaded."));
+        return;
+    }
 
     if (!m_settings->isConfigured()) {
         setLastError(tr("LLM is not configured. Open Settings to add a model and API key."));
+        finishRun(paperId, false, m_lastError);
         return;
     }
 
     refreshClient();
 
-    const QString paperId = currentPaperId();
-    if (paperId.isEmpty())
+    if (paperId.isEmpty() || paperId != currentPaperId()) {
+        // The paragraphs a run works through are the ones on screen, and
+        // they are not this run's any more. Nothing went wrong; the reader
+        // moved on. (With no manager there is no run on record here and
+        // this is the old silent return.)
+        cancelRun(paperId);
         return;
+    }
     // Starting over on this paper: drop what it had queued, leave other
-    // papers' runs alone.
-    cancelPaper(paperId);
+    // papers' runs alone. The task around this run stays — this is its own
+    // body clearing the way.
+    cancelPaperJobs(paperId);
 
     for (int row = 0; row < m_model->blockCount(); ++row) {
         const Block *b = m_model->blockAt(row);
@@ -452,8 +690,11 @@ void TranslationService::translateAll()
 
     setLastError({});
     emit progressChanged();
-    if (m_pending.isEmpty())
+    if (!hasWorkFor(paperId)) {
+        // Nothing needed translating — the run is over before it began.
+        finishRun(paperId, true);
         return;
+    }
 
     emit busyChanged();
     scheduleNext();
@@ -461,9 +702,14 @@ void TranslationService::translateAll()
 
 void TranslationService::retranslateAll()
 {
+    startRun(RunMode::Retranslate);
+}
+
+void TranslationService::clearTranslations()
+{
     if (!m_model) return;
-    // Clear first, or translateAll() would skip every one of them as already
-    // translated. Skipped rows are cleared too — translateAll marks them
+    // Clear first, or the run would skip every one of them as already
+    // translated. Skipped rows are cleared too — the run marks them
     // Skipped again on the way past, and a stale pass-through would otherwise
     // survive a change of language.
     for (int row = 0; row < m_model->blockCount(); ++row) {
@@ -473,7 +719,6 @@ void TranslationService::retranslateAll()
         m_model->setTranslation(row, QString());
         m_model->setTranslationStatus(row, Block::NotTranslated);
     }
-    translateAll();
 }
 
 int TranslationService::translatedParagraphs() const
@@ -526,9 +771,22 @@ TranslationService::Job TranslationService::jobForRow(int row) const
 
 void TranslationService::retryFailed()
 {
-    if (!m_model) return;
-    const QString paperId = currentPaperId();
-    if (paperId.isEmpty()) return;
+    startRun(RunMode::Failed);
+}
+
+void TranslationService::runRetryFailed(const QString &paperId)
+{
+    // Same rule as the full run: the task is admitted by the time this
+    // runs, so no way out of here may leave it unfinished.
+    if (!m_model) {
+        finishRun(paperId, false,
+                  tr("The paper's paragraphs are no longer loaded."));
+        return;
+    }
+    if (paperId.isEmpty() || paperId != currentPaperId()) {
+        cancelRun(paperId);
+        return;
+    }
     bool added = false;
     for (int row = 0; row < m_model->blockCount(); ++row) {
         const Block *b = m_model->blockAt(row);
@@ -542,9 +800,14 @@ void TranslationService::retryFailed()
             added = true;
         }
     }
-    if (!added) return;
+    if (!added) {
+        finishRun(paperId, true);
+        return;
+    }
     if (!m_client) {
-        translateAll();
+        // No client yet — the full run builds one on its way past, and it
+        // picks these rows up along with everything else. Same task.
+        runTranslateAll(paperId);
         return;
     }
     emit progressChanged();
@@ -693,8 +956,32 @@ void TranslationService::translateRow(int row)
 
 void TranslationService::startJob(Job job)
 {
-    if (!m_client || job.paperId.isEmpty())
+    if (!m_client || job.paperId.isEmpty()) {
+        // The job is already out of the queue, so returning quietly is what
+        // leaves a run one paragraph short of ever ending — the viewer's row
+        // sits at 0/N and nothing will ever move it. A single paragraph
+        // asked for by hand has no run behind it and still just goes away.
+        if (!m_runs.contains(job.paperId))
+            return;
+        // No client means the model configuration changed between the run
+        // being submitted and its turn coming up, and the paragraphs still
+        // queued behind this one would each be dropped the same way — so
+        // the run ends here, with the reason on it.
+        const QString msg = tr("No model is configured. Open Settings to add "
+                               "a model and API key.");
+        if (m_model && job.row >= 0) {
+            const Block *b = m_model->blockAt(job.row);
+            if (b && b->translationStatus == Block::Queued)
+                m_model->setTranslationStatus(job.row, Block::NotTranslated);
+        }
+        if (job.paperId == currentPaperId())
+            setLastError(msg);
+        cancelPaperJobs(job.paperId);
+        finishRun(job.paperId, false, msg);
+        emit progressChanged();
+        emit busyChanged();
         return;
+    }
 
     LlmClient::Request req;
     req.system = systemPrompt();
@@ -712,6 +999,14 @@ void TranslationService::startJob(Job job)
     }
     m_inflightJobs.insert(reply, job);
     emit progressChanged();   // the row just became Translating
+    if (m_tasks) {
+        // The run says which paragraph it is on, whether or not that
+        // paper's rows are the ones on screen.
+        const auto run = m_runs.constFind(job.paperId);
+        if (run != m_runs.constEnd())
+            m_tasks->setNote(run->taskId,
+                             tr("Paragraph %1").arg(job.blockId + 1));
+    }
 
     connect(reply, &LlmReply::chunkReceived, this,
             [this, reply](const QString &chunk) {
@@ -734,7 +1029,9 @@ void TranslationService::startJob(Job job)
         --m_inflight;
         const bool onScreen = (m_model && j.row >= 0);
 
-        if (j.out.trimmed().isEmpty()) {
+        const bool empty = j.out.trimmed().isEmpty();
+        noteRunProgress(j.paperId, empty);
+        if (empty) {
             // A stream can end having delivered nothing at all. Calling that
             // Translated hides the failure behind a blank line and, worse,
             // caches the blank — so reopening the paper "restores" it and the
@@ -764,6 +1061,11 @@ void TranslationService::startJob(Job job)
         scheduleNext();
         if (!busy())
             emit busyChanged();
+        // The run is over when its last paragraph has landed — not when
+        // the queue was drained, since a slot freed here may have just
+        // taken the next one.
+        if (!hasWorkFor(j.paperId))
+            finishRun(j.paperId, true);
     });
     connect(reply, &LlmReply::errorOccurred, this,
             [this, reply](const QString &message) {
@@ -771,6 +1073,7 @@ void TranslationService::startJob(Job job)
             return;
         const Job j = m_inflightJobs.take(reply);
         --m_inflight;
+        noteRunProgress(j.paperId, true);
         if (m_model && j.row >= 0) {
             m_model->setTranslationStatus(j.row, Block::Failed, message);
             syncBlockRow(j.row);
@@ -785,6 +1088,8 @@ void TranslationService::startJob(Job job)
         scheduleNext();
         if (!busy())
             emit busyChanged();
+        if (!hasWorkFor(j.paperId))
+            finishRun(j.paperId, true);
     });
 }
 

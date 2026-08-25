@@ -7,8 +7,10 @@
 #include <QPointer>
 #include <QString>
 #include <QStringList>
+#include <QHash>
 #include <QVariantList>
 #include <QVariantMap>
+#include <QVector>
 
 #include <functional>
 
@@ -18,6 +20,7 @@ class ProjectController;
 class ProjectProfileController;
 class Settings;
 class StructuredCall;
+class TaskManager;
 
 // Everything that looks at the whole project at once (§8–§15): the category
 // system, the research map, consensus and conflict, how the field moved, what
@@ -45,6 +48,12 @@ public:
                            ProjectProfileController *profile,
                            QObject *parent = nullptr);
 
+    // Each kind becomes its own task, so generateAll() hands the manager
+    // seven of them and lets its queue do the pacing the list below used to
+    // do alone. Without a manager -- the harnesses build this service bare --
+    // that list is still what serialises them.
+    void setTasks(TaskManager *tasks);
+
     QString runningKind() const { return m_runningKind; }
     QString lastError() const { return m_lastError; }
     int digestCount() const;
@@ -55,7 +64,7 @@ public:
     // library's worth of reading, so they queue rather than run at once.
     Q_INVOKABLE void generateAll();
     Q_PROPERTY(int queuedKinds READ queuedKinds NOTIFY stateChanged)
-    int queuedKinds() const { return m_queue.size(); }
+    int queuedKinds() const { return m_queue.size() + m_deferred.size(); }
     Q_INVOKABLE void cancel();
 
     Q_INVOKABLE QVariantMap result(const QString &kind) const;
@@ -102,14 +111,45 @@ signals:
     void resultChanged(const QString &kind);
 
 private:
+    using PostProcess = std::function<QJsonObject(const QJsonObject &)>;
+
+    // A run that is ready to go and is waiting for the model call in front
+    // of it. Two project-wide analyses cannot share one StructuredCall, and
+    // the manager may well admit several at once.
+    struct QueuedRun {
+        QString kind;
+        QString storeKind;
+        QJsonArray briefs;
+        QJsonObject extra;
+        PostProcess postProcess;
+    };
+
     QJsonArray briefs() const;
     QString inputHashNow() const;
+    // Everything canRun() asks except "nothing is running": submitting a
+    // task while a call is in flight is fine, starting a second one is not.
+    bool canSubmit() const;
     // One call: build the prompt for `kind`, run it, optionally reshape the
     // answer, and file it under `storeKind`. Classification reshapes into the
     // category system rather than storing an object of its own.
     void run(const QString &kind, const QString &storeKind,
              const QJsonArray &briefs, const QJsonObject &extra,
-             std::function<QJsonObject(const QJsonObject &)> postProcess);
+             PostProcess postProcess);
+    // The call itself, split out of run() so the direct path and a task's
+    // start callback go the same way.
+    void startCall(const QString &kind, const QString &storeKind,
+                   const QJsonArray &briefs, const QJsonObject &extra,
+                   PostProcess postProcess);
+    // cancel(), narrowed to one kind -- what stopping a single task means.
+    void cancelKind(const QString &kind);
+    QString taskTitleFor(const QString &kind) const;
+    void finishTaskFor(const QString &kind, bool ok,
+                       const QString &error = QString());
+    // The service stopped the work itself -- the viewer's stop button, or a
+    // project switch under a task that was still waiting. Nothing went
+    // wrong, so the row ends Canceled rather than Failed with no reason.
+    void cancelTaskFor(const QString &kind);
+    void cancelAllTasks();
     QJsonObject mergeTaxonomy(const QJsonObject &fresh) const;
     void runNextQueued();
     QJsonObject taxonomy() const;
@@ -123,6 +163,10 @@ private:
     LlmClientCache m_clients;
     QPointer<LlmClient> m_client;
     QPointer<StructuredCall> m_call;
+
+    QPointer<TaskManager> m_tasks;
+    QHash<QString, QString> m_taskIds;   // kind -> task id
+    QVector<QueuedRun> m_deferred;
 
     QString m_runningKind;
     QStringList m_queue;

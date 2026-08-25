@@ -1,5 +1,38 @@
 # AI Reader changelog
 
+## v1.3.0 — 2026-08-25
+
+### One queue for everything that talks to a model
+- Translating a paper, splitting it into paragraphs, extracting its contents,
+  reading a page as an image, the quick interpretation and the nine-module
+  close reading, interpreting a whole library in batch, and each of the seven
+  project-wide analyses are now all submitted to one task queue instead of
+  starting wherever they were clicked.
+- Two runs of the same work on the same paper can no longer overlap — the
+  second is refused rather than started, which is what stops one paper's
+  answers from landing on another. Different papers still run side by side.
+- A budget limits how many model calls run at once; the rest wait in the
+  order they were submitted and are admitted as earlier ones finish.
+
+### A Tasks pane
+- A new pane — toolbar button, dockable like the other panes, showing a
+  count while anything is running — lists what is running, waiting and
+  finished, with a progress bar, how long each has been going and an
+  estimate of how much longer.
+- Tasks can be cancelled individually or all at once, failed ones retried,
+  and finished ones cleared.
+- A task that is merely queued is shown as such in the pane that started it,
+  so a click never looks ignored.
+
+### Closing the window no longer loses work quietly
+- Closing while work is in flight now asks first, and lists what is
+  unfinished.
+- Close anyway and the unfinished work is written down; the next launch
+  offers to pick it up where it left off, or to throw it away. Work that
+  cannot honestly be restarted is never offered.
+- A library analysis that produced nothing now reports a failure instead of
+  silently stalling the queue.
+
 ## v1.2.19 — 2026-08-25
 
 ### Project analysis is a pane, not a window

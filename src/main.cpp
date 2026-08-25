@@ -23,6 +23,7 @@
 #include "AnalysisExporter.h"
 #include "StorageIdentity.h"
 #include "LibraryAnalysisService.h"
+#include "TaskManager.h"
 #include "PaperSource.h"
 #include "AnalysisStore.h"
 #include "ProjectProfileController.h"
@@ -379,6 +380,43 @@ int main(int argc, char *argv[])
                                   &projectProfile);
     LibraryAnalysisService libraryAnalysis(&settings, &analysisStore,
                                            &projectController, &projectProfile);
+
+    // One queue for everything that calls a model. Services submit to it
+    // instead of starting their own work, which is what keeps two runs off
+    // one paper and what makes "what is this app doing right now" a question
+    // with an answer.
+    TaskManager taskManager(&settings);
+    // A paper's file on disk is a checksum when it came from a project, so
+    // the viewer would otherwise list "Translate -- 9f3c1e…". The library
+    // knows the real title; the project is whichever one is open.
+    taskManager.setContext(
+        [&projectController] { return projectController.currentId(); },
+        [&libraryModel](const QString &paperId) -> QString {
+            const QString itemId = libraryModel.findByPaperId(paperId);
+            if (itemId.isEmpty())
+                return {};
+            return libraryModel.itemFields(itemId).value(QStringLiteral("title")).toString();
+        });
+    // Picking work back up needs the paper it was being done to. The manager
+    // asks for it by id; the library knows which file that is.
+    taskManager.setPaperOpener([&libraryModel, &fileSync](const QString &paperId) {
+        const QString itemId = libraryModel.findByPaperId(paperId);
+        if (itemId.isEmpty())
+            return;
+        const QVariantMap fields = libraryModel.itemFields(itemId);
+        fileSync.openItem(itemId, fields.value(QStringLiteral("localPath")).toString());
+    });
+    // ...and once its paragraphs are on disk, the work that was waiting for
+    // that paper can start.
+    QObject::connect(&paperController, &PaperController::paperCacheReady,
+                     &taskManager,
+                     [&taskManager](const QString &) { taskManager.retryPending(); });
+    QObject::connect(&app, &QGuiApplication::aboutToQuit, &taskManager, [&] {
+        // Whatever is still in flight when the window closes is written
+        // down, so the next launch can offer it back rather than pretending
+        // it never happened.
+        taskManager.saveInterrupted();
+    });
     AnalysisExporter analysisExporter(&analysisStore, &projectController,
                                       &projectProfile, &libraryAnalysis,
                                       &compareService);
@@ -452,6 +490,18 @@ int main(int argc, char *argv[])
     syncSelectionSource();
 
     QQmlApplicationEngine engine;
+    // Everything that calls a model goes through the one queue. Registered
+    // here, after the manager exists and before the pending work from the
+    // last session is offered back -- the resumers are registered inside
+    // these calls.
+    translation.setTasks(&taskManager);
+    toc.setTasks(&taskManager);
+    vision.setTasks(&taskManager);
+    structure.setTasks(&taskManager);
+    analysisService.setTasks(&taskManager);
+    batchAnalysis.setTasks(&taskManager);
+    libraryAnalysis.setTasks(&taskManager);
+
     engine.rootContext()->setContextProperty("paperController", &paperController);
     engine.rootContext()->setContextProperty("pdfSelection", &pdfSelection);
     engine.rootContext()->setContextProperty("structure", &structure);
@@ -484,6 +534,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("compare", &compareService);
     engine.rootContext()->setContextProperty("research", &libraryAnalysis);
     engine.rootContext()->setContextProperty("exporter", &analysisExporter);
+    engine.rootContext()->setContextProperty("tasks", &taskManager);
 
     QObject::connect(
         &engine,

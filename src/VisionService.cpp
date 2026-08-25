@@ -3,9 +3,12 @@
 #include "LlmClient.h"
 #include "PaperController.h"
 #include "Settings.h"
+#include "TaskManager.h"
 
 #include <QBuffer>
 #include <QImage>
+#include <QJsonObject>
+#include <QTimer>
 
 namespace {
 
@@ -46,7 +49,7 @@ void VisionService::clear()
     emit statusChanged();
 }
 
-void VisionService::cancel()
+void VisionService::cancelReply()
 {
     if (m_reply) {
         m_reply->disconnect(this);
@@ -58,21 +61,190 @@ void VisionService::cancel()
         setStatus(Idle);
 }
 
-void VisionService::readPage(int pageIdx)
+void VisionService::cancel()
 {
-    if (!m_settings || !m_paper) return;
+    cancelReply();
+    // A read still waiting its turn in the queue is over too: the reader
+    // asked for it and has now asked for something else, and nothing would
+    // ever collect its answer.
+    if (m_tasks && !m_taskId.isEmpty()) {
+        const QString id = m_taskId;
+        m_taskId.clear();
+        m_taskPaperId.clear();
+        m_taskPage = -1;
+        m_tasks->cancel(id);
+    }
+}
 
+void VisionService::setTasks(TaskManager *tasks)
+{
+    m_tasks = tasks;
+    if (!m_tasks)
+        return;
+
+    // A read the app closed on can be started again from nothing -- but
+    // only where its paper is the one on screen, since the answer has
+    // nowhere else to go.
+    m_tasks->registerResumer(Tasks::Kind::Vision,
+                             [this](const QJsonObject &resume) {
+        if (!m_paper)
+            return false;
+        if (m_paper->paperId()
+            != resume.value(QStringLiteral("paperId")).toString())
+            return false;
+        const int page = resume.value(QStringLiteral("page")).toInt(-1);
+        if (page < 0)
+            return false;
+        // A resumer that cannot start says no and leaves the screen alone:
+        // readPage() would refuse an unconfigured model or a page the paper
+        // no longer has by putting a failure on the dialog, for a read the
+        // user never watched start.
+        if (!couldRead(page))
+            return false;
+        readPage(page);
+        return true;
+    });
+}
+
+bool VisionService::canRead(int pageIdx)
+{
+    if (!m_settings || !m_paper)
+        return false;
     if (!m_settings->isConfigured()) {
         setStatus(Failed,
                   tr("LLM is not configured. Open Settings to add a model and API key."));
-        return;
+        return false;
     }
     if (pageIdx < 0 || pageIdx >= m_paper->pageCount()) {
         setStatus(Failed, tr("Page %1 is out of range.").arg(pageIdx + 1));
+        return false;
+    }
+    return true;
+}
+
+bool VisionService::couldRead(int pageIdx) const
+{
+    // The silent twin of canRead() above; the two refuse on the same
+    // grounds and have to stay in step.
+    return m_settings && m_paper && m_settings->isConfigured()
+        && pageIdx >= 0 && pageIdx < m_paper->pageCount();
+}
+
+void VisionService::finishTask(bool ok, const QString &error)
+{
+    if (!m_tasks || m_taskId.isEmpty())
+        return;
+    const QString id = m_taskId;
+    m_taskId.clear();
+    m_taskPaperId.clear();
+    m_taskPage = -1;
+    m_tasks->finish(id, ok, error);
+}
+
+void VisionService::cancelTask()
+{
+    if (!m_tasks || m_taskId.isEmpty())
+        return;
+    const QString id = m_taskId;
+    m_taskId.clear();
+    m_taskPaperId.clear();
+    m_taskPage = -1;
+    m_tasks->markCanceled(id);
+}
+
+void VisionService::readPage(int pageIdx)
+{
+    // The refusals stay in front of the queue: a page that cannot be read
+    // should say so at once rather than wait its turn to fail.
+    if (!canRead(pageIdx))
+        return;
+
+    if (!m_tasks) {
+        runReadPage(pageIdx);
         return;
     }
 
-    cancel();
+    Tasks::Request req;
+    req.kind = Tasks::Kind::Vision;
+    req.title = tr("Read page %1").arg(pageIdx + 1);
+    req.paperId = m_paper->paperId();
+    req.paperTitle = m_paper->fileName();
+    req.steps = 1;
+    // A page is its own piece of work: reading page 3 while page 7 is
+    // running is two answers about two pages, not the same job twice.
+    req.exclusiveKey = QStringLiteral("vision|%1|%2")
+                           .arg(req.paperId)
+                           .arg(pageIdx);
+    req.resume = QJsonObject{
+        {QStringLiteral("paperId"), req.paperId},
+        {QStringLiteral("path"), m_paper->pdfSource().toLocalFile()},
+        {QStringLiteral("page"), pageIdx},
+    };
+
+    const QString previous = m_taskId;
+    const QString id = m_tasks->submit(req,
+        [this, pageIdx, paperId = req.paperId] {
+            // submit() only hands the id back when it returns, and it may
+            // call this from inside itself -- one turn of the event loop
+            // and the read has its id on record.
+            QTimer::singleShot(0, this, [this, pageIdx, paperId] {
+                // Cancelled in the turn between being admitted and
+                // starting: the stop callback has already dropped the id,
+                // or another page has taken its place. The id on record is
+                // not ours to settle either way.
+                if (m_taskId.isEmpty() || m_taskPaperId != paperId
+                    || m_taskPage != pageIdx)
+                    return;
+                if (!m_paper || m_paper->paperId() != paperId) {
+                    // Admitted after the reader moved on: page 4 of the
+                    // paper now on screen is not what was asked for.
+                    // Nothing failed — the paper closed under it.
+                    cancelTask();
+                    return;
+                }
+                runReadPage(pageIdx);
+            });
+        },
+        [this, pageIdx, paperId = req.paperId] {
+            // The manager is stopping us; it owns the outcome from here,
+            // so drop the id rather than finishing the task ourselves --
+            // and only when the id still belongs to this page of this
+            // paper, since a later read may already have taken its place
+            // and that one's id is not ours to drop. The request in flight
+            // is aborted either way.
+            if (m_taskPaperId == paperId && m_taskPage == pageIdx) {
+                m_taskId.clear();
+                m_taskPaperId.clear();
+                m_taskPage = -1;
+            }
+            cancelReply();
+        });
+    if (id.isEmpty())
+        return;             // this page is already being read
+    m_taskId = id;
+    m_taskPaperId = req.paperId;
+    m_taskPage = pageIdx;
+
+    // Only one page is ever on display, so the read that was here before
+    // is over -- including one still waiting its turn, whose answer would
+    // otherwise land on top of this one.
+    if (!previous.isEmpty() && previous != id)
+        m_tasks->cancel(previous);
+}
+
+void VisionService::runReadPage(int pageIdx)
+{
+    if (!canRead(pageIdx)) {
+        // canRead() puts its own reason on screen for the two refusals it
+        // knows; with no settings or no paper at all it says nothing, and
+        // the task still has to be told something honest.
+        finishTask(false, m_lastError.isEmpty() ? tr("No paper open.")
+                                                : m_lastError);
+        return;
+    }
+
+    // Only the reply, never the task: this is the task's own body.
+    cancelReply();
     m_text.clear();
     emit textChanged();
     if (m_page != pageIdx) {
@@ -81,14 +253,18 @@ void VisionService::readPage(int pageIdx)
     }
     setStatus(Rendering);
 
+    if (m_tasks && !m_taskId.isEmpty())
+        m_tasks->setNote(m_taskId, tr("Rendering the page"));
     const QImage img = m_paper->renderPage(pageIdx, 1280);
     if (img.isNull()) {
         setStatus(Failed, tr("Failed to render page %1.").arg(pageIdx + 1));
+        finishTask(false, m_lastError);
         return;
     }
     const QByteArray png = encodePng(img);
     if (png.isEmpty()) {
         setStatus(Failed, tr("Failed to encode page image."));
+        finishTask(false, m_lastError);
         return;
     }
 
@@ -97,6 +273,7 @@ void VisionService::readPage(int pageIdx)
     m_client = m_clients.client();
     if (!m_client) {
         setStatus(Failed, tr("No model is configured."));
+        finishTask(false, m_lastError);
         return;
     }
 
@@ -112,6 +289,8 @@ void VisionService::readPage(int pageIdx)
     req.stream = true;
 
     setStatus(Generating);
+    if (m_tasks && !m_taskId.isEmpty())
+        m_tasks->setNote(m_taskId, tr("Reading the page"));
     m_reply = m_client->send(req);
 
     connect(m_reply, &LlmReply::chunkReceived, this,
@@ -124,12 +303,16 @@ void VisionService::readPage(int pageIdx)
         m_reply.clear();
         if (m_status == Generating)
             setStatus(Done);
+        if (m_tasks && !m_taskId.isEmpty())
+            m_tasks->setProgress(m_taskId, 1, 1);
+        finishTask(true);
     });
     connect(m_reply, &LlmReply::errorOccurred, this,
             [this](const QString &message) {
         if (m_reply) m_reply->deleteLater();
         m_reply.clear();
         setStatus(Failed, message);
+        finishTask(false, message);
     });
 }
 

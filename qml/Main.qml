@@ -26,6 +26,21 @@ ApplicationWindow {
         ToolTip.text: tip
     }
 
+    // Closing with work in flight asks first (see quitTasksDialog); this is
+    // how the answer gets back to the second close.
+    property bool forceClose: false
+    // A version popup that had to wait behind the resume prompt.
+    property string pendingVersionPopup: ""
+
+    onClosing: function(close) {
+        if (window.forceClose || tasks.activeCount === 0)
+            return
+        close.accepted = false
+        quitTasksDialog.runningCount = tasks.runningCount
+        quitTasksDialog.queuedCount = tasks.queuedCount
+        quitTasksDialog.open()
+    }
+
     // ── Where the reader was in each paper ──────────────────────────
     // Saved as they scroll (the C++ side debounces the writes) and put back
     // when the paper comes round again. The key is the paperId, so it
@@ -215,6 +230,21 @@ ApplicationWindow {
 
     ChangelogDialog {
         id: changelogDialog
+        anchors.centerIn: Overlay.overlay
+    }
+
+    // Closing while a model is still working, and picking that work back up
+    // on the next launch.
+    QuitTasksDialog {
+        id: quitTasksDialog
+        anchors.centerIn: Overlay.overlay
+        onConfirmed: {
+            window.forceClose = true
+            window.close()
+        }
+    }
+    ResumeTasksDialog {
+        id: resumeTasksDialog
         anchors.centerIn: Overlay.overlay
     }
 
@@ -558,10 +588,33 @@ ApplicationWindow {
         // launch of EVERY new version (it also stamps
         // lastSeenVersion, so the changelog dialog never stacks on
         // top of it in the same session).
-        if (layoutSettings.wizardSeenVersion() !== settings.appVersion) {
+        const versionPopup =
+            layoutSettings.wizardSeenVersion() !== settings.appVersion ? "wizard"
+            : layoutSettings.lastSeenVersion() !== settings.appVersion ? "changelog"
+            : ""
+
+        // Work the last session did not finish is the more urgent question,
+        // and it is the one the user can still answer wrongly by ignoring
+        // it, so it goes first and the version popup waits its turn.
+        if (tasks.pendingCount > 0) {
+            window.pendingVersionPopup = versionPopup
+            Qt.callLater(function() { resumeTasksDialog.open() })
+        } else if (versionPopup === "wizard") {
             Qt.callLater(function() { welcomeWizard.start() })
-        } else if (layoutSettings.lastSeenVersion() !== settings.appVersion) {
+        } else if (versionPopup === "changelog") {
             Qt.callLater(function() { changelogDialog.open() })
+        }
+    }
+
+    Connections {
+        target: resumeTasksDialog
+        function onClosed() {
+            const next = window.pendingVersionPopup
+            window.pendingVersionPopup = ""
+            if (next === "wizard")
+                welcomeWizard.start()
+            else if (next === "changelog")
+                changelogDialog.open()
         }
     }
 
@@ -940,6 +993,17 @@ ApplicationWindow {
                           + "research map, consensus and conflict, coverage, and "
                           + "what to do next")
                 onClicked: researchPane.visible = !researchPane.visible
+            }
+            ToolIcon {
+                icon.source: "qrc:/icons/tasks.svg"
+                // The count is the point when something is running: it is
+                // the only place the toolbar admits the app is busy.
+                display: tasks.activeCount > 0 ? AbstractButton.TextBesideIcon
+                                               : AbstractButton.IconOnly
+                text: tasks.activeCount > 0 ? tasks.activeCount : ""
+                tip: qsTr("Everything the app is working on: what is running, "
+                          + "how far along it is, and how long it has left")
+                onClicked: tasksPane.visible = !tasksPane.visible
             }
             ToolIcon {
                 id: accountBtn
@@ -1730,6 +1794,29 @@ ApplicationWindow {
                     anchors.leftMargin: 4
                     anchors.topMargin: 7
                     pane: researchPane
+                    split: split
+                    marker: dropMarker
+                    onReordered: window.persistPaneOrder()
+                }
+            }
+
+            // ── What the app is working on (toggleable) ────────────────
+            TasksPane {
+                id: tasksPane
+                objectName: "tasks"
+                resizing: split.resizing
+                visible: layoutSettings.paneVisible("tasks", false)
+                onVisibleChanged: layoutSettings.setPaneVisible("tasks", visible)
+                SplitView.preferredWidth: layoutSettings.paneWidth("tasks", 360)
+                SplitView.minimumWidth: 260
+                onWidthChanged: layoutSettings.setPaneWidth("tasks", width)
+
+                DockGrip {
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.leftMargin: 4
+                    anchors.topMargin: 7
+                    pane: tasksPane
                     split: split
                     marker: dropMarker
                     onReordered: window.persistPaneOrder()

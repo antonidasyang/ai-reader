@@ -8,12 +8,15 @@
 #include "ProjectProfileController.h"
 #include "Settings.h"
 #include "StructuredLlm.h"
+#include "TaskManager.h"
+#include "TaskTypes.h"
 
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QJsonDocument>
 #include <QHash>
 #include <QSet>
+#include <QTimer>
 #include <QUuid>
 
 namespace {
@@ -62,15 +65,75 @@ LibraryAnalysisService::LibraryAnalysisService(
             &LibraryAnalysisService::stateChanged);
 }
 
+void LibraryAnalysisService::setTasks(TaskManager *tasks)
+{
+    m_tasks = tasks;
+    if (!m_tasks)
+        return;
+
+    // A task stopped while it was still queued never calls its stop callback
+    // -- there was nothing to stop -- so this is the only word the service
+    // gets that an id it is holding is dead, and a kind left in the table
+    // would look busy to everything that asks.
+    connect(m_tasks, &TaskManager::taskFinished, this,
+            [this](const QString &id, bool, const QString &) {
+                if (id.isEmpty())
+                    return;
+                for (auto it = m_taskIds.begin(); it != m_taskIds.end(); ++it) {
+                    if (it.value() != id)
+                        continue;
+                    const QString kind = it.key();
+                    m_taskIds.erase(it);
+                    // Whatever it was waiting for goes with it.
+                    m_queue.removeAll(kind);
+                    for (int i = m_deferred.size() - 1; i >= 0; --i) {
+                        if (m_deferred.at(i).kind == kind)
+                            m_deferred.removeAt(i);
+                    }
+                    emit stateChanged();
+                    return;
+                }
+            });
+
+    // Everything here is built out of the digests in the project, so a task
+    // from the last session only means anything if the reader is still in
+    // that project; the kind is the whole of the rest of the payload.
+    m_tasks->registerResumer(
+        Tasks::Kind::LibraryAnalysis, [this](const QJsonObject &resume) {
+            if (resume.value(QStringLiteral("projectId")).toString()
+                != m_store->projectId())
+                return false;
+            const QString kind = resume.value(QStringLiteral("kind")).toString();
+            if (kind.isEmpty() || !canSubmit())
+                return false;
+            // This question is already being asked. generate() would be
+            // refused by the exclusion key and leave the running task's id
+            // in the table, so answering from it would claim a run this one
+            // never started.
+            if (m_taskIds.contains(kind))
+                return false;
+            if (kind == QLatin1String("classify"))
+                classifyNewPapers();
+            else
+                generate(kind);
+            return m_taskIds.contains(kind);
+        });
+}
+
 int LibraryAnalysisService::digestCount() const
 {
     return m_store->paperAnalyses(Analysis::KindQuick).size();
 }
 
-bool LibraryAnalysisService::canRun() const
+bool LibraryAnalysisService::canSubmit() const
 {
     return m_settings && m_settings->isConfigured()
-           && m_store->canWrite() && digestCount() >= 2 && m_call.isNull();
+           && m_store->canWrite() && digestCount() >= 2;
+}
+
+bool LibraryAnalysisService::canRun() const
+{
+    return canSubmit() && m_call.isNull();
 }
 
 QString LibraryAnalysisService::titleOf(const QString &kind) const
@@ -163,9 +226,12 @@ QString LibraryAnalysisService::paperTitle(const QString &paperId) const
 
 void LibraryAnalysisService::generate(const QString &kind)
 {
-    if (m_call)
+    // One call at a time is all this service can do on its own; with a
+    // manager the task is submitted now and started when the queue reaches
+    // it, so a call in flight is no reason to refuse.
+    if (m_call && !m_tasks)
         return;
-    if (!canRun()) {
+    if (!canSubmit()) {
         setError(digestCount() < 2
                      ? tr("Interpret at least two papers first — everything "
                           "here is built out of those interpretations.")
@@ -216,13 +282,76 @@ void LibraryAnalysisService::generate(const QString &kind)
     run(kind, kind, briefs(), extra, nullptr);
 }
 
-void LibraryAnalysisService::run(
-    const QString &kind, const QString &storeKind, const QJsonArray &briefs,
-    const QJsonObject &extra,
-    std::function<QJsonObject(const QJsonObject &)> postProcess)
+void LibraryAnalysisService::run(const QString &kind, const QString &storeKind,
+                                 const QJsonArray &briefs,
+                                 const QJsonObject &extra,
+                                 PostProcess postProcess)
 {
     if (briefs.isEmpty()) {
         setError(tr("There is nothing to work from yet."));
+        finishTaskFor(kind, false, m_lastError);
+        return;
+    }
+    if (!m_tasks) {
+        startCall(kind, storeKind, briefs, extra, postProcess);
+        return;
+    }
+
+    Tasks::Request req;
+    req.kind = Tasks::Kind::LibraryAnalysis;
+    req.title = taskTitleFor(kind);
+    req.projectId = m_store->projectId();
+    // Project work, not one paper's: the key names the project and the
+    // question, so the seven kinds queue beside each other but no kind is
+    // ever asked twice at once.
+    req.exclusiveKey = QStringLiteral("library_analysis|") + req.projectId
+                       + QChar('|') + kind;
+    req.steps = 1;
+    req.resume = QJsonObject{{QStringLiteral("projectId"), req.projectId},
+                             {QStringLiteral("kind"), kind}};
+
+    const QString project = req.projectId;
+    const QString id = m_tasks->submit(
+        req,
+        // submit() may call this before it returns; the hop through the
+        // event loop keeps the id ahead of anything that reports against it,
+        // and is where a task that waited out a project switch is dropped.
+        [this, kind, storeKind, briefs, extra, postProcess, project] {
+            QTimer::singleShot(0, this,
+                               [this, kind, storeKind, briefs, extra,
+                                postProcess, project] {
+                                   if (!m_taskIds.contains(kind))
+                                       return;   // cancelled while it waited
+                                   if (project != m_store->projectId()) {
+                                       // The reader is somewhere else now;
+                                       // nothing went wrong here.
+                                       cancelTaskFor(kind);
+                                       return;
+                                   }
+                                   startCall(kind, storeKind, briefs, extra,
+                                             postProcess);
+                               });
+        },
+        [this, kind] { cancelKind(kind); });
+    if (id.isEmpty())
+        return;                    // this question is already being asked
+    m_taskIds.insert(kind, id);
+    emit stateChanged();
+}
+
+void LibraryAnalysisService::startCall(const QString &kind,
+                                       const QString &storeKind,
+                                       const QJsonArray &briefs,
+                                       const QJsonObject &extra,
+                                       PostProcess postProcess)
+{
+    if (m_call) {
+        // The manager may admit two of these at once; a StructuredCall is
+        // not shareable, so the second waits here instead of trampling the
+        // first. Its task is running either way -- what it is waiting for is
+        // the model, which is what a task queue is about.
+        m_deferred.append(QueuedRun{kind, storeKind, briefs, extra, postProcess});
+        emit stateChanged();
         return;
     }
     // Rebuilt when the model configuration moved (one project-wide analysis runs at a time).
@@ -243,15 +372,26 @@ void LibraryAnalysisService::run(
     m_runningKind = kind;
     const int count = briefs.size();
     m_call = StructuredCall::start(m_client, req, this);
+    if (m_tasks && m_taskIds.contains(kind)) {
+        m_tasks->setProgress(m_taskIds.value(kind), 0, 1);
+        m_tasks->setNote(m_taskIds.value(kind),
+                         tr("reading %1 interpretations").arg(count));
+    }
     emit stateChanged();
 
     connect(m_call, &StructuredCall::succeeded, this,
-            [this, storeKind, count, postProcess](const QJsonObject &raw) {
+            [this, kind, storeKind, count, postProcess](const QJsonObject &raw) {
                 m_call.clear();
                 m_runningKind.clear();
                 QJsonObject payload = postProcess ? postProcess(raw) : raw;
                 if (payload.isEmpty()) {
+                    // Nothing usable came back. It is not an error the model
+                    // reported, but it is not a result either, and the six
+                    // behind it should not wait on it.
+                    finishTaskFor(kind, false,
+                                  tr("The model returned nothing usable."));
                     emit stateChanged();
+                    runNextQueued();
                     return;
                 }
                 payload.insert(QStringLiteral("generatedAt"),
@@ -260,18 +400,64 @@ void LibraryAnalysisService::run(
                 m_store->putLibraryAnalysis(
                     storeKind, QString(), payload,
                     m_settings->model(), inputHashNow(), count);
+                finishTaskFor(kind, true);
                 emit resultChanged(storeKind);
                 emit stateChanged();
                 runNextQueued();
             });
-    connect(m_call, &StructuredCall::failed, this, [this](const QString &e) {
-        m_call.clear();
-        m_runningKind.clear();
-        setError(e);
-        emit stateChanged();
-        // One kind failing is not a reason to abandon the other six.
-        runNextQueued();
-    });
+    connect(m_call, &StructuredCall::failed, this,
+            [this, kind](const QString &e) {
+                m_call.clear();
+                m_runningKind.clear();
+                setError(e);
+                finishTaskFor(kind, false, e);
+                emit stateChanged();
+                // One kind failing is not a reason to abandon the other six.
+                runNextQueued();
+            });
+}
+
+QString LibraryAnalysisService::taskTitleFor(const QString &kind) const
+{
+    // Placing new papers is not one of the seven questions; it borrows the
+    // category system's schema, so titleOf() has nothing to say about it.
+    if (kind == QLatin1String("classify"))
+        return tr("Place new papers");
+    return titleOf(kind);
+}
+
+void LibraryAnalysisService::finishTaskFor(const QString &kind, bool ok,
+                                           const QString &error)
+{
+    if (!m_tasks)
+        return;
+    // Taken out first: a cancel and an answer can arrive for the same kind.
+    const QString id = m_taskIds.take(kind);
+    if (id.isEmpty())
+        return;
+    m_tasks->finish(id, ok, error);
+}
+
+void LibraryAnalysisService::cancelTaskFor(const QString &kind)
+{
+    if (!m_tasks)
+        return;
+    const QString id = m_taskIds.take(kind);
+    if (id.isEmpty())
+        return;
+    m_tasks->markCanceled(id);
+}
+
+void LibraryAnalysisService::cancelAllTasks()
+{
+    if (!m_tasks) {
+        m_taskIds.clear();
+        return;
+    }
+    const QHash<QString, QString> ids = m_taskIds;
+    m_taskIds.clear();
+    for (auto it = ids.constBegin(); it != ids.constEnd(); ++it)
+        m_tasks->markCanceled(it.value());
 }
 
 void LibraryAnalysisService::generateAll()
@@ -279,10 +465,20 @@ void LibraryAnalysisService::generateAll()
     // The whole set, in the order a reader would want to read it: how the
     // papers group, then the map, then where they agree and disagree, how it
     // moved, what is missing, what that opens up, and what to do next.
-    m_queue = QStringList{Analysis::KindTaxonomy,  Analysis::KindMap,
+    const QStringList all{Analysis::KindTaxonomy,  Analysis::KindMap,
                           Analysis::KindConsensus, Analysis::KindEvolution,
                           Analysis::KindCoverage,  Analysis::KindOpportunities,
                           Analysis::KindActions};
+    if (m_tasks) {
+        // Seven tasks, submitted in reading order. The manager's queue is
+        // what paces them now -- and what the reader can watch and stop one
+        // of, which a list private to this service never was.
+        for (const QString &kind : all)
+            generate(kind);
+        emit stateChanged();
+        return;
+    }
+    m_queue = all;
     if (!m_call)
         runNextQueued();
     emit stateChanged();
@@ -290,6 +486,16 @@ void LibraryAnalysisService::generateAll()
 
 void LibraryAnalysisService::runNextQueued()
 {
+    if (m_call)
+        return;
+    if (!m_deferred.isEmpty()) {
+        // A run the manager already admitted: its task is running, so it
+        // goes straight to the model rather than being submitted again.
+        const QueuedRun next = m_deferred.takeFirst();
+        startCall(next.kind, next.storeKind, next.briefs, next.extra,
+                  next.postProcess);
+        return;
+    }
     if (m_queue.isEmpty())
         return;
     const QString kind = m_queue.takeFirst();
@@ -304,12 +510,38 @@ void LibraryAnalysisService::runNextQueued()
 void LibraryAnalysisService::cancel()
 {
     m_queue.clear();
-    if (!m_call)
-        return;
-    m_call->abort();
-    m_call.clear();
-    m_runningKind.clear();
+    m_deferred.clear();
+    // Stopping everything means every task, not only the one at the model:
+    // the ones still waiting would otherwise sit in the viewer forever. The
+    // reader stopped them, so they end Canceled -- a Failed row with no
+    // reason under it says nothing about what happened.
+    cancelAllTasks();
+    if (m_call) {
+        m_call->abort();
+        m_call.clear();
+        m_runningKind.clear();
+    }
     emit stateChanged();
+}
+
+void LibraryAnalysisService::cancelKind(const QString &kind)
+{
+    // What the viewer's stop button means for one row: drop it if it is
+    // waiting, abort it if it is the one talking to the model, and leave the
+    // other six alone.
+    m_queue.removeAll(kind);
+    for (int i = m_deferred.size() - 1; i >= 0; --i) {
+        if (m_deferred.at(i).kind == kind)
+            m_deferred.removeAt(i);
+    }
+    if (m_call && m_runningKind == kind) {
+        m_call->abort();
+        m_call.clear();
+        m_runningKind.clear();
+    }
+    cancelTaskFor(kind);
+    emit stateChanged();
+    runNextQueued();
 }
 
 void LibraryAnalysisService::setError(const QString &e)
@@ -744,7 +976,9 @@ QStringList LibraryAnalysisService::unclassifiedPapers() const
 
 void LibraryAnalysisService::classifyNewPapers()
 {
-    if (m_call)
+    // As in generate(): with a manager this becomes a task and waits its
+    // turn; without one it can only go when nothing else is running.
+    if (m_call && !m_tasks)
         return;
     const QJsonObject tax = taxonomy();
     if (tax.isEmpty()) {

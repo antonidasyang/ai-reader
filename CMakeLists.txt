@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.2.19 LANGUAGES CXX)
+project(ai-reader VERSION 1.3.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -331,6 +331,14 @@ qt_add_executable(ai-reader
     src/CompareService.cpp
     src/LibraryAnalysisService.h
     src/LibraryAnalysisService.cpp
+    src/TaskTypes.h
+    src/TaskTypes.cpp
+    src/TaskListModel.h
+    src/TaskListModel.cpp
+    src/TaskManager.h
+    src/TaskManager.cpp
+    src/TaskStore.h
+    src/TaskStore.cpp
     src/AnalysisExporter.h
     src/AnalysisExporter.cpp
 )
@@ -438,6 +446,9 @@ qt_add_qml_module(ai-reader
         qml/CompareDialog.qml
         qml/DeepReadView.qml
         qml/ResearchPane.qml
+        qml/TasksPane.qml
+        qml/QuitTasksDialog.qml
+        qml/ResumeTasksDialog.qml
 )
 
 # Compile .ts → .qm and embed under :/i18n so QTranslator::load() in
@@ -479,6 +490,7 @@ qt_add_resources(ai-reader "icons"
         resources/icons/batch.svg
         resources/icons/compare.svg
         resources/icons/research.svg
+        resources/icons/tasks.svg
         resources/icons/settings.svg
         resources/icons/prompts.svg
         resources/icons/help.svg

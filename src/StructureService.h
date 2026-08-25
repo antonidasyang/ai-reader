@@ -12,6 +12,7 @@
 class QNetworkReply;
 class PaperController;
 class Settings;
+class TaskManager;
 
 // GROBID-backed paragraph segmentation. Whenever PaperController runs a
 // fresh automatic extraction (cache miss or explicit rebuild), this
@@ -39,6 +40,11 @@ public:
     bool busy() const { return m_reply != nullptr; }
     QString lastError() const { return m_lastError; }
 
+    // The queue every long run goes through. Optional: with no manager the
+    // service segments directly, exactly as it always did, which is what
+    // the harnesses rely on.
+    void setTasks(TaskManager *tasks);
+
     // One entry of the section outline recovered from TEI <head>
     // elements — everything the parser can tell about a heading
     // beyond the Block it emits. `y` is the top edge of the heading's
@@ -60,6 +66,11 @@ public:
     static QVector<Block> parseTei(const QByteArray &tei,
                                    QVector<OutlineEntry> *outline = nullptr);
 
+public slots:
+    // Stop the segmentation in flight, including the retry it may be
+    // about to make. This is the task's stop callback.
+    void cancel();
+
 signals:
     void busyChanged();
     void lastErrorChanged();
@@ -73,6 +84,16 @@ signals:
 
 private:
     void onAutoExtracted();
+    // Submit the segmentation of `pdfPath` as a task, or -- with no
+    // manager -- run it straight away.
+    void startSegmentation(const QString &pdfPath, const QString &paperId);
+    // The segmentation itself, without the queue around it: the direct
+    // path and the task's start callback both land here.
+    void runSegmentation(const QString &pdfPath, const QString &paperId);
+    void finishTask(bool ok, const QString &error = {});
+    // The segmentation was stopped rather than lost — cancelled, or the
+    // paper closed under it. The row ends Canceled, not Failed.
+    void cancelTask();
     void startRequest(const QString &pdfPath, const QString &paperId,
                       bool isRetry);
     void onFinished(QNetworkReply *reply, const QString &pdfPath,
@@ -81,7 +102,17 @@ private:
 
     QPointer<Settings> m_settings;
     QPointer<PaperController> m_paper;
+    QPointer<TaskManager> m_tasks;
     QNetworkAccessManager m_nam;
     QNetworkReply *m_reply = nullptr;
     QString m_lastError;
+    // The segmentation on record with the manager, and the paper it is
+    // for: opening another paper supersedes it, and the superseded task's
+    // stop callback must not clear the id of the one that replaced it.
+    QString m_taskId;
+    QString m_taskPaperId;
+    // GROBID answers a busy server with 503 and we come back in five
+    // seconds; a cancel in that window has nothing to abort, so it says so
+    // here instead.
+    bool m_canceled = false;
 };

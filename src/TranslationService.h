@@ -16,6 +16,7 @@ class LlmClient;
 class LlmReply;
 class PaperController;
 class Settings;
+class TaskManager;
 
 class TranslationService : public QObject
 {
@@ -66,6 +67,11 @@ public:
     // since otherwise a paper nobody has open keeps burning tokens.
     void cancelPaper(const QString &paperId);
 
+    // The queue every run goes through. Optional: with no manager each
+    // entry point below does the work directly, exactly as it always did,
+    // which is what the harnesses rely on.
+    void setTasks(TaskManager *tasks);
+
 public slots:
     // Translate the paragraphs that have no translation yet.
     void translateAll();
@@ -112,6 +118,40 @@ signals:
     void translationCacheReady(const QString &paperId);
 
 private:
+    // What a whole-paper run is asked to do. One task covers the run from
+    // end to end — the paragraphs inside it are its steps, not tasks of
+    // their own, and the run parallelises them under its own cap.
+    enum class RunMode {
+        All,          // everything that has no translation yet
+        Retranslate,  // throw away what is there and ask again
+        Failed,       // only the paragraphs that failed
+    };
+    // Submit a run as a task, or — with no manager — run it straight away.
+    void startRun(RunMode mode);
+    // The run itself, without the queue around it: the direct path and the
+    // task's start callback both land here. The paper is carried in rather
+    // than read back off the screen, so a body that has to give up settles
+    // the task it was started for and no other.
+    void runRun(RunMode mode, const QString &paperId);
+    void runTranslateAll(const QString &paperId);
+    void runRetryFailed(const QString &paperId);
+    // Drop every translation this paper has, so a run really re-asks the
+    // model instead of skipping what is already there.
+    void clearTranslations();
+    // How many paragraphs `mode` is about to send. The run's steps.
+    int plannedSteps(RunMode mode) const;
+    // cancelPaper() without settling the task around it — what a task's
+    // own body uses to clear the way before it starts.
+    void cancelPaperJobs(const QString &paperId);
+    // One paragraph landed, one step done.
+    void noteRunProgress(const QString &paperId, bool failed);
+    void finishRun(const QString &paperId, bool ok,
+                   const QString &error = QString());
+    // The run was stopped by the user — the Cancel button, the tab closing,
+    // a paragraph edited out from under it. Nothing went wrong, so the row
+    // ends Canceled rather than Failed with a message that reads like one.
+    void cancelRun(const QString &paperId);
+
     void onPaperChanged();
     void rehydrateFromCache();
     void scheduleNext();
@@ -168,9 +208,24 @@ private:
     // waiting.
     bool takeNextJob(Job &out);
 
+    // A run in the queue's terms: which task covers this paper, how many
+    // paragraphs it set out to do and how many have landed. Counted here
+    // rather than off the rows, because a paper the reader has moved on
+    // from has no rows to count.
+    struct Run {
+        QString taskId;
+        int total  = 0;
+        int done   = 0;
+        int failed = 0;
+    };
+
     QPointer<Settings> m_settings;
     QPointer<PaperController> m_paper;
     QPointer<BlockListModel> m_model;
+    QPointer<TaskManager> m_tasks;
+    // paperId → the task covering its run. Only ever holds papers whose
+    // run was submitted; a single right-click translation is not a run.
+    QHash<QString, Run> m_runs;
     LlmClientCache m_clients;
     QPointer<LlmClient> m_client;
     TranslationCache m_cache;

@@ -18,6 +18,7 @@ class ProjectProfileController;
 class DeepModuleJob;
 class QuickAnalysisJob;
 class Settings;
+class TaskManager;
 
 // The interpretation of the paper currently on screen.
 //
@@ -78,6 +79,12 @@ public:
     AnalysisService(Settings *settings, PaperController *paper,
                     AnalysisStore *store, ProjectProfileController *profile,
                     QObject *parent = nullptr);
+
+    // Both readings become tasks once there is a manager to hold them, so
+    // one queue knows what is in flight and the app can be asked before it
+    // closes. Without one -- the harnesses build this service bare -- every
+    // path below runs directly, exactly as it always has.
+    void setTasks(TaskManager *tasks);
 
     Status status() const { return m_status; }
     QString lastError() const { return m_lastError; }
@@ -156,6 +163,45 @@ private:
     void clearDeep();
     void pumpDeep();
     void startModule(const QString &id);
+    // The work itself, split out of generateQuick()/generateDeep() so the
+    // direct path and a task's start callback run the same thing.
+    void startQuickRun();
+    void startDeepRun(const QStringList &modules, bool force);
+    // §5's one module, split out the same way: what regenerateModule() does
+    // once its own task has been admitted.
+    void startModuleRun(const QString &id);
+    // The stop callback of a single module's task.
+    void cancelModule(const QString &moduleId);
+    // Which modules a run would cover: what is missing (or all of them when
+    // forced), minus anything already queued or in flight. `only` narrows it
+    // to the list a resumed run brought back.
+    QStringList deepModulesToRun(bool force, const QStringList &only) const;
+    // Submit or run, depending on whether there is a manager. False when
+    // there was nothing to do or the manager refused an identical run.
+    bool beginDeepRun(const QStringList &modules, bool force);
+    void reportDeepProgress();
+    // How many of the whole run's own modules are still waiting or in
+    // flight. A module regenerated on its own goes through the same queue
+    // and must not be counted here.
+    int deepRunLeft() const;
+    // `only` narrows it to one run's modules, for the same reason.
+    QString firstDeepError(const QSet<QString> &only = QSet<QString>()) const;
+    // Taken out first, always: the manager must never be told twice about
+    // one task, and a cancel and a job's own answer can race for the same
+    // one. Empty when there is no manager or no task.
+    QString takeQuickTaskId();
+    QString takeDeepTaskId();
+    QString takeModuleTaskId(const QString &moduleId);
+    void finishQuickTask(bool ok, const QString &error = QString());
+    void finishDeepTask(bool ok, const QString &error = QString());
+    void finishModuleTask(const QString &moduleId, bool ok,
+                          const QString &error = QString());
+    // The service stopped the work itself -- the pane's Cancel button, or
+    // the reader closing the paper. Nothing went wrong, so the row ends
+    // Canceled rather than Failed with no reason under it.
+    void cancelQuickTask();
+    void cancelDeepTask();
+    void cancelModuleTask(const QString &moduleId);
     void persistDeep();
     void reloadNotes();
     QString currentInputHash() const;
@@ -169,6 +215,22 @@ private:
     LlmClientCache m_clients;
     QPointer<LlmClient> m_client;
     QPointer<QuickAnalysisJob> m_job;
+    QPointer<TaskManager> m_tasks;
+    QString m_quickTaskId;
+    QString m_deepTaskId;
+    // How many modules this run set out to do -- deepDone/deepTotal count
+    // what is stored, which is not the same thing once a run skips modules
+    // a previous one already wrote.
+    int m_deepTaskTotal = 0;
+    // False while the task is still queued: a single module regenerated in
+    // that window must not be mistaken for the whole run finishing.
+    bool m_deepTaskStarted = false;
+    // Which modules that task set out to do. Everything else in the queue
+    // belongs to a §5 regeneration with a task of its own, and neither the
+    // whole run's bar nor its verdict may be built out of those.
+    QSet<QString> m_deepRunModules;
+    // moduleId -> task id, for modules being redone one at a time.
+    QHash<QString, QString> m_moduleTaskIds;
 
     QString m_paperTitle;
     QString m_lastPaperId;

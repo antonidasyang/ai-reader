@@ -2,6 +2,7 @@
 
 #include "PaperController.h"
 #include "Settings.h"
+#include "TaskManager.h"
 
 #include <QCryptographicHash>
 #include <QDateTime>
@@ -11,6 +12,7 @@
 #include <QMessageAuthenticationCode>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QJsonObject>
 #include <QRectF>
 #include <QTimer>
 #include <QUrl>
@@ -323,7 +325,144 @@ void StructureService::onAutoExtracted()
     const QUrl src = m_paper->pdfSource();
     if (!src.isLocalFile())
         return;
-    startRequest(src.toLocalFile(), m_paper->paperId(), false);
+    startSegmentation(src.toLocalFile(), m_paper->paperId());
+}
+
+void StructureService::setTasks(TaskManager *tasks)
+{
+    m_tasks = tasks;
+    if (!m_tasks)
+        return;
+
+    // A segmentation the app closed on can be started again from nothing:
+    // the PDF is all it ever needed. It still has to be the paper on
+    // screen, since that is the only block list a result may replace.
+    m_tasks->registerResumer(Tasks::Kind::Segment,
+                             [this](const QJsonObject &resume) {
+        const QString paperId =
+            resume.value(QStringLiteral("paperId")).toString();
+        const QString path = resume.value(QStringLiteral("path")).toString();
+        // A resumer that cannot start says no and starts nothing: GROBID
+        // may have been switched off since the run was interrupted, and
+        // the PDF may not be where it was.
+        if (!m_settings || !m_settings->grobidEnabled())
+            return false;
+        if (path.isEmpty() || !QFileInfo::exists(path))
+            return false;
+        if (!m_paper || m_paper->paperId() != paperId)
+            return false;
+        startSegmentation(path, paperId);
+        return true;
+    });
+}
+
+void StructureService::startSegmentation(const QString &pdfPath,
+                                         const QString &paperId)
+{
+    if (!m_tasks) {
+        runSegmentation(pdfPath, paperId);
+        return;
+    }
+
+    Tasks::Request req;
+    req.kind = Tasks::Kind::Segment;
+    req.title = tr("Segment paragraphs");
+    req.paperId = paperId;
+    req.paperTitle = QFileInfo(pdfPath).fileName();
+    // GROBID says nothing until the whole document comes back, so there
+    // is no unit to count off.
+    req.steps = 0;
+    req.resume = QJsonObject{
+        {QStringLiteral("paperId"), paperId},
+        {QStringLiteral("path"), pdfPath},
+    };
+
+    const QString previous = m_taskId;
+    const QString id = m_tasks->submit(req,
+        [this, pdfPath, paperId] {
+            // submit() only hands the id back when it returns, and it may
+            // call this from inside itself -- one turn of the event loop
+            // and the segmentation has its id on record.
+            QTimer::singleShot(0, this, [this, pdfPath, paperId] {
+                // Cancelled in the turn between being admitted and
+                // starting: the stop callback has already dropped the id,
+                // or a newer paper's segmentation has taken its place.
+                // Neither is ours to run -- and runSegmentation would
+                // clear the cancel flag and upload the PDF regardless.
+                if (m_taskId.isEmpty() || m_taskPaperId != paperId)
+                    return;
+                if (!m_paper || m_paper->paperId() != paperId) {
+                    // Admitted after the reader moved on. The result could
+                    // only be refused, so do not spend the upload; nothing
+                    // failed, the paper changed under it.
+                    cancelTask();
+                    return;
+                }
+                runSegmentation(pdfPath, paperId);
+            });
+        },
+        [this, paperId] {
+            // The manager is stopping us; it owns the outcome from here,
+            // so drop the id rather than finishing the task ourselves --
+            // and only when the id still belongs to this paper.
+            if (m_taskPaperId == paperId) {
+                m_taskId.clear();
+                m_taskPaperId.clear();
+            }
+            cancel();
+        });
+    if (id.isEmpty())
+        return;             // this paper is already being segmented
+    m_taskId = id;
+    m_taskPaperId = paperId;
+
+    // Only one request is ever in the air here, so a segmentation for
+    // another paper takes this one's place -- and its result would be
+    // refused by PaperController anyway once the reader moved on.
+    if (!previous.isEmpty() && previous != id)
+        m_tasks->cancel(previous);
+}
+
+void StructureService::runSegmentation(const QString &pdfPath,
+                                       const QString &paperId)
+{
+    m_canceled = false;
+    startRequest(pdfPath, paperId, false);
+}
+
+void StructureService::cancel()
+{
+    m_canceled = true;
+    if (!m_reply)
+        return;
+    // Let go of the handle before aborting: abort() raises finished(), and
+    // onFinished has to see a request that is no longer ours and drop it,
+    // rather than report the abort as a GROBID failure.
+    QNetworkReply *reply = m_reply;
+    m_reply = nullptr;
+    reply->abort();
+    reply->deleteLater();
+    emit busyChanged();
+}
+
+void StructureService::finishTask(bool ok, const QString &error)
+{
+    if (!m_tasks || m_taskId.isEmpty())
+        return;
+    const QString id = m_taskId;
+    m_taskId.clear();
+    m_taskPaperId.clear();
+    m_tasks->finish(id, ok, error);
+}
+
+void StructureService::cancelTask()
+{
+    if (!m_tasks || m_taskId.isEmpty())
+        return;
+    const QString id = m_taskId;
+    m_taskId.clear();
+    m_taskPaperId.clear();
+    m_tasks->markCanceled(id);
 }
 
 void StructureService::startRequest(const QString &pdfPath,
@@ -341,6 +480,7 @@ void StructureService::startRequest(const QString &pdfPath,
     if (!file->open(QIODevice::ReadOnly)) {
         delete file;
         setLastError(tr("Cannot read PDF for GROBID: %1").arg(pdfPath));
+        finishTask(false, m_lastError);
         return;
     }
 
@@ -387,6 +527,10 @@ void StructureService::startRequest(const QString &pdfPath,
     m_reply = m_nam.post(req, multi);
     multi->setParent(m_reply);
     emit busyChanged();
+    if (m_tasks && !m_taskId.isEmpty())
+        m_tasks->setNote(m_taskId,
+                         isRetry ? tr("Asking GROBID again")
+                                 : tr("Asking GROBID for the structure"));
     qCInfo(lcStructure) << "GROBID request" << endpoint.toString()
                         << "for" << QFileInfo(pdfPath).fileName()
                         << (isRetry ? "(retry)" : "");
@@ -418,9 +562,32 @@ void StructureService::onFinished(QNetworkReply *reply,
     // retry. One retry, then give up (clusterer output stands).
     if (http == 503 && !wasRetry) {
         qCInfo(lcStructure) << "GROBID busy (503), retrying in 5s";
+        if (m_tasks && !m_taskId.isEmpty())
+            m_tasks->setNote(m_taskId, tr("GROBID is busy; trying again"));
+        // The task stays open across the wait -- the retry is part of the
+        // same piece of work, not a new one.
         QTimer::singleShot(5000, this, [this, pdfPath, paperId]() {
-            if (m_paper && m_paper->paperId() == paperId)
+            // Whatever this timer settles has to be this paper's task. Open
+            // another paper inside the five seconds and the id on record is
+            // already the new segmentation's -- ending it here would fail
+            // the wrong work while its upload is still running.
+            const bool ours = (m_taskPaperId == paperId);
+            if (m_canceled) {
+                // Stopped while we waited. There is no request in flight to
+                // report the abort, so this is the last chance to settle
+                // the task -- and it was stopped, not failed.
+                if (ours)
+                    cancelTask();
+                return;
+            }
+            if (m_paper && m_paper->paperId() == paperId) {
                 startRequest(pdfPath, paperId, true);
+                return;
+            }
+            // The paper changed under the wait: this segmentation is over,
+            // and again nothing went wrong.
+            if (ours)
+                cancelTask();
         });
         return;
     }
@@ -430,10 +597,12 @@ void StructureService::onFinished(QNetworkReply *reply,
                          .arg(reply->errorString()));
         qCWarning(lcStructure) << "GROBID failed:" << reply->errorString()
                                << "HTTP" << http;
+        finishTask(false, m_lastError);
         return;
     }
     if (http == 204) {
         setLastError(tr("GROBID found no extractable content."));
+        finishTask(false, m_lastError);
         return;
     }
 
@@ -441,6 +610,7 @@ void StructureService::onFinished(QNetworkReply *reply,
     QVector<Block> blocks = parseTei(reply->readAll(), &outline);
     if (blocks.isEmpty()) {
         setLastError(tr("GROBID returned an unusable document structure."));
+        finishTask(false, m_lastError);
         return;
     }
 
@@ -448,6 +618,7 @@ void StructureService::onFinished(QNetworkReply *reply,
                                                   std::move(blocks))) {
         setLastError({});
         qCInfo(lcStructure) << "GROBID segmentation applied";
+        finishTask(true);
         emit upgraded();
         // The outline only leaves this service when the blocks it
         // refers to were actually applied — a stale/rejected result
@@ -477,6 +648,10 @@ void StructureService::onFinished(QNetworkReply *reply,
         qCInfo(lcStructure)
             << "GROBID result dropped (paper changed, edits or "
                "translations exist)";
+        // The run finished but changed nothing, which is not a success
+        // any viewer should show as one.
+        finishTask(false, tr("The segmentation was dropped: the paper "
+                             "changed while it ran."));
     }
 }
 

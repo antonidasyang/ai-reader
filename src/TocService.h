@@ -14,6 +14,7 @@ class LlmClient;
 class LlmReply;
 class PaperController;
 class Settings;
+class TaskManager;
 
 class TocService : public QObject
 {
@@ -49,6 +50,11 @@ public:
     Source   source()       const { return m_source; }
     QString  defaultSystemPrompt() const;
 
+    // The queue every long run goes through. Optional: with no manager the
+    // service generates directly, exactly as it always did, which is what
+    // the harnesses rely on.
+    void setTasks(TaskManager *tasks);
+
 public slots:
     void generate();
     void cancel();
@@ -69,6 +75,23 @@ signals:
     void navigationRequested(int blockId, int page);
 
 private:
+    // The generation itself, without the queue around it: the direct path
+    // and the task's start callback both land here.
+    void runGenerate();
+    // Abort the request in flight without touching the task around it --
+    // what a task's own body uses to clear the way before it starts.
+    void cancelReply();
+    // Whether a generation can even be attempted; sets the failure status
+    // itself so a refusal reads the same on both paths.
+    bool canGenerate();
+    // The same question asked without saying anything out loud. A resumer
+    // offering a run back on startup must not paint a refusal into the
+    // sidebar for work the user never watched start.
+    bool couldGenerate() const;
+    void finishTask(bool ok, const QString &error = {});
+    // The generation was stopped rather than lost — the paper was closed,
+    // something else overtook it. The row ends Canceled, not Failed.
+    void cancelTask();
     void onPaperChanged();
     void rehydrateFromCache();
     QString systemPrompt() const;
@@ -79,6 +102,14 @@ private:
     QPointer<Settings> m_settings;
     QPointer<PaperController> m_paper;
     QPointer<BlockListModel> m_blocks;
+    QPointer<TaskManager> m_tasks;
+    // The generation on record with the manager, and the paper it is for.
+    // Empty whenever none is, which is also how the direct path is
+    // recognised. The paper is kept because a deferred body or a stop
+    // callback arriving late must never settle the generation that has
+    // meanwhile taken its place.
+    QString m_taskId;
+    QString m_taskPaperId;
     LlmClientCache m_clients;
     QPointer<LlmClient> m_client;
     QPointer<LlmReply> m_reply;

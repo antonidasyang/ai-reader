@@ -7,6 +7,7 @@
 #include <QObject>
 #include <QPointer>
 #include <QQueue>
+#include <QSet>
 #include <QString>
 #include <QStringList>
 #include <QVector>
@@ -18,6 +19,7 @@ class PaperSource;
 class ProjectProfileController;
 class QuickAnalysisJob;
 class Settings;
+class TaskManager;
 
 // Interpreting a whole library (§7).
 //
@@ -49,6 +51,12 @@ public:
                          PaperSource *source, AnalysisListModel *model,
                          QObject *parent = nullptr);
 
+    // A whole run is one task, not one per paper: the papers are already
+    // paced by the queue below, and a hundred rows in the viewer would tell
+    // the reader less than one row that says which paper it is on. Without a
+    // manager -- the harnesses build this service bare -- nothing changes.
+    void setTasks(TaskManager *tasks);
+
     bool busy() const { return m_running > 0 || !m_queue.isEmpty(); }
     int total() const { return m_total; }
     int done() const { return m_done; }
@@ -74,6 +82,21 @@ signals:
     void finished(int done, int failed, int skipped);
 
 private:
+    // What startItems() used to do, so the direct path and the task's start
+    // callback enqueue the same way.
+    void startRun(const QStringList &itemIds, bool force);
+    // Taken out first, always: the manager must never be told twice about
+    // one task, and a cancel and the last paper's answer can race for it.
+    QString takeTaskId();
+    void finishTask(bool ok, const QString &error = QString());
+    // The reader stopped it, or the project changed under it. Nothing went
+    // wrong, so the row ends Canceled rather than Failed with no reason.
+    void cancelTask();
+    // A paper the batch is on is spoken for: the reader's own Interpret
+    // button must not start a second call against the same paper.
+    void claimPaper(const QString &paperId);
+    void releasePaper(const QString &paperId);
+    void releaseAllPapers();
     void pump();
     void onSourceReady(const QString &itemId, const QString &paperId,
                        const QString &title, const QVector<Block> &blocks);
@@ -89,6 +112,17 @@ private:
     AnalysisListModel *m_model;
     LlmClientCache m_clients;
     QPointer<LlmClient> m_client;
+    QPointer<TaskManager> m_tasks;
+    QString m_taskId;
+    // False while the task is submitted but still waiting its turn. The
+    // papers a second Interpret click asks for in that window join m_pending
+    // rather than running beside the batch, outside the concurrency cap and
+    // ahead of the papers the task was opened for.
+    bool m_taskStarted = false;
+    QStringList m_pending;
+    bool m_pendingForce = false;
+    // Papers this task holds the individual-interpretation key for.
+    QSet<QString> m_claimed;
 
     QQueue<QString> m_queue;
     QHash<QString, QString> m_errors;     // itemId -> why
