@@ -276,7 +276,7 @@ ApplicationWindow {
         anchors.centerIn: Overlay.overlay
     }
 
-    // ── Saved layouts ───────────────────────────────────────────────
+    // ── Saved layouts ─────────────────────────────
     SaveLayoutDialog {
         id: saveLayoutDialog
         anchors.centerIn: Overlay.overlay
@@ -284,52 +284,19 @@ ApplicationWindow {
         onRenameConfirmed: function(from, to) { layouts.rename(from, to) }
     }
 
-    // Deleting is the one thing here that cannot be undone -- the
-    // arrangement itself survives, but the name and the widths behind it do
-    // not -- so it is asked about, with the name in the question.
-    AppDialog {
-        id: deleteLayoutDialog
-        title: qsTr("Delete this layout?")
-        width: 400
-        standardButtons: Dialog.NoButton
-
-        property string layoutName: ""
-
-        function ask(name) {
-            deleteLayoutDialog.layoutName = name
-            deleteLayoutDialog.open()
+    // Renaming and deleting live here rather than on the menu rows: a
+    // small ✕ sitting beside a layout's name reads as "close this", which
+    // is what ✕ means everywhere else in this app, and it deleted the
+    // layout instead. In here the buttons say what they do in words and
+    // the delete is confirmed on the row it belongs to.
+    ManageLayoutsDialog {
+        id: manageLayoutsDialog
+        anchors.centerIn: Overlay.overlay
+        paneLabels: window.paneLabels
+        onRenameRequested: function(name) {
+            saveLayoutDialog.openForRename(name)
         }
-
-        ColumnLayout {
-            anchors.fill: parent
-            spacing: Theme.spaceM
-
-            Label {
-                Layout.fillWidth: true
-                wrapMode: Text.Wrap
-                color: Theme.text
-                text: qsTr("“%1” will be gone. The panes on screen stay "
-                           + "exactly as they are.")
-                          .arg(deleteLayoutDialog.layoutName)
-            }
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Theme.spaceS
-                Item { Layout.fillWidth: true }
-                AppButton {
-                    text: qsTr("Cancel")
-                    onClicked: deleteLayoutDialog.close()
-                }
-                AppButton {
-                    text: qsTr("Delete")
-                    danger: true
-                    onClicked: {
-                        deleteLayoutDialog.close()
-                        layouts.remove(deleteLayoutDialog.layoutName)
-                    }
-                }
-            }
-        }
+        onSaveRequested: saveLayoutDialog.openForSave()
     }
 
     // Cloud-library dialogs (the toolbar account/project group drives these).
@@ -673,6 +640,25 @@ ApplicationWindow {
     // tells the two apart: the reader moving something means the panes are
     // no longer the saved layout they came from, the layout putting them
     // there does not.
+    // What each pane is called, for anything that has to list panes by
+    // name rather than draw them -- the layout manager, telling one saved
+    // arrangement from another. The ids are the SplitView children's
+    // objectNames, which is what a saved layout stores; this file is the
+    // only one that knows both halves, so the map lives here and is handed
+    // to whoever needs it. A pane missing from the map (a layout saved by
+    // a newer build) shows its id rather than disappearing.
+    readonly property var paneLabels: ({
+        "folder":   qsTr("Folder"),
+        "library":  qsTr("Library"),
+        "toc":      qsTr("Outline"),
+        "pdf":      qsTr("PDF"),
+        "blocks":   qsTr("Paragraphs"),
+        "analysis": qsTr("Interpretation"),
+        "research": qsTr("Project analyses"),
+        "tasks":    qsTr("Tasks"),
+        "chat":     qsTr("Chat")
+    })
+
     property bool applyingLayout: false
     // True until the window has finished building itself. Every pane's
     // `visible` settles while the SplitView is being created, which fires
@@ -1128,12 +1114,7 @@ ApplicationWindow {
                     id: layoutMenu
                     onApplyRequested: function(name) { window.applyLayout(name) }
                     onSaveRequested: saveLayoutDialog.openForSave()
-                    onRenameRequested: function(name) {
-                        saveLayoutDialog.openForRename(name)
-                    }
-                    onDeleteRequested: function(name) {
-                        deleteLayoutDialog.ask(name)
-                    }
+                    onManageRequested: manageLayoutsDialog.open()
                 }
             }
 

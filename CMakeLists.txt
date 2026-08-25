@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.5.0 LANGUAGES CXX)
+project(ai-reader VERSION 1.3.5 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -451,6 +451,7 @@ qt_add_qml_module(ai-reader
         qml/DeepReadView.qml
         qml/ResearchPane.qml
         qml/LayoutMenu.qml
+        qml/ManageLayoutsDialog.qml
         qml/SaveLayoutDialog.qml
         qml/TasksPane.qml
         qml/QuitTasksDialog.qml

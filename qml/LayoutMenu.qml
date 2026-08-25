@@ -2,59 +2,34 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-// The saved pane arrangements, as a menu: pick one to put the panes back
-// the way they were, save the arrangement on screen under a name, rename
-// one, throw one away.
+// The saved pane arrangements, as a menu. A row here does exactly one
+// thing: it puts that arrangement back on screen.
 //
-// Every one of those is asked of the window rather than done here. This
-// file knows what a layout menu looks like; Main.qml is the only place that
+// Every row used to carry a "✎" and a "✕" of its own. Everywhere else in
+// this app "✕" closes a pane, so a reader arriving here read it as "close"
+// and was one click away from losing a layout they had spent time on. A
+// menu is the wrong place to destroy anything anyway: it is a list of
+// things to pick, opened and dismissed in a second, with no room for a
+// confirmation and no way to say what is about to go. Renaming and
+// deleting now live in ManageLayoutsDialog, where the buttons have words
+// on them and a delete is confirmed on the row it affects.
+//
+// Everything below is asked of the window rather than done here. This file
+// knows what a layout menu looks like; Main.qml is the only place that
 // knows what a SplitView is, which pane is which, and how wide the row is.
 Menu {
     id: root
 
     signal applyRequested(string name)
     signal saveRequested()
-    signal renameRequested(string name)
-    signal deleteRequested(string name)
+    signal manageRequested()
 
     readonly property bool empty: layouts.names.length === 0
 
-    // The two per-item actions. Small, quiet, and on the row they act on --
-    // a rename that lives three menus away is a rename nobody finds.
-    component RowAction: Rectangle {
-        id: act
-        property alias glyph: actGlyph.text
-        property string tip: ""
-        signal activated()
-
-        width: 22
-        height: 20
-        radius: Theme.radiusS
-        color: actMouse.containsMouse ? Theme.buttonHover : "transparent"
-
-        Text {
-            id: actGlyph
-            anchors.centerIn: parent
-            font.pixelSize: 12
-            color: actMouse.containsMouse ? Theme.text : Theme.dimText
-        }
-
-        MouseArea {
-            id: actMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            // Accepting the press here is what keeps it from reaching the
-            // menu item underneath and applying the layout instead. (No id
-            // from the file around it is in scope here: an inline component
-            // has a scope of its own, so closing the menu is the caller's
-            // job, one level out.)
-            onClicked: act.activated()
-        }
-
-        ToolTip.visible: actMouse.containsMouse && act.tip.length > 0
-        ToolTip.delay: 500
-        ToolTip.text: act.tip
-    }
+    // The column the tick sits in. Every name starts to the right of it,
+    // ticked or not, so the menu reads as one column of names rather than
+    // one indented name among the rest.
+    readonly property int tickWidth: 18
 
     Instantiator {
         model: layouts.names
@@ -66,46 +41,40 @@ Menu {
             // so the menu is legible to anything that reads a MenuItem
             // rather than looking at it.
             text: presetItem.modelData
-            checkable: true
-            // Bound, not assigned: triggering a checkable item writes
-            // `checked` itself, and a plain binding would not survive that
-            // -- the tick would stop following the applied layout the
-            // moment anybody clicked anything.
-            Binding on checked {
-                value: presetItem.modelData === layouts.current
-                restoreMode: Binding.RestoreNone
-            }
             onTriggered: root.applyRequested(presetItem.modelData)
 
-            // A layout, then the two things that can be done to it. The
-            // name takes the slack so the actions line up down the menu
-            // rather than trailing each name at a different distance.
+            // Deliberately NOT `checkable`, and the tick is drawn by hand.
+            // Fusion puts a checkable item's indicator at the item's own
+            // left padding and relies on its stock contentItem to carry the
+            // matching left inset that keeps the label clear of it -- and
+            // this row replaces that contentItem, which is how the tick
+            // came to be printed on top of the layout's name. A column of
+            // our own can never be laid over, whatever the style does.
             contentItem: RowLayout {
                 spacing: Theme.spaceS
+
+                Item {
+                    Layout.preferredWidth: root.tickWidth
+                    Layout.preferredHeight: tick.implicitHeight
+                    Layout.alignment: Qt.AlignVCenter
+                    Label {
+                        id: tick
+                        anchors.centerIn: parent
+                        // Hidden rather than absent: the Item keeps its
+                        // width either way, which is the whole point.
+                        visible: presetItem.modelData === layouts.current
+                        text: "✓"
+                        font.pixelSize: 13
+                        color: Theme.accent
+                    }
+                }
+
                 Label {
                     Layout.fillWidth: true
                     text: presetItem.text
                     color: Theme.text
                     font.pixelSize: 13
                     elide: Text.ElideRight
-                }
-                RowAction {
-                    Layout.alignment: Qt.AlignVCenter
-                    glyph: "✎"
-                    tip: qsTr("Rename this layout")
-                    onActivated: {
-                        root.dismiss()
-                        root.renameRequested(presetItem.modelData)
-                    }
-                }
-                RowAction {
-                    Layout.alignment: Qt.AlignVCenter
-                    glyph: "✕"
-                    tip: qsTr("Delete this layout")
-                    onActivated: {
-                        root.dismiss()
-                        root.deleteRequested(presetItem.modelData)
-                    }
                 }
             }
         }
@@ -131,5 +100,14 @@ Menu {
     MenuItem {
         text: qsTr("Save current layout…")
         onTriggered: root.saveRequested()
+    }
+
+    MenuItem {
+        // Nothing to manage until something is saved, and an item that
+        // opens an empty dialog is worse than no item at all.
+        text: qsTr("Manage layouts…")
+        visible: !root.empty
+        height: visible ? implicitHeight : 0
+        onTriggered: root.manageRequested()
     }
 }

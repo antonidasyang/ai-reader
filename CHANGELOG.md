@@ -1,6 +1,22 @@
 # AI Reader changelog
 
-## v1.5.0 — 2026-08-25
+## v1.3.5 — 2026-08-25
+
+### The saved-layouts menu
+- The menu that lists the saved layouts drew the tick mark on top of the
+  layout's name, so the one arrangement you could not read was the one you
+  were using. The tick and the name no longer share the same space.
+- Every row also carried a small ✕. Everywhere else in the app an ✕ closes
+  something; here it deleted the layout for good. A row now does one thing
+  — clicking it puts that arrangement back — and renaming and deleting have
+  moved into a **Manage layouts…** window, where the buttons say in words
+  what they do and deleting asks first, on the row, naming the layout it is
+  about to remove.
+- That window also shows which panes each saved layout actually opens, so a
+  layout can be told apart by what it does rather than only by the name
+  somebody gave it months ago.
+
+## v1.3.4 — 2026-08-25
 
 ### Pane layouts can be saved and switched
 - Arrange the panes however you like, save that arrangement under a name,
@@ -45,7 +61,7 @@
   name, where it read as "delete this row". It is at the end of the
   progress bar now, next to the work it stops.
 
-## v1.4.2 — 2026-08-25
+## v1.3.3 — 2026-08-25
 
 ### Pane buttons show whether the pane is open
 - Every toolbar button that shows or hides a pane now sits pressed while its
@@ -60,7 +76,7 @@
   obviously wrong. The bar is now sized from the tab it frames, so the two
   gaps are equal.
 
-## v1.4.1 — 2026-08-25
+## v1.3.2 — 2026-08-25
 
 ### Project buttons stop disappearing
 - Members, the research profile, batch interpretation, comparison and the
@@ -71,7 +87,7 @@
 - Clicking one does the missing step rather than nothing: it signs you in, or
   opens the project list.
 
-## v1.4.0 — 2026-08-25
+## v1.3.1 — 2026-08-25
 
 ### The folder pane could freeze the app, and did
 - Browsing a folder of PDFs used to walk that folder's whole subtree, on the
