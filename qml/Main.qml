@@ -15,15 +15,43 @@ ApplicationWindow {
     // one line at the call site.
     component ToolIcon: ToolButton {
         property string tip: ""
+        // A button that only means something inside a cloud project. It
+        // stays on the toolbar when there is no project rather than
+        // disappearing -- a control that vanishes reads as a feature that
+        // was removed, and the user cannot ask a missing button what it
+        // wants. It dims, says what it needs, and clicking it does that
+        // thing: signs in, or points at the project list.
+        property bool needsProject: false
+        readonly property bool blocked: needsProject && !window.projectReady
         display: AbstractButton.IconOnly
         icon.width: 18
         icon.height: 18
         // Tinted to the theme's text colour, so a set of single-stroke
         // glyphs reads as one family in both themes.
-        icon.color: enabled ? Theme.text : Theme.dimText
-        ToolTip.visible: hovered && tip.length > 0
+        icon.color: (enabled && !blocked) ? Theme.text : Theme.dimText
+        ToolTip.visible: hovered && ToolTip.text.length > 0
         ToolTip.delay: 400
-        ToolTip.text: tip
+        ToolTip.text: blocked
+                      ? (auth.authenticated
+                         ? qsTr("Choose a project first — then: %1").arg(tip)
+                         : qsTr("Sign in first — then: %1").arg(tip))
+                      : tip
+    }
+
+    // Everything project-wide -- members, the profile, batch interpretation,
+    // comparison, the project analyses -- needs both an account and a chosen
+    // project.
+    readonly property bool projectReady: auth.authenticated
+                                         && projects.currentId.length > 0
+
+    // What a blocked project button does instead of its own job: the step
+    // that is actually missing. Never nothing -- a button that answers a
+    // click with silence is worse than one that is not there.
+    function resolveProjectBlock() {
+        if (!auth.authenticated)
+            auth.startCasLogin()
+        else
+            projectCombo.popup.open()
     }
 
     // Closing with work in flight asks first (see quitTasksDialog); this is
@@ -926,15 +954,19 @@ ApplicationWindow {
             }
             ToolIcon {
                 icon.source: "qrc:/icons/project-edit.svg"
-                visible: auth.authenticated && projects.currentId.length > 0
+                needsProject: true
                 tip: qsTr("Rename this project, or delete it")
-                onClicked: projectSettingsDialog.open()
+                onClicked: {
+                    if (blocked) { window.resolveProjectBlock(); return }
+                    projectSettingsDialog.open()
+                }
             }
             ToolIcon {
                 icon.source: "qrc:/icons/members.svg"
-                visible: auth.authenticated && projects.currentId.length > 0
+                needsProject: true
                 tip: qsTr("Members of this project")
                 onClicked: {
+                    if (blocked) { window.resolveProjectBlock(); return }
                     projects.refreshMembers()
                     membersDialog.open()
                 }
@@ -944,7 +976,7 @@ ApplicationWindow {
                 // for. Every interpretation is prompted with it, so the button
                 // carries a dot until it has been filled in.
                 icon.source: "qrc:/icons/profile.svg"
-                visible: auth.authenticated && projects.currentId.length > 0
+                needsProject: true
                 display: profile.hasProfile ? AbstractButton.IconOnly
                                             : AbstractButton.TextBesideIcon
                 text: profile.hasProfile ? "" : "•"
@@ -952,18 +984,20 @@ ApplicationWindow {
                      ? qsTr("Research profile: %1").arg(profile.summary)
                      : qsTr("Describe what this project is trying to find out — "
                             + "every interpretation is written against it")
-                onClicked: projectProfileDialog.open()
+                onClicked: {
+                    if (blocked) { window.resolveProjectBlock(); return }
+                    projectProfileDialog.open()
+                }
             }
 
-            ToolSeparator { visible: auth.authenticated
-                                     && projects.currentId.length > 0 }
+            ToolSeparator { visible: auth.authenticated }
 
             ToolIcon {
                 // A running batch is owned by the app, not by the window it
                 // was started from — closing that window does not stop it, so
                 // the progress has to be visible here too.
                 icon.source: "qrc:/icons/batch.svg"
-                visible: auth.authenticated && projects.currentId.length > 0
+                needsProject: true
                 display: batchAnalysis.busy ? AbstractButton.TextBesideIcon
                                             : AbstractButton.IconOnly
                 text: batchAnalysis.busy
@@ -974,25 +1008,34 @@ ApplicationWindow {
                      ? qsTr("Still interpreting — click to watch or stop")
                      : qsTr("Interpret every paper in this project, then filter "
                             + "by relevance")
-                onClicked: batchAnalysisDialog.open()
+                onClicked: {
+                    if (blocked) { window.resolveProjectBlock(); return }
+                    batchAnalysisDialog.open()
+                }
             }
             ToolIcon {
                 icon.source: "qrc:/icons/compare.svg"
-                visible: auth.authenticated && projects.currentId.length > 0
+                needsProject: true
                 display: compare.count > 0 ? AbstractButton.TextBesideIcon
                                            : AbstractButton.IconOnly
                 text: compare.count > 0 ? compare.count : ""
                 tip: qsTr("Put papers side by side, with a warning where they "
                           + "cannot honestly be compared")
-                onClicked: compareDialog.open()
+                onClicked: {
+                    if (blocked) { window.resolveProjectBlock(); return }
+                    compareDialog.open()
+                }
             }
             ToolIcon {
                 icon.source: "qrc:/icons/research.svg"
-                visible: auth.authenticated && projects.currentId.length > 0
+                needsProject: true
                 tip: qsTr("What this whole project adds up to: categories, the "
                           + "research map, consensus and conflict, coverage, and "
                           + "what to do next")
-                onClicked: researchPane.visible = !researchPane.visible
+                onClicked: {
+                    if (blocked) { window.resolveProjectBlock(); return }
+                    researchPane.visible = !researchPane.visible
+                }
             }
             ToolIcon {
                 icon.source: "qrc:/icons/tasks.svg"

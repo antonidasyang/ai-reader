@@ -1,5 +1,16 @@
 # AI Reader changelog
 
+## v1.4.1 — 2026-08-25
+
+### Project buttons stop disappearing
+- Members, the research profile, batch interpretation, comparison and the
+  project analyses used to vanish from the toolbar when you were not signed
+  in or had no project chosen — which reads as "that feature is gone", not as
+  "that feature needs something first". They stay put now, greyed, and say
+  what they want when you hover them.
+- Clicking one does the missing step rather than nothing: it signs you in, or
+  opens the project list.
+
 ## v1.4.0 — 2026-08-25
 
 ### The folder pane could freeze the app, and did
