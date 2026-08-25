@@ -31,18 +31,33 @@ Rectangle {
     function isSelected(path) {
         return root.selectedCount >= 0 && root.selectedPaths[path] === true
     }
-    function setSelected(path, on) {
+    // Change the map without announcing it, and hand back what that did
+    // to the count, so a caller can announce a whole batch in one go.
+    function applyOne(path, on) {
         if (!path || on === (root.selectedPaths[path] === true))
-            return
+            return 0
         if (on)
             root.selectedPaths[path] = true
         else
             delete root.selectedPaths[path]
-        root.selectedCount += on ? 1 : -1
+        return on ? 1 : -1
     }
+    function setSelected(path, on) {
+        root.selectedCount += root.applyOne(path, on)
+    }
+    // Ticking a folder used to bump selectedCount once per PDF, and every
+    // bump re-evaluates the tick state of every visible row, each of
+    // which re-reads its own whole list — quadratic, and a freeze of its
+    // own on a folder with thousands of PDFs. Mutate everything first,
+    // notify once at the end.
     function selectPaths(paths, on) {
+        if (!paths || paths.length === 0)
+            return
+        let delta = 0
         for (let i = 0; i < paths.length; ++i)
-            root.setSelected(paths[i], on)
+            delta += root.applyOne(paths[i], on)
+        if (delta !== 0)
+            root.selectedCount += delta
     }
     function clearSelection() {
         root.selectedPaths = ({})
@@ -58,14 +73,28 @@ Rectangle {
         const notifier = root.selectedCount
         if (notifier < 0 || !paths || paths.length === 0)
             return Qt.Unchecked
-        let n = 0
-        for (let i = 0; i < paths.length; ++i)
+        // Bail out at the first disagreement rather than counting the
+        // whole list: on a folder of thousands this runs per row.
+        let any = false
+        let all = true
+        for (let i = 0; i < paths.length; ++i) {
             if (root.selectedPaths[paths[i]] === true)
-                ++n
-        return n === 0 ? Qt.Unchecked
-             : n === paths.length ? Qt.Checked
-                                  : Qt.PartiallyChecked
+                any = true
+            else
+                all = false
+            if (any && !all)
+                return Qt.PartiallyChecked
+        }
+        return all ? Qt.Checked : Qt.Unchecked
     }
+
+    // The playing paper's own path, resolved once per paper change. The
+    // row highlight used to call paperController.isCurrentFile() per row,
+    // which canonicalises both sides — two filesystem round-trips for
+    // every visible row, and they are not free on a share.
+    readonly property string activeFilePath:
+        library.localFile(paperController.pdfSource)
+    readonly property string activeFileName: paperController.fileName
 
     // The import lands in the cloud project library, so it needs the
     // same rights the library pane's "+ Add" needs.
@@ -166,13 +195,45 @@ Rectangle {
                             ? qsTr("%1 selected").arg(root.selectedCount)
                             : qsTr("Tick PDFs to add them to the library")
                 }
-                ToolButton {
-                    text: qsTr("All")
+                // The button is disabled while the folder is still being
+                // counted, and a disabled control gets no hover events —
+                // so the tooltip that explains why hangs off this wrapper,
+                // which stays enabled.
+                Item {
                     visible: !importer.busy
-                    ToolTip.visible: hovered
+                    implicitWidth: allButton.implicitWidth
+                    implicitHeight: allButton.implicitHeight
+                    Layout.preferredWidth: allButton.implicitWidth
+
+                    // Counted in the background; -1 means the walk has not
+                    // landed yet. A truncated walk saw only part of the
+                    // tree, so "All" would silently mean "some".
+                    readonly property int pdfCount:
+                        (library.scanRevision,
+                         library.pdfCountUnder(library.rootIndex()))
+                    readonly property bool truncated:
+                        (library.scanRevision,
+                         library.scanTruncated(library.rootIndex()))
+
+                    HoverHandler { id: allHover }
+                    ToolTip.visible: allHover.hovered
                     ToolTip.delay: 400
-                    ToolTip.text: qsTr("Select every PDF in this folder, subfolders included")
-                    onClicked: root.selectPaths(library.pdfsUnder(library.rootIndex()), true)
+                    ToolTip.text:
+                        truncated
+                        ? qsTr("More than %1 PDFs in this folder — too many to select in one go. Pick a subfolder instead.")
+                              .arg(library.scanLimit)
+                        : pdfCount < 0
+                          ? qsTr("Still counting the PDFs in this folder…")
+                          : qsTr("Select every PDF in this folder, subfolders included")
+
+                    ToolButton {
+                        id: allButton
+                        anchors.centerIn: parent
+                        text: qsTr("All")
+                        enabled: parent.pdfCount > 0 && !parent.truncated
+                        onClicked: root.selectPaths(
+                            library.pdfsUnderCached(library.rootIndex()), true)
+                    }
                 }
                 ToolButton {
                     text: qsTr("None")
@@ -235,19 +296,50 @@ Rectangle {
                         tree.index(row, column)
                     readonly property bool _isDir: library.isDir(_modelIndex)
                     readonly property string _path: library.filePath(_modelIndex)
+                    readonly property string _name: delegateRoot.model.display
                     readonly property bool _isActiveFile:
                         !_isDir
-                        && (paperController.pdfSource,
-                            paperController.isCurrentFile(_path)
+                        // Both sides are the model's own path strings for
+                        // anything opened from this pane, so the plain
+                        // compare answers almost every row for free.
+                        && (_path === root.activeFilePath
                             || (root.openPaperPath.length > 0
-                                && root.openPaperPath === _path))
+                                && root.openPaperPath === _path)
+                            // Only a row whose file name matches can still
+                            // turn out to be the same file through a link
+                            // or an alias, and that is at most one row on
+                            // screen — the expensive canonical compare is
+                            // worth it there and nowhere else.
+                            || (root.activeFileName.length > 0
+                                && _name === root.activeFileName
+                                && paperController.isCurrentFile(_path)))
 
                     // Every PDF this row stands for: the file itself, or
                     // everything under the folder — including the parts
                     // of it the user never expanded, which have no rows.
-                    // Read once per row, not per repaint: it walks the
-                    // filesystem.
-                    readonly property var _pdfs: library.pdfsUnder(_modelIndex)
+                    //
+                    // A folder row must never call library.pdfsUnder():
+                    // that walks the subtree on this thread and is exactly
+                    // what froze the pane. It reads the background walk's
+                    // cache instead — -1 until that walk lands, so the row
+                    // paints straight away and settles afterwards, and
+                    // library.scanRevision is in the binding so it does.
+                    // A file row stays synchronous: one QFileInfo.
+                    readonly property int _pdfCount:
+                        _isDir ? (library.scanRevision,
+                                  library.pdfCountUnder(_modelIndex))
+                               : _pdfs.length
+                    // The walk gave up part-way, so this listing is a
+                    // subset of the subtree — countable, but not something
+                    // to tick "all" of.
+                    readonly property bool _truncated:
+                        _isDir && (library.scanRevision,
+                                   library.scanTruncated(_modelIndex))
+                    readonly property var _pdfs:
+                        !_isDir  ? library.pdfsUnder(_modelIndex)
+                        : _truncated ? []
+                                     : (library.scanRevision,
+                                        library.pdfsUnderCached(_modelIndex))
                     readonly property int _tickState:
                         _isDir ? root.groupState(_pdfs)
                                : (root.isSelected(_path) ? Qt.Checked
@@ -258,25 +350,48 @@ Rectangle {
                     // while only some of it is selected.
                     contentItem: RowLayout {
                         spacing: 4
-                        CheckBox {
-                            id: tickBox
-                            visible: delegateRoot._pdfs.length > 0
+                        // Wrapped because the box of a truncated folder is
+                        // disabled, and a disabled control receives no
+                        // hover events — the tooltip saying why has to
+                        // hang off something that is still enabled.
+                        Item {
                             implicitWidth: 20
                             implicitHeight: 20
-                            padding: 0
-                            tristate: delegateRoot._isDir
-                            checkState: delegateRoot._tickState
-                            onClicked: {
-                                // The control already cycled its own
-                                // checkState; _tickState still holds what
-                                // the selection said before the click.
-                                const on = delegateRoot._tickState !== Qt.Checked
-                                root.selectPaths(delegateRoot._pdfs, on)
-                                // That click also dropped the binding
-                                // above; restore it so the All / None
-                                // buttons and sibling rows still drive it.
-                                tickBox.checkState = Qt.binding(
-                                    () => delegateRoot._tickState)
+                            Layout.preferredWidth: 20
+                            // Nothing to tick until the count is known.
+                            visible: delegateRoot._pdfCount > 0
+
+                            HoverHandler { id: tickHover }
+                            ToolTip.visible: tickHover.hovered
+                                             && delegateRoot._truncated
+                            ToolTip.delay: 400
+                            ToolTip.text:
+                                qsTr("More than %1 PDFs under this folder — too many to tick in one go. Open a subfolder to pick from it.")
+                                    .arg(library.scanLimit)
+
+                            CheckBox {
+                                id: tickBox
+                                anchors.fill: parent
+                                // A subset listing must not offer to tick
+                                // the whole subtree.
+                                enabled: !delegateRoot._truncated
+                                padding: 0
+                                tristate: delegateRoot._isDir
+                                checkState: delegateRoot._tickState
+                                onClicked: {
+                                    // The control already cycled its own
+                                    // checkState; _tickState still holds
+                                    // what the selection said before the
+                                    // click.
+                                    const on = delegateRoot._tickState !== Qt.Checked
+                                    root.selectPaths(delegateRoot._pdfs, on)
+                                    // That click also dropped the binding
+                                    // above; restore it so the All / None
+                                    // buttons and sibling rows still
+                                    // drive it.
+                                    tickBox.checkState = Qt.binding(
+                                        () => delegateRoot._tickState)
+                                }
                             }
                         }
                         Label {
@@ -299,28 +414,36 @@ Rectangle {
                         onPressed: rowMenu.popup()
                     }
 
+                    // All three act on the row's cached listing. Asking
+                    // the filesystem here instead would put the freeze
+                    // back one click further along: a right-click on a
+                    // folder nobody has counted yet.
                     Menu {
                         id: rowMenu
                         MenuItem {
-                            text: delegateRoot._isDir
-                                  ? qsTr("Select all PDFs here")
-                                  : qsTr("Select this PDF")
-                            onTriggered: root.selectPaths(
-                                library.pdfsUnder(delegateRoot._modelIndex), true)
+                            text: !delegateRoot._isDir
+                                  ? qsTr("Select this PDF")
+                                  : delegateRoot._truncated
+                                    ? qsTr("Too many PDFs here to select at once")
+                                    : delegateRoot._pdfCount < 0
+                                      ? qsTr("Counting PDFs…")
+                                      : qsTr("Select all PDFs here")
+                            enabled: delegateRoot._pdfs.length > 0
+                            onTriggered: root.selectPaths(delegateRoot._pdfs, true)
                         }
                         MenuItem {
                             text: delegateRoot._isDir
                                   ? qsTr("Deselect all PDFs here")
                                   : qsTr("Deselect this PDF")
-                            onTriggered: root.selectPaths(
-                                library.pdfsUnder(delegateRoot._modelIndex), false)
+                            enabled: delegateRoot._pdfs.length > 0
+                            onTriggered: root.selectPaths(delegateRoot._pdfs, false)
                         }
                         MenuSeparator {}
                         MenuItem {
                             text: qsTr("Add to library")
                             enabled: root.canImport && !importer.busy
-                            onTriggered: importer.importFiles(
-                                library.pdfsUnder(delegateRoot._modelIndex))
+                                     && delegateRoot._pdfs.length > 0
+                            onTriggered: importer.importFiles(delegateRoot._pdfs)
                         }
                     }
 
