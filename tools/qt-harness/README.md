@@ -6,24 +6,28 @@ model. One directory per driver.
 
 ```sh
 cmake --build build                     # the drivers link against these objects
-tools/qt-harness/papersync/run.sh       # ~1 min, 38 checks
+tools/qt-harness/papersync/run.sh       # ~1 min, 72 checks
 tools/qt-harness/translation/run.sh     # ~30 s, 12 checks
 tools/qt-harness/analysis/run.sh        # ~2 min, 108 checks
 tools/qt-harness/dialogs/run.sh         # ~20 s, opens every dialog + the panes
 tools/qt-harness/panes/run.sh           # ~30 s, times a splitter drag
 tools/qt-harness/storage/run.sh         # ~5 s, 50 checks
 tools/qt-harness/tasks/run.sh           # ~20 s, 38 checks
+tools/qt-harness/layout/run.sh          # ~5 s, 62 checks
+tools/qt-harness/login/run.sh           # ~5 s, 14 checks
 ```
 
 Exit status is non-zero if anything failed.
 
 | driver | covers | stand-in |
 |---|---|---|
-| `papersync` | segmentation and translations syncing into the project — who wins, what gets published, what gets attributed | `common/FakeSync.h`, a `QTcpServer` speaking the sync API |
+| `papersync` | segmentation and translations syncing into the project — who wins, what gets published, what gets attributed — and who may read the local mirror at all: the store belongs to one account, signing out empties it, a second user sees their own library and never the first's, and nobody's un-pushed work is lost in the process | `common/FakeSync.h`, a `QTcpServer` speaking the sync API |
 | `translation` | cancelling a translation run mid-stream | `common/FakeLlm.h`, a `QTcpServer` streaming OpenAI SSE that never finishes on its own |
 | `panes` | what a splitter drag costs (sweeping a real pane's width with and without the `resizing` flag), and that Home / End / PageUp / PageDown really scroll — real key events into a real pane | a fixture PDF and the real panes in a `QQuickView` |
 | `dialogs` | every dialog actually opening — loading Main.qml only proves the window's own tree is sound, and a dialog's delegates and bindings are not exercised until it is shown | the real services, wired the way `main.cpp` wires them, in an offscreen window |
 | `storage` | where the app keeps things: the D2S/AIReader directories, and the one JSON settings file every QSettings in the app writes to — the '/'-keys nesting and flattening back, types surviving a cold re-read (an int staying an int), an atomic write that a failure leaves untouched, and a damaged file being copied aside rather than silently replaced | a throwaway identity and a scratch root: Qt test mode for the directories, and a registered JSON format under a temp path (the platform-native backend is cfprefsd on macOS and the registry on Windows, neither of which test mode redirects) |
+| `layout` | saved pane arrangements — the JSON they are stored as, widths kept as a share of the window so a layout saved on a 4K screen still fits a laptop, and the account payload they ride in | none: plain settings and arithmetic |
+| `login` | the page the browser is left on after signing in — the one screen of this app that is HTML built by string substitution, where a stray placeholder or an unescaped percent would ship unnoticed | a real request to the app's own loopback server |
 | `tasks` | the one queue every model call now goes through — two runs never on one paper, the concurrency budget, progress and time-left, cancelling, and work interrupted by a close being offered back on the next launch | nothing external: the task callbacks are the test's own lambdas |
 | `analysis` | the interpretation layer — citations checked against the paper, unsupported claims demoted, the research profile reaching the prompt, staleness, storage and attribution, the batch that interprets papers nobody has opened, the nine-module close reading, the cross-paper comparison, the category system surviving the reader's edits, and the Markdown export | `common/FakeAnalysisLlm.h` (builds its answer out of the very paragraph markers it was sent) + `common/FakeSync.h` |
 

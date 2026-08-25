@@ -62,6 +62,15 @@ QtObject {
     readonly property color buttonHover:   dark ? "#36393f" : "#e9ebef"
     readonly property color buttonPressed: dark ? "#3d4148" : "#dee1e6"
 
+    // ── Selected text ──────────────────────────────────────────────────
+    // QtQuick.Pdf fills a selection with the palette highlight at half
+    // alpha. The paragraph pane used to take Fusion's own selection colour
+    // instead -- flat, opaque and much darker -- so the same sentence
+    // selected in the page and in the paragraph looked like two different
+    // things. One token now paints both, and being translucent it leaves the
+    // text itself readable rather than reversing it out.
+    readonly property color selection: Qt.alpha(accent, 0.45)
+
     // ── Status ─────────────────────────────────────────────────────────
     readonly property color success: dark ? "#7bc67e" : "#2e7d32"
 

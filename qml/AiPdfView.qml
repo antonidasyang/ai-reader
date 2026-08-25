@@ -15,6 +15,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Pdf
+import AiReader
 import QtQuick.Shapes
 
 Item {
@@ -225,7 +226,9 @@ Item {
         name: "qt.pdf.multipageview"
     }
 
-    PdfStyle { id: style }
+    // The page's selection and the paragraph pane's are the same colour on
+    // purpose; see Theme.selection.
+    PdfStyle { id: style; selectionColor: Theme.selection }
     TableView {
         id: tableView
         property bool debug: false

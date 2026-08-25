@@ -16,8 +16,19 @@ LibraryModel::LibraryModel(LibraryDb *db, ProjectController *projects,
 {
     connect(m_projects, &ProjectController::currentChanged, this,
             &LibraryModel::reload);
+    // Signing in or out doesn't have to change the current project for the
+    // rows to change: the store's account gate decides whether they may be
+    // read at all.
+    connect(m_projects, &ProjectController::lockChanged, this,
+            &LibraryModel::reload);
+    // A sync that lands for a project the reader has already left says
+    // nothing about the one on screen; reloading on it would only put a
+    // model reset in the middle of whatever they are doing.
     connect(m_sync, &SyncEngine::projectSynced, this,
-            [this](const QString &) { reload(); });
+            [this](const QString &projectId) {
+                if (projectId == m_projects->currentId())
+                    reload();
+            });
     reload();
 }
 
@@ -88,6 +99,10 @@ QHash<int, QByteArray> LibraryModel::roleNames() const
 void LibraryModel::reload()
 {
     beginResetModel();
+    // Always the project that is current *now*, and always through the
+    // store's gate: no project, no session, or a store that belongs to
+    // another account all come back as an empty library rather than as
+    // whatever happened to be listed last.
     m_items = m_db->objectsByType(m_projects->currentId(),
                                   QStringLiteral("item"));
     endResetModel();

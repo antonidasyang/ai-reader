@@ -5,6 +5,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QStringList>
 #include <QVariantMap>
 
 ProjectController::ProjectController(ApiClient *api, AuthController *auth,
@@ -14,20 +15,108 @@ ProjectController::ProjectController(ApiClient *api, AuthController *auth,
     , m_auth(auth)
     , m_db(db)
 {
+    // A session that was open when the app last quit is still open: the
+    // store remembers whose it is, so an owner with no network still gets
+    // their own library. Only a sign-out (or a refresh the server refuses)
+    // closes it — see onSessionClosed().
+    if (m_auth->authenticated() && !m_auth->userId().isEmpty()) {
+        m_openedFor = m_auth->userId();
+        m_db->openSession(m_openedFor);
+    }
     m_currentId = m_qs.value(QStringLiteral("project/currentId")).toString();
     loadFromCache();
+    // ...and if the remembered project is not this session's to read, it is
+    // not the current project either.
+    revalidateCurrent();
 
     // Re-fetch when the session changes; clear members on sign-out.
     connect(m_auth, &AuthController::authenticatedChanged, this, [this] {
-        if (m_auth->authenticated()) {
-            refresh();
-        } else {
-            m_members.clear();
-            emit membersChanged();
-        }
+        if (m_auth->authenticated())
+            onSessionOpened();
+        else
+            onSessionClosed();
+    });
+    // CAS marks the session authenticated before /auth/me answers, so the
+    // account behind it can arrive a moment later. That is when the store
+    // learns whose session this is.
+    connect(m_auth, &AuthController::userChanged, this, [this] {
+        // Only ever to *learn* who is signed in: signing out clears the
+        // user id first and the session flag second, and that first half is
+        // not a session opening.
+        if (m_auth->authenticated() && !m_auth->userId().isEmpty())
+            onSessionOpened();
     });
     if (m_auth->authenticated())
         refresh();
+}
+
+void ProjectController::onSessionOpened()
+{
+    const QString uid = m_auth->userId();
+    if (!uid.isEmpty()) {
+        if (uid == m_openedFor)
+            return;              // the same sign-in, announced twice
+        m_openedFor = uid;
+        m_db->openSession(uid);
+        // The gate just moved: the cached list, the current project and
+        // everything reading through them have to be re-decided.
+        loadFromCache();
+        emit lockChanged();
+    }
+    refresh();
+}
+
+void ProjectController::onSessionClosed()
+{
+    // Signing out forgets which project was open and shuts the store's
+    // gate, so the library pane empties, search answers nothing and the
+    // analysis views go blank. Nothing on disk is touched: an un-pushed
+    // outbox is still there — and still pushes — when its user returns.
+    m_openedFor.clear();
+    m_db->closeSession();
+    setCurrentId(QString());
+    loadFromCache();
+    m_members.clear();
+    emit membersChanged();
+    emit lockChanged();
+    // The gate closed even when there was no project selected to forget,
+    // and every reader keys off this signal.
+    emit currentChanged();
+}
+
+bool ProjectController::libraryReadable() const
+{
+    return m_db && m_db->canRead(m_currentId);
+}
+
+QString ProjectController::libraryLockReason() const
+{
+    if (!m_db)
+        return {};
+    const QString reason = m_db->lockReason();
+    if (reason != QLatin1String("other-account"))
+        return reason;
+    // Another account is signed in. Say so only while we are actually
+    // looking at something of the store owner's: this user's own projects
+    // read perfectly well, they are simply empty until their sync fills
+    // them.
+    if (!m_currentId.isEmpty() && m_db->canRead(m_currentId))
+        return {};
+    return reason;
+}
+
+void ProjectController::setCurrentId(const QString &id)
+{
+    // A project this session may not read is not a project it can be in.
+    const QString next = (m_db && !m_db->canRead(id)) ? QString() : id;
+    if (next == m_currentId)
+        return;
+    m_currentId = next;
+    if (next.isEmpty())
+        m_qs.remove(QStringLiteral("project/currentId"));
+    else
+        m_qs.setValue(QStringLiteral("project/currentId"), next);
+    emit currentChanged();
 }
 
 void ProjectController::loadFromCache()
@@ -51,10 +140,10 @@ void ProjectController::rebuildList()
         if (p.id == m_currentId)
             currentStillPresent = true;
     }
-    if (!currentStillPresent) {
-        m_currentId = m_projects.isEmpty() ? QString() : m_projects.first().id;
-        m_qs.setValue(QStringLiteral("project/currentId"), m_currentId);
-    }
+    if (!currentStillPresent)
+        setCurrentId(m_projects.isEmpty() ? QString() : m_projects.first().id);
+    else
+        revalidateCurrent();
     emit listChanged();
     emit currentChanged();
 }
@@ -87,6 +176,11 @@ void ProjectController::refresh()
                [this](bool ok, int status, const QJsonDocument &doc) {
                    if (!ok) {
                        setStatus(tr("Could not load projects (HTTP %1)").arg(status));
+                       // Without a list we cannot say this account belongs
+                       // to whatever is selected. Keeping it is how a new
+                       // sign-in ended up sitting in the previous user's
+                       // project; the gate answers that, and so does this.
+                       revalidateCurrent();
                        return;
                    }
                    m_projects.clear();
@@ -104,6 +198,17 @@ void ProjectController::refresh()
                        m_projects.append(p);
                    }
                    m_db->replaceProjects(m_projects);
+                   // The server listing these under this account's token is
+                   // the only proof of membership a client gets: claim the
+                   // ones nobody holds yet, so this user's own projects are
+                   // theirs to read on this machine. Projects another
+                   // account already claimed are never re-assigned.
+                   QStringList ids;
+                   ids.reserve(m_projects.size());
+                   for (const ProjectRow &p : m_projects)
+                       ids << p.id;
+                   m_db->claimProjects(ids, m_auth->userId());
+                   emit lockChanged();
                    rebuildList();
                    if (!m_currentId.isEmpty())
                        refreshMembers();
@@ -114,9 +219,7 @@ void ProjectController::selectProject(const QString &id)
 {
     if (id == m_currentId)
         return;
-    m_currentId = id;
-    m_qs.setValue(QStringLiteral("project/currentId"), id);
-    emit currentChanged();
+    setCurrentId(id);
     refreshMembers();
 }
 
@@ -134,8 +237,10 @@ void ProjectController::createProject(const QString &name,
                     }
                     const QString id =
                         doc.object().value(QStringLiteral("id")).toString();
-                    m_currentId = id;
-                    m_qs.setValue(QStringLiteral("project/currentId"), id);
+                    // Through the setter: assigning the field directly left
+                    // every view bound to `currentChanged` — the library
+                    // pane included — listing the project we just left.
+                    setCurrentId(id);
                     refresh();
                 });
 }
@@ -195,11 +300,8 @@ void ProjectController::deleteProject(const QString &id)
                    // still counted, indexed and searched.
                    if (m_db)
                        m_db->purgeProject(id);
-                   if (m_currentId == id) {
-                       m_currentId.clear();
-                       m_qs.remove(QStringLiteral("project/currentId"));
-                       emit currentChanged();
-                   }
+                   if (m_currentId == id)
+                       setCurrentId(QString());
                    setStatus(tr("Project deleted."));
                    refresh();
                });

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QHash>
 #include <QJsonObject>
 #include <QList>
 #include <QObject>
@@ -55,6 +56,13 @@ struct PaperDataRef {
 // Offline-first local store: a SQLite mirror of the cloud library. Owns the
 // per-project objects (+ outbox), the sync cursor, a projects cache, and an
 // FTS5 full-text index. SyncEngine / LibraryModel / SearchService go through it.
+//
+// It also knows whose data it holds. Every row here is scoped by project and
+// by nothing else, so without that the library pane happily served the last
+// user's papers to whoever opened the app next. The account gate below is the
+// one place that is decided: `canRead` guards every content read, and the
+// answer is recorded in the database itself rather than in QSettings, which
+// follows an account to another machine.
 class LibraryDb : public QObject
 {
     Q_OBJECT
@@ -115,6 +123,40 @@ public:
                                   const QString &paperId,
                                   const QString &kind) const;
 
+    // ── the account gate ──────────────────────────────────────────────
+    // The account this copy of the store holds data for. Empty until the
+    // first session opens: a database that predates the gate adopts whoever
+    // signs in first rather than locking its own user out.
+    QString storeOwner() const { return m_owner; }
+    // The account that claimed one project, empty when nobody has. First
+    // claim wins: a project is never re-assigned to a second account, so
+    // signing in as somebody else can never uncover the first user's rows.
+    QString projectOwner(const QString &projectId) const
+    {
+        return m_claims.value(projectId);
+    }
+    // The account whose session this store believes is open — whoever
+    // signed in, and still them after a restart with no network, because
+    // "offline" is not "signed out". Cleared by closeSession() only.
+    QString sessionUser() const { return m_sessionUser; }
+
+    // A session opened for `userId`: an unclaimed store adopts them along
+    // with everything already in it, and reads are answered for what they
+    // hold. Cheap and idempotent — the sign-in path may call it twice.
+    void openSession(const QString &userId);
+    // The session ended: a sign-out, or a refresh token the server refused.
+    // The gate shuts until somebody signs in again. Nothing is deleted, so
+    // an un-pushed outbox is still there when its owner comes back.
+    void closeSession();
+    // The projects the server just listed for `userId` — the only proof of
+    // membership a client gets. Claims the ones nobody holds yet.
+    void claimProjects(const QStringList &projectIds, const QString &userId);
+    // The chokepoint: may this session read `projectId`'s rows at all?
+    bool canRead(const QString &projectId) const;
+    // Why not, for the empty state to say something true: "signed-out",
+    // "other-account", or empty when reads are being answered.
+    QString lockReason() const;
+
     // ── full-text index ───────────────────────────────────────────────
     void indexDoc(const QString &objectId, const QString &projectId,
                   const QString &kind, const QString &content);
@@ -125,9 +167,22 @@ public:
 private:
     bool open();
     bool migrate();
+    // Gate state lives in the store: `store_meta` for the owner and the
+    // open session, `sync_state.owner_id` for the per-project claims. Read
+    // once at startup and kept in step by the writers below, because
+    // canRead() is on the path of every single row read.
+    void loadGateState();
+    void setMeta(const QString &key, const QString &value);
+    // Every project id the store has any trace of — what an adopting
+    // session claims in one go.
+    QStringList knownProjectIds() const;
 
     QString m_connName;
     QString m_path;
     bool m_ready = false;
     bool m_ftsAvailable = false;
+
+    QString m_owner;                      // store_meta/owner_user_id
+    QString m_sessionUser;                // store_meta/session_user_id
+    QHash<QString, QString> m_claims;     // project id -> account
 };

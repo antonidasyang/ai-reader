@@ -1,6 +1,7 @@
 #include "Settings.h"
 
 #include "AnthropicClient.h"
+#include "LayoutPresets.h"
 #include "OpenAiClient.h"
 
 #include <QJsonArray>
@@ -69,6 +70,11 @@ constexpr auto kKeyAnalysisConcurrency  = "analysis/concurrency";
 constexpr auto kKeyRetiredAnalysisProvider = "analysis/provider";
 constexpr auto kKeyRetiredAnalysisModel    = "analysis/model";
 constexpr auto kKeyRetiredAnalysisBaseUrl  = "analysis/baseUrl";
+
+// The saved pane layouts. Both the key and what a legal document looks
+// like belong to LayoutPresets; asking it rather than keeping a second
+// copy of the string here is what stops the two from ever drifting apart.
+QString layoutPresetsKey() { return LayoutPresets::settingsKey(); }
 
 // Factory defaults, named because two places need the same numbers: load(),
 // and defaultAccountSettings() -- which is how the account sync tells a
@@ -982,6 +988,8 @@ const QStringList &Settings::accountSettingKeys()
         QString::fromLatin1(kKeySharePaperData),
         QString::fromLatin1(kKeyGrobidEnabled),
         QString::fromLatin1(kKeyAutoCheckUpdates),
+
+        layoutPresetsKey(),
     };
     return keys;
 }
@@ -1024,6 +1032,12 @@ QJsonObject Settings::exportAccountSettings() const
     o.insert(QString::fromLatin1(kKeySharePaperData),  m_sharePaperData);
     o.insert(QString::fromLatin1(kKeyGrobidEnabled),   m_grobidEnabled);
     o.insert(QString::fromLatin1(kKeyAutoCheckUpdates), m_autoCheckUpdates);
+
+    // Straight out of QSettings rather than out of a member: LayoutPresets
+    // owns this value and writes it whenever the reader saves, renames or
+    // deletes a layout, so a cached copy here would export whatever the
+    // presets happened to be when this object was built.
+    o.insert(layoutPresetsKey(), m_qs.value(layoutPresetsKey()).toString());
 
     // No API keys, no tokens: those live in the OS keychain and the whole
     // point of keeping them there is that they never travel.
@@ -1068,6 +1082,8 @@ QJsonObject Settings::defaultAccountSettings()
     o.insert(QString::fromLatin1(kKeySharePaperData),   kDefSharePaperData);
     o.insert(QString::fromLatin1(kKeyGrobidEnabled),    kDefGrobidEnabled);
     o.insert(QString::fromLatin1(kKeyAutoCheckUpdates), kDefAutoCheckUpdates);
+    // A fresh install has saved no layouts.
+    o.insert(layoutPresetsKey(), QString{});
     return o;
 }
 
@@ -1193,6 +1209,27 @@ void Settings::importAccountSettings(const QJsonObject &obj)
         setGrobidEnabled(*v);
     if (const auto v = jsonBool(obj, kKeyAutoCheckUpdates))
         setAutoCheckUpdates(*v);
+
+    // The saved layouts. This one is a document rather than a setting, so
+    // it goes straight to the key LayoutPresets reads -- there is no setter
+    // to clamp it, which is why the shape is checked here instead. Anything
+    // that is not a presets document (a truncated write, a payload from
+    // something else entirely, a hand-edited file) leaves the layouts on
+    // this machine exactly where they are: the local ones at least came
+    // from this reader. An empty string is the same answer -- it is what an
+    // account that has never held a layout exports, and it must not be able
+    // to wipe one that has. Deleting a layout for real travels as a
+    // document with one fewer preset in it, not as nothing at all.
+    const QJsonValue presetsValue = obj.value(layoutPresetsKey());
+    if (presetsValue.isString()) {
+        const QString text = presetsValue.toString();
+        if (LayoutPresets::isPresetDocument(text)
+            && m_qs.value(layoutPresetsKey()).toString() != text) {
+            m_qs.setValue(layoutPresetsKey(), text);
+            m_qs.sync();
+            emit layoutPresetsChanged();
+        }
+    }
 
     // Anything else in obj is ignored on purpose: a newer build may sync a
     // key this one has never heard of, and guessing at it is worse than

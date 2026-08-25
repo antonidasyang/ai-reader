@@ -40,6 +40,11 @@ class TranslationService;
 // Adopted content is marked as such in the cache file and is never re-published
 // under this account, so a project of N members doesn't end up storing N copies
 // of the same work.
+//
+// Adoption reads the project's artifacts through LibraryDb, so the store's
+// account gate applies to it too: a paper opened while signed out, or while
+// signed in on a store that belongs to another account, adopts nothing and
+// segments for itself.
 class PaperSyncService : public QObject
 {
     Q_OBJECT

@@ -305,17 +305,6 @@ Rectangle {
                                 font.pixelSize: root.fs - 1
                                 text: root.endLabel(row.taskState, model.stateLabel)
                             }
-                            ToolButton {
-                                visible: model.canCancel
-                                implicitWidth: 22
-                                implicitHeight: 22
-                                font.pixelSize: 11
-                                text: "✕"
-                                ToolTip.visible: hovered
-                                ToolTip.delay: 400
-                                ToolTip.text: qsTr("Stop this task")
-                                onClicked: tasks.cancel(row.taskId)
-                            }
                             AppButton {
                                 visible: model.canRetry
                                 Layout.preferredHeight: 24
@@ -380,6 +369,22 @@ Rectangle {
                                       ? qsTr("Waiting")
                                       : root.numbers(model.done, model.total,
                                                      model.elapsedMs, model.etaMs)
+                            }
+                            // At the end of the bar, not up beside the title:
+                            // next to the work it stops it reads as "stop",
+                            // while next to the name it read as "delete this
+                            // row". It only exists while there is something
+                            // to stop, which is exactly when this row shows.
+                            ToolButton {
+                                visible: model.canCancel
+                                implicitWidth: 22
+                                implicitHeight: 22
+                                font.pixelSize: 11
+                                text: "✕"
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 400
+                                ToolTip.text: qsTr("Stop this task")
+                                onClicked: tasks.cancel(row.taskId)
                             }
                         }
 

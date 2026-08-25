@@ -10,6 +10,12 @@
 #include <QVariant>
 
 namespace {
+// store_meta keys. Both belong to this copy of the database, never to the
+// account: a settings key would be carried to another machine by the
+// user-preferences sync and would then vouch for a store it has never seen.
+constexpr auto kMetaOwner = "owner_user_id";
+constexpr auto kMetaSession = "session_user_id";
+
 QString jsonToText(const QJsonObject &o)
 {
     return QString::fromUtf8(QJsonDocument(o).toJson(QJsonDocument::Compact));
@@ -147,6 +153,23 @@ bool LibraryDb::migrate()
         }
     }
 
+    // Who this store belongs to, and whose session is open on it. One row
+    // per fact, in the database rather than in QSettings — see the header.
+    ok &= run(QStringLiteral(
+        "CREATE TABLE IF NOT EXISTS store_meta ("
+        " key TEXT PRIMARY KEY,"
+        " value TEXT NOT NULL)"));
+    // ...and which account claimed each project. sync_state already has one
+    // row per project, so the claim rides along with the sync cursor. ALTER
+    // is the only way to add it to a store that already exists; on one that
+    // already has the column it just fails, which is the "already migrated"
+    // answer.
+    {
+        QSqlQuery alter(db);
+        alter.exec(QStringLiteral(
+            "ALTER TABLE sync_state ADD COLUMN owner_id TEXT"));
+    }
+
     // FTS5 self-check: the bundled qsqlite driver normally ships FTS5, but a
     // system-sqlite build might not. If the virtual table can't be created,
     // disable search rather than break the whole DB.
@@ -160,7 +183,158 @@ bool LibraryDb::migrate()
                    << q.lastError().text()
                    << ") - full-text search disabled.";
     }
+    loadGateState();
     return ok;
+}
+
+// ─────────────────────────────────────────────────── the account gate ──
+
+void LibraryDb::loadGateState()
+{
+    m_owner.clear();
+    m_sessionUser.clear();
+    m_claims.clear();
+    QSqlQuery q(database());
+    if (q.exec(QStringLiteral("SELECT key, value FROM store_meta"))) {
+        while (q.next()) {
+            const QString key = q.value(0).toString();
+            if (key == QLatin1String(kMetaOwner))
+                m_owner = q.value(1).toString();
+            else if (key == QLatin1String(kMetaSession))
+                m_sessionUser = q.value(1).toString();
+        }
+    }
+    QSqlQuery c(database());
+    if (c.exec(QStringLiteral(
+            "SELECT project_id, owner_id FROM sync_state "
+            "WHERE owner_id IS NOT NULL AND owner_id <> ''"))) {
+        while (c.next())
+            m_claims.insert(c.value(0).toString(), c.value(1).toString());
+    }
+}
+
+void LibraryDb::setMeta(const QString &key, const QString &value)
+{
+    QSqlQuery q(database());
+    if (value.isEmpty()) {
+        q.prepare(QStringLiteral("DELETE FROM store_meta WHERE key=?"));
+        q.addBindValue(key);
+    } else {
+        q.prepare(QStringLiteral(
+            "INSERT INTO store_meta(key, value) VALUES(?,?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value"));
+        q.addBindValue(key);
+        q.addBindValue(value);
+    }
+    if (!q.exec())
+        qWarning() << "LibraryDb::setMeta:" << q.lastError().text();
+}
+
+QStringList LibraryDb::knownProjectIds() const
+{
+    QStringList ids;
+    QSqlQuery q(database());
+    if (q.exec(QStringLiteral(
+            "SELECT id FROM projects "
+            "UNION SELECT project_id FROM sync_state "
+            "UNION SELECT DISTINCT project_id FROM sync_objects"))) {
+        while (q.next()) {
+            const QString id = q.value(0).toString();
+            if (!id.isEmpty())
+                ids << id;
+        }
+    }
+    return ids;
+}
+
+void LibraryDb::openSession(const QString &userId)
+{
+    if (userId.isEmpty())
+        return;
+    if (m_owner.isEmpty()) {
+        // Nothing has claimed this store: a fresh profile, or one that
+        // predates the gate and is full of its own user's papers. It adopts
+        // whoever signs in first, together with everything already in it —
+        // the alternative is a library that locks out the person who built
+        // it the first time they update the app.
+        m_owner = userId;
+        setMeta(QString::fromLatin1(kMetaOwner), userId);
+        claimProjects(knownProjectIds(), userId);
+        qInfo() << "LibraryDb: store adopted by" << userId;
+    }
+    if (m_sessionUser != userId) {
+        m_sessionUser = userId;
+        setMeta(QString::fromLatin1(kMetaSession), userId);
+    }
+}
+
+void LibraryDb::closeSession()
+{
+    if (m_sessionUser.isEmpty())
+        return;
+    m_sessionUser.clear();
+    setMeta(QString::fromLatin1(kMetaSession), QString());
+}
+
+void LibraryDb::claimProjects(const QStringList &projectIds,
+                              const QString &userId)
+{
+    if (userId.isEmpty() || projectIds.isEmpty())
+        return;
+    QSqlDatabase db = database();
+    db.transaction();
+    QSqlQuery q(db);
+    for (const QString &pid : projectIds) {
+        // First claim wins. Re-assigning a project would hand the account
+        // that pulled it a second reader, which is the whole thing this
+        // gate exists to stop.
+        if (pid.isEmpty() || m_claims.contains(pid))
+            continue;
+        q.prepare(QStringLiteral(
+            "INSERT INTO sync_state(project_id, last_version, owner_id) "
+            "VALUES(?,0,?) ON CONFLICT(project_id) DO UPDATE SET "
+            "owner_id=excluded.owner_id "
+            "WHERE sync_state.owner_id IS NULL OR sync_state.owner_id=''"));
+        q.addBindValue(pid);
+        q.addBindValue(userId);
+        if (!q.exec()) {
+            qWarning() << "LibraryDb::claimProjects:" << q.lastError().text();
+            continue;
+        }
+        m_claims.insert(pid, userId);
+    }
+    db.commit();
+}
+
+bool LibraryDb::canRead(const QString &projectId) const
+{
+    if (projectId.isEmpty())
+        return false;
+    // A store nobody has ever claimed has no owner to protect, and the
+    // first session to open will adopt it.
+    if (m_owner.isEmpty() && m_claims.isEmpty())
+        return true;
+    // Whoever signed in — and, after a restart with no network, still the
+    // account whose session was never closed. Empty only after a sign-out.
+    const QString me = m_sessionUser;
+    if (me.isEmpty())
+        return false;
+    const QString owner = m_claims.value(projectId);
+    // A project nobody claimed belongs to whoever owns the store: a
+    // brand-new project of theirs is readable before its first sync, and
+    // one of the owner's that predates the claim column stays readable.
+    return owner.isEmpty() ? me == m_owner : owner == me;
+}
+
+QString LibraryDb::lockReason() const
+{
+    if (m_owner.isEmpty() && m_claims.isEmpty())
+        return {};
+    if (m_sessionUser.isEmpty())
+        return QStringLiteral("signed-out");
+    if (m_sessionUser != m_owner)
+        return QStringLiteral("other-account");
+    return {};
 }
 
 qint64 LibraryDb::lastVersion(const QString &projectId) const
@@ -242,6 +416,8 @@ void LibraryDb::localUpsert(const QString &projectId, const QString &id,
 bool LibraryDb::getObject(const QString &projectId, const QString &id,
                           SyncObjectRow &out) const
 {
+    if (!canRead(projectId))
+        return false;
     QSqlQuery q(database());
     q.prepare(QStringLiteral(
         "SELECT id, project_id, type, data, version, deleted, updated_at,"
@@ -277,6 +453,11 @@ QList<SyncObjectRow> LibraryDb::dirtyObjects(const QString &projectId,
                                             qint64 maxBytes) const
 {
     QList<SyncObjectRow> rows;
+    // The outbox is content too: pushing it would put one account's
+    // unsynced work on the wire under another's token. It is not deleted,
+    // only held, and drains as soon as its own user is back.
+    if (!canRead(projectId))
+        return rows;
     QSqlQuery q(database());
     // Oldest first (rowid order) so a busy paper can't keep jumping the
     // queue ahead of edits that have been waiting.
@@ -316,6 +497,8 @@ QList<SyncObjectRow> LibraryDb::dirtyObjects(const QString &projectId,
 
 int LibraryDb::dirtyCount(const QString &projectId) const
 {
+    if (!canRead(projectId))
+        return 0;
     QSqlQuery q(database());
     q.prepare(QStringLiteral(
         "SELECT COUNT(*) FROM sync_objects WHERE project_id=? AND dirty=1"));
@@ -350,6 +533,8 @@ QList<SyncObjectRow> LibraryDb::objectsByType(const QString &projectId,
                                               bool includeDeleted) const
 {
     QList<SyncObjectRow> rows;
+    if (!canRead(projectId))
+        return rows;
     QSqlQuery q(database());
     QString sql = QStringLiteral(
         "SELECT id, project_id, type, data, version, deleted, updated_at,"
@@ -411,6 +596,11 @@ QList<ProjectRow> LibraryDb::projects() const
     while (q.next()) {
         ProjectRow p;
         p.id = q.value(0).toString();
+        // The cache is whatever the last session fetched, so it is gated
+        // like everything else: signed out it answers nothing, and a
+        // second account sees only the projects it claimed itself.
+        if (!canRead(p.id))
+            continue;
         p.name = q.value(1).toString();
         p.description = q.value(2).toString();
         p.role = q.value(3).toString();
@@ -443,6 +633,9 @@ void LibraryDb::purgeProject(const QString &projectId)
         q.exec();
     }
     db.commit();
+    // The sync_state row carried the claim, so the project is unclaimed
+    // again — which is what a project that no longer exists should be.
+    m_claims.remove(projectId);
 }
 
 void LibraryDb::indexPaperData(const PaperDataRef &ref)
@@ -481,7 +674,7 @@ QList<PaperDataRef> LibraryDb::paperData(const QString &projectId,
                                          const QString &kind) const
 {
     QList<PaperDataRef> out;
-    if (projectId.isEmpty() || paperId.isEmpty())
+    if (paperId.isEmpty() || !canRead(projectId))
         return out;
     QSqlQuery q(database());
     q.prepare(QStringLiteral(
@@ -541,7 +734,7 @@ QList<SearchHit> LibraryDb::search(const QString &projectId,
                                    const QString &query, int limit) const
 {
     QList<SearchHit> hits;
-    if (!m_ftsAvailable || query.trimmed().isEmpty())
+    if (!m_ftsAvailable || query.trimmed().isEmpty() || !canRead(projectId))
         return hits;
     QSqlQuery q(database());
     q.prepare(QStringLiteral(

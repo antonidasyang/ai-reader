@@ -2,6 +2,7 @@
 #include "ChatService.h"
 #include "CursorUtil.h"
 #include "CrashReporter.h"
+#include "LayoutPresets.h"
 #include "LayoutSettings.h"
 #include "UpdateChecker.h"
 #include "Library.h"
@@ -349,6 +350,14 @@ int main(int argc, char *argv[])
     ChatContent chatContent(&markdown);
     Library library;
     LayoutSettings layoutSettings;
+    // Named arrangements of the panes. The presets themselves ride the
+    // account payload as one JSON string; which one this screen is showing
+    // stays here, because that is a fact about this screen.
+    LayoutPresets layoutPresets;
+    QObject::connect(&layoutPresets, &LayoutPresets::presetsChanged,
+                     &settings, &Settings::layoutPresetsChanged);
+    QObject::connect(&settings, &Settings::layoutPresetsChanged,
+                     &layoutPresets, &LayoutPresets::reload);
     Tabs tabs(&paperController);
     UpdateChecker updateChecker(&settings);
     LibraryDb libraryDb;
@@ -534,6 +543,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("chatContent", &chatContent);
     engine.rootContext()->setContextProperty("library", &library);
     engine.rootContext()->setContextProperty("layoutSettings", &layoutSettings);
+    engine.rootContext()->setContextProperty("layouts", &layoutPresets);
     engine.rootContext()->setContextProperty("tabs", &tabs);
     engine.rootContext()->setContextProperty("updates", &updateChecker);
     engine.rootContext()->setContextProperty("libraryDb", &libraryDb);

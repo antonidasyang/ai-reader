@@ -267,11 +267,19 @@ public:
     // signed-in user; UserPrefsSync pushes and pulls exactly these and
     // nothing else. What is missing from it is missing on purpose: API
     // keys and tokens live in the OS keychain and must never leave the
-    // machine, and window geometry, pane visibility/width/order, reading
-    // positions, open tabs, the last local folder, ui/remoteMode,
+    // machine, and window geometry, the live pane visibility/width/order,
+    // reading positions, open tabs, the last local folder, ui/remoteMode,
     // server/sessionActive, privacy/crashReportsOptIn, server/url,
     // grobid/url and updates/manifestUrl describe this screen, this disk
     // or this network -- not this user.
+    //
+    // The saved LAYOUTS are the exception that proves that rule and the one
+    // key here Settings does not itself own: "layouts/presets" is a document
+    // LayoutPresets writes, and Settings only carries the string in and out
+    // of the payload. It travels because a named arrangement is a decision
+    // the reader made -- and its widths are fractions of the window rather
+    // than pixels precisely so it can be carried to a machine with a
+    // different screen. Which of them is currently applied does not travel.
     static const QStringList &accountSettingKeys();
 
     // The current value of every key above. Types are the natural JSON
@@ -358,6 +366,14 @@ signals:
     void fetchingTranslationModelsChanged();
     void translationModelsErrorChanged();
     void keychainStatusChanged();
+
+    // The saved-layouts document changed. Raised when an account payload
+    // brings a different one in (LayoutPresets listens, so the menu follows
+    // without a restart), and relayed from LayoutPresets by main() when the
+    // reader saves one here (so the sync layer has something to push --
+    // Settings does not hold the value, so no ordinary setter's signal
+    // would ever fire for it).
+    void layoutPresetsChanged();
 
 private:
     void load();

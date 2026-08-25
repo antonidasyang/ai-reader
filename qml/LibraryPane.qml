@@ -18,6 +18,18 @@ Rectangle {
         searchResults = searching ? search.search(searchField.text) : []
     }
 
+    // The library this pane is showing. A search belongs to the project it
+    // was typed in — and to the account that typed it — so when either
+    // changes the hits on screen are somebody else's rows and go with it.
+    // Bound to the value, not to the signal: `currentChanged` is also
+    // emitted whenever the project list is merely re-fetched, and that must
+    // not wipe what the user is in the middle of typing.
+    readonly property string shownProject: projects.currentId
+    onShownProjectChanged: {
+        searchField.text = ""
+        searchResults = []
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -251,13 +263,19 @@ Rectangle {
                 color: Theme.dimText
                 visible: root.searching ? root.searchResults.length === 0
                                         : libraryModel.count === 0
+                // What actually happened, in this order: a store that
+                // belongs to somebody else is not the same as a signed-out
+                // one, and neither is an empty project.
                 text: root.searching
                       ? qsTr("No matches.")
-                      : (!auth.authenticated
-                         ? qsTr("Sign in to use the library.")
-                         : (projects.currentId.length === 0
-                            ? qsTr("Create or select a project.")
-                            : qsTr("No papers yet. Open a PDF, then click + Add.")))
+                      : (projects.libraryLockReason === "other-account"
+                         ? qsTr("This library belongs to a different account. Sign in as that user to open it — papers you sync yourself will appear here.")
+                         : (projects.libraryLockReason === "signed-out"
+                            || !auth.authenticated
+                            ? qsTr("Sign in to use the library.")
+                            : (projects.currentId.length === 0
+                               ? qsTr("Create or select a project.")
+                               : qsTr("No papers yet. Open a PDF, then click + Add."))))
             }
         }
 

@@ -460,6 +460,14 @@ Rectangle {
                             wrapMode: TextEdit.Wrap
                             textFormat: TextEdit.PlainText
                             color: Theme.bodyText
+                            // Translucent, and the same colour the page uses
+                            // for its own selection -- Fusion's default is
+                            // opaque and dark enough to bury the words under
+                            // it. Keeping selectedTextColor equal to the text
+                            // colour is what makes that translucency mean
+                            // something.
+                            selectionColor: Theme.selection
+                            selectedTextColor: Theme.bodyText
                             // Headings get +2 px so they remain
                             // visually above the body even when the
                             // user scales paragraphFontSize from
@@ -473,13 +481,23 @@ Rectangle {
                         // +2 px from the source so the translated
                         // line is the dominant element; headings
                         // stack another +2 px on top.
-                        Text {
+                        // A read-only TextEdit rather than a Text: the
+                        // translation is the half most readers actually work
+                        // from, and it could not be selected or copied at
+                        // all. Same selection colour as the source and as the
+                        // page.
+                        TextEdit {
+                            id: translationText
                             visible: blockDelegate._showTrans
                             Layout.fillWidth: true
                             text: model.translation || ""
-                            wrapMode: Text.Wrap
-                            textFormat: Text.PlainText
+                            readOnly: true
+                            selectByMouse: true
+                            wrapMode: TextEdit.Wrap
+                            textFormat: TextEdit.PlainText
                             color: Theme.text
+                            selectionColor: Theme.selection
+                            selectedTextColor: Theme.text
                             font.pixelSize: settings.paragraphFontSize + 2
                                           + (model.kindName === "heading" ? 2 : 0)
                             font.bold: model.kindName === "heading"

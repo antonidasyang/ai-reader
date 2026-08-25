@@ -6,6 +6,11 @@
 //   rule 2  another account                → adopted only into our gaps; a
 //                                            segmentation or a paragraph
 //                                            translation of our own wins
+//
+// The last two sections drive the same real stack over the local store's
+// account gate (whose papers the library is allowed to serve) and over a
+// project switch with no pane in the picture — the model has to answer for
+// the project that is current now, not for the one it last drew.
 
 #include "FakeSync.h"
 
@@ -14,16 +19,19 @@
 #include "BlockCache.h"
 #include "BlockListModel.h"
 #include "LibraryDb.h"
+#include "LibraryModel.h"
 #include "PaperController.h"
 #include "FileSyncService.h"
 #include "PaperSyncService.h"
 #include "ProjectController.h"
+#include "SearchService.h"
 #include "Settings.h"
 #include "SyncEngine.h"
 #include "Tabs.h"
 #include "TranslationCache.h"
 #include "TranslationService.h"
 
+#include <QRegularExpression>
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDeadlineTimer>
@@ -34,8 +42,11 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSettings>
+#include <QSqlQuery>
 #include <QStandardPaths>
+#include <QStringList>
 #include <QUuid>
+#include <QVariant>
 #include <QtGlobal>
 
 static int g_pass = 0, g_fail = 0;
@@ -560,7 +571,245 @@ int main(int argc, char **argv)
               titled.nameAt(titled.activeIndex())
                   == QStringLiteral("Attention Is All You Need"),
               titled.nameAt(titled.activeIndex()));
+
+        // ...and when it cannot be looked up at all -- signed out, no project
+        // selected, the item not pulled yet -- the tab and the caption must
+        // not fall back to the checksum the file is named after.
+        Tabs anonymous(&paper);
+        anonymous.setTitleResolver([](const QUrl &) { return QString(); });
+        anonymous.openPaper(QUrl::fromLocalFile(blob));
+        pump(100);
+        const QString shown = anonymous.nameAt(anonymous.activeIndex());
+        check("with nothing to look the paper up in, the tab says so rather "
+              "than showing a checksum",
+              !shown.contains(QRegularExpression(QStringLiteral("[0-9a-f]{32}"))) 
+                  && !shown.isEmpty(),
+              shown);
     }
+
+    // ── the local store's account gate ────────────────────────────────
+    // Everything above ran as one signed-in user on a store that was empty
+    // when the run started. From here the question is who the store lets
+    // read it: signing out, a second account on the same machine, and the
+    // first user coming back to an edit they never got to push.
+    const QString PROJ2 =
+        QStringLiteral("99999999-8888-7777-6666-555555555555");
+    const QString PROJ3 =
+        QStringLiteral("33333333-4444-5555-6666-777777777777");
+    const QString ITEM_MINE =
+        QStringLiteral("10000000-0000-0000-0000-00000000000a");
+    const QString ITEM_PENDING =
+        QStringLiteral("10000000-0000-0000-0000-00000000000b");
+    const QString ITEM_THEIRS =
+        QStringLiteral("10000000-0000-0000-0000-00000000000c");
+    const QString ITEM_OTHER_PROJECT =
+        QStringLiteral("10000000-0000-0000-0000-00000000000d");
+
+    // The real readers, built exactly as main.cpp builds them — no QML, no
+    // pane, nothing that could be holding the rows on its own.
+    LibraryModel library(&db, &projects, &sync);
+    SearchService searchSvc(&db, &projects);
+
+    // A row as a pull would have written it, plus its search-index entry.
+    const auto putItem = [&](const QString &project, const QString &id,
+                             const QString &title, const QString &text) {
+        SyncObjectRow r;
+        r.id = id;
+        r.projectId = project;
+        r.type = QStringLiteral("item");
+        r.data = QJsonObject{{"title", title}};
+        r.version = 1;
+        db.upsertFromServer(r);
+        db.indexDoc(id, project, QStringLiteral("item"), text);
+    };
+    // Straight SQL, so "is the data still on disk" can be asked even while
+    // the gate refuses to answer it through LibraryDb.
+    const auto rawCount = [&](const QString &sql, const QString &project) {
+        QSqlQuery q(db.database());
+        q.prepare(sql);
+        q.addBindValue(project);
+        return (q.exec() && q.next()) ? q.value(0).toInt() : -1;
+    };
+    const auto rawItems = [&](const QString &project) {
+        return rawCount(QStringLiteral(
+            "SELECT COUNT(*) FROM sync_objects "
+            "WHERE project_id=? AND type='item' AND deleted=0"), project);
+    };
+    const auto rawOutbox = [&](const QString &project) {
+        return rawCount(QStringLiteral(
+            "SELECT COUNT(*) FROM sync_objects "
+            "WHERE project_id=? AND dirty=1"), project);
+    };
+    const auto listedTitles = [&] {
+        QStringList out;
+        for (int i = 0; i < library.rowCount(); ++i)
+            out << library.data(library.index(i, 0),
+                                LibraryModel::TitleRole).toString();
+        return out;
+    };
+
+    check("the store recorded the account that first signed in",
+          db.storeOwner() == ME, db.storeOwner());
+    check("...and claimed the project that account synced",
+          db.projectOwner(PROJ) == ME, db.projectOwner(PROJ));
+
+    putItem(PROJ, ITEM_MINE, QStringLiteral("Owner Paper"),
+            QStringLiteral("photonics resonator lattice"));
+    library.reload();
+    const int ownerRows = library.rowCount();
+    check("the owner's library lists their papers",
+          ownerRows == rawItems(PROJ) && ownerRows > 0,
+          QStringLiteral("%1 rows").arg(ownerRows));
+    check("...their search index answers",
+          searchSvc.search(QStringLiteral("photonics")).size() == 1);
+    check("...and the paper data they synced is served",
+          !db.paperData(PROJ, paperA, QStringLiteral("blocks")).isEmpty());
+
+    // An edit that never reached the server. Written straight into the
+    // outbox so no push can carry it away before the sign-out below.
+    backend.clearPushed();
+    db.localUpsert(PROJ, ITEM_PENDING, QStringLiteral("item"),
+                   QJsonObject{{"title", "Written While Offline"}}, false, ME);
+    check("an un-pushed edit is in the outbox", rawOutbox(PROJ) >= 1,
+          QStringLiteral("%1 dirty").arg(rawOutbox(PROJ)));
+
+    // ── signing out ───────────────────────────────────────────────────
+    auth.logout();
+    pump(400);
+    check("signing out forgets which project was open",
+          projects.currentId().isEmpty(), projects.currentId());
+    check("...and the settings key with it",
+          QSettings().value(QStringLiteral("project/currentId"))
+              .toString().isEmpty());
+    check("...the library pane empties", library.rowCount() == 0,
+          QStringLiteral("%1 rows").arg(library.rowCount()));
+    check("...search answers nothing",
+          searchSvc.search(QStringLiteral("photonics")).isEmpty());
+    check("...paper data refuses",
+          db.paperData(PROJ, paperA, QStringLiteral("blocks")).isEmpty());
+    check("...and the empty state can say why",
+          projects.libraryLockReason() == QLatin1String("signed-out"),
+          projects.libraryLockReason());
+    check("...but nothing was deleted: the rows are still on disk",
+          rawItems(PROJ) == ownerRows + 1,
+          QStringLiteral("%1 rows on disk").arg(rawItems(PROJ)));
+    check("...including the un-pushed edit", rawOutbox(PROJ) >= 1);
+
+    // ── a second account on the same machine ──────────────────────────
+    qputenv("TEST_USER_ID", OTHER.toUtf8());
+    qputenv("TEST_USER_EMAIL", "other@example.test");
+    auth.startCasLogin();
+    waitFor([&] { return !projects.list().isEmpty(); }, 8000);
+    pump(600);
+    check("a second account does not inherit the first one's library",
+          library.rowCount() == 0,
+          QStringLiteral("%1 rows").arg(library.rowCount()));
+    check("...nor their search index",
+          searchSvc.search(QStringLiteral("photonics")).isEmpty());
+    check("...nor their paper data",
+          db.paperData(PROJ, paperA, QStringLiteral("blocks")).isEmpty());
+    check("...and is not even parked in their project",
+          projects.currentId().isEmpty(), projects.currentId());
+    check("...and is told whose store this is",
+          projects.libraryLockReason() == QLatin1String("other-account"),
+          projects.libraryLockReason());
+    check("the store still belongs to the first account",
+          db.storeOwner() == ME && db.projectOwner(PROJ) == ME);
+    check("...none of their rows were deleted",
+          rawItems(PROJ) == ownerRows + 1);
+    check("...and their outbox was not pushed under the new account",
+          backend.pushed().isEmpty(),
+          QStringLiteral("%1 pushed").arg(backend.pushed().size()));
+
+    // Their own project, which nobody has claimed, is theirs to read: the
+    // store is neither wiped for them nor shared with them.
+    backend.setProject(PROJ2, QStringLiteral("owner"));
+    projects.refresh();
+    waitFor([&] { return projects.currentId() == PROJ2; }, 8000);
+    check("the second account's own project is theirs",
+          projects.currentId() == PROJ2 && db.projectOwner(PROJ2) == OTHER,
+          db.projectOwner(PROJ2));
+    putItem(PROJ2, ITEM_THEIRS, QStringLiteral("Their Own Paper"),
+            QStringLiteral("silicon carbide waveguide"));
+    library.reload();
+    check("...and their own sync fills their library",
+          listedTitles() == QStringList{QStringLiteral("Their Own Paper")},
+          listedTitles().join(QStringLiteral(", ")));
+    check("...while the first account's project stays shut",
+          db.objectsByType(PROJ, QStringLiteral("item")).isEmpty());
+
+    // ── the first account comes back ──────────────────────────────────
+    auth.logout();
+    backend.setProject(PROJ, QStringLiteral("owner"));
+    backend.clearPushed();
+    qputenv("TEST_USER_ID", ME.toUtf8());
+    qputenv("TEST_USER_EMAIL", "me@example.test");
+    auth.startCasLogin();
+    waitFor([&] { return projects.currentId() == PROJ; }, 8000);
+    check("the owner comes back to their own library",
+          listedTitles().contains(QStringLiteral("Owner Paper"))
+              && !listedTitles().contains(QStringLiteral("Their Own Paper")),
+          listedTitles().join(QStringLiteral(", ")));
+    check("...with the edit they never pushed still in it",
+          listedTitles().contains(QStringLiteral("Written While Offline")));
+    const bool pushedPending = waitForSync([&] {
+        for (const QJsonObject &o : backend.pushed()) {
+            if (o.value("id").toString() == ITEM_PENDING)
+                return true;
+        }
+        return false;
+    }, sync, 20000);
+    check("...and it pushes now that they are back", pushedPending);
+    check("the store never changed hands",
+          db.storeOwner() == ME, db.storeOwner());
+
+    // Creating a project switches to it. The current project used to be
+    // assigned without telling anyone, leaving the pane on the project we
+    // had just left whenever the /projects refresh that was supposed to
+    // announce it failed — which is what this backend's answer to
+    // POST /projects (no id in it) reproduces exactly.
+    {
+        bool agreed = true;
+        QString sawCurrent, sawTitles;
+        projects.createProject(QStringLiteral("A New Project"), QString());
+        for (int i = 0; i < 60 && agreed; ++i) {
+            pump(50);
+            const int expected = qMax(0, rawItems(projects.currentId()));
+            if (library.rowCount() != expected) {
+                agreed = false;
+                sawCurrent = projects.currentId();
+                sawTitles = listedTitles().join(QStringLiteral(", "));
+            }
+        }
+        check("creating a project never leaves the old rows listed", agreed,
+              QStringLiteral("current=%1 listed=%2").arg(sawCurrent, sawTitles));
+    }
+
+
+    // ── switching projects with no pane in the picture ────────────────
+    // The model is what the library pane lists. It has to answer for the
+    // project that is current *now* whether or not anything is on screen,
+    // and the project id may never move without the signal that says so.
+    putItem(PROJ3, ITEM_OTHER_PROJECT,
+            QStringLiteral("A Paper In The Other Project"),
+            QStringLiteral("quantum dot emitter"));
+    projects.selectProject(PROJ3);
+    check("switching projects lists the new project's papers, not the old",
+          listedTitles()
+                  == QStringList{QStringLiteral("A Paper In The Other Project")},
+          listedTitles().join(QStringLiteral(", ")));
+    // A pull that started before the switch, finishing after it: it says
+    // nothing about the project on screen and must not put its rows back.
+    sync.projectSynced(PROJ);
+    check("a sync landing for the project we left does not repopulate it",
+          !listedTitles().contains(QStringLiteral("Owner Paper")),
+          listedTitles().join(QStringLiteral(", ")));
+    projects.selectProject(PROJ);
+    check("...and switching back lists the first project again",
+          listedTitles().contains(QStringLiteral("Owner Paper"))
+              && !listedTitles().contains(
+                     QStringLiteral("A Paper In The Other Project")),
+          listedTitles().join(QStringLiteral(", ")));
 
     QDir(root).removeRecursively();
     { QSettings s; s.clear(); s.sync(); }

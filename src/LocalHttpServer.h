@@ -33,6 +33,9 @@ private slots:
 private:
     void handle(QTcpSocket *sock);
     void respond(QTcpSocket *sock, int status, const QByteArray &body);
+    // The page the browser is left on when the round trip ends. `error` empty
+    // means it worked; `name` is only used to greet the user by name.
+    QByteArray resultPage(const QString &error, const QString &name) const;
 
     QTcpServer *m_server = nullptr;
     quint16 m_port = 0;

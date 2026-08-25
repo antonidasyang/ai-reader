@@ -121,6 +121,11 @@ UserPrefsSync::UserPrefsSync(ApiClient *api, AuthController *auth,
             &Settings::sharePaperDataChanged,
             &Settings::grobidEnabledChanged,
             &Settings::autoCheckUpdatesChanged,
+            // Saved pane arrangements live in the same payload. They have no
+            // ordinary setter -- LayoutPresets writes the key itself -- so
+            // without this a layout saved here would only reach the account
+            // on the next pull.
+            &Settings::layoutPresetsChanged,
         };
         for (const Sig s : sigs)
             connect(m_settings, s, this, &UserPrefsSync::onLocalChange);

@@ -276,6 +276,62 @@ ApplicationWindow {
         anchors.centerIn: Overlay.overlay
     }
 
+    // ── Saved layouts ───────────────────────────────────────────────
+    SaveLayoutDialog {
+        id: saveLayoutDialog
+        anchors.centerIn: Overlay.overlay
+        onSaveConfirmed: function(name) { window.saveLayout(name) }
+        onRenameConfirmed: function(from, to) { layouts.rename(from, to) }
+    }
+
+    // Deleting is the one thing here that cannot be undone -- the
+    // arrangement itself survives, but the name and the widths behind it do
+    // not -- so it is asked about, with the name in the question.
+    AppDialog {
+        id: deleteLayoutDialog
+        title: qsTr("Delete this layout?")
+        width: 400
+        standardButtons: Dialog.NoButton
+
+        property string layoutName: ""
+
+        function ask(name) {
+            deleteLayoutDialog.layoutName = name
+            deleteLayoutDialog.open()
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: Theme.spaceM
+
+            Label {
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                color: Theme.text
+                text: qsTr("“%1” will be gone. The panes on screen stay "
+                           + "exactly as they are.")
+                          .arg(deleteLayoutDialog.layoutName)
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Theme.spaceS
+                Item { Layout.fillWidth: true }
+                AppButton {
+                    text: qsTr("Cancel")
+                    onClicked: deleteLayoutDialog.close()
+                }
+                AppButton {
+                    text: qsTr("Delete")
+                    danger: true
+                    onClicked: {
+                        deleteLayoutDialog.close()
+                        layouts.remove(deleteLayoutDialog.layoutName)
+                    }
+                }
+            }
+        }
+    }
+
     // Cloud-library dialogs (the toolbar account/project group drives these).
     MembersDialog { id: membersDialog }
     ProjectSettingsDialog { id: projectSettingsDialog }
@@ -572,17 +628,19 @@ ApplicationWindow {
                 arr.push(it.objectName)
         }
         layoutSettings.setPaneOrder(arr.join(","))
+        window.layoutTouched()
     }
 
-    function applySavedPaneOrder() {
-        const csv = layoutSettings.paneOrder()
-        if (!csv || csv.length === 0) return
-        const desired = csv.split(",")
-        // Walk each desired position and pull the matching pane (by
-        // objectName) into that slot. Skip ids that aren't present
-        // any longer (e.g., a pane was removed in a new build).
-        for (let dst = 0; dst < desired.length; ++dst) {
-            const id = desired[dst]
+    // Put the panes in `desired` order, left to right. Ids this build has
+    // no pane for are stepped over rather than counted -- a saved order (or
+    // a saved layout) written by another version may name a pane that is
+    // not here, and letting it consume a slot would shift every pane after
+    // it one place to the right.
+    function applyPaneOrder(desired) {
+        if (!desired || desired.length === 0) return
+        let dst = 0
+        for (let k = 0; k < desired.length; ++k) {
+            const id = desired[k]
             for (let i = dst; i < split.count; ++i) {
                 const it = split.itemAt(i)
                 if (it && it.objectName === id) {
@@ -590,10 +648,121 @@ ApplicationWindow {
                         const item = split.takeItem(i)
                         split.insertItem(dst, item)
                     }
+                    ++dst
                     break
                 }
             }
         }
+    }
+
+    function applySavedPaneOrder() {
+        const csv = layoutSettings.paneOrder()
+        if (!csv || csv.length === 0) return
+        window.applyPaneOrder(csv.split(","))
+    }
+
+    // ── Saved layouts ─────────────────────────────────────────────────
+    // A layout is the arrangement itself -- which panes are showing, how
+    // wide each one is, what order they sit in -- saved under a name and
+    // put back on demand. `layouts` (LayoutPresets) owns the storage, the
+    // naming rules and the JSON; the two functions below are the half only
+    // this file can do, because only this file can see the SplitView.
+    //
+    // While a layout is being applied every change it makes goes through
+    // the same properties a click or a drag writes, so this flag is what
+    // tells the two apart: the reader moving something means the panes are
+    // no longer the saved layout they came from, the layout putting them
+    // there does not.
+    property bool applyingLayout: false
+    // True until the window has finished building itself. Every pane's
+    // `visible` settles while the SplitView is being created, which fires
+    // onVisibleChanged for each pane that was saved hidden -- that is the
+    // arrangement being restored, not the reader changing it, and reading
+    // it as a change would clear the tick beside the applied layout on
+    // every single launch.
+    property bool startingUp: true
+
+    function layoutTouched() {
+        if (window.applyingLayout || window.startingUp) return
+        layouts.current = ""
+    }
+
+    // The arrangement on screen, ready to be saved. Widths are FRACTIONS of
+    // the row rather than pixels: a layout saved on a 4K desktop has to be
+    // usable on a 1366-wide laptop, and pixel widths carried across would
+    // leave the reader nothing but scrollbars. Window geometry is left out
+    // on purpose -- a position from another machine's monitors is a window
+    // nobody can find.
+    function paneLayoutSnapshot() {
+        const total = split.width
+        const order = []
+        const panes = {}
+        for (let i = 0; i < split.count; ++i) {
+            const it = split.itemAt(i)
+            if (!it || !it.objectName || it.objectName.length === 0)
+                continue
+            order.push(it.objectName)
+            // A hidden pane is 0 wide on screen; what it would come back at
+            // is its preferred width, and failing that the width the app
+            // has been remembering for it all along.
+            let px = it.visible ? it.width : it.SplitView.preferredWidth
+            if (!(px > 0))
+                px = layoutSettings.paneWidth(it.objectName, 0)
+            panes[it.objectName] = {
+                "visible": it.visible,
+                "width": (total > 0 && px > 0) ? (px / total) : 0
+            }
+        }
+        return { "order": order, "panes": panes }
+    }
+
+    // Put a saved arrangement back. Everything below is written through the
+    // properties the reader's own clicks and drags write -- `visible`, the
+    // pane's preferred width, and the take/insert the DockGrip uses -- so
+    // the result is a hand-made arrangement as far as the rest of the app
+    // is concerned, and it persists exactly like one.
+    function applyLayout(name) {
+        const mins = {}
+        for (let i = 0; i < split.count; ++i) {
+            const it = split.itemAt(i)
+            if (it && it.objectName && it.objectName.length > 0)
+                mins[it.objectName] = it.SplitView.minimumWidth
+        }
+        // C++ turns the fractions back into pixels for this window and
+        // clamps them: nothing below its minimum, nothing wider than the
+        // row, and the whole thing made to fit.
+        const plan = layouts.resolve(name, split.width, mins)
+        if (!plan || !plan.found)
+            return false
+
+        window.applyingLayout = true
+        const panes = plan.panes
+        for (let i = 0; i < split.count; ++i) {
+            const it = split.itemAt(i)
+            if (!it || !it.objectName || it.objectName.length === 0)
+                continue
+            const want = panes[it.objectName]
+            // A pane the layout says nothing about is left exactly as it
+            // is. A layout saved by an older build has no opinion about a
+            // pane that build did not have, and reading silence as "hide
+            // it" would make every upgrade look like a pane had been taken
+            // away.
+            if (!want) continue
+            it.visible = want.visible
+            // The filling pane takes whatever the others leave it;
+            // assigning it a width would only fight the SplitView.
+            if (want.width > 0 && !it.SplitView.fillWidth)
+                it.SplitView.preferredWidth = want.width
+        }
+        window.applyPaneOrder(plan.order)
+        window.persistPaneOrder()
+        window.applyingLayout = false
+        layouts.current = name
+        return true
+    }
+
+    function saveLayout(name) {
+        layouts.save(name, window.paneLayoutSnapshot())
     }
 
     Component.onCompleted: {
@@ -608,6 +777,10 @@ ApplicationWindow {
         // SplitView.preferredWidth to layoutSettings.paneWidth(...)
         // and persists via onWidthChanged. The C++ setter debounces
         // writes so a drag becomes one disk write.
+
+        // Every pane has settled by now, so anything that moves from here
+        // on is the reader moving it.
+        window.startingUp = false
 
         // Wire spotlight targets now that the toolbar / panes exist.
         welcomeWizard.steps = buildWizardSteps()
@@ -913,6 +1086,56 @@ ApplicationWindow {
                 tip: qsTr("Chat pane: ask about this paper")
                 onClicked: chatPane.visible = !chatPane.visible
             }
+            ToolButton {
+                // The last entry in the pane group, because it is about all
+                // of them at once: the arrangement the other buttons make,
+                // saved under a name and switched between.
+                id: layoutsBtn
+                ToolTip.visible: hovered
+                ToolTip.delay: 400
+                ToolTip.text: layouts.current.length > 0
+                              ? qsTr("Saved layouts — showing “%1”")
+                                    .arg(layouts.current)
+                              : qsTr("Saved layouts: arrange the panes, save "
+                                     + "that arrangement under a name, and "
+                                     + "switch between them")
+                // Drawn rather than an icon file: three columns with a wide
+                // one in the middle, which is what every one of these
+                // arrangements looks like from far enough away.
+                contentItem: Item {
+                    implicitWidth: 18
+                    implicitHeight: 18
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 2
+                        Repeater {
+                            model: [3, 7, 3]
+                            delegate: Rectangle {
+                                required property var modelData
+                                required property int index
+                                width: modelData
+                                height: 14
+                                radius: 1
+                                color: Theme.text
+                                opacity: index === 1 ? 0.5 : 0.9
+                            }
+                        }
+                    }
+                }
+                onClicked: layoutMenu.popup()
+
+                LayoutMenu {
+                    id: layoutMenu
+                    onApplyRequested: function(name) { window.applyLayout(name) }
+                    onSaveRequested: saveLayoutDialog.openForSave()
+                    onRenameRequested: function(name) {
+                        saveLayoutDialog.openForRename(name)
+                    }
+                    onDeleteRequested: function(name) {
+                        deleteLayoutDialog.ask(name)
+                    }
+                }
+            }
 
             Label {
                 text: pdfDoc.status === PdfDocument.Ready
@@ -1151,6 +1374,12 @@ ApplicationWindow {
             anchors.fill: parent
             orientation: Qt.Horizontal
 
+            // A handle the reader dragged is a change to the arrangement,
+            // so the panes are no longer the saved layout they came from.
+            // A window resize is not: every pane keeps its share of the row,
+            // which is exactly what a layout stores.
+            onResizingChanged: if (!resizing) window.layoutTouched()
+
             // ── Far left: folder browser (toggleable) ──────────────────
             // Visible by default if the user previously had a folder
             // open; auto-hidden otherwise so first-launch isn't crowded.
@@ -1172,7 +1401,10 @@ ApplicationWindow {
                 // is persisted via onVisibleChanged below.
                 visible: layoutSettings.paneVisible("folder",
                     library.currentFolder.length > 0)
-                onVisibleChanged: layoutSettings.setPaneVisible("folder", visible)
+                onVisibleChanged: {
+                    layoutSettings.setPaneVisible("folder", visible)
+                    window.layoutTouched()
+                }
                 SplitView.preferredWidth: layoutSettings.paneWidth("folder", 240)
                 SplitView.minimumWidth: 0
                 onWidthChanged: layoutSettings.setPaneWidth("folder", width)
@@ -1195,7 +1427,10 @@ ApplicationWindow {
                 id: libraryPane
                 objectName: "library"
                 visible: layoutSettings.paneVisible("library", false)
-                onVisibleChanged: layoutSettings.setPaneVisible("library", visible)
+                onVisibleChanged: {
+                    layoutSettings.setPaneVisible("library", visible)
+                    window.layoutTouched()
+                }
                 SplitView.preferredWidth: layoutSettings.paneWidth("library", 280)
                 SplitView.minimumWidth: 0
                 onWidthChanged: layoutSettings.setPaneWidth("library", width)
@@ -1218,7 +1453,10 @@ ApplicationWindow {
                 id: tocSidebar
                 objectName: "toc"
                 visible: layoutSettings.paneVisible("toc", true)
-                onVisibleChanged: layoutSettings.setPaneVisible("toc", visible)
+                onVisibleChanged: {
+                    layoutSettings.setPaneVisible("toc", visible)
+                    window.layoutTouched()
+                }
                 SplitView.preferredWidth: layoutSettings.paneWidth("toc", 220)
                 SplitView.minimumWidth: 0
                 onWidthChanged: layoutSettings.setPaneWidth("toc", width)
@@ -1767,7 +2005,10 @@ ApplicationWindow {
                 // remembers, so a reader who works from the PDF alone does
                 // not get it back on every launch.
                 visible: layoutSettings.paneVisible("blocks", true)
-                onVisibleChanged: layoutSettings.setPaneVisible("blocks", visible)
+                onVisibleChanged: {
+                    layoutSettings.setPaneVisible("blocks", visible)
+                    window.layoutTouched()
+                }
                 SplitView.fillWidth: true
                 SplitView.minimumWidth: 240
                 model: paperController.blocks
@@ -1794,7 +2035,10 @@ ApplicationWindow {
                 objectName: "analysis"
                 resizing: split.resizing
                 visible: layoutSettings.paneVisible("analysis", false)
-                onVisibleChanged: layoutSettings.setPaneVisible("analysis", visible)
+                onVisibleChanged: {
+                    layoutSettings.setPaneVisible("analysis", visible)
+                    window.layoutTouched()
+                }
                 SplitView.preferredWidth: layoutSettings.paneWidth("analysis", 380)
                 SplitView.minimumWidth: 260
                 onWidthChanged: layoutSettings.setPaneWidth("analysis", width)
@@ -1843,7 +2087,10 @@ ApplicationWindow {
                 objectName: "research"
                 resizing: split.resizing
                 visible: layoutSettings.paneVisible("research", false)
-                onVisibleChanged: layoutSettings.setPaneVisible("research", visible)
+                onVisibleChanged: {
+                    layoutSettings.setPaneVisible("research", visible)
+                    window.layoutTouched()
+                }
                 SplitView.preferredWidth: layoutSettings.paneWidth("research", 420)
                 SplitView.minimumWidth: 300
                 onWidthChanged: layoutSettings.setPaneWidth("research", width)
@@ -1880,7 +2127,10 @@ ApplicationWindow {
                 objectName: "tasks"
                 resizing: split.resizing
                 visible: layoutSettings.paneVisible("tasks", false)
-                onVisibleChanged: layoutSettings.setPaneVisible("tasks", visible)
+                onVisibleChanged: {
+                    layoutSettings.setPaneVisible("tasks", visible)
+                    window.layoutTouched()
+                }
                 SplitView.preferredWidth: layoutSettings.paneWidth("tasks", 360)
                 SplitView.minimumWidth: 260
                 onWidthChanged: layoutSettings.setPaneWidth("tasks", width)
@@ -1903,7 +2153,10 @@ ApplicationWindow {
                 objectName: "chat"
                 resizing: split.resizing
                 visible: layoutSettings.paneVisible("chat", false)
-                onVisibleChanged: layoutSettings.setPaneVisible("chat", visible)
+                onVisibleChanged: {
+                    layoutSettings.setPaneVisible("chat", visible)
+                    window.layoutTouched()
+                }
                 SplitView.preferredWidth: layoutSettings.paneWidth("chat", 360)
                 SplitView.minimumWidth: 240
                 onWidthChanged: layoutSettings.setPaneWidth("chat", width)

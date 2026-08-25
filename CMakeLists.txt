@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.4.2 LANGUAGES CXX)
+project(ai-reader VERSION 1.5.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -331,6 +331,8 @@ qt_add_executable(ai-reader
     src/CompareService.cpp
     src/LibraryAnalysisService.h
     src/LibraryAnalysisService.cpp
+    src/LayoutPresets.h
+    src/LayoutPresets.cpp
     src/UserPrefsSync.h
     src/UserPrefsSync.cpp
     src/TaskTypes.h
@@ -448,6 +450,8 @@ qt_add_qml_module(ai-reader
         qml/CompareDialog.qml
         qml/DeepReadView.qml
         qml/ResearchPane.qml
+        qml/LayoutMenu.qml
+        qml/SaveLayoutDialog.qml
         qml/TasksPane.qml
         qml/QuitTasksDialog.qml
         qml/ResumeTasksDialog.qml
@@ -500,6 +504,7 @@ qt_add_resources(ai-reader "icons"
         resources/icons/account.svg
         resources/icons/cursor-hand-open.svg
         resources/icons/cursor-hand-grab.svg
+        resources/icons/app.svg
         resources/icons/app-16.png
         resources/icons/app-32.png
         resources/icons/app-48.png

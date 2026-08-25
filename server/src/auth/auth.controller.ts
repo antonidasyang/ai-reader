@@ -81,6 +81,9 @@ export class AuthController {
         access: tokens.accessToken,
         refresh: tokens.refreshToken,
         state: st,
+        // Only so the page the app serves on 127.0.0.1 can greet the user by
+        // name; the app learns who they are from the token, not from this.
+        name: r.displayName ?? r.user ?? '',
       }),
     );
   }

@@ -49,6 +49,12 @@ struct AnalysisRecord {
 //   * project_profile — one row per project (§6).
 //   * analysis_note   — one row per (paper, member): the reader's own notes
 //     and edits, which a regenerate must never touch (§16).
+//
+// Every read here goes through LibraryDb::getObject / objectsByType, which is
+// where the store's account gate lives: signed out, or signed in on a store
+// that belongs to somebody else, all of this comes back empty rather than
+// showing the previous user's interpretations. Keep it that way -- a raw
+// query against the database would walk straight past it.
 class AnalysisStore : public QObject
 {
     Q_OBJECT

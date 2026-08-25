@@ -3,6 +3,7 @@
 #include "PaperController.h"
 
 #include <QFileInfo>
+#include <QRegularExpression>
 
 namespace {
 constexpr auto kKeyUrls   = "tabs/urls";
@@ -33,9 +34,23 @@ QString Tabs::nameAt(int idx) const
         if (!title.isEmpty())
             return title;
     }
-    if (u.isLocalFile())
-        return QFileInfo(u.toLocalFile()).fileName();
-    return u.fileName();
+    const QString file = u.isLocalFile() ? QFileInfo(u.toLocalFile()).fileName()
+                                         : u.fileName();
+    // A paper opened out of a project plays from the content-addressed cache,
+    // where its file is named after its checksum. The library is what turns
+    // that back into a title, and it cannot always answer -- no project is
+    // selected, nobody has signed in yet, the sync has not brought the item
+    // down. Sixty-four hex characters in the tab and in the window caption is
+    // not a name; it is the app admitting it does not know, in the least
+    // useful way available. Say that instead.
+    static const QRegularExpression checksum(
+        QStringLiteral("^[0-9a-f]{32,}(\\.[A-Za-z0-9]+)?$"),
+        QRegularExpression::CaseInsensitiveOption);
+    if (checksum.match(QFileInfo(file).completeBaseName().isEmpty()
+                           ? file : QFileInfo(file).completeBaseName())
+            .hasMatch())
+        return tr("Untitled paper");
+    return file;
 }
 
 int Tabs::indexOf(const QUrl &url) const

@@ -1,5 +1,50 @@
 # AI Reader changelog
 
+## v1.5.0 — 2026-08-25
+
+### Pane layouts can be saved and switched
+- Arrange the panes however you like, save that arrangement under a name,
+  and switch between saved layouts from the toolbar.
+- A layout remembers which panes are showing, how wide each is, and the
+  order they sit in — widths are saved as a share of the window, so a
+  layout saved on a big monitor still works on a laptop.
+- Layouts travel with your account, so the same arrangements are on your
+  other computer. Window size and position are deliberately not part of a
+  layout.
+
+### The library now belongs to the account
+- Signing out empties the library, the search and the interpretation views
+  instead of leaving the previous person's papers on screen. Nothing is
+  deleted, and anything not yet synced is still there and still pushes
+  when that user signs back in.
+- A second account on the same computer sees its own library, not the
+  first one's.
+- Being merely offline is not signing out: the person who owns the
+  library still sees it with no network.
+
+### The browser is left on a proper page after signing in
+- It is now a card with the app's own mark, a green tick, the user's
+  name, and a button that closes the page — with a line telling them to
+  close the tab themselves when the browser refuses to.
+- Failures use the same page with a red mark and say what to do.
+
+### Fixes
+- The window title and the tab used to show a 64-character checksum
+  whenever the paper's title could not be looked up — when signed out, or
+  before the project's papers had come down. They say "Untitled paper"
+  now.
+- Switching projects with the library pane closed left it listing the
+  previous project's papers when it was reopened; creating a project
+  could leave every view pointing at the old one.
+- Selected text in the paragraph pane was painted in a heavy opaque blue;
+  it now uses the same translucent highlight as the PDF page, so the same
+  sentence looks the same in both.
+- The translation half of a paragraph could not be selected or copied at
+  all. It can now.
+- In the task list, the button that stops a task sat beside the task's
+  name, where it read as "delete this row". It is at the end of the
+  progress bar now, next to the work it stops.
+
 ## v1.4.2 — 2026-08-25
 
 ### Pane buttons show whether the pane is open
