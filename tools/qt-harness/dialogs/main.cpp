@@ -335,6 +335,53 @@ int main(int argc, char **argv)
         pump(60);
     }
 
+    // The selected tab's pill used to sit against the top of its bar -- 3 px
+    // above it, 7 below -- because the bar was sized independently of the
+    // button it frames. Geometry is the only way to see that without eyes.
+    {
+        QQmlComponent comp(&engine);
+        comp.setData("import QtQuick\nimport QtQuick.Controls\nimport AiReader\n"
+                     "AppTabBar { width: 400\n"
+                     "  AppTabButton { text: \"One\" }\n"
+                     "  AppTabButton { text: \"Two\" }\n"
+                     "  AppTabButton { text: \"Three\" } }",
+                     QUrl::fromLocalFile(QDir::currentPath()
+                                         + QStringLiteral("/harness-tabs.qml")));
+        QObject *obj = comp.create(engine.rootContext());
+        auto *bar = qobject_cast<QQuickItem *>(obj);
+        if (!bar) {
+            g_problems.append(QStringLiteral("AppTabBar failed to create: %1")
+                                  .arg(comp.errorString()));
+        } else {
+            bar->setParentItem(win->contentItem());
+            pump(300);
+            QQuickItem *tab = nullptr;
+            for (QQuickItem *child : bar->findChildren<QQuickItem *>())
+                if (child->inherits("QQuickTabButton") && child->height() > 0) {
+                    tab = child;
+                    break;
+                }
+            if (!tab) {
+                g_problems.append(QStringLiteral("no tab button found in AppTabBar"));
+            } else {
+                const QPointF inBar = tab->mapToItem(bar, QPointF(0, 0));
+                const qreal above = inBar.y();
+                const qreal below = bar->height() - inBar.y() - tab->height();
+                const bool centred = qAbs(above - below) <= 1.0;
+                qInfo().noquote()
+                    << (centred ? "PASS  " : "FAIL  ")
+                    << "the selected tab sits in the middle of its bar"
+                    << QStringLiteral("  - %1 px above, %2 px below (bar %3, tab %4)")
+                           .arg(above).arg(below).arg(bar->height()).arg(tab->height());
+                if (!centred)
+                    g_problems.append(QStringLiteral("tab off-centre: %1 vs %2")
+                                          .arg(above).arg(below));
+            }
+            obj->deleteLater();
+            pump(60);
+        }
+    }
+
     qInstallMessageHandler(g_prev);
     qInfo().noquote() << "";
     qInfo().noquote() << QStringLiteral("%1 dialogs and %2 panes built, %3 warnings")

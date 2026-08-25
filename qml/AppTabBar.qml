@@ -6,9 +6,17 @@ import QtQuick.Controls
 // chrome is built from. Pair with AppTabButton.
 TabBar {
     id: bar
-    implicitHeight: Theme.controlH + 6
-    padding: 3
-    spacing: 3
+    // One number decides both the pill and the frame around it. TabBar does
+    // not stretch its buttons to the content height, so a bar that is taller
+    // than a button plus its two insets leaves the whole row sitting against
+    // the top edge -- which is exactly what it did: 3 px above the selected
+    // tab and 7 below it. Deriving the height from the button keeps it
+    // centred no matter what the metrics change to.
+    readonly property int tabHeight: Theme.controlH - 4
+    readonly property int inset: 3
+    implicitHeight: tabHeight + inset * 2
+    padding: inset
+    spacing: inset
     background: Rectangle {
         radius: Theme.radiusM
         color: Theme.cardBg

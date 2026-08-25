@@ -1,5 +1,20 @@
 # AI Reader changelog
 
+## v1.4.2 — 2026-08-25
+
+### Pane buttons show whether the pane is open
+- Every toolbar button that shows or hides a pane now sits pressed while its
+  pane is open and raised while it is closed — including the two newest ones,
+  the project analyses and the task list, which had no pressed state at all.
+- They also stay right when something else opens a pane: asking the AI about
+  a selection opens the chat pane, and the chat button now knows it.
+
+### The selected tab sits in the middle of its bar
+- The blue pill behind the current tab was 3 pixels from the top of its
+  frame and 7 from the bottom, which read as slightly wrong without being
+  obviously wrong. The bar is now sized from the tab it frames, so the two
+  gaps are equal.
+
 ## v1.4.1 — 2026-08-25
 
 ### Project buttons stop disappearing

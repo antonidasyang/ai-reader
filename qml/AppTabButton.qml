@@ -5,7 +5,10 @@ import QtQuick.Controls
 // is filled the way a primary button is, the rest stay quiet until hovered.
 TabButton {
     id: tb
-    implicitHeight: Theme.controlH - 4
+    // The bar sizes itself around this; take it from the bar when there is
+    // one, so the two can never drift apart.
+    implicitHeight: (TabBar.tabBar && TabBar.tabBar.tabHeight !== undefined)
+                    ? TabBar.tabBar.tabHeight : Theme.controlH - 4
     leftPadding: Theme.spaceM
     rightPadding: Theme.spaceM
     contentItem: Text {

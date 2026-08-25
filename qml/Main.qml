@@ -762,7 +762,10 @@ ApplicationWindow {
                 id: panToggleBtn
                 icon.source: "qrc:/icons/pan.svg"
                 checkable: true
-                checked: window.panMode
+                // Bound, not assigned: a click writes `checked` itself, and a
+                // plain binding would not survive that -- the button would stop
+                // following the pane the moment anything else showed it.
+                Binding on checked { value: window.panMode; restoreMode: Binding.RestoreNone }
                 enabled: pdfDoc.status === PdfDocument.Ready
                 tip: qsTr("Hand tool: drag to move the page. Off = select text.")
                 onClicked: window.panMode = !window.panMode
@@ -846,7 +849,10 @@ ApplicationWindow {
                 id: folderToggleBtn
                 icon.source: "qrc:/icons/pane-folder.svg"
                 checkable: true
-                checked: folderPane.visible
+                // Bound, not assigned: a click writes `checked` itself, and a
+                // plain binding would not survive that -- the button would stop
+                // following the pane the moment anything else showed it.
+                Binding on checked { value: folderPane.visible; restoreMode: Binding.RestoreNone }
                 tip: qsTr("Folder pane: browse PDFs on this machine")
                 onClicked: folderPane.visible = !folderPane.visible
             }
@@ -854,7 +860,10 @@ ApplicationWindow {
                 id: libToggleBtn
                 icon.source: "qrc:/icons/pane-library.svg"
                 checkable: true
-                checked: libraryPane.visible
+                // Bound, not assigned: a click writes `checked` itself, and a
+                // plain binding would not survive that -- the button would stop
+                // following the pane the moment anything else showed it.
+                Binding on checked { value: libraryPane.visible; restoreMode: Binding.RestoreNone }
                 tip: qsTr("Library pane: the papers in this project")
                 onClicked: libraryPane.visible = !libraryPane.visible
             }
@@ -862,7 +871,10 @@ ApplicationWindow {
                 id: blocksToggleBtn
                 icon.source: "qrc:/icons/pane-paragraphs.svg"
                 checkable: true
-                checked: blockList.visible
+                // Bound, not assigned: a click writes `checked` itself, and a
+                // plain binding would not survive that -- the button would stop
+                // following the pane the moment anything else showed it.
+                Binding on checked { value: blockList.visible; restoreMode: Binding.RestoreNone }
                 tip: qsTr("Paragraph pane: the paper's text, its translation, "
                           + "and the per-paragraph actions")
                 onClicked: blockList.visible = !blockList.visible
@@ -871,14 +883,20 @@ ApplicationWindow {
                 id: tocToggleBtn
                 icon.source: "qrc:/icons/pane-toc.svg"
                 checkable: true
-                checked: tocSidebar.visible
+                // Bound, not assigned: a click writes `checked` itself, and a
+                // plain binding would not survive that -- the button would stop
+                // following the pane the moment anything else showed it.
+                Binding on checked { value: tocSidebar.visible; restoreMode: Binding.RestoreNone }
                 tip: qsTr("Outline pane: the paper's sections")
                 onClicked: tocSidebar.visible = !tocSidebar.visible
             }
             ToolIcon {
                 icon.source: "qrc:/icons/pane-interpret.svg"
                 checkable: true
-                checked: analysisPane.visible
+                // Bound, not assigned: a click writes `checked` itself, and a
+                // plain binding would not survive that -- the button would stop
+                // following the pane the moment anything else showed it.
+                Binding on checked { value: analysisPane.visible; restoreMode: Binding.RestoreNone }
                 tip: qsTr("Interpretation pane: relevance to this project, what "
                           + "to read first, and every statement traced back to "
                           + "the paper")
@@ -888,7 +906,10 @@ ApplicationWindow {
                 id: chatToggleBtn
                 icon.source: "qrc:/icons/pane-chat.svg"
                 checkable: true
-                checked: chatPane.visible
+                // Bound, not assigned: a click writes `checked` itself, and a
+                // plain binding would not survive that -- the button would stop
+                // following the pane the moment anything else showed it.
+                Binding on checked { value: chatPane.visible; restoreMode: Binding.RestoreNone }
                 tip: qsTr("Chat pane: ask about this paper")
                 onClicked: chatPane.visible = !chatPane.visible
             }
@@ -1029,6 +1050,11 @@ ApplicationWindow {
             ToolIcon {
                 icon.source: "qrc:/icons/research.svg"
                 needsProject: true
+                checkable: true
+                // Bound, not assigned: a click writes `checked` itself, and a
+                // plain binding would not survive that -- the button would stop
+                // following the pane the moment anything else showed it.
+                Binding on checked { value: researchPane.visible; restoreMode: Binding.RestoreNone }
                 tip: qsTr("What this whole project adds up to: categories, the "
                           + "research map, consensus and conflict, coverage, and "
                           + "what to do next")
@@ -1039,6 +1065,11 @@ ApplicationWindow {
             }
             ToolIcon {
                 icon.source: "qrc:/icons/tasks.svg"
+                checkable: true
+                // Bound, not assigned: a click writes `checked` itself, and a
+                // plain binding would not survive that -- the button would stop
+                // following the pane the moment anything else showed it.
+                Binding on checked { value: tasksPane.visible; restoreMode: Binding.RestoreNone }
                 // The count is the point when something is running: it is
                 // the only place the toolbar admits the app is busy.
                 display: tasks.activeCount > 0 ? AbstractButton.TextBesideIcon
