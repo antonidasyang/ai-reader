@@ -19,7 +19,8 @@ Rectangle {
     onResizingChanged: if (!resizing) { reflow.stop(); list.layoutWidth = list.width }
 
     // Home / End / PageUp / PageDown, once the pane has been clicked into.
-    focus: true
+    // No `focus: true`: several panes in one focus scope would fight over it
+    // and the last one created would win at startup.
     Keys.onPressed: (event) => ScrollKeys.handle(event, list)
     TapHandler {
         // Passive: the delegates keep their own clicks, this only moves the

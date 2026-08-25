@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.2.17 LANGUAGES CXX)
+project(ai-reader VERSION 1.2.18 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -452,6 +452,36 @@ qt_add_resources(ai-reader "icons"
     BASE "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons"
     FILES
         resources/icons/pan-hand.svg
+        resources/icons/open.svg
+        resources/icons/open-folder.svg
+        resources/icons/export.svg
+        resources/icons/pan.svg
+        resources/icons/zoom-in.svg
+        resources/icons/zoom-out.svg
+        resources/icons/fit-width.svg
+        resources/icons/segment.svg
+        resources/icons/translate.svg
+        resources/icons/retry.svg
+        resources/icons/vision.svg
+        resources/icons/quote.svg
+        resources/icons/pane-folder.svg
+        resources/icons/pane-library.svg
+        resources/icons/pane-paragraphs.svg
+        resources/icons/pane-toc.svg
+        resources/icons/pane-interpret.svg
+        resources/icons/pane-chat.svg
+        resources/icons/project-new.svg
+        resources/icons/project-edit.svg
+        resources/icons/members.svg
+        resources/icons/profile.svg
+        resources/icons/batch.svg
+        resources/icons/compare.svg
+        resources/icons/research.svg
+        resources/icons/settings.svg
+        resources/icons/prompts.svg
+        resources/icons/help.svg
+        resources/icons/changelog.svg
+        resources/icons/account.svg
         resources/icons/cursor-hand-open.svg
         resources/icons/cursor-hand-grab.svg
         resources/icons/app-16.png

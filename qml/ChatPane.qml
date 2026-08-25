@@ -9,7 +9,10 @@ Rectangle {
 
     // Page/Home/End walk the transcript. The composer keeps them while it
     // has the keyboard, so they stay editing keys mid-question.
-    focus: true
+    // No `focus: true`: several panes in one focus scope would fight over
+    // it and the last one created would win at startup. The pane the reader
+    // points at takes the keys instead.
+    TapHandler { onTapped: root.forceActiveFocus() }
     Keys.onPressed: (event) => {
         if (!input.activeFocus)
             ScrollKeys.handle(event, list)

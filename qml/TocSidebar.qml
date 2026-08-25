@@ -8,7 +8,10 @@ Rectangle {
     color: Theme.paneBg
 
     // Page/Home/End walk the section list.
-    focus: true
+    // No `focus: true`: several panes in one focus scope would fight over
+    // it and the last one created would win at startup. The pane the reader
+    // points at takes the keys instead.
+    TapHandler { onTapped: root.forceActiveFocus() }
     Keys.onPressed: (event) => ScrollKeys.handle(event, list)
 
     signal sectionClicked(int blockId, int page)

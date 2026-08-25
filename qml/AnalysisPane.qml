@@ -47,8 +47,8 @@ Rectangle {
         onTriggered: root.layoutWidth = root.width
     }
 
-    // Home / End / PageUp / PageDown scroll whichever tab is showing.
-    focus: true
+    // Home / End / PageUp / PageDown scroll whichever tab is showing, once
+    // the pane has been clicked into.
     function currentFlickable() {
         const view = root.mode === 0 ? quickScroll
                    : root.mode === 1 ? deepScroll : notesScroll

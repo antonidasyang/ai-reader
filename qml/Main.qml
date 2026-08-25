@@ -10,6 +10,22 @@ ApplicationWindow {
     width: 1400
     height: 900
     visible: true
+    // Every toolbar button: the icon carries the meaning, the tooltip
+    // carries the words. `tip` rather than ToolTip.text so each button is
+    // one line at the call site.
+    component ToolIcon: ToolButton {
+        property string tip: ""
+        display: AbstractButton.IconOnly
+        icon.width: 18
+        icon.height: 18
+        // Tinted to the theme's text colour, so a set of single-stroke
+        // glyphs reads as one family in both themes.
+        icon.color: enabled ? Theme.text : Theme.dimText
+        ToolTip.visible: hovered && tip.length > 0
+        ToolTip.delay: 400
+        ToolTip.text: tip
+    }
+
     // ── Where the reader was in each paper ──────────────────────────
     // Saved as they scroll (the C++ side debounces the writes) and put back
     // when the paper comes round again. The key is the paperId, so it
@@ -221,6 +237,79 @@ ApplicationWindow {
         onAskAiRequested: function(text) {
             chatPane.visible = true
             chatPane.prefillInput(text, 0)
+        }
+    }
+
+    // Re-segmenting is destructive in a way that is not obvious: the
+    // paragraph ids change, so translations keyed to them stop matching and
+    // any manual split/merge is gone. Asked once, with the numbers, rather
+    // than silently redone.
+    AppDialog {
+        id: resegmentDialog
+        title: qsTr("Segment this paper again?")
+        width: 460
+        standardButtons: Dialog.NoButton
+
+        property int paragraphs: 0
+        property int translated: 0
+
+        function ask() {
+            paragraphs = paperController.blockCount
+            translated = translation.translatedParagraphs()
+            if (paragraphs === 0) {          // nothing to lose: just do it
+                paperController.rebuildBlocks()
+                return
+            }
+            open()
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 10
+            Label {
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                color: Theme.text
+                text: resegmentDialog.translated > 0
+                      ? qsTr("This paper is already split into %1 paragraphs, and "
+                             + "%2 of them are translated.")
+                            .arg(resegmentDialog.paragraphs)
+                            .arg(resegmentDialog.translated)
+                      : qsTr("This paper is already split into %1 paragraphs.")
+                            .arg(resegmentDialog.paragraphs)
+            }
+            Label {
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                color: Theme.dimText
+                font.pixelSize: 12
+                text: resegmentDialog.translated > 0
+                      ? qsTr("Splitting it again replaces that division and any "
+                             + "paragraph you merged or split by hand. The "
+                             + "existing translations are tied to the old "
+                             + "paragraphs, so most of them will no longer match "
+                             + "and would have to be translated again.")
+                      : qsTr("Splitting it again replaces that division, including "
+                             + "any paragraph you merged or split by hand.")
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                Item { Layout.fillWidth: true }
+                AppButton {
+                    text: qsTr("Cancel")
+                    onClicked: resegmentDialog.close()
+                }
+                AppButton {
+                    text: qsTr("Segment again")
+                    danger: resegmentDialog.translated > 0
+                    primary: resegmentDialog.translated === 0
+                    onClicked: {
+                        resegmentDialog.close()
+                        paperController.rebuildBlocks()
+                    }
+                }
+            }
         }
     }
 
@@ -522,139 +611,49 @@ ApplicationWindow {
             translation.translateBlock(row)
         }
         function onSegmentRequested() {
-            paperController.rebuildBlocks()
+            resegmentDialog.ask()
         }
     }
 
     header: ToolBar {
+        // Grouped by what the buttons act on — the file, the view, this
+        // paper, the panes, the project — with the words moved into
+        // tooltips. Twenty-five labelled buttons in one row had stopped
+        // being a toolbar and become a sentence.
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: 8
             anchors.rightMargin: 8
-            ToolButton {
+            spacing: 2
+
+            // ── the file ────────────────────────────────────────────
+            ToolIcon {
                 id: openBtn
-                text: qsTr("Open…")
+                icon.source: "qrc:/icons/open.svg"
+                tip: qsTr("Open a PDF…")
                 onClicked: fileDialog.open()
             }
-            ToolButton {
+            ToolIcon {
                 id: openFolderBtn
-                text: qsTr("Open folder…")
+                icon.source: "qrc:/icons/open-folder.svg"
+                tip: qsTr("Open a folder of PDFs…")
                 onClicked: openFolderDialog.open()
             }
-            ToolButton {
-                text: qsTr("Export text…")
+            ToolIcon {
+                icon.source: "qrc:/icons/export.svg"
                 enabled: paperController.status === PaperController.Ready
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: qsTr("Save the raw PDF text + per-line bboxes + detected paragraphs to a .txt file")
+                tip: qsTr("Export text: the raw PDF text, per-line boxes and "
+                          + "detected paragraphs, to a .txt file")
                 onClicked: exportTextDialog.open()
             }
-            ToolButton {
-                // One button, two readings: with no paragraphs yet this
-                // is the primary "segment this paper" action (auto
-                // segmentation is off by default); once there are
-                // paragraphs it means "throw them away and redo it".
-                readonly property bool _firstRun: paperController.blockCount === 0
-                text: _firstRun ? qsTr("Segment") : qsTr("Re-extract")
-                enabled: paperController.status === PaperController.Ready
-                         && !paperController.extracting
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: _firstRun
-                    ? qsTr("Split this paper into paragraphs (needed for translation, TOC and chat)")
-                    : qsTr("Discard manual paragraph edits and re-run automatic extraction")
-                onClicked: paperController.rebuildBlocks()
-            }
+
             ToolSeparator {}
-            ToolButton {
-                id: translateBtn
-                text: translation.busy ? qsTr("Cancel") : qsTr("Translate")
-                enabled: paperController.status === PaperController.Ready
-                         && (translation.busy || settings.isConfigured)
-                onClicked: {
-                    if (translation.busy) {
-                        translation.cancel()
-                    } else if (translation.translatedParagraphs() > 0) {
-                        translateChoiceDialog.ask()
-                    } else {
-                        translation.translateAll()
-                    }
-                }
-            }
-            ToolButton {
-                text: qsTr("Retry failed")
-                visible: !translation.busy && translation.failedCount > 0
-                onClicked: translation.retryFailed()
-            }
-            ToolButton {
-                text: qsTr("Research")
-                visible: auth.authenticated && projects.currentId.length > 0
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: qsTr("What this whole project adds up to: "
-                                   + "categories, the research map, consensus "
-                                   + "and conflict, coverage, and what to do "
-                                   + "next")
-                onClicked: researchDialog.open()
-            }
-            ToolButton {
-                text: compare.count > 0 ? qsTr("Compare (%1)").arg(compare.count)
-                                        : qsTr("Compare")
-                visible: auth.authenticated && projects.currentId.length > 0
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: qsTr("Put papers side by side, with a warning "
-                                   + "where they cannot honestly be compared")
-                onClicked: compareDialog.open()
-            }
-            ToolButton {
-                // A running batch is owned by the app, not by the dialog it
-                // was started from — closing that window does not stop it, so
-                // the progress has to be visible here too.
-                text: batchAnalysis.busy
-                      ? qsTr("Interpreting %1/%2")
-                            .arg(batchAnalysis.done + batchAnalysis.failed
-                                 + batchAnalysis.skipped)
-                            .arg(batchAnalysis.total)
-                      : qsTr("Interpret library")
-                visible: auth.authenticated && projects.currentId.length > 0
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: batchAnalysis.busy
-                              ? qsTr("Still interpreting — click to watch or stop")
-                              : qsTr("Interpret every paper in this project, "
-                                     + "then filter by relevance")
-                onClicked: batchAnalysisDialog.open()
-            }
-            ToolButton {
-                text: qsTr("Interpret")
-                checkable: true
-                checked: analysisPane.visible
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: qsTr("Structured interpretation: relevance to this "
-                                   + "project, what to read first, and every "
-                                   + "statement traced back to the paper")
-                onClicked: analysisPane.visible = !analysisPane.visible
-            }
-            ToolButton {
-                text: qsTr("Read page (vision)")
-                enabled: paperController.status === PaperController.Ready
-                         && settings.isConfigured
-                         && vision.status !== VisionService.Generating
-                         && vision.status !== VisionService.Rendering
-                onClicked: {
-                    visionDialog.open()
-                    vision.readPage(pdfView.currentPage)
-                }
-            }
-            ToolSeparator {}
-            ToolButton {
-                text: "−"
+
+            // ── the view ────────────────────────────────────────────
+            ToolIcon {
+                icon.source: "qrc:/icons/zoom-out.svg"
                 enabled: pdfDoc.status === PdfDocument.Ready
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: qsTr("Zoom out")
+                tip: qsTr("Zoom out")
                 onClicked: window.zoomOut()
             }
             ToolButton {
@@ -682,87 +681,153 @@ ApplicationWindow {
                     }
                 }
             }
-            ToolButton {
-                text: "+"
+            ToolIcon {
+                icon.source: "qrc:/icons/zoom-in.svg"
                 enabled: pdfDoc.status === PdfDocument.Ready
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: qsTr("Zoom in")
+                tip: qsTr("Zoom in")
                 onClicked: window.zoomIn()
             }
-            ToolButton {
+            ToolIcon {
+                icon.source: "qrc:/icons/fit-width.svg"
+                enabled: pdfDoc.status === PdfDocument.Ready
+                tip: qsTr("Fit the page to the window width")
+                onClicked: window.fitWidth()
+            }
+            ToolIcon {
                 id: panToggleBtn
+                icon.source: "qrc:/icons/pan.svg"
                 checkable: true
                 checked: window.panMode
                 enabled: pdfDoc.status === PdfDocument.Ready
-                display: AbstractButton.IconOnly
-                icon.source: "qrc:/icons/pan-hand.svg"
-                icon.width: 18
-                icon.height: 18
-                // Tint the single-stroke glyph with the theme's text color
-                // so it matches the neighboring toolbar labels; active
-                // state shows via the button's checked highlight.
-                icon.color: Theme.text
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: qsTr("Hand tool: drag to move the page. Off = select text.")
+                tip: qsTr("Hand tool: drag to move the page. Off = select text.")
                 onClicked: window.panMode = !window.panMode
             }
+
             ToolSeparator {}
-            ToolButton {
-                id: folderToggleBtn
-                text: qsTr("Folder")
-                checkable: true
-                checked: folderPane.visible
-                onClicked: folderPane.visible = !folderPane.visible
+
+            // ── this paper ──────────────────────────────────────────
+            ToolIcon {
+                // One button, two readings: with no paragraphs yet this is
+                // the primary "segment this paper" action (auto segmentation
+                // is off by default); once there are paragraphs it means
+                // "throw them away and redo it", which asks first.
+                readonly property bool _firstRun: paperController.blockCount === 0
+                icon.source: "qrc:/icons/segment.svg"
+                enabled: paperController.status === PaperController.Ready
+                         && !paperController.extracting
+                tip: _firstRun
+                    ? qsTr("Split this paper into paragraphs (needed for "
+                           + "translation, the outline and chat)")
+                    : qsTr("Split it into paragraphs again, discarding the "
+                           + "current division")
+                onClicked: resegmentDialog.ask()
             }
-            ToolButton {
-                id: libToggleBtn
-                text: qsTr("Lib")
-                checkable: true
-                checked: libraryPane.visible
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: qsTr("Cloud-synced literature library")
-                onClicked: libraryPane.visible = !libraryPane.visible
+            ToolIcon {
+                id: translateBtn
+                icon.source: "qrc:/icons/translate.svg"
+                enabled: paperController.status === PaperController.Ready
+                         && (translation.busy || settings.isConfigured)
+                display: translation.busy ? AbstractButton.TextBesideIcon
+                                          : AbstractButton.IconOnly
+                text: translation.busy ? qsTr("Stop") : ""
+                tip: translation.busy ? qsTr("Stop translating")
+                                      : qsTr("Translate every paragraph")
+                onClicked: {
+                    if (translation.busy) {
+                        translation.cancel()
+                    } else if (translation.translatedParagraphs() > 0) {
+                        translateChoiceDialog.ask()
+                    } else {
+                        translation.translateAll()
+                    }
+                }
             }
-            ToolButton {
-                id: blocksToggleBtn
-                text: qsTr("Paragraphs")
-                checkable: true
-                checked: blockList.visible
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: qsTr("The paragraph pane: the paper's text, its "
-                                   + "translation, and the per-paragraph actions")
-                onClicked: blockList.visible = !blockList.visible
+            ToolIcon {
+                icon.source: "qrc:/icons/retry.svg"
+                visible: !translation.busy && translation.failedCount > 0
+                display: AbstractButton.TextBesideIcon
+                text: translation.failedCount
+                tip: qsTr("Translate the paragraphs that failed")
+                onClicked: translation.retryFailed()
             }
-            ToolButton {
-                id: tocToggleBtn
-                text: qsTr("TOC")
-                checkable: true
-                checked: tocSidebar.visible
-                onClicked: tocSidebar.visible = !tocSidebar.visible
+            ToolIcon {
+                icon.source: "qrc:/icons/vision.svg"
+                enabled: paperController.status === PaperController.Ready
+                         && settings.isConfigured
+                         && vision.status !== VisionService.Generating
+                         && vision.status !== VisionService.Rendering
+                tip: qsTr("Read this page with vision: figures, tables and "
+                          + "equations as the model sees them")
+                onClicked: {
+                    visionDialog.open()
+                    vision.readPage(pdfView.currentPage)
+                }
             }
-            ToolButton {
-                id: chatToggleBtn
-                text: qsTr("Chat")
-                checkable: true
-                checked: chatPane.visible
-                onClicked: chatPane.visible = !chatPane.visible
-            }
-            ToolButton {
-                text: qsTr("Quote → Chat")
+            ToolIcon {
+                icon.source: "qrc:/icons/quote.svg"
                 visible: paperController.currentSelection.length > 0
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: qsTr("Quote the highlighted PDF text into the chat input")
+                tip: qsTr("Quote the highlighted text into the chat")
                 onClicked: {
                     chatPane.visible = true
                     chatPane.prefillInput(paperController.currentSelection,
                                           paperController.currentSelectionPage + 1)
                 }
             }
+
+            ToolSeparator {}
+
+            // ── the panes ───────────────────────────────────────────
+            ToolIcon {
+                id: folderToggleBtn
+                icon.source: "qrc:/icons/pane-folder.svg"
+                checkable: true
+                checked: folderPane.visible
+                tip: qsTr("Folder pane: browse PDFs on this machine")
+                onClicked: folderPane.visible = !folderPane.visible
+            }
+            ToolIcon {
+                id: libToggleBtn
+                icon.source: "qrc:/icons/pane-library.svg"
+                checkable: true
+                checked: libraryPane.visible
+                tip: qsTr("Library pane: the papers in this project")
+                onClicked: libraryPane.visible = !libraryPane.visible
+            }
+            ToolIcon {
+                id: blocksToggleBtn
+                icon.source: "qrc:/icons/pane-paragraphs.svg"
+                checkable: true
+                checked: blockList.visible
+                tip: qsTr("Paragraph pane: the paper's text, its translation, "
+                          + "and the per-paragraph actions")
+                onClicked: blockList.visible = !blockList.visible
+            }
+            ToolIcon {
+                id: tocToggleBtn
+                icon.source: "qrc:/icons/pane-toc.svg"
+                checkable: true
+                checked: tocSidebar.visible
+                tip: qsTr("Outline pane: the paper's sections")
+                onClicked: tocSidebar.visible = !tocSidebar.visible
+            }
+            ToolIcon {
+                icon.source: "qrc:/icons/pane-interpret.svg"
+                checkable: true
+                checked: analysisPane.visible
+                tip: qsTr("Interpretation pane: relevance to this project, what "
+                          + "to read first, and every statement traced back to "
+                          + "the paper")
+                onClicked: analysisPane.visible = !analysisPane.visible
+            }
+            ToolIcon {
+                id: chatToggleBtn
+                icon.source: "qrc:/icons/pane-chat.svg"
+                checkable: true
+                checked: chatPane.visible
+                tip: qsTr("Chat pane: ask about this paper")
+                onClicked: chatPane.visible = !chatPane.visible
+            }
+
             Label {
                 text: pdfDoc.status === PdfDocument.Ready
                       ? qsTr("page %1 / %2 · %3 paragraphs")
@@ -777,7 +842,7 @@ ApplicationWindow {
             }
             Item { Layout.fillWidth: true }
 
-            // ── Cloud library: project picker + account (was the ProjectBar) ──
+            // ── the project ─────────────────────────────────────────
             ToolButton {
                 id: signInBtn
                 text: qsTr("Sign in")
@@ -816,54 +881,100 @@ ApplicationWindow {
                     function onListChanged() { projectCombo.syncIndex() }
                 }
             }
-            ToolButton {
-                text: qsTr("New project")
+            ToolIcon {
+                icon.source: "qrc:/icons/project-new.svg"
                 visible: auth.authenticated
+                tip: qsTr("New project")
                 onClicked: createProjectDialog.open()
             }
-            ToolButton {
-                text: qsTr("Edit project")
+            ToolIcon {
+                icon.source: "qrc:/icons/project-edit.svg"
                 visible: auth.authenticated && projects.currentId.length > 0
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: qsTr("Rename this project, or delete it")
+                tip: qsTr("Rename this project, or delete it")
                 onClicked: projectSettingsDialog.open()
             }
-            ToolButton {
-                text: qsTr("Members")
+            ToolIcon {
+                icon.source: "qrc:/icons/members.svg"
                 visible: auth.authenticated && projects.currentId.length > 0
+                tip: qsTr("Members of this project")
                 onClicked: {
                     projects.refreshMembers()
                     membersDialog.open()
                 }
             }
-            ToolButton {
-                // The one place the reader tells the app what this project
-                // is for. Every interpretation is prompted with it, so the
-                // button carries a dot until it has been filled in.
-                text: profile.hasProfile ? qsTr("Profile") : qsTr("Profile •")
+            ToolIcon {
+                // The one place the reader tells the app what this project is
+                // for. Every interpretation is prompted with it, so the button
+                // carries a dot until it has been filled in.
+                icon.source: "qrc:/icons/profile.svg"
                 visible: auth.authenticated && projects.currentId.length > 0
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: profile.hasProfile
-                              ? qsTr("Research profile: %1").arg(profile.summary)
-                              : qsTr("Describe what this project is trying to find "
-                                     + "out — every interpretation is written against it")
+                display: profile.hasProfile ? AbstractButton.IconOnly
+                                            : AbstractButton.TextBesideIcon
+                text: profile.hasProfile ? "" : "•"
+                tip: profile.hasProfile
+                     ? qsTr("Research profile: %1").arg(profile.summary)
+                     : qsTr("Describe what this project is trying to find out — "
+                            + "every interpretation is written against it")
                 onClicked: projectProfileDialog.open()
             }
-            ToolButton {
+
+            ToolSeparator { visible: auth.authenticated
+                                     && projects.currentId.length > 0 }
+
+            ToolIcon {
+                // A running batch is owned by the app, not by the window it
+                // was started from — closing that window does not stop it, so
+                // the progress has to be visible here too.
+                icon.source: "qrc:/icons/batch.svg"
+                visible: auth.authenticated && projects.currentId.length > 0
+                display: batchAnalysis.busy ? AbstractButton.TextBesideIcon
+                                            : AbstractButton.IconOnly
+                text: batchAnalysis.busy
+                      ? (batchAnalysis.done + batchAnalysis.failed
+                         + batchAnalysis.skipped) + "/" + batchAnalysis.total
+                      : ""
+                tip: batchAnalysis.busy
+                     ? qsTr("Still interpreting — click to watch or stop")
+                     : qsTr("Interpret every paper in this project, then filter "
+                            + "by relevance")
+                onClicked: batchAnalysisDialog.open()
+            }
+            ToolIcon {
+                icon.source: "qrc:/icons/compare.svg"
+                visible: auth.authenticated && projects.currentId.length > 0
+                display: compare.count > 0 ? AbstractButton.TextBesideIcon
+                                           : AbstractButton.IconOnly
+                text: compare.count > 0 ? compare.count : ""
+                tip: qsTr("Put papers side by side, with a warning where they "
+                          + "cannot honestly be compared")
+                onClicked: compareDialog.open()
+            }
+            ToolIcon {
+                icon.source: "qrc:/icons/research.svg"
+                visible: auth.authenticated && projects.currentId.length > 0
+                tip: qsTr("What this whole project adds up to: categories, the "
+                          + "research map, consensus and conflict, coverage, and "
+                          + "what to do next")
+                onClicked: researchDialog.open()
+            }
+            ToolIcon {
                 id: accountBtn
+                icon.source: "qrc:/icons/account.svg"
                 visible: auth.authenticated
-                text: (auth.userDisplayName.length > 0 ? auth.userDisplayName
-                                                       : auth.userEmail) + " ▾"
+                display: AbstractButton.TextBesideIcon
+                text: auth.userDisplayName.length > 0 ? auth.userDisplayName
+                                                      : auth.userEmail
+                tip: qsTr("Signed in — click to sign out")
                 onClicked: accountMenu.popup()
                 Menu {
                     id: accountMenu
                     MenuItem { text: qsTr("Sign out"); onTriggered: auth.logout() }
                 }
             }
-            ToolSeparator { visible: auth.authenticated }
 
+            ToolSeparator {}
+
+            // ── the app ─────────────────────────────────────────────
             Label {
                 text: settings.isConfigured
                       ? qsTr("%1 · %2").arg(settings.provider).arg(settings.model)
@@ -872,23 +983,22 @@ ApplicationWindow {
                 // was unreadable against the dark toolbar in dark mode.
                 color: settings.isConfigured ? Theme.accent : Theme.danger
                 font.pixelSize: 11
-                Layout.rightMargin: 8
+                Layout.rightMargin: 4
             }
-            ToolButton {
-                text: qsTr("Prompts…")
+            ToolIcon {
+                icon.source: "qrc:/icons/prompts.svg"
+                tip: qsTr("Edit the prompts the model is given")
                 onClicked: promptsDialog.open()
             }
-            ToolButton {
+            ToolIcon {
                 id: settingsBtn
-                text: qsTr("Settings…")
+                icon.source: "qrc:/icons/settings.svg"
+                tip: qsTr("Settings")
                 onClicked: settingsDialog.open()
             }
-            ToolButton {
-                text: "?"
-                font.pixelSize: 16
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: qsTr("Show getting-started tour")
+            ToolIcon {
+                icon.source: "qrc:/icons/help.svg"
+                tip: qsTr("Show the getting-started tour")
                 onClicked: welcomeWizard.start()
             }
         }

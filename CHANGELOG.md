@@ -1,5 +1,24 @@
 # AI Reader changelog
 
+## v1.2.18 — 2026-08-25
+
+### A toolbar you can read
+- Twenty-five labelled buttons in one row had stopped being a toolbar. They
+  are now icons, grouped by what they act on — the file, the view, this paper,
+  the panes, the project, the app — with a separator between groups and the
+  words moved into the tooltips.
+- The icons are one drawn family, tinted to the theme, so they read the same
+  in light and dark.
+- Where a button carries a number it keeps it: the zoom level, how many papers
+  a batch has done, how many are lined up to compare, the paragraphs that
+  failed to translate.
+
+### Splitting a paper again asks first
+- Pressing Segment on a paper that is already split now says how many
+  paragraphs it has, how many are translated, and that splitting again
+  replaces the division — translations are tied to the old paragraphs and
+  mostly will not match afterwards. First-time segmentation just runs.
+
 ## v1.2.17 — 2026-08-25
 
 ### A paper reopens where you left it
