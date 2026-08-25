@@ -7,6 +7,10 @@ Rectangle {
     id: root
     color: Theme.paneBg
 
+    // Page/Home/End walk the section list.
+    focus: true
+    Keys.onPressed: (event) => ScrollKeys.handle(event, list)
+
     signal sectionClicked(int blockId, int page)
 
     ColumnLayout {

@@ -1,5 +1,20 @@
 # AI Reader changelog
 
+## v1.2.17 — 2026-08-25
+
+### A paper reopens where you left it
+- The reading position is remembered per paper and restored when you come
+  back to it — including a paper opened from a project, whose file on disk is
+  named by a checksum, since the position is keyed to the paper rather than
+  the file. It stays on this machine: where you were on a laptop screen is
+  not where you were on a monitor.
+
+### Home, End, Page Up, Page Down
+- They now scroll the PDF, the paragraph pane, the interpretation pane and
+  the dialogs, and **Space / Shift+Space** page forward and back the way a
+  reader expects. Typing in a text box keeps them for editing.
+- Click a pane to give it the keys.
+
 ## v1.2.16 — 2026-08-25
 
 ### Switching papers is quick again

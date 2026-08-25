@@ -63,6 +63,10 @@ AppDialog {
         anchors.fill: parent
         spacing: 8
 
+        // Page/Home/End walk the paper list.
+        focus: true
+        Keys.onPressed: (event) => ScrollKeys.handle(event, list)
+
         // ── summary ─────────────────────────────────────────────────
         Label {
             Layout.fillWidth: true

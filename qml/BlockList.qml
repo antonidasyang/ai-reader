@@ -18,6 +18,15 @@ Rectangle {
     property bool resizing: false
     onResizingChanged: if (!resizing) { reflow.stop(); list.layoutWidth = list.width }
 
+    // Home / End / PageUp / PageDown, once the pane has been clicked into.
+    focus: true
+    Keys.onPressed: (event) => ScrollKeys.handle(event, list)
+    TapHandler {
+        // Passive: the delegates keep their own clicks, this only moves the
+        // keyboard focus to the pane the reader just pointed at.
+        onTapped: root.forceActiveFocus()
+    }
+
     signal pageRequested(int page)
     signal askInChatRequested(string text, int page)
     signal translateBlockRequested(int row)

@@ -85,6 +85,13 @@ Item {
 
     property real renderScale: 1
 
+    // The vertical scroll position, and whether the page table has laid
+    // anything out yet. Between them they are what "put the reader back
+    // where they were" needs: a position restored before the rows exist
+    // would be clamped to zero.
+    property alias viewportY: tableView.contentY
+    readonly property int pageRows: tableView.rows
+
     // True while a splitter handle is being dragged. Re-laying out the page
     // table is the single most expensive thing this view does, and doing it
     // on every mouse move made a drag crawl -- worst of all over a remote

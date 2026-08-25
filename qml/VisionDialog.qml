@@ -16,6 +16,10 @@ AppDialog {
     contentItem: ColumnLayout {
         spacing: Theme.spaceM
 
+        // Page/Home/End walk the vision read.
+        focus: true
+        Keys.onPressed: (event) => ScrollKeys.handle(event, visionScroll.contentItem)
+
         RowLayout {
             Layout.fillWidth: true
             spacing: Theme.spaceS

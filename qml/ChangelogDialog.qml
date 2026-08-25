@@ -42,6 +42,11 @@ AppDialog {
     // ── Content ─────────────────────────────────────────────────────
     contentItem: Flickable {
         id: scroll
+
+        // Page/Home/End walk the changelog.
+        focus: true
+        Keys.onPressed: (event) => ScrollKeys.handle(event, scroll)
+
         contentWidth: width
         contentHeight: body.implicitHeight
         clip: true

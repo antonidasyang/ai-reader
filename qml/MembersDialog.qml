@@ -28,11 +28,16 @@ AppDialog {
         anchors.fill: parent
         spacing: Theme.spaceM
 
+        // Page/Home/End walk the member list.
+        focus: true
+        Keys.onPressed: (event) => ScrollKeys.handle(event, memberList)
+
         AppSectionCard {
             Layout.preferredHeight: 220
             clip: true
 
             ListView {
+                id: memberList
                 anchors.fill: parent
                 anchors.margins: Theme.spaceS - 2
                 clip: true

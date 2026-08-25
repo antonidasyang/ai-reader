@@ -174,6 +174,13 @@ AppDialog {
         }
     }
 
+    // The subject pages all scroll; the keys belong to whichever one is
+    // showing, so they page that page rather than a fixed one.
+    function currentFlickable() {
+        const page = pageStack.children[pageStack.currentIndex]
+        return page ? page.contentItem : null
+    }
+
     readonly property var pageTitles: [
         qsTr("Model"),
         qsTr("Translation"),
@@ -185,6 +192,10 @@ AppDialog {
 
     contentItem: RowLayout {
         spacing: Theme.spaceL
+
+        // Page/Home/End walk the open subject page.
+        focus: true
+        Keys.onPressed: (event) => ScrollKeys.handle(event, dialog.currentFlickable())
 
         // ── The subjects ────────────────────────────────────────────
         ColumnLayout {
@@ -258,6 +269,7 @@ AppDialog {
         }
 
         StackLayout {
+            id: pageStack
             Layout.fillWidth: true
             Layout.fillHeight: true
             currentIndex: nav.currentIndex

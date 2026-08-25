@@ -76,6 +76,10 @@ AppDialog {
         anchors.fill: parent
         spacing: 8
 
+        // Page/Home/End walk the form.
+        focus: true
+        Keys.onPressed: (event) => ScrollKeys.handle(event, formScroll.contentItem)
+
         Label {
             Layout.fillWidth: true
             wrapMode: Text.Wrap
@@ -85,6 +89,7 @@ AppDialog {
         }
 
         ScrollView {
+            id: formScroll
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true

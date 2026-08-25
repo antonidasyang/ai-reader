@@ -22,6 +22,9 @@
 #include <QDeadlineTimer>
 #include <QDir>
 #include <QElapsedTimer>
+#include <QKeyEvent>
+
+#include <functional>
 #include <QGuiApplication>
 #include <QQmlComponent>
 #include <QQmlContext>
@@ -196,6 +199,91 @@ Item {
             ++failures;
         }
     }
+    // ── Home / End / PageUp / PageDown ──────────────────────────────
+    // Qt Quick gives a Flickable no paging keys of its own, so every pane
+    // answers them through the ScrollKeys singleton. Real key events, sent
+    // to the window, so what is checked is what a reader would press.
+    {
+        auto key = [&view](int k) {
+            QKeyEvent press(QEvent::KeyPress, k, Qt::NoModifier);
+            QCoreApplication::sendEvent(&view, &press);
+            QKeyEvent release(QEvent::KeyRelease, k, Qt::NoModifier);
+            QCoreApplication::sendEvent(&view, &release);
+            pump(120);
+        };
+        // The pane's scrolling surface. Found by type rather than by id --
+        // QML ids are file-scoped and invisible from here — and there is
+        // exactly one Flickable inside this pane.
+        std::function<QQuickItem *(QQuickItem *)> findFlickable =
+            [&findFlickable](QQuickItem *item) -> QQuickItem * {
+            for (QQuickItem *child : item->childItems()) {
+                if (child->inherits("QQuickFlickable"))
+                    return child;
+                if (QQuickItem *deeper = findFlickable(child))
+                    return deeper;
+            }
+            return nullptr;
+        };
+        auto contentY = [&findFlickable](QQuickItem *pane) {
+            QQuickItem *flick = findFlickable(pane);
+            return flick ? flick->property("contentY").toDouble() : -1.0;
+        };
+        // A list's origin moves as delegates are recycled, so "at the top"
+        // means contentY == originY, not contentY == 0.
+        auto originY = [&findFlickable](QQuickItem *pane) {
+            QQuickItem *flick = findFlickable(pane);
+            return flick ? flick->property("originY").toDouble() : 0.0;
+        };
+
+        blocks->forceActiveFocus();
+        pump(200);
+        const double atTop = contentY(blocks);
+        key(Qt::Key_PageDown);
+        const double afterPage = contentY(blocks);
+        qInfo().noquote() << QStringLiteral("paragraph pane: top %1, after "
+                                            "PageDown %2")
+                                 .arg(atTop, 0, 'f', 0)
+                                 .arg(afterPage, 0, 'f', 0);
+        if (!(afterPage > atTop)) {
+            qInfo().noquote() << "  FAIL  PageDown did not scroll";
+            ++failures;
+        }
+        key(Qt::Key_End);
+        const double atEnd = contentY(blocks);
+        if (!(atEnd > afterPage)) {
+            qInfo().noquote() << "  FAIL  End did not reach the bottom";
+            ++failures;
+        }
+        key(Qt::Key_PageUp);
+        if (!(contentY(blocks) < atEnd)) {
+            qInfo().noquote() << "  FAIL  PageUp did not scroll back";
+            ++failures;
+        }
+        key(Qt::Key_Home);
+        qInfo().noquote() << QStringLiteral("after Home: contentY %1, originY %2")
+                                 .arg(contentY(blocks), 0, 'f', 0)
+                                 .arg(originY(blocks), 0, 'f', 0);
+        if (contentY(blocks) > originY(blocks) + 1) {
+            qInfo().noquote() << "  FAIL  Home did not return to the top";
+            ++failures;
+        }
+        if (failures == 0)
+            qInfo().noquote() << "paging keys: PageDown / End / PageUp / Home "
+                                 "all move the paragraph pane";
+    }
+
+    // ── the reading position survives leaving a paper ───────────────
+    {
+        layoutSettings.setReadingPosition(QStringLiteral("paper-x"), 4321.0);
+        const double back = layoutSettings.readingPosition(QStringLiteral("paper-x"));
+        if (qAbs(back - 4321.0) > 0.5) {
+            qInfo().noquote() << "  FAIL  the reading position did not come back";
+            ++failures;
+        } else {
+            qInfo().noquote() << "reading position: stored and read back";
+        }
+    }
+
     qInfo().noquote() << "";
     qInfo().noquote() << (failures == 0 ? "OK" : "FAILURES ABOVE");
     return failures == 0 ? 0 : 1;

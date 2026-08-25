@@ -67,6 +67,11 @@ AppDialog {
         ColumnLayout {
             anchors.fill: parent
             spacing: 8
+
+            // Page/Home/End walk the paper list below.
+            focus: true
+            Keys.onPressed: (event) => ScrollKeys.handle(event, splitScroll.contentItem)
+
             Label {
                 Layout.fillWidth: true
                 wrapMode: Text.Wrap
@@ -84,6 +89,7 @@ AppDialog {
                 onTextChanged: splitDialog.newName = text
             }
             ScrollView {
+                id: splitScroll
                 Layout.fillWidth: true
                 Layout.preferredHeight: 220
                 clip: true
@@ -321,6 +327,15 @@ AppDialog {
         default:
             return ""
         }
+    }
+
+    // Seven tabs, seven scrolling pages: the scroll keys belong to the one
+    // on screen, so they page that instead of a fixed tab.
+    function currentFlickable() {
+        const views = [taxScroll, mapScroll, conScroll, evoScroll,
+                       covScroll, oppScroll, actScroll]
+        const view = views[tabBar.currentIndex]
+        return view ? view.contentItem : null
     }
 
     // ── the seven results ───────────────────────────────────────────
@@ -1040,6 +1055,10 @@ AppDialog {
         anchors.fill: parent
         spacing: 8
 
+        // Page/Home/End walk whichever tab is showing.
+        focus: true
+        Keys.onPressed: (event) => ScrollKeys.handle(event, root.currentFlickable())
+
         // Nothing here notifies on its own; this is what makes the bindings
         // above re-read after a generation lands or a category is edited.
         Connections {
@@ -1084,6 +1103,7 @@ AppDialog {
                     }
 
                     ScrollView {
+                        id: taxScroll
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         visible: !!root.hasResult("taxonomy", root.rev)
@@ -1232,6 +1252,7 @@ AppDialog {
                     }
 
                     ScrollView {
+                        id: mapScroll
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         visible: !!root.hasResult("map", root.rev)
@@ -1325,6 +1346,7 @@ AppDialog {
                     }
 
                     ScrollView {
+                        id: conScroll
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         visible: !!root.hasResult("consensus", root.rev)
@@ -1407,6 +1429,7 @@ AppDialog {
                     }
 
                     ScrollView {
+                        id: evoScroll
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         visible: !!root.hasResult("evolution", root.rev)
@@ -1576,6 +1599,7 @@ AppDialog {
                     }
 
                     ScrollView {
+                        id: covScroll
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         visible: !!root.hasResult("coverage", root.rev)
@@ -1670,6 +1694,7 @@ AppDialog {
                     }
 
                     ScrollView {
+                        id: oppScroll
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         visible: !!root.hasResult("opportunities", root.rev)
@@ -1818,6 +1843,7 @@ AppDialog {
                     }
 
                     ScrollView {
+                        id: actScroll
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         visible: !!root.hasResult("actions", root.rev)

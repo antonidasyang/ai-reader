@@ -15,6 +15,10 @@ constexpr auto kLastSeenVersionKey = "changelog/lastSeenVersion";
 LayoutSettings::LayoutSettings(QObject *parent)
     : QObject(parent)
 {
+    m_positionSaveTimer.setSingleShot(true);
+    m_positionSaveTimer.setInterval(400);
+    connect(&m_positionSaveTimer, &QTimer::timeout, this,
+            &LayoutSettings::flushPendingPositions);
     m_widthSaveTimer.setSingleShot(true);
     m_widthSaveTimer.setInterval(300);
     connect(&m_widthSaveTimer, &QTimer::timeout,
@@ -176,4 +180,29 @@ void LayoutSettings::flushPendingWidths()
     }
     m_pendingWidths.clear();
     if (anyChange) m_qs.sync();
+}
+
+double LayoutSettings::readingPosition(const QString &paperId) const
+{
+    if (paperId.isEmpty())
+        return 0;
+    if (m_pendingPositions.contains(paperId))
+        return m_pendingPositions.value(paperId);
+    return m_qs.value(QStringLiteral("reading/") + paperId, 0.0).toDouble();
+}
+
+void LayoutSettings::setReadingPosition(const QString &paperId, double y)
+{
+    if (paperId.isEmpty())
+        return;
+    m_pendingPositions.insert(paperId, y);
+    m_positionSaveTimer.start();
+}
+
+void LayoutSettings::flushPendingPositions()
+{
+    for (auto it = m_pendingPositions.constBegin();
+         it != m_pendingPositions.constEnd(); ++it)
+        m_qs.setValue(QStringLiteral("reading/") + it.key(), it.value());
+    m_pendingPositions.clear();
 }

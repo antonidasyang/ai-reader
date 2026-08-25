@@ -47,6 +47,16 @@ Rectangle {
         onTriggered: root.layoutWidth = root.width
     }
 
+    // Home / End / PageUp / PageDown scroll whichever tab is showing.
+    focus: true
+    function currentFlickable() {
+        const view = root.mode === 0 ? quickScroll
+                   : root.mode === 1 ? deepScroll : notesScroll
+        return view ? view.contentItem : null
+    }
+    Keys.onPressed: (event) => ScrollKeys.handle(event, root.currentFlickable())
+    TapHandler { onTapped: root.forceActiveFocus() }
+
     readonly property var d: analysis.quick
     readonly property int fs: settings.summaryFontSize
     readonly property var meta: d && d.meta ? d.meta : null
@@ -343,6 +353,7 @@ Rectangle {
 
         // ── the interpretation ──────────────────────────────────────
         ScrollView {
+            id: quickScroll
             Layout.fillWidth: true
             Layout.fillHeight: true
             visible: root.mode === 0 && analysis.hasQuick
@@ -548,6 +559,7 @@ Rectangle {
 
         // ── the close reading ───────────────────────────────────────
         ScrollView {
+            id: deepScroll
             Layout.fillWidth: true
             Layout.fillHeight: true
             visible: root.mode === 1
@@ -587,6 +599,7 @@ Rectangle {
             }
 
             ScrollView {
+                id: notesScroll
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true

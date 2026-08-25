@@ -66,13 +66,24 @@ public:
     // The setter is debounced via a 300 ms timer so a single drag
     // (which fires onWidthChanged at frame rate) becomes one disk
     // write rather than dozens.
+    // Where the reader had scrolled to in a paper, keyed by its paperId.
+    // Reading position is per machine and per screen size, so it stays in
+    // the local settings rather than travelling with the project.
+    // Writes are debounced the same way pane widths are: scrolling emits
+    // this at frame rate.
+    Q_INVOKABLE double readingPosition(const QString &paperId) const;
+    Q_INVOKABLE void setReadingPosition(const QString &paperId, double y);
+
     Q_INVOKABLE int  paneWidth(const QString &name, int defaultWidth) const;
     Q_INVOKABLE void setPaneWidth(const QString &name, int width);
 
 private:
     void flushPendingWidths();
+    void flushPendingPositions();
 
     QSettings m_qs;
     QHash<QString, int> m_pendingWidths;
+    QHash<QString, double> m_pendingPositions;
     QTimer m_widthSaveTimer;
+    QTimer m_positionSaveTimer;
 };

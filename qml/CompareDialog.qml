@@ -65,6 +65,10 @@ AppDialog {
         anchors.fill: parent
         spacing: 8
 
+        // Page/Home/End walk the comparison table.
+        focus: true
+        Keys.onPressed: (event) => ScrollKeys.handle(event, tableFlick)
+
         // ── the basket ──────────────────────────────────────────────
         Label {
             Layout.fillWidth: true
@@ -187,6 +191,7 @@ AppDialog {
         // grid would need horizontal scrolling as soon as there are more than
         // three papers, and the cells are sentences, not numbers.
         Flickable {
+            id: tableFlick
             Layout.fillWidth: true
             Layout.fillHeight: true
             visible: !!(root.res && root.res.rows && root.res.rows.length > 0)

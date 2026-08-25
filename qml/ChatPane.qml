@@ -7,6 +7,14 @@ Rectangle {
     id: root
     color: Theme.paneBg
 
+    // Page/Home/End walk the transcript. The composer keeps them while it
+    // has the keyboard, so they stay editing keys mid-question.
+    focus: true
+    Keys.onPressed: (event) => {
+        if (!input.activeFocus)
+            ScrollKeys.handle(event, list)
+    }
+
     // True while the user drags a splitter handle. Every visible bubble
     // re-lays-out its rich text when the pane's width changes (3.1 ms
     // measured), so during a drag the bubbles reflow on a timer rather

@@ -10,6 +10,51 @@ ApplicationWindow {
     width: 1400
     height: 900
     visible: true
+    // ── Where the reader was in each paper ──────────────────────────
+    // Saved as they scroll (the C++ side debounces the writes) and put back
+    // when the paper comes round again. The key is the paperId, so it
+    // survives the file being moved — and a paper opened from a project,
+    // whose file on disk is a checksum.
+    property string readingKey: ""
+    property bool restoringPosition: false
+
+    function restoreReadingPosition() {
+        const key = paperController.paperId
+        if (key.length === 0 || pdfView.pageRows === 0)
+            return                       // nothing laid out to scroll yet
+        window.readingKey = key
+        const y = layoutSettings.readingPosition(key)
+        if (y <= 0)
+            return
+        window.restoringPosition = true
+        pdfView.viewportY = y
+        Qt.callLater(function() { window.restoringPosition = false })
+    }
+
+    Timer {
+        id: restorePositionTimer
+        interval: 120
+        onTriggered: window.restoreReadingPosition()
+    }
+    Connections {
+        target: paperController
+        function onBlocksChanged() {
+            // A different paper: stop attributing scrolling to the old one
+            // until the new one's position has been put back.
+            window.readingKey = ""
+            restorePositionTimer.restart()
+        }
+    }
+    Connections {
+        target: pdfView
+        function onPageRowsChanged() { restorePositionTimer.restart() }
+        function onViewportYChanged() {
+            if (window.readingKey.length > 0 && !window.restoringPosition)
+                layoutSettings.setReadingPosition(window.readingKey,
+                                                  pdfView.viewportY)
+        }
+    }
+
     // The paper on screen, named the way the library names it. One opened
     // from a project plays out of the content-addressed cache, so its file
     // name is a sha256; the tab bar already resolves that through the
@@ -1217,6 +1262,8 @@ ApplicationWindow {
                                 return
                             }
                             const f = pdfMouse._flick()
+                            if (ScrollKeys.handle(event, f))
+                                return
                             const k = event.key
                             const isArrow = k === Qt.Key_Up || k === Qt.Key_Down
                                          || k === Qt.Key_Left || k === Qt.Key_Right

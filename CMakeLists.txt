@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.2.16 LANGUAGES CXX)
+project(ai-reader VERSION 1.2.17 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -389,13 +389,15 @@ target_include_directories(ai-reader PRIVATE
 
 # Theme.qml is a QML singleton (pragma Singleton); the module system needs
 # it flagged so `Theme.xxx` resolves without instantiation.
-set_source_files_properties(qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(qml/Theme.qml qml/ScrollKeys.qml
+                            PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(ai-reader
     URI AiReader
     VERSION 1.0
     QML_FILES
         qml/Theme.qml
+        qml/ScrollKeys.qml
         qml/AppDialog.qml
         qml/AppTabBar.qml
         qml/AppTabButton.qml
