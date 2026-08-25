@@ -38,6 +38,10 @@ AnalysisStore::AnalysisStore(LibraryDb *db, ProjectController *projects,
     , m_sync(sync)
     , m_auth(auth)
 {
+    // Any of these can add, replace or remove an analysis, so the index of
+    // whose-is-where has to be rebuilt after them.
+    connect(this, &AnalysisStore::changed, this,
+            [this] { m_othersIndexValid = false; });
     connect(m_sync, &SyncEngine::projectSynced, this,
             [this](const QString &) { emit changed(); });
     connect(m_projects, &ProjectController::currentChanged, this,
@@ -158,11 +162,66 @@ QList<AnalysisRecord> AnalysisStore::paperAnalysesFor(const QString &paperId,
     return out;
 }
 
+void AnalysisStore::ensureOthersIndex() const
+{
+    if (m_othersIndexValid)
+        return;
+    m_othersIndex.clear();
+    m_othersIndexValid = true;
+    const QString project = projectId();
+    if (project.isEmpty())
+        return;
+    const QString me = userId();
+    for (const SyncObjectRow &row :
+         m_db->objectsByType(project, Analysis::TypePaperAnalysis)) {
+        const QString author = row.data.value(QStringLiteral("author")).toString();
+        if (author.isEmpty() || author == me)
+            continue;                       // ours is found by its id
+        const QString paperId =
+            row.data.value(QStringLiteral("paperId")).toString();
+        const QString kind = row.data.value(QStringLiteral("kind")).toString();
+        if (paperId.isEmpty() || kind.isEmpty())
+            continue;
+        QHash<QString, QString> &byPaper = m_othersIndex[kind];
+        // Newest wins, so a paper several members read shows the last word.
+        const auto it = byPaper.constFind(paperId);
+        if (it != byPaper.constEnd()) {
+            SyncObjectRow prev;
+            if (m_db->getObject(project, it.value(), prev)
+                && prev.data.value(QStringLiteral("updatedAt")).toString()
+                       > row.data.value(QStringLiteral("updatedAt")).toString())
+                continue;
+        }
+        byPaper.insert(paperId, row.id);
+    }
+}
+
 AnalysisRecord AnalysisStore::paperAnalysis(const QString &paperId,
                                             const QString &kind) const
 {
-    const QList<AnalysisRecord> all = paperAnalysesFor(paperId, kind);
-    return all.isEmpty() ? AnalysisRecord() : all.first();
+    const QString project = projectId();
+    if (project.isEmpty() || paperId.isEmpty())
+        return {};
+
+    // Ours is a primary-key lookup: the id is derived from the project, the
+    // paper, the kind and the author, so there is nothing to search for.
+    SyncObjectRow row;
+    if (m_db->getObject(project,
+                        Analysis::paperAnalysisId(project, paperId, kind,
+                                                  userId()),
+                        row)
+        && !row.deleted)
+        return decodePaper(row);
+
+    // Otherwise a collaborator may have one. That needs a search, which is
+    // done once per change rather than once per paper the reader opens.
+    ensureOthersIndex();
+    const QString id = m_othersIndex.value(kind).value(paperId);
+    if (id.isEmpty())
+        return {};
+    if (!m_db->getObject(project, id, row) || row.deleted)
+        return {};
+    return decodePaper(row);
 }
 
 QList<AnalysisRecord> AnalysisStore::paperAnalyses(const QString &kind) const

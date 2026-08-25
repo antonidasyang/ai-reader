@@ -38,6 +38,7 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDeadlineTimer>
+#include <QElapsedTimer>
 #include <QDir>
 #include <QFile>
 #include <QGuiApplication>
@@ -697,6 +698,48 @@ int main(int argc, char **argv)
           !settings.isConfigured());
     settings.setBaseUrl(gateway.baseUrl());
     check("...and configured again once it has one", settings.isConfigured());
+
+    // ── what a paper switch costs on a real-sized library ───────────
+    // Switching paper asks the store for that paper's interpretation. With
+    // one row per paper per member, a lookup that scans them all pays for
+    // the whole library -- and a deep read is tens of KB of base64 each,
+    // so the parse alone is the cost.
+    {
+        const QString proj = projects.currentId();
+        const QString filler(6000, QChar('x'));   // ~ a real digest
+        const QString deepFiller(40000, QChar('y'));
+        for (int i = 0; i < 200; ++i) {
+            const QString paper = QStringLiteral("bulk-paper-%1").arg(i);
+            for (const QString &kind : {Analysis::KindQuick, Analysis::KindDeep}) {
+                SyncObjectRow row;
+                row.id = Analysis::paperAnalysisId(proj, paper, kind,
+                                                   QStringLiteral("bulk-author"));
+                row.projectId = proj;
+                row.type = Analysis::TypePaperAnalysis;
+                row.data = QJsonObject{
+                    {QStringLiteral("paperId"), paper},
+                    {QStringLiteral("kind"), kind},
+                    {QStringLiteral("author"), QStringLiteral("bulk-author")},
+                    {QStringLiteral("codec"), PayloadCodec::codecName()},
+                    {QStringLiteral("payload"),
+                     kind == Analysis::KindQuick ? filler : deepFiller},
+                    {QStringLiteral("updatedAt"), QStringLiteral("2026-01-01")}};
+                row.version = 1;
+                db.upsertFromServer(row);
+            }
+        }
+        QElapsedTimer t;
+        t.start();
+        for (int i = 0; i < 20; ++i) {
+            store.paperAnalysis(QStringLiteral("bulk-paper-7"), Analysis::KindQuick);
+            store.paperAnalysis(QStringLiteral("bulk-paper-7"), Analysis::KindDeep);
+        }
+        const double perSwitch = t.nsecsElapsed() / 1e6 / 20.0;
+        check("looking a paper's interpretation up stays cheap on a 200-paper "
+              "library",
+              perSwitch < 8.0,
+              QStringLiteral("%1 ms per paper switch").arg(perSwitch, 0, 'f', 1));
+    }
 
     qInfo().noquote() << "";
     qInfo().noquote() << QStringLiteral("%1 passed, %2 failed")

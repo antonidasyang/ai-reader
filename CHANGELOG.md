@@ -1,5 +1,18 @@
 # AI Reader changelog
 
+## v1.2.16 — 2026-08-25
+
+### Switching papers is quick again
+- Opening another paper asks the project for that paper's interpretation, and
+  that lookup was searching every interpretation in the project — parsing the
+  lot, including the close readings, which run to tens of kilobytes each. On a
+  200-paper library it cost 19 ms every time you switched, and it grew with
+  the library.
+- An interpretation of your own is now found directly (its identity is derived
+  from the project, the paper and you, so there is nothing to search for), and
+  a collaborator's is found through an index rebuilt only when something
+  changes. Same library: 0.8 ms.
+
 ## v1.2.15 — 2026-08-25
 
 ### The window title names the paper, not its hash

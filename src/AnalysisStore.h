@@ -2,6 +2,7 @@
 
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QHash>
 #include <QList>
 #include <QObject>
 #include <QString>
@@ -118,7 +119,15 @@ signals:
 
 private:
     AnalysisRecord decodePaper(const SyncObjectRow &row) const;
+    // paperId -> object id, per kind, for the analyses that are NOT ours.
+    // Ours are found by deriving the id; a collaborator's needs a search,
+    // and searching per paper switch means parsing every stored analysis in
+    // the project each time. Built once per change instead.
+    void ensureOthersIndex() const;
     AnalysisRecord decodeLibrary(const SyncObjectRow &row) const;
+
+    mutable QHash<QString, QHash<QString, QString>> m_othersIndex;
+    mutable bool m_othersIndexValid = false;
 
     LibraryDb *m_db;
     ProjectController *m_projects;
