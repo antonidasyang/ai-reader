@@ -51,6 +51,11 @@ public:
     bool canRun() const;
 
     Q_INVOKABLE void generate(const QString &kind);
+    // Every kind, one after another. They share a model and each is a whole
+    // library's worth of reading, so they queue rather than run at once.
+    Q_INVOKABLE void generateAll();
+    Q_PROPERTY(int queuedKinds READ queuedKinds NOTIFY stateChanged)
+    int queuedKinds() const { return m_queue.size(); }
     Q_INVOKABLE void cancel();
 
     Q_INVOKABLE QVariantMap result(const QString &kind) const;
@@ -106,6 +111,7 @@ private:
              const QJsonArray &briefs, const QJsonObject &extra,
              std::function<QJsonObject(const QJsonObject &)> postProcess);
     QJsonObject mergeTaxonomy(const QJsonObject &fresh) const;
+    void runNextQueued();
     QJsonObject taxonomy() const;
     void saveTaxonomy(const QJsonObject &tax);
     void setError(const QString &e);
@@ -119,5 +125,6 @@ private:
     QPointer<StructuredCall> m_call;
 
     QString m_runningKind;
+    QStringList m_queue;
     QString m_lastError;
 };

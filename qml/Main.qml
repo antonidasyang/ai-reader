@@ -224,22 +224,6 @@ ApplicationWindow {
     ProjectProfileDialog { id: projectProfileDialog }
     BatchAnalysisDialog { id: batchAnalysisDialog }
     CompareDialog { id: compareDialog }
-    ResearchDialog {
-        id: researchDialog
-        // A paper named anywhere in a project-wide analysis opens from there.
-        onPaperActivated: function(paperId) {
-            const id = libraryModel.findByPaperId(paperId)
-            if (!id || id.length === 0)
-                return
-            const fields = libraryModel.itemFields(id)
-            fileSync.openItem(id, fields.localPath ? fields.localPath : "")
-        }
-        onAskAiRequested: function(text) {
-            chatPane.visible = true
-            chatPane.prefillInput(text, 0)
-        }
-    }
-
     // Re-segmenting is destructive in a way that is not obvious: the
     // paragraph ids change, so translations keyed to them stop matching and
     // any manual split/merge is gone. Asked once, with the numbers, rather
@@ -955,7 +939,7 @@ ApplicationWindow {
                 tip: qsTr("What this whole project adds up to: categories, the "
                           + "research map, consensus and conflict, coverage, and "
                           + "what to do next")
-                onClicked: researchDialog.open()
+                onClicked: researchPane.visible = !researchPane.visible
             }
             ToolIcon {
                 id: accountBtn
@@ -1706,6 +1690,46 @@ ApplicationWindow {
                     anchors.leftMargin: 4
                     anchors.topMargin: 7
                     pane: analysisPane
+                    split: split
+                    marker: dropMarker
+                    onReordered: window.persistPaneOrder()
+                }
+            }
+
+            // ── Project-wide analysis (toggleable) ─────────────────────
+            // A pane rather than a dialog: reading a category or an opening
+            // means looking at a paper at the same time, and a modal window
+            // covering the library made that impossible.
+            ResearchPane {
+                id: researchPane
+                objectName: "research"
+                resizing: split.resizing
+                visible: layoutSettings.paneVisible("research", false)
+                onVisibleChanged: layoutSettings.setPaneVisible("research", visible)
+                SplitView.preferredWidth: layoutSettings.paneWidth("research", 420)
+                SplitView.minimumWidth: 300
+                onWidthChanged: layoutSettings.setPaneWidth("research", width)
+
+                // A paper named anywhere in a project-wide analysis opens
+                // from there.
+                onPaperActivated: function(paperId) {
+                    const id = libraryModel.findByPaperId(paperId)
+                    if (!id || id.length === 0)
+                        return
+                    const fields = libraryModel.itemFields(id)
+                    fileSync.openItem(id, fields.localPath ? fields.localPath : "")
+                }
+                onAskAiRequested: function(text) {
+                    chatPane.visible = true
+                    chatPane.prefillInput(text, 0)
+                }
+
+                DockGrip {
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.leftMargin: 4
+                    anchors.topMargin: 7
+                    pane: researchPane
                     split: split
                     marker: dropMarker
                     onReordered: window.persistPaneOrder()

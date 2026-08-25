@@ -262,17 +262,48 @@ void LibraryAnalysisService::run(
                     m_settings->model(), inputHashNow(), count);
                 emit resultChanged(storeKind);
                 emit stateChanged();
+                runNextQueued();
             });
     connect(m_call, &StructuredCall::failed, this, [this](const QString &e) {
         m_call.clear();
         m_runningKind.clear();
         setError(e);
         emit stateChanged();
+        // One kind failing is not a reason to abandon the other six.
+        runNextQueued();
     });
+}
+
+void LibraryAnalysisService::generateAll()
+{
+    // The whole set, in the order a reader would want to read it: how the
+    // papers group, then the map, then where they agree and disagree, how it
+    // moved, what is missing, what that opens up, and what to do next.
+    m_queue = QStringList{Analysis::KindTaxonomy,  Analysis::KindMap,
+                          Analysis::KindConsensus, Analysis::KindEvolution,
+                          Analysis::KindCoverage,  Analysis::KindOpportunities,
+                          Analysis::KindActions};
+    if (!m_call)
+        runNextQueued();
+    emit stateChanged();
+}
+
+void LibraryAnalysisService::runNextQueued()
+{
+    if (m_queue.isEmpty())
+        return;
+    const QString kind = m_queue.takeFirst();
+    generate(kind);
+    if (!m_call && !m_queue.isEmpty()) {
+        // generate() refused this one (nothing to work from, or it is
+        // already running); do not stall the rest behind it.
+        runNextQueued();
+    }
 }
 
 void LibraryAnalysisService::cancel()
 {
+    m_queue.clear();
     if (!m_call)
         return;
     m_call->abort();

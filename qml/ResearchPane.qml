@@ -20,12 +20,29 @@ import QtQuick.Layouts
 // classification belongs to them, not to the model — renaming, merging,
 // locking and confirming are all here, and a locked category survives the next
 // regeneration untouched.
-AppDialog {
+Rectangle {
     id: root
-    title: qsTr("Research this library")
-    width: Math.min(880, Overlay.overlay ? Overlay.overlay.width - 60 : 880)
-    height: Math.min(660, Overlay.overlay ? Overlay.overlay.height - 60 : 660)
-    standardButtons: Dialog.NoButton
+    color: Theme.paneBg
+
+    // True while a splitter handle is being dragged. Re-wrapping seven tabs
+    // of prose on every mouse move is expensive, so the content holds the
+    // width it had and catches up on a timer -- the same trick the
+    // interpretation and paragraph panes use.
+    property bool resizing: false
+    property real layoutWidth: width
+    onResizingChanged: if (!resizing) {
+        reflow.stop()
+        root.layoutWidth = root.width
+    }
+    onWidthChanged: {
+        if (!root.resizing) { root.layoutWidth = root.width; return }
+        if (!reflow.running) reflow.start()
+    }
+    Timer {
+        id: reflow
+        interval: 32
+        onTriggered: root.layoutWidth = root.width
+    }
 
     // Main.qml opens the paper.
     FileDialog {
@@ -144,9 +161,10 @@ AppDialog {
     // re-evaluate. Every such binding goes through a helper below and passes
     // `rev`, which the Connections block bumps — that read is what ties the
     // binding to the service's signals.
+    // A pane has no onOpened to refresh on: the Connections below are the
+    // only thing that re-reads, and the service signals on every store and
+    // project change, so that is enough.
     property int rev: 0
-
-    onOpened: root.rev = root.rev + 1
 
     // ── reading the service ─────────────────────────────────────────
     // `rev` is unused in the bodies on purpose; see the note above.
@@ -337,6 +355,10 @@ AppDialog {
         const view = views[tabBar.currentIndex]
         return view ? view.contentItem : null
     }
+    // Home / End / PageUp / PageDown scroll whichever tab is showing, once
+    // the pane has been clicked into.
+    Keys.onPressed: (event) => ScrollKeys.handle(event, root.currentFlickable())
+    TapHandler { onTapped: root.forceActiveFocus() }
 
     // ── the seven results ───────────────────────────────────────────
     readonly property var taxRes:  root.resultOf("taxonomy", root.rev)
@@ -807,11 +829,6 @@ AppDialog {
                        + "from the PDFs — %1 interpreted so far.")
                   .arg(research.digestCount)
         }
-        AppButton {
-            enabled: research.canRun
-            text: qsTr("Generate")
-            onClicked: research.generate(es.kind)
-        }
         Item { Layout.fillHeight: true }
     }
 
@@ -1050,26 +1067,54 @@ AppDialog {
         }
     }
 
-    // ── the dialog ──────────────────────────────────────────────────
+    // Nothing here notifies on its own; this is what makes the bindings
+    // above re-read after a generation lands or a category is edited.
+    Connections {
+        target: research
+        function onResultChanged(kind) { root.rev = root.rev + 1 }
+        function onStateChanged() { root.rev = root.rev + 1 }
+    }
+
+    // ── the pane ────────────────────────────────────────────────────
     ColumnLayout {
         anchors.fill: parent
-        spacing: 8
+        spacing: 0
 
-        // Page/Home/End walk whichever tab is showing.
-        focus: true
-        Keys.onPressed: (event) => ScrollKeys.handle(event, root.currentFlickable())
-
-        // Nothing here notifies on its own; this is what makes the bindings
-        // above re-read after a generation lands or a category is edited.
-        Connections {
-            target: research
-            function onResultChanged(kind) { root.rev = root.rev + 1 }
-            function onStateChanged() { root.rev = root.rev + 1 }
+        // ── header ──────────────────────────────────────────────────
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 32
+            color: Theme.headerBg
+            clip: true
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 12
+                anchors.rightMargin: 8
+                spacing: 6
+                Label {
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                    text: qsTr("Research")
+                    font.bold: true
+                    color: Theme.text
+                    elide: Text.ElideRight
+                }
+                // One generation at a time, whichever tab asked for it.
+                BusyIndicator {
+                    running: research.runningKind.length > 0
+                    visible: running
+                    Layout.preferredWidth: 16
+                    Layout.preferredHeight: 16
+                }
+            }
         }
 
         AppTabBar {
             id: tabBar
             Layout.fillWidth: true
+            Layout.leftMargin: 10
+            Layout.rightMargin: 10
+            Layout.topMargin: 8
             AppTabButton { text: qsTr("Categories") }
             AppTabButton { text: qsTr("Map") }
             AppTabButton { text: qsTr("Consensus") }
@@ -1080,8 +1125,13 @@ AppDialog {
         }
 
         StackLayout {
-            Layout.fillWidth: true
+            // Frozen width while a splitter drags (see `resizing` above).
+            Layout.fillWidth: false
+            Layout.preferredWidth: Math.max(0, root.layoutWidth - 20)
             Layout.fillHeight: true
+            Layout.leftMargin: 10
+            Layout.rightMargin: 10
+            Layout.topMargin: 8
             currentIndex: tabBar.currentIndex
 
             // ── §8 categories ───────────────────────────────────────
@@ -1898,8 +1948,15 @@ AppDialog {
             }
         }
 
+        // Visible on every tab: the caveat that applies to all seven, and
+        // the two actions that are about the set rather than one answer.
         RowLayout {
             Layout.fillWidth: true
+            Layout.leftMargin: 10
+            Layout.rightMargin: 10
+            Layout.topMargin: 8
+            Layout.bottomMargin: 8
+            spacing: 6
             Label {
                 Layout.fillWidth: true
                 wrapMode: Text.Wrap
@@ -1913,9 +1970,18 @@ AppDialog {
                 text: qsTr("Export report…")
                 onClicked: exportReportDialog.open()
             }
+            // All seven, queued. While one is running this is the way to
+            // stop it, so it is never two buttons fighting over one slot.
             AppButton {
-                text: qsTr("Close")
-                onClicked: root.close()
+                id: generateAll
+                readonly property bool busy: research.runningKind.length > 0
+                primary: true
+                enabled: generateAll.busy || research.canRun
+                text: generateAll.busy
+                      ? qsTr("Generating %1…").arg(research.runningKind)
+                      : qsTr("Generate all")
+                onClicked: generateAll.busy ? research.cancel()
+                                            : research.generateAll()
             }
         }
     }

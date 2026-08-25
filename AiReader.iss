@@ -17,7 +17,9 @@
 ; project(... VERSION ...)); there is nothing to bump in this file.
 
 #define MyAppName       "AI Reader"
-#define MyAppPublisher  "AI Reader"
+; The brand, not the product: this is the vendor Windows shows in
+; Apps & features and in the wizard.
+#define MyAppPublisher  "D2S"
 #define MyAppExeName    "ai-reader.exe"
 
 ; App version — SINGLE-SOURCED from the built exe's version resource, which
@@ -57,13 +59,17 @@ VersionInfoProductVersion={#MyAppVersion}
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppName} installer
 VersionInfoCopyright=Copyright © AI Reader contributors
-DefaultDirName={autopf}\AI Reader
+; Brand folder, product folder, no space -- the same convention the
+; app now uses for its data directories (StorageIdentity). Existing
+; installs keep their own folder: AppId is unchanged, so this is
+; only the default for a first install.
+DefaultDirName={autopf}\D2S\AIReader
 DefaultGroupName=AI Reader
 DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\{#MyAppExeName}
 UninstallDisplayName={#MyAppName} {#MyAppVersion}
 ; Per-user install — no admin prompt. Switch to "admin" + DefaultDirName=
-; "{autopf}\AI Reader" (already the default for admin) if you'd rather
+; "{autopf}\D2S\AIReader" (already the default for admin) if you'd rather
 ; install under Program Files.
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog

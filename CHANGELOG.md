@@ -1,5 +1,27 @@
 # AI Reader changelog
 
+## v1.2.19 — 2026-08-25
+
+### Project analysis is a pane, not a window
+- Categories, the research map, consensus, the timeline, coverage, openings
+  and next steps now dock alongside the paper instead of covering it, so a
+  category can be read with the paper it names open next to it. It drags to
+  any slot in the layout like the other panes, and the toolbar button toggles
+  it.
+- One **Generate all** button at the bottom now runs all seven, queued, and
+  turns into the way to stop the run. Each tab keeps its own Generate for
+  rewriting a single thin answer.
+
+### The app's folders carry the brand
+- Settings, the library database and the caches used to live under
+  `ai-reader/AI Reader` — a repository name where the brand belongs, and a
+  space that every script downstream had to quote. They are `D2S/AIReader`
+  now.
+- Updating moves what is already there: the library, the paragraph caches,
+  the downloaded PDFs and every setting come across on first launch, once,
+  and the API key in the system keychain is untouched. A second launch
+  changes nothing, and work done after the move is never overwritten.
+
 ## v1.2.18 — 2026-08-25
 
 ### A toolbar you can read

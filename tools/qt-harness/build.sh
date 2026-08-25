@@ -37,6 +37,12 @@ if [[ ! -f $B/build.ninja ]]; then
 fi
 mkdir -p "$OUT"
 
+# Bring the app's objects up to date first. This script links whatever
+# CMakeFiles/ai-reader.dir happens to hold, so a stale object silently puts
+# yesterday's code under test -- which has now twice produced a "failure" in
+# code that was already fixed.
+cmake --build "$B" >/dev/null
+
 # Pull one variable out of a ninja build block. Any app source will do for the
 # compile flags.
 pick() {

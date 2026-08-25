@@ -21,6 +21,7 @@
 #include "BatchAnalysisService.h"
 #include "CompareService.h"
 #include "AnalysisExporter.h"
+#include "StorageIdentity.h"
 #include "LibraryAnalysisService.h"
 #include "PaperSource.h"
 #include "AnalysisStore.h"
@@ -37,6 +38,7 @@
 
 #include <QDateTime>
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
 #include <QGuiApplication>
 
@@ -130,6 +132,7 @@ void installLaunchLogger()
 }
 
 
+
 // ── Remote sessions ────────────────────────────────────────────────
 // Qt Quick composes the whole window on the GPU. Inside an RDP session
 // there is no GPU: Direct3D falls back to WARP, every frame is rendered
@@ -182,9 +185,10 @@ int main(int argc, char *argv[])
     // Before the application object: the org/app names make QSettings
     // resolvable, and the rendering hints below are environment variables
     // Qt reads while QGuiApplication is being constructed.
-    QCoreApplication::setOrganizationName(QStringLiteral("ai-reader"));
-    QCoreApplication::setOrganizationDomain(QStringLiteral("ai-reader.local"));
-    QCoreApplication::setApplicationName(QStringLiteral("AI Reader"));
+    // Names the storage after the brand and the product (D2S / AIReader),
+    // moving what the old names left behind. Before anything reads a
+    // setting or a cache -- which includes the rendering hints below.
+    StorageIdentity::apply();
     applyRemoteRenderingHints();
 
     QGuiApplication app(argc, argv);

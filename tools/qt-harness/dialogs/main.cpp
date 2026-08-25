@@ -228,7 +228,6 @@ int main(int argc, char **argv)
         QStringLiteral("ProjectProfileDialog"),
         QStringLiteral("VisionDialog"),     QStringLiteral("ChangelogDialog"),
         QStringLiteral("BatchAnalysisDialog"), QStringLiteral("CompareDialog"),
-        QStringLiteral("ResearchDialog"),
     };
 
     int opened = 0;
@@ -265,10 +264,45 @@ int main(int argc, char **argv)
         pump(60);
     }
 
+    // Panes are not dialogs -- they are docked into the split view rather
+    // than opened -- but they are built out of the same shared controls and
+    // break the same way, so they are instantiated here too. Every tab's
+    // subtree is declared inline, so creating one exercises all of them.
+    const QStringList panes = { QStringLiteral("ResearchPane") };
+    int built = 0;
+    for (const QString &name : panes) {
+        const int before = g_problems.size();
+        QQmlComponent comp(&engine);
+        comp.setData(QStringLiteral("import QtQuick\nimport QtQuick.Controls\n"
+                                    "import AiReader\n%1 { width: 480; height: 720 }")
+                         .arg(name)
+                         .toUtf8(),
+                     QUrl::fromLocalFile(QDir::currentPath()
+                                         + QStringLiteral("/harness-%1.qml")
+                                               .arg(name)));
+        QObject *obj = comp.create(engine.rootContext());
+        if (!obj) {
+            g_problems.append(QStringLiteral("%1 failed to create: %2")
+                                  .arg(name, comp.errorString()));
+            continue;
+        }
+        if (auto *item = qobject_cast<QQuickItem *>(obj))
+            item->setParentItem(win->contentItem());
+        pump(400);
+        ++built;
+        const int added = g_problems.size() - before;
+        qInfo().noquote() << (added == 0 ? "PASS  " : "FAIL  ") << name
+                          << (added == 0 ? QString()
+                                         : QStringLiteral("(%1 warnings)").arg(added));
+        obj->deleteLater();
+        pump(60);
+    }
+
     qInstallMessageHandler(g_prev);
     qInfo().noquote() << "";
-    qInfo().noquote() << QStringLiteral("%1 dialogs opened, %2 warnings")
+    qInfo().noquote() << QStringLiteral("%1 dialogs and %2 panes built, %3 warnings")
                              .arg(opened)
+                             .arg(built)
                              .arg(g_problems.size());
     for (const QString &p : g_problems)
         qInfo().noquote() << "  " << p;
