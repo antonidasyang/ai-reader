@@ -29,6 +29,13 @@ void ApiClient::post(const QString &path, const QJsonObject &body, Handler h,
          std::move(h), allowRefresh);
 }
 
+void ApiClient::put(const QString &path, const QJsonObject &body, Handler h,
+                    bool allowRefresh)
+{
+    send("PUT", path, QJsonDocument(body).toJson(QJsonDocument::Compact),
+         std::move(h), allowRefresh);
+}
+
 void ApiClient::patch(const QString &path, const QJsonObject &body, Handler h,
                       bool allowRefresh)
 {
@@ -55,6 +62,8 @@ void ApiClient::send(const QByteArray &verb, const QString &path,
         reply = m_nam.get(req);
     else if (verb == "POST")
         reply = m_nam.post(req, data);
+    else if (verb == "PUT")
+        reply = m_nam.put(req, data);
     else if (verb == "DELETE")
         reply = m_nam.deleteResource(req);
     else

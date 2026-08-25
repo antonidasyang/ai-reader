@@ -9,6 +9,7 @@ import { SyncModule } from './sync/sync.module';
 import { FilesModule } from './files/files.module';
 import { ExportModule } from './export/export.module';
 import { UpdateModule } from './update/update.module';
+import { UserPrefsModule } from './user-prefs/user-prefs.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { UpdateModule } from './update/update.module';
     FilesModule,
     ExportModule,
     UpdateModule,
+    UserPrefsModule,
   ],
   controllers: [HealthController],
 })

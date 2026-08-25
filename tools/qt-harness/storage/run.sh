@@ -1,5 +1,5 @@
 #!/bin/zsh
-# The storage-identity rename, with a user's data in the way.
+# Where the app keeps things: its directories, and its one JSON settings file.
 set -e
 HERE=${0:A:h}
 REPO=${HERE:h:h:h}

@@ -33,6 +33,8 @@ public:
     void get(const QString &path, Handler h, bool allowRefresh = true);
     void post(const QString &path, const QJsonObject &body, Handler h,
               bool allowRefresh = true);
+    void put(const QString &path, const QJsonObject &body, Handler h,
+             bool allowRefresh = true);
     void patch(const QString &path, const QJsonObject &body, Handler h,
                bool allowRefresh = true);
     void del(const QString &path, Handler h, bool allowRefresh = true);

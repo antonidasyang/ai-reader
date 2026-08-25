@@ -42,6 +42,18 @@ CREATE TABLE "sync_objects" (
     CONSTRAINT "sync_objects_pkey" PRIMARY KEY ("id")
 );
 
+-- Account-scoped (not project-scoped) portable settings; `data` is opaque to
+-- the server, `version` is the per-user optimistic-concurrency counter.
+-- CreateTable
+CREATE TABLE "user_prefs" (
+    "user_id" UUID NOT NULL,
+    "data" JSONB NOT NULL,
+    "version" BIGINT NOT NULL DEFAULT 0,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "user_prefs_pkey" PRIMARY KEY ("user_id")
+);
+
 -- CreateTable
 CREATE TABLE "project_members" (
     "project_id" UUID NOT NULL,
@@ -72,4 +84,7 @@ ALTER TABLE "project_members" ADD CONSTRAINT "project_members_project_id_fkey" F
 
 -- AddForeignKey
 ALTER TABLE "project_members" ADD CONSTRAINT "project_members_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "user_prefs" ADD CONSTRAINT "user_prefs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 

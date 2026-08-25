@@ -24,6 +24,7 @@
 #include "StorageIdentity.h"
 #include "LibraryAnalysisService.h"
 #include "TaskManager.h"
+#include "UserPrefsSync.h"
 #include "PaperSource.h"
 #include "AnalysisStore.h"
 #include "ProjectProfileController.h"
@@ -219,8 +220,20 @@ int main(int argc, char *argv[])
                       << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
     qInfo().noquote() << "  Config        :"
                       << QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
-    qInfo().noquote() << "  QSettings file:"
-                      << QSettings().fileName();
+    qInfo().noquote() << "  Settings file :"
+                      << StorageIdentity::settingsFilePath();
+    // A settings file the app could not read is the difference between "it
+    // forgot everything" and "it was damaged and here is the copy we kept",
+    // and only the log can tell them apart afterwards.
+    {
+        QSettings probe;
+        if (probe.status() != QSettings::NoError)
+            qWarning().noquote()
+                << "  Settings could not be read (status"
+                << int(probe.status())
+                << "); the app is starting from defaults. A copy of the "
+                   "unreadable file is kept next to it with a .corrupt suffix.";
+    }
 
     QQuickStyle::setStyle(QStringLiteral("Fusion"));
 
@@ -341,6 +354,12 @@ int main(int argc, char *argv[])
     LibraryDb libraryDb;
     ApiClient apiClient;
     AuthController auth(&apiClient);
+    // The settings that belong to the person rather than the machine follow
+    // the account: pulled when they sign in, pushed a few seconds after they
+    // change. It wires itself to auth and to Settings' own change signals,
+    // and stays silent when there is no account or no network -- the local
+    // value is what the running app obeys either way.
+    UserPrefsSync prefsSync(&apiClient, &auth, &settings);
     ProjectController projectController(&apiClient, &auth, &libraryDb);
     SyncEngine syncEngine(&apiClient, &auth, &projectController, &libraryDb);
     LibraryModel libraryModel(&libraryDb, &projectController, &syncEngine);

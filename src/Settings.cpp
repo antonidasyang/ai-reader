@@ -9,6 +9,11 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QRegularExpression>
+#include <QUrl>
+
+#include <limits>
+#include <optional>
 
 // qtkeychain is now built in-tree via FetchContent; its public header
 // lives at the source root so we include it unprefixed (the system
@@ -64,6 +69,129 @@ constexpr auto kKeyAnalysisConcurrency  = "analysis/concurrency";
 constexpr auto kKeyRetiredAnalysisProvider = "analysis/provider";
 constexpr auto kKeyRetiredAnalysisModel    = "analysis/model";
 constexpr auto kKeyRetiredAnalysisBaseUrl  = "analysis/baseUrl";
+
+// Factory defaults, named because two places need the same numbers: load(),
+// and defaultAccountSettings() -- which is how the account sync tells a
+// machine the user has configured apart from one nobody has touched. A
+// default that drifted between the two would make a fresh install look
+// configured and let it win a first-pull merge it should have lost.
+constexpr auto kDefProvider              = "anthropic";
+constexpr auto kDefModel                 = "claude-opus-4-7";
+constexpr double kDefTemperature         = 0.2;
+constexpr int  kDefMaxTokens             = 8192;
+constexpr int  kDefContextWindow         = 128000;
+constexpr int  kDefToolBudget            = 30;
+constexpr auto kDefTargetLang            = "zh-CN";
+constexpr bool kDefChatIncludePaperText  = false;
+constexpr bool kDefAutoCheckUpdates      = true;
+constexpr bool kDefGrobidEnabled         = true;
+constexpr bool kDefAutoSegment           = false;
+constexpr bool kDefSharePaperData        = true;
+constexpr int  kDefTranslationConcurrency = 2;
+constexpr int  kDefTocFontSize           = 12;
+constexpr int  kDefSummaryFontSize       = 13;
+constexpr int  kDefParagraphFontSize     = 12;
+constexpr int  kDefChatFontSize          = 14;
+constexpr auto kDefChatSendKey           = "enter";
+constexpr int  kDefAnalysisMaxTokens     = 8192;
+constexpr int  kDefAnalysisConcurrency   = 2;
+
+// ── Reading an account payload ─────────────────────────────────────────
+// Everything below treats the incoming object as untrusted: it was written
+// by another machine, possibly by an older or newer build of this app, and
+// nothing guarantees a key still holds the type it held when it was saved.
+// A value we cannot read as the type we need is left out entirely, which
+// means the local value survives -- always the safer of the two outcomes,
+// since the local one at least came from this user on this machine.
+
+std::optional<QString> jsonString(const QJsonObject &o, const char *key)
+{
+    const QJsonValue v = o.value(QString::fromLatin1(key));
+    if (!v.isString())
+        return std::nullopt;
+    return v.toString();
+}
+
+std::optional<double> jsonDouble(const QJsonObject &o, const char *key)
+{
+    const QJsonValue v = o.value(QString::fromLatin1(key));
+    if (v.isDouble())
+        return v.toDouble();
+    // A number that made the round trip through a string (some JSON
+    // producers stringify everything) is still unambiguously a number.
+    if (v.isString()) {
+        bool ok = false;
+        const double d = v.toString().toDouble(&ok);
+        if (ok)
+            return d;
+    }
+    return std::nullopt;
+}
+
+std::optional<int> jsonInt(const QJsonObject &o, const char *key)
+{
+    const auto d = jsonDouble(o, key);
+    if (!d)
+        return std::nullopt;
+    // Out of int range is not a number we can use for anything here; the
+    // setters would clamp it, but rounding it first would be a lie.
+    if (*d < double(std::numeric_limits<int>::min())
+        || *d > double(std::numeric_limits<int>::max()))
+        return std::nullopt;
+    return int(qRound(*d));
+}
+
+std::optional<bool> jsonBool(const QJsonObject &o, const char *key)
+{
+    const QJsonValue v = o.value(QString::fromLatin1(key));
+    if (v.isBool())
+        return v.toBool();
+    if (v.isDouble())
+        return v.toDouble() != 0.0;
+    if (v.isString()) {
+        const QString t = v.toString().trimmed().toLower();
+        if (t == QLatin1String("true") || t == QLatin1String("1"))
+            return true;
+        if (t == QLatin1String("false") || t == QLatin1String("0"))
+            return false;
+    }
+    return std::nullopt;
+}
+
+// The four provider codes the UI offers. An unknown one would leave the app
+// silently talking to the wrong client class, so it is dropped instead.
+bool isKnownProvider(const QString &p)
+{
+    return p == QLatin1String("anthropic") || p == QLatin1String("openai")
+           || p == QLatin1String("deepseek")
+           || p == QLatin1String("openai-compatible");
+}
+
+// A Base URL is only worth storing if a request could actually be sent to
+// it. Anything else (a file:// path, a bare word, a URL with no host) turns
+// every call into an obscure network error long after the sync that
+// delivered it.
+bool isUsableEndpoint(const QString &url)
+{
+    const QUrl u(url.trimmed(), QUrl::StrictMode);
+    if (!u.isValid() || u.host().isEmpty())
+        return false;
+    const QString scheme = u.scheme().toLower();
+    return scheme == QLatin1String("http") || scheme == QLatin1String("https");
+}
+
+// Empty (follow the system) or something shaped like a locale code. We
+// deliberately do not check it against the .qm files we ship: a newer build
+// may know a language this one does not, and dropping the code here would
+// quietly reset that machine's choice on every sync.
+bool isUsableLanguageCode(const QString &code)
+{
+    if (code.isEmpty())
+        return true;
+    static const QRegularExpression re(
+        QStringLiteral("^[A-Za-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"));
+    return re.match(code).hasMatch();
+}
 
 } // namespace
 
@@ -695,8 +823,8 @@ void Settings::setAvailableTranslationModels(QStringList list)
 
 void Settings::load()
 {
-    m_provider      = m_qs.value(kKeyProvider,      QStringLiteral("anthropic")).toString();
-    m_model         = m_qs.value(kKeyModel,         QStringLiteral("claude-opus-4-7")).toString();
+    m_provider      = m_qs.value(kKeyProvider,      QString::fromLatin1(kDefProvider)).toString();
+    m_model         = m_qs.value(kKeyModel,         QString::fromLatin1(kDefModel)).toString();
     m_baseUrl       = m_qs.value(kKeyBaseUrl,       QString{}).toString();
     // Legacy plaintext API key — picked up here only so the constructor
     // can migrate it into the keychain. Erase from QSettings to avoid
@@ -704,18 +832,18 @@ void Settings::load()
     m_apiKey        = m_qs.value(kKeyApiKey,        QString{}).toString();
     if (!m_apiKey.isEmpty())
         m_qs.remove(kKeyApiKey);
-    m_temperature   = m_qs.value(kKeyTemperature,   0.2).toDouble();
-    m_maxTokens     = m_qs.value(kKeyMaxTokens,     8192).toInt();
-    m_contextWindow = m_qs.value(kKeyContextWindow, 128000).toInt();
-    m_toolBudget    = qBound(1, m_qs.value(kKeyToolBudget, 30).toInt(), 100);
-    m_targetLang    = m_qs.value(kKeyTargetLang,    QStringLiteral("zh-CN")).toString();
+    m_temperature   = m_qs.value(kKeyTemperature,   kDefTemperature).toDouble();
+    m_maxTokens     = m_qs.value(kKeyMaxTokens,     kDefMaxTokens).toInt();
+    m_contextWindow = m_qs.value(kKeyContextWindow, kDefContextWindow).toInt();
+    m_toolBudget    = qBound(1, m_qs.value(kKeyToolBudget, kDefToolBudget).toInt(), 100);
+    m_targetLang    = m_qs.value(kKeyTargetLang,    QString::fromLatin1(kDefTargetLang)).toString();
     m_uiLanguage    = m_qs.value(kKeyUiLanguage,    QString{}).toString();
     m_translationPrompt = m_qs.value(kKeyTranslationPrompt, QString{}).toString();
     m_tocPrompt         = m_qs.value(kKeyTocPrompt,         QString{}).toString();
     m_visionPrompt      = m_qs.value(kKeyVisionPrompt,      QString{}).toString();
     m_chatPrompt           = m_qs.value(kKeyChatPrompt,           QString{}).toString();
-    m_chatIncludePaperText = m_qs.value(kKeyChatIncludePaperText, false).toBool();
-    m_autoCheckUpdates     = m_qs.value(kKeyAutoCheckUpdates,     true).toBool();
+    m_chatIncludePaperText = m_qs.value(kKeyChatIncludePaperText, kDefChatIncludePaperText).toBool();
+    m_autoCheckUpdates     = m_qs.value(kKeyAutoCheckUpdates,     kDefAutoCheckUpdates).toBool();
     m_updateManifestUrl    = m_qs.value(kKeyUpdateManifestUrl,    QString{}).toString();
     // Migration: old installs saved the retired GitHub manifest URL
     // (raw.githubusercontent is unreachable for most users in China,
@@ -727,24 +855,24 @@ void Settings::load()
         m_qs.setValue(kKeyUpdateManifestUrl, QString());
         m_qs.sync();
     }
-    m_grobidEnabled        = m_qs.value(kKeyGrobidEnabled,        true).toBool();
+    m_grobidEnabled        = m_qs.value(kKeyGrobidEnabled,        kDefGrobidEnabled).toBool();
     m_grobidUrl            = m_qs.value(kKeyGrobidUrl,
                                  QStringLiteral("https://aireader.d2ssoft.com/grobid")).toString();
     m_crashReportsOptIn    = m_qs.value(kKeyCrashReportsOptIn,    false).toBool();
-    m_autoSegment          = m_qs.value(kKeyAutoSegment,          false).toBool();
-    m_sharePaperData       = m_qs.value(kKeySharePaperData,       true).toBool();
+    m_autoSegment          = m_qs.value(kKeyAutoSegment,          kDefAutoSegment).toBool();
+    m_sharePaperData       = m_qs.value(kKeySharePaperData,       kDefSharePaperData).toBool();
     m_translationConcurrency =
-        qBound(1, m_qs.value(kKeyTranslationConcurrency, 2).toInt(), 16);
-    m_tocFontSize          = qBound(8, m_qs.value(kKeyTocFontSize,       12).toInt(), 32);
-    m_summaryFontSize      = qBound(8, m_qs.value(kKeySummaryFontSize,   13).toInt(), 32);
-    m_paragraphFontSize    = qBound(8, m_qs.value(kKeyParagraphFontSize, 12).toInt(), 32);
-    m_chatFontSize         = qBound(8, m_qs.value(kKeyChatFontSize,      14).toInt(), 32);
+        qBound(1, m_qs.value(kKeyTranslationConcurrency, kDefTranslationConcurrency).toInt(), 16);
+    m_tocFontSize          = qBound(8, m_qs.value(kKeyTocFontSize,       kDefTocFontSize).toInt(), 32);
+    m_summaryFontSize      = qBound(8, m_qs.value(kKeySummaryFontSize,   kDefSummaryFontSize).toInt(), 32);
+    m_paragraphFontSize    = qBound(8, m_qs.value(kKeyParagraphFontSize, kDefParagraphFontSize).toInt(), 32);
+    m_chatFontSize         = qBound(8, m_qs.value(kKeyChatFontSize,      kDefChatFontSize).toInt(), 32);
     m_remoteMode           = m_qs.value(kKeyRemoteMode,
                                         QStringLiteral("auto")).toString();
     if (m_remoteMode != QLatin1String("on") && m_remoteMode != QLatin1String("off"))
         m_remoteMode = QStringLiteral("auto");
     m_chatSendKey          = m_qs.value(kKeyChatSendKey,
-                                        QStringLiteral("enter")).toString();
+                                        QString::fromLatin1(kDefChatSendKey)).toString();
     if (m_chatSendKey != QLatin1String("ctrl-enter"))
         m_chatSendKey = QStringLiteral("enter");
     m_chatInputHeight      =
@@ -760,9 +888,9 @@ void Settings::load()
             m_qs.remove(QString::fromLatin1(k));
     }
     m_analysisMaxTokens    =
-        qBound(512, m_qs.value(kKeyAnalysisMaxTokens, 8192).toInt(), 64000);
+        qBound(512, m_qs.value(kKeyAnalysisMaxTokens, kDefAnalysisMaxTokens).toInt(), 64000);
     m_analysisConcurrency  =
-        qBound(1, m_qs.value(kKeyAnalysisConcurrency, 2).toInt(), 8);
+        qBound(1, m_qs.value(kKeyAnalysisConcurrency, kDefAnalysisConcurrency).toInt(), 8);
 }
 
 void Settings::save()
@@ -803,6 +931,273 @@ void Settings::save()
     m_qs.setValue(kKeyAnalysisMaxTokens,    m_analysisMaxTokens);
     m_qs.setValue(kKeyAnalysisConcurrency,  m_analysisConcurrency);
     m_qs.sync();
+}
+
+// ── Settings that follow the user's account ────────────────────────
+//
+// Three functions, one list. accountSettingKeys() names the keys; export
+// and import move them in and out of a JSON object; defaultAccountSettings()
+// answers "what would a machine nobody has configured say?". Everything
+// about which settings are account-class and which are local lives here, so
+// UserPrefsSync never has to know a single QSettings key by name.
+
+const QStringList &Settings::accountSettingKeys()
+{
+    // Grouped the way the settings dialog groups them. The order carries no
+    // meaning for the protocol -- the payload is a JSON object -- but a
+    // stable one keeps a diff of two accounts readable.
+    static const QStringList keys = {
+        QString::fromLatin1(kKeyProvider),
+        QString::fromLatin1(kKeyModel),
+        QString::fromLatin1(kKeyBaseUrl),
+        QString::fromLatin1(kKeyTemperature),
+        QString::fromLatin1(kKeyMaxTokens),
+        QString::fromLatin1(kKeyContextWindow),
+
+        QString::fromLatin1(kKeyTranslationProvider),
+        QString::fromLatin1(kKeyTranslationModel),
+        QString::fromLatin1(kKeyTranslationBaseUrl),
+        QString::fromLatin1(kKeyTargetLang),
+        QString::fromLatin1(kKeyTranslationConcurrency),
+
+        QString::fromLatin1(kKeyTranslationPrompt),
+        QString::fromLatin1(kKeyTocPrompt),
+        QString::fromLatin1(kKeyVisionPrompt),
+        QString::fromLatin1(kKeyChatPrompt),
+
+        QString::fromLatin1(kKeyToolBudget),
+        QString::fromLatin1(kKeyChatIncludePaperText),
+        QString::fromLatin1(kKeyChatSendKey),
+
+        QString::fromLatin1(kKeyAnalysisMaxTokens),
+        QString::fromLatin1(kKeyAnalysisConcurrency),
+
+        QString::fromLatin1(kKeyTocFontSize),
+        QString::fromLatin1(kKeySummaryFontSize),
+        QString::fromLatin1(kKeyParagraphFontSize),
+        QString::fromLatin1(kKeyChatFontSize),
+
+        QString::fromLatin1(kKeyUiLanguage),
+        QString::fromLatin1(kKeyAutoSegment),
+        QString::fromLatin1(kKeySharePaperData),
+        QString::fromLatin1(kKeyGrobidEnabled),
+        QString::fromLatin1(kKeyAutoCheckUpdates),
+    };
+    return keys;
+}
+
+QJsonObject Settings::exportAccountSettings() const
+{
+    QJsonObject o;
+    o.insert(QString::fromLatin1(kKeyProvider),      m_provider);
+    o.insert(QString::fromLatin1(kKeyModel),         m_model);
+    o.insert(QString::fromLatin1(kKeyBaseUrl),       m_baseUrl);
+    o.insert(QString::fromLatin1(kKeyTemperature),   m_temperature);
+    o.insert(QString::fromLatin1(kKeyMaxTokens),     m_maxTokens);
+    o.insert(QString::fromLatin1(kKeyContextWindow), m_contextWindow);
+
+    o.insert(QString::fromLatin1(kKeyTranslationProvider), m_translationProvider);
+    o.insert(QString::fromLatin1(kKeyTranslationModel),    m_translationModel);
+    o.insert(QString::fromLatin1(kKeyTranslationBaseUrl),  m_translationBaseUrl);
+    o.insert(QString::fromLatin1(kKeyTargetLang),          m_targetLang);
+    o.insert(QString::fromLatin1(kKeyTranslationConcurrency), m_translationConcurrency);
+
+    o.insert(QString::fromLatin1(kKeyTranslationPrompt), m_translationPrompt);
+    o.insert(QString::fromLatin1(kKeyTocPrompt),         m_tocPrompt);
+    o.insert(QString::fromLatin1(kKeyVisionPrompt),      m_visionPrompt);
+    o.insert(QString::fromLatin1(kKeyChatPrompt),        m_chatPrompt);
+
+    o.insert(QString::fromLatin1(kKeyToolBudget),            m_toolBudget);
+    o.insert(QString::fromLatin1(kKeyChatIncludePaperText),  m_chatIncludePaperText);
+    o.insert(QString::fromLatin1(kKeyChatSendKey),           m_chatSendKey);
+
+    o.insert(QString::fromLatin1(kKeyAnalysisMaxTokens),   m_analysisMaxTokens);
+    o.insert(QString::fromLatin1(kKeyAnalysisConcurrency), m_analysisConcurrency);
+
+    o.insert(QString::fromLatin1(kKeyTocFontSize),       m_tocFontSize);
+    o.insert(QString::fromLatin1(kKeySummaryFontSize),   m_summaryFontSize);
+    o.insert(QString::fromLatin1(kKeyParagraphFontSize), m_paragraphFontSize);
+    o.insert(QString::fromLatin1(kKeyChatFontSize),      m_chatFontSize);
+
+    o.insert(QString::fromLatin1(kKeyUiLanguage),      m_uiLanguage);
+    o.insert(QString::fromLatin1(kKeyAutoSegment),     m_autoSegment);
+    o.insert(QString::fromLatin1(kKeySharePaperData),  m_sharePaperData);
+    o.insert(QString::fromLatin1(kKeyGrobidEnabled),   m_grobidEnabled);
+    o.insert(QString::fromLatin1(kKeyAutoCheckUpdates), m_autoCheckUpdates);
+
+    // No API keys, no tokens: those live in the OS keychain and the whole
+    // point of keeping them there is that they never travel.
+    return o;
+}
+
+QJsonObject Settings::defaultAccountSettings()
+{
+    QJsonObject o;
+    o.insert(QString::fromLatin1(kKeyProvider),      QString::fromLatin1(kDefProvider));
+    o.insert(QString::fromLatin1(kKeyModel),         QString::fromLatin1(kDefModel));
+    o.insert(QString::fromLatin1(kKeyBaseUrl),       QString{});
+    o.insert(QString::fromLatin1(kKeyTemperature),   kDefTemperature);
+    o.insert(QString::fromLatin1(kKeyMaxTokens),     kDefMaxTokens);
+    o.insert(QString::fromLatin1(kKeyContextWindow), kDefContextWindow);
+
+    o.insert(QString::fromLatin1(kKeyTranslationProvider), QString{});
+    o.insert(QString::fromLatin1(kKeyTranslationModel),    QString{});
+    o.insert(QString::fromLatin1(kKeyTranslationBaseUrl),  QString{});
+    o.insert(QString::fromLatin1(kKeyTargetLang),          QString::fromLatin1(kDefTargetLang));
+    o.insert(QString::fromLatin1(kKeyTranslationConcurrency), kDefTranslationConcurrency);
+
+    o.insert(QString::fromLatin1(kKeyTranslationPrompt), QString{});
+    o.insert(QString::fromLatin1(kKeyTocPrompt),         QString{});
+    o.insert(QString::fromLatin1(kKeyVisionPrompt),      QString{});
+    o.insert(QString::fromLatin1(kKeyChatPrompt),        QString{});
+
+    o.insert(QString::fromLatin1(kKeyToolBudget),           kDefToolBudget);
+    o.insert(QString::fromLatin1(kKeyChatIncludePaperText), kDefChatIncludePaperText);
+    o.insert(QString::fromLatin1(kKeyChatSendKey),          QString::fromLatin1(kDefChatSendKey));
+
+    o.insert(QString::fromLatin1(kKeyAnalysisMaxTokens),   kDefAnalysisMaxTokens);
+    o.insert(QString::fromLatin1(kKeyAnalysisConcurrency), kDefAnalysisConcurrency);
+
+    o.insert(QString::fromLatin1(kKeyTocFontSize),       kDefTocFontSize);
+    o.insert(QString::fromLatin1(kKeySummaryFontSize),   kDefSummaryFontSize);
+    o.insert(QString::fromLatin1(kKeyParagraphFontSize), kDefParagraphFontSize);
+    o.insert(QString::fromLatin1(kKeyChatFontSize),      kDefChatFontSize);
+
+    o.insert(QString::fromLatin1(kKeyUiLanguage),       QString{});
+    o.insert(QString::fromLatin1(kKeyAutoSegment),      kDefAutoSegment);
+    o.insert(QString::fromLatin1(kKeySharePaperData),   kDefSharePaperData);
+    o.insert(QString::fromLatin1(kKeyGrobidEnabled),    kDefGrobidEnabled);
+    o.insert(QString::fromLatin1(kKeyAutoCheckUpdates), kDefAutoCheckUpdates);
+    return o;
+}
+
+void Settings::importAccountSettings(const QJsonObject &obj)
+{
+    // Every branch below calls the ordinary setter. That is deliberate and
+    // it is the whole safety story of this function: the setters are where
+    // the ranges live (8-32 px fonts, 1-8 interpretations at once, 1-16
+    // translations), where configRevision is bumped so LlmClientCache
+    // rebuilds its clients, and where the change signals are emitted so the
+    // panes on screen re-lay out without a restart. Reimplementing any of
+    // that here would mean a value from another machine could reach places
+    // a value typed into the dialog cannot.
+
+    // The provider goes first: it decides whether a Base URL is meaningful
+    // at all, and the guard below reads the provider that is by then in
+    // effect. An unrecognised code is dropped rather than stored -- it would
+    // silently select the Anthropic client in createClient().
+    if (const auto v = jsonString(obj, kKeyProvider)) {
+        const QString p = v->trimmed().toLower();
+        if (isKnownProvider(p))
+            setProvider(p);
+    }
+    if (const auto v = jsonString(obj, kKeyModel))
+        setModel(v->trimmed());
+    if (const auto v = jsonString(obj, kKeyBaseUrl)) {
+        // Stored whatever the provider is, and deliberately so. The rule that
+        // only "openai-compatible" has an address of its own is enforced
+        // where it matters -- resolveBaseUrl(), which every client goes
+        // through, ignores this field for the three named providers -- and
+        // not by refusing to remember it. Refusing would also make the two
+        // sides permanently disagree about this key: this machine would keep
+        // exporting the gateway it declined to overwrite, the account would
+        // keep sending back the one it holds, and every launch would spend a
+        // pointless write on the argument. What is rejected is a URL nothing
+        // could ever be sent to.
+        const QString url = v->trimmed();
+        if (url.isEmpty() || isUsableEndpoint(url))
+            setBaseUrl(url);
+    }
+    if (const auto v = jsonDouble(obj, kKeyTemperature)) {
+        // setTemperature() takes anything; the dialog's slider is the only
+        // thing that has ever bounded it. A value from elsewhere gets the
+        // widest range any of our providers accepts, because an out-of-range
+        // temperature does not degrade -- it turns every request into a 400
+        // long after the sync that delivered it.
+        setTemperature(qBound(0.0, *v, 2.0));
+    }
+    if (const auto v = jsonInt(obj, kKeyMaxTokens))
+        setMaxTokens(*v);
+    if (const auto v = jsonInt(obj, kKeyContextWindow))
+        setContextWindow(*v);
+
+    // Translation override. Blank means "use the main configuration", so
+    // unlike the main provider an empty string is a legal value here.
+    if (const auto v = jsonString(obj, kKeyTranslationProvider)) {
+        const QString p = v->trimmed().toLower();
+        if (p.isEmpty() || isKnownProvider(p))
+            setTranslationProvider(p);
+    }
+    if (const auto v = jsonString(obj, kKeyTranslationModel))
+        setTranslationModel(v->trimmed());
+    if (const auto v = jsonString(obj, kKeyTranslationBaseUrl)) {
+        // Same reasoning as the main Base URL above; translationBaseUrlInUse()
+        // is what decides whether this address is ever dialled.
+        const QString url = v->trimmed();
+        if (url.isEmpty() || isUsableEndpoint(url))
+            setTranslationBaseUrl(url);
+    }
+    if (const auto v = jsonString(obj, kKeyTargetLang))
+        setTargetLang(v->trimmed());
+    if (const auto v = jsonInt(obj, kKeyTranslationConcurrency))
+        setTranslationConcurrency(*v);
+
+    if (const auto v = jsonString(obj, kKeyTranslationPrompt))
+        setTranslationPrompt(*v);
+    if (const auto v = jsonString(obj, kKeyTocPrompt))
+        setTocPrompt(*v);
+    if (const auto v = jsonString(obj, kKeyVisionPrompt))
+        setVisionPrompt(*v);
+    if (const auto v = jsonString(obj, kKeyChatPrompt))
+        setChatPrompt(*v);
+
+    if (const auto v = jsonInt(obj, kKeyToolBudget))
+        setToolBudget(*v);
+    if (const auto v = jsonBool(obj, kKeyChatIncludePaperText))
+        setChatIncludePaperText(*v);
+    if (const auto v = jsonString(obj, kKeyChatSendKey)) {
+        // setChatSendKey() normalises anything unknown to "enter". Here we
+        // skip it instead: normalising would let a junk value silently undo
+        // a deliberate local choice, which is not what the setter's rule is
+        // for -- it exists to make a stale QSettings file safe, not to
+        // arbitrate between two machines.
+        const QString k = v->trimmed().toLower();
+        if (k == QLatin1String("enter") || k == QLatin1String("ctrl-enter"))
+            setChatSendKey(k);
+    }
+
+    if (const auto v = jsonInt(obj, kKeyAnalysisMaxTokens))
+        setAnalysisMaxTokens(*v);
+    if (const auto v = jsonInt(obj, kKeyAnalysisConcurrency))
+        setAnalysisConcurrency(*v);
+
+    if (const auto v = jsonInt(obj, kKeyTocFontSize))
+        setTocFontSize(*v);
+    if (const auto v = jsonInt(obj, kKeySummaryFontSize))
+        setSummaryFontSize(*v);
+    if (const auto v = jsonInt(obj, kKeyParagraphFontSize))
+        setParagraphFontSize(*v);
+    if (const auto v = jsonInt(obj, kKeyChatFontSize))
+        setChatFontSize(*v);
+
+    if (const auto v = jsonString(obj, kKeyUiLanguage)) {
+        const QString code = v->trimmed();
+        if (isUsableLanguageCode(code))
+            setUiLanguage(code);
+    }
+    if (const auto v = jsonBool(obj, kKeyAutoSegment))
+        setAutoSegment(*v);
+    if (const auto v = jsonBool(obj, kKeySharePaperData))
+        setSharePaperData(*v);
+    if (const auto v = jsonBool(obj, kKeyGrobidEnabled))
+        setGrobidEnabled(*v);
+    if (const auto v = jsonBool(obj, kKeyAutoCheckUpdates))
+        setAutoCheckUpdates(*v);
+
+    // Anything else in obj is ignored on purpose: a newer build may sync a
+    // key this one has never heard of, and guessing at it is worse than
+    // leaving it alone. UserPrefsSync carries such keys back untouched so
+    // an older client cannot erase a newer one's settings.
 }
 
 // ── Updates / privacy setters ──────────────────────────────────────

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QJsonObject>
 #include <QObject>
 #include <QPointer>
 #include <QSettings>
@@ -260,6 +261,39 @@ public:
     // custom URL that only counts when the provider allows one.
     Q_INVOKABLE static QString resolveBaseUrl(const QString &provider,
                                               const QString &customUrl);
+
+    // ── Settings that follow the user's account ──────────────────────
+    // The one authoritative list of QSettings keys that travel with the
+    // signed-in user; UserPrefsSync pushes and pulls exactly these and
+    // nothing else. What is missing from it is missing on purpose: API
+    // keys and tokens live in the OS keychain and must never leave the
+    // machine, and window geometry, pane visibility/width/order, reading
+    // positions, open tabs, the last local folder, ui/remoteMode,
+    // server/sessionActive, privacy/crashReportsOptIn, server/url,
+    // grobid/url and updates/manifestUrl describe this screen, this disk
+    // or this network -- not this user.
+    static const QStringList &accountSettingKeys();
+
+    // The current value of every key above. Types are the natural JSON
+    // ones (string / number / bool) so two machines produce byte-identical
+    // payloads for identical configuration, which is what lets the sync
+    // layer skip a redundant write.
+    QJsonObject exportAccountSettings() const;
+
+    // What a fresh install would export. The sync layer needs it to tell
+    // "the user configured this machine" from "nothing here was ever
+    // touched", which is what decides who wins on a first pull.
+    static QJsonObject defaultAccountSettings();
+
+    // Apply an account payload that arrived from the server. Every value
+    // goes through the ordinary setter, so it is clamped and validated
+    // exactly like typed input and emits the ordinary change signals --
+    // the running app picks the change up without a restart. A value of
+    // the wrong type, or one outside what the setter would accept from a
+    // person, is ignored rather than forced through; a key that is absent
+    // leaves the local value alone, because absent means "the account has
+    // no opinion", not "reset this to the default".
+    void importAccountSettings(const QJsonObject &obj);
 
     LlmClient *createClient(QObject *parent = nullptr) const;
     // The client TranslationService talks to: the translation override where

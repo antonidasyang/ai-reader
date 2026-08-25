@@ -27,6 +27,7 @@ model User {
 
   ownedProjects Project[]       @relation("OwnedProjects")
   memberships   ProjectMember[]
+  prefs         UserPref?
 
   @@map("users")
 }
@@ -89,4 +90,22 @@ model ProjectMember {
 
   @@id([projectId, userId])
   @@map("project_members")
+}
+
+// Account-scoped (NOT project-scoped) portable settings: the model
+// configuration, prompts, UI language, font sizes ... everything that should
+// follow the *user* between machines rather than live inside a shared library.
+// One row per user. `data` is opaque -- the server never reads inside it, the
+// same contract as SyncObject.data -- and `version` is a per-user counter bumped
+// on every successful write, used for the optimistic-concurrency (409 + merge +
+// retry) handshake the sync push already uses.
+model UserPref {
+  userId    String   @id @map("user_id") @db.Uuid
+  data      Json
+  version   BigInt   @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_prefs")
 }

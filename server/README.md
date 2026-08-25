@@ -45,5 +45,6 @@ src/
   sync/              GET /projects/:id/sync, POST .../push       [phase 2]
   files/             S3 presigned upload/download                [phase 2.3]
   events/            WebSocket change notifications              [phase 2.4]
+  user-prefs/        GET/PUT /me/prefs -- account-scoped settings
 prisma/schema.prisma data model (source of truth)
 ```

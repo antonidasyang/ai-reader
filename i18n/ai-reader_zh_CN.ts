@@ -2203,102 +2203,127 @@ Click to open this passage.</source>
 <context>
     <name>FolderPane</name>
     <message>
-        <location filename="../qml/FolderPane.qml" line="109"/>
+        <location filename="../qml/FolderPane.qml" line="138"/>
         <source>Folder</source>
         <translation>文件夹</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="114"/>
+        <location filename="../qml/FolderPane.qml" line="143"/>
         <source>Open…</source>
         <translation>打开…</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="118"/>
+        <location filename="../qml/FolderPane.qml" line="147"/>
         <source>Close</source>
         <translation>关闭</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="81"/>
+        <location filename="../qml/FolderPane.qml" line="110"/>
         <source>Open folder</source>
         <translation>打开文件夹</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="162"/>
+        <location filename="../qml/FolderPane.qml" line="191"/>
         <source>%1 (%2/%3)</source>
         <translation>%1(%2/%3)</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="166"/>
+        <location filename="../qml/FolderPane.qml" line="195"/>
         <source>%1 selected</source>
         <translation>已选 %1 篇</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="167"/>
+        <location filename="../qml/FolderPane.qml" line="196"/>
         <source>Tick PDFs to add them to the library</source>
         <translation>勾选 PDF 即可批量加入文献库</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="170"/>
+        <location filename="../qml/FolderPane.qml" line="232"/>
         <source>All</source>
         <translation>全选</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="174"/>
+        <location filename="../qml/FolderPane.qml" line="227"/>
         <source>Select every PDF in this folder, subfolders included</source>
         <translation>选中该文件夹(含子文件夹)里的所有 PDF</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="178"/>
+        <location filename="../qml/FolderPane.qml" line="223"/>
+        <source>More than %1 PDFs in this folder — too many to select in one go. Pick a subfolder instead.</source>
+        <translation>这个文件夹里的 PDF 超过 %1 个，一次性全选太多了。请改为进入某个子文件夹再选。</translation>
+    </message>
+    <message>
+        <location filename="../qml/FolderPane.qml" line="226"/>
+        <source>Still counting the PDFs in this folder…</source>
+        <translation>还在统计这个文件夹里的 PDF…</translation>
+    </message>
+    <message>
+        <location filename="../qml/FolderPane.qml" line="239"/>
         <source>None</source>
         <translation>清空</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="183"/>
+        <location filename="../qml/FolderPane.qml" line="244"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="184"/>
+        <location filename="../qml/FolderPane.qml" line="245"/>
         <source>Add %1 →</source>
         <translation>加入 %1 篇 →</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="190"/>
+        <location filename="../qml/FolderPane.qml" line="251"/>
         <source>Add the ticked PDFs to the current project&apos;s library and upload them</source>
         <translation>把勾选的 PDF 加入当前课题的文献库并上传</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="191"/>
+        <location filename="../qml/FolderPane.qml" line="252"/>
         <source>Sign in and pick a project you can write to</source>
         <translation>请先登录并选择一个有写权限的课题</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="306"/>
+        <location filename="../qml/FolderPane.qml" line="369"/>
+        <source>More than %1 PDFs under this folder — too many to tick in one go. Open a subfolder to pick from it.</source>
+        <translation>这个文件夹下的 PDF 超过 %1 个，一次性勾选太多了。请打开某个子文件夹再挑。</translation>
+    </message>
+    <message>
+        <location filename="../qml/FolderPane.qml" line="427"/>
+        <source>Too many PDFs here to select at once</source>
+        <translation>这里的 PDF 太多，无法一次全选</translation>
+    </message>
+    <message>
+        <location filename="../qml/FolderPane.qml" line="429"/>
+        <source>Counting PDFs…</source>
+        <translation>正在统计 PDF…</translation>
+    </message>
+    <message>
+        <location filename="../qml/FolderPane.qml" line="430"/>
         <source>Select all PDFs here</source>
         <translation>选中这里的所有 PDF</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="307"/>
+        <location filename="../qml/FolderPane.qml" line="425"/>
         <source>Select this PDF</source>
         <translation>选中此 PDF</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="313"/>
+        <location filename="../qml/FolderPane.qml" line="436"/>
         <source>Deselect all PDFs here</source>
         <translation>取消选中这里的所有 PDF</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="314"/>
+        <location filename="../qml/FolderPane.qml" line="437"/>
         <source>Deselect this PDF</source>
         <translation>取消选中此 PDF</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="320"/>
+        <location filename="../qml/FolderPane.qml" line="443"/>
         <source>Add to library</source>
         <translation>加入文献库</translation>
     </message>
     <message>
-        <location filename="../qml/FolderPane.qml" line="353"/>
+        <location filename="../qml/FolderPane.qml" line="476"/>
         <source>Click &quot;Open…&quot; to choose a folder of PDFs.</source>
         <translation>点击「打开…」选择 PDF 所在的文件夹。</translation>
     </message>
@@ -5209,64 +5234,64 @@ Click to open this passage.</source>
 <context>
     <name>Settings</name>
     <message>
-        <location filename="../src/Settings.cpp" line="167"/>
-        <location filename="../src/Settings.cpp" line="359"/>
+        <location filename="../src/Settings.cpp" line="295"/>
+        <location filename="../src/Settings.cpp" line="487"/>
         <source>Keychain delete failed: %1</source>
         <translation>钥匙串删除失败:%1</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="169"/>
+        <location filename="../src/Settings.cpp" line="297"/>
         <source>API key removed from keyring.</source>
         <translation>已从钥匙串移除 API Key。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="489"/>
+        <location filename="../src/Settings.cpp" line="617"/>
         <source>Enter an API key first.</source>
         <translation>请先输入 API Key。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="496"/>
+        <location filename="../src/Settings.cpp" line="624"/>
         <source>Enter the endpoint&apos;s Base URL first.</source>
         <translation>请先填写该服务地址的 Base URL。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="543"/>
+        <location filename="../src/Settings.cpp" line="671"/>
         <source>HTTP %1: %2</source>
         <translation>HTTP %1:%2</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="551"/>
+        <location filename="../src/Settings.cpp" line="679"/>
         <source>Invalid JSON: %1</source>
         <translation>JSON 无效:%1</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="566"/>
+        <location filename="../src/Settings.cpp" line="694"/>
         <source>Endpoint returned no models.</source>
         <translation>接口未返回模型列表。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="589"/>
+        <location filename="../src/Settings.cpp" line="717"/>
         <source>API key loaded from keyring.</source>
         <translation>已从钥匙串加载 API Key。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="591"/>
+        <location filename="../src/Settings.cpp" line="719"/>
         <source>No API key in keyring yet.</source>
         <translation>钥匙串中尚无 API Key。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="593"/>
+        <location filename="../src/Settings.cpp" line="721"/>
         <source>Keychain read failed: %1</source>
         <translation>钥匙串读取失败:%1</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="607"/>
+        <location filename="../src/Settings.cpp" line="735"/>
         <source>API key saved to keyring.</source>
         <translation>API Key 已保存到钥匙串。</translation>
     </message>
     <message>
-        <location filename="../src/Settings.cpp" line="609"/>
-        <location filename="../src/Settings.cpp" line="641"/>
+        <location filename="../src/Settings.cpp" line="737"/>
+        <location filename="../src/Settings.cpp" line="769"/>
         <source>Keychain write failed: %1</source>
         <translation>钥匙串写入失败:%1</translation>
     </message>
@@ -6360,6 +6385,24 @@ Click to open this passage.</source>
         <location filename="../src/UpdateChecker.cpp" line="239"/>
         <source>Update download failed: %1</source>
         <translation>更新下载失败：%1</translation>
+    </message>
+</context>
+<context>
+    <name>UserPrefsSync</name>
+    <message>
+        <location filename="../src/UserPrefsSync.cpp" line="260"/>
+        <source>Could not read the account settings (HTTP %1).</source>
+        <translation>读取账号设置失败（HTTP %1）。</translation>
+    </message>
+    <message>
+        <location filename="../src/UserPrefsSync.cpp" line="320"/>
+        <source>Could not save the account settings (HTTP %1).</source>
+        <translation>保存账号设置失败（HTTP %1）。</translation>
+    </message>
+    <message>
+        <location filename="../src/UserPrefsSync.cpp" line="342"/>
+        <source>The account settings changed on another machine while saving; kept the local ones for now.</source>
+        <translation>保存时账号设置已在另一台机器上改动，暂时保留本机的设置。</translation>
     </message>
 </context>
 <context>

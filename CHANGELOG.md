@@ -1,5 +1,50 @@
 # AI Reader changelog
 
+## v1.4.0 — 2026-08-25
+
+### The folder pane could freeze the app, and did
+- Browsing a folder of PDFs used to walk that folder's whole subtree, on the
+  spot, for every row on screen. On a big folder — or one on a network drive
+  or a synced cloud folder — that froze the window, and because the pane's
+  state was remembered it froze again on the next launch.
+- Worse, the walk could never finish at all: a shortcut inside a folder that
+  points back at one of its own parents (common in Windows user profiles and
+  cloud-drive mounts) sent it round in circles for ever.
+- The counting now happens in the background: rows appear at once and their
+  numbers fill in behind them. A loop is detected and stepped over, a folder
+  with an absurd number of PDFs is counted up to a limit and then says so
+  rather than offering a "select everything" that would quietly act on part
+  of it, and ticking a folder full of papers is instant instead of taking
+  seconds.
+
+### Settings are one file you can read
+- Everything the app remembers used to live in the Windows registry, in a
+  macOS preferences database, or in a Linux config file — three different
+  things, and on Windows not a file at all, so somebody whose app would not
+  start could not be talked through fixing it.
+- It is now a single JSON file, in the same place on every platform, that can
+  be opened, read, backed up, edited, sent to us, or deleted to put a stuck
+  installation back on its feet. Its location is printed in the startup log.
+- If that file is ever damaged, the app starts from defaults and keeps a copy
+  of the damaged one beside it instead of overwriting it.
+
+### Your settings can follow your account
+- The settings that belong to you rather than to a machine — model and
+  provider, prompts, target language, interface language, font sizes, token
+  and concurrency limits, how Enter behaves in chat — now travel with your
+  account, so a second computer picks up where you left off.
+- The settings that belong to the machine stay on it: window size and
+  position, which panes are open and how wide, where you were in each paper,
+  which files are open, the folder you last browsed. A window position from a
+  4K desktop would put the window off-screen on a laptop, so those never
+  travel.
+- API keys and login tokens never leave the machine — they stay in the system
+  keychain and are not part of what syncs.
+- A machine you have already configured is not overwritten by what the
+  account holds: only settings you have not touched here are adopted, and
+  what you changed here is pushed. It all keeps working with no account and
+  with no network — what is on this machine is always what the app obeys.
+
 ## v1.3.0 — 2026-08-25
 
 ### One queue for everything that talks to a model

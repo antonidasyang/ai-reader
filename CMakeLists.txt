@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.3.0 LANGUAGES CXX)
+project(ai-reader VERSION 1.4.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -331,6 +331,8 @@ qt_add_executable(ai-reader
     src/CompareService.cpp
     src/LibraryAnalysisService.h
     src/LibraryAnalysisService.cpp
+    src/UserPrefsSync.h
+    src/UserPrefsSync.cpp
     src/TaskTypes.h
     src/TaskTypes.cpp
     src/TaskListModel.h
