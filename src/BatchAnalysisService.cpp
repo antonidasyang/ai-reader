@@ -158,7 +158,7 @@ void BatchAnalysisService::startItems(const QStringList &itemIds, bool force)
     // batches over one project would fight over the same rows.
     req.exclusiveKey =
         QStringLiteral("batch_interpret|") + req.projectId;
-    req.steps = itemIds.size();
+    req.steps = int(itemIds.size());
     QJsonArray items;
     for (const QString &id : itemIds)
         items.append(id);

@@ -86,7 +86,7 @@ void LibraryAnalysisService::setTasks(TaskManager *tasks)
                     m_taskIds.erase(it);
                     // Whatever it was waiting for goes with it.
                     m_queue.removeAll(kind);
-                    for (int i = m_deferred.size() - 1; i >= 0; --i) {
+                    for (int i = int(m_deferred.size()) - 1; i >= 0; --i) {
                         if (m_deferred.at(i).kind == kind)
                             m_deferred.removeAt(i);
                     }
@@ -530,7 +530,7 @@ void LibraryAnalysisService::cancelKind(const QString &kind)
     // waiting, abort it if it is the one talking to the model, and leave the
     // other six alone.
     m_queue.removeAll(kind);
-    for (int i = m_deferred.size() - 1; i >= 0; --i) {
+    for (int i = int(m_deferred.size()) - 1; i >= 0; --i) {
         if (m_deferred.at(i).kind == kind)
             m_deferred.removeAt(i);
     }

@@ -271,7 +271,7 @@ int Library::pdfCountUnder(const QModelIndex &index) const
 
     const auto cached = m_pdfCache.constFind(dir);
     if (cached != m_pdfCache.constEnd())
-        return cached->pdfs.size();
+        return int(cached->pdfs.size());
 
     const_cast<Library *>(this)->requestScan(dir);
     return -1;   // "not counted yet" — the row renders now, settles later

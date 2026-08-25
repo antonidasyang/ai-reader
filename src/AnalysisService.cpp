@@ -619,7 +619,7 @@ bool AnalysisService::beginDeepRun(const QStringList &modules, bool force)
     req.paperTitle =
         m_paperTitle.isEmpty() && m_paper ? m_paper->fileName() : m_paperTitle;
     req.projectId = m_store->projectId();
-    req.steps = modules.size();
+    req.steps = int(modules.size());
     QJsonArray wanted;
     for (const QString &id : modules)
         wanted.append(id);
@@ -651,7 +651,7 @@ bool AnalysisService::beginDeepRun(const QStringList &modules, bool force)
     if (id.isEmpty())
         return false;              // this paper is already being read
     m_deepTaskId = id;
-    m_deepTaskTotal = modules.size();
+    m_deepTaskTotal = int(modules.size());
     m_deepTaskStarted = false;
     return true;
 }

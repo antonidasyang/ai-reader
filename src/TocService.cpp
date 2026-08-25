@@ -14,6 +14,8 @@
 #include <QJsonObject>
 #include <QTimer>
 
+#include <functional>
+
 namespace {
 
 // Reserved (model, promptHash) cache key for TOCs derived
