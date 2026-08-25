@@ -20,6 +20,7 @@
 #include "ProjectController.h"
 #include "Settings.h"
 #include "SyncEngine.h"
+#include "Tabs.h"
 #include "TranslationCache.h"
 #include "TranslationService.h"
 
@@ -544,6 +545,21 @@ int main(int argc, char **argv)
               fileSync.titleForFile(pdfA)
                   == QStringLiteral("A Paper Added From Disk"),
               fileSync.titleForFile(pdfA));
+
+        // The tab bar and the window caption both ask Tabs for the name, so
+        // that is the path worth checking: the caption used to read the file
+        // name straight off the controller and showed a sha256.
+        Tabs titled(&paper);
+        titled.setTitleResolver([&fileSync](const QUrl &u) {
+            return u.isLocalFile() ? fileSync.titleForFile(u.toLocalFile())
+                                   : QString();
+        });
+        titled.openPaper(QUrl::fromLocalFile(blob));
+        pump(200);
+        check("the tab -- and so the window caption -- names it the same way",
+              titled.nameAt(titled.activeIndex())
+                  == QStringLiteral("Attention Is All You Need"),
+              titled.nameAt(titled.activeIndex()));
     }
 
     QDir(root).removeRecursively();

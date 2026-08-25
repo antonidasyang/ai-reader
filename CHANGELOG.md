@@ -1,5 +1,13 @@
 # AI Reader changelog
 
+## v1.2.15 — 2026-08-25
+
+### The window title names the paper, not its hash
+- A paper opened from a project plays out of the shared cache, where the file
+  is named by a checksum. The tab bar already looked the real title up in the
+  library; the window caption still read the file name off disk and showed the
+  hash. It asks the same place now.
+
 ## v1.2.14 — 2026-08-25
 
 ### The comparison basket follows your account

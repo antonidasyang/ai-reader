@@ -10,8 +10,19 @@ ApplicationWindow {
     width: 1400
     height: 900
     visible: true
-    title: paperController.fileName.length > 0
-           ? "AI Reader — " + paperController.fileName
+    // The paper on screen, named the way the library names it. One opened
+    // from a project plays out of the content-addressed cache, so its file
+    // name is a sha256; the tab bar already resolves that through the
+    // library and the caption has to give the same answer. tabs.count is
+    // named so the binding re-runs when the titles are refreshed after a
+    // sync — nameAt is an invokable and notifies nothing by itself.
+    readonly property string paperDisplayName: {
+        const named = (tabs.count, tabs.activeIndex >= 0
+                       ? tabs.nameAt(tabs.activeIndex) : "")
+        return named.length > 0 ? named : paperController.fileName
+    }
+    title: paperDisplayName.length > 0
+           ? "AI Reader — " + paperDisplayName
            : "AI Reader"
 
     // Zoom limits picked to match the rest of the Qt PDF demos: below
