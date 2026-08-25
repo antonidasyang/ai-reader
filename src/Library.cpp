@@ -527,7 +527,7 @@ void Library::flushInvalidations()
         const QString root = QDir::cleanPath(m_currentFolder);
         QString up = dir;
         for (;;) {
-            dropped |= m_pdfCache.remove(up) > 0;
+            dropped |= m_pdfCache.remove(up);   // QHash::remove answers bool
             if (up.size() <= root.size())
                 break;
             const QString next = QFileInfo(up).path();
