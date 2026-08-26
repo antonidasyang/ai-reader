@@ -1,5 +1,26 @@
 # AI Reader changelog
 
+## v1.3.8 — 2026-08-26
+
+### Formulas in translations are drawn, not spelled
+- The PDF hands the app its formulas as flattened text, and the
+  translation model faithfully rebuilds them as $…$ LaTeX — which the
+  paragraph view then showed as raw dollar signs. Those spans are now
+  rendered as real formulas, inline with the translated sentence, in the
+  same ink and size as the words around them; dark mode gets its own ink
+  instead of near-black on near-black. Display math ($$…$$) centers on
+  its own line.
+- A span the renderer cannot parse stays as its literal text, a price in
+  dollars is never mistaken for math, and a translation with no formulas
+  renders exactly as before.
+
+### The settings dialog says when the key is missing
+- An empty API key field now carries a red note explaining that saving
+  like this leaves the toolbar showing "LLM not configured" — and that
+  keys live only on this machine, never in the account sync. Configuring
+  a new machine lands exactly there, with everything else synced and
+  only the key missing.
+
 ## v1.3.7 — 2026-08-26
 
 ### Every way of translating now resolves its settings the same way

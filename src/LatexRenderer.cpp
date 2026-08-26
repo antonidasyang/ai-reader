@@ -17,12 +17,14 @@
 
 namespace {
 
-QString cacheKey(const QString &latex, LatexRenderer::Mode mode, int sizePx)
+QString cacheKey(const QString &latex, LatexRenderer::Mode mode, int sizePx,
+                 QRgb ink)
 {
     // Tab separator avoids ambiguity with anything LaTeX bodies might
     // legitimately contain.
     return QString::number(static_cast<int>(mode))
          + QChar('\t') + QString::number(sizePx)
+         + QChar('\t') + QString::number(ink, 16)
          + QChar('\t') + latex;
 }
 
@@ -100,7 +102,8 @@ LatexRenderer::~LatexRenderer()
         tex::LaTeX::release();
 }
 
-QImage LatexRenderer::render(const QString &latex, Mode mode, int textSizePx)
+QImage LatexRenderer::render(const QString &latex, Mode mode, int textSizePx,
+                             QRgb ink)
 {
     if (!m_initialized)
         return {};
@@ -108,7 +111,7 @@ QImage LatexRenderer::render(const QString &latex, Mode mode, int textSizePx)
     if (trimmed.isEmpty())
         return {};
 
-    const QString key = cacheKey(trimmed, mode, textSizePx);
+    const QString key = cacheKey(trimmed, mode, textSizePx, ink);
     auto cached = m_cache.constFind(key);
     if (cached != m_cache.constEnd())
         return *cached;
@@ -124,7 +127,7 @@ QImage LatexRenderer::render(const QString &latex, Mode mode, int textSizePx)
                               width,
                               static_cast<float>(textSizePx),
                               lineSpace,
-                              0xff1d1d1d);
+                              ink);
     } catch (const std::exception &e) {
         qWarning("LatexRenderer: parse failed for '%s': %s",
                  qUtf8Printable(trimmed), e.what());
@@ -165,9 +168,10 @@ QImage LatexRenderer::render(const QString &latex, Mode mode, int textSizePx)
     return img;
 }
 
-QString LatexRenderer::renderDataUrl(const QString &latex, Mode mode, int textSizePx)
+QString LatexRenderer::renderDataUrl(const QString &latex, Mode mode,
+                                     int textSizePx, QRgb ink)
 {
-    const QImage img = render(latex, mode, textSizePx);
+    const QImage img = render(latex, mode, textSizePx, ink);
     if (img.isNull())
         return {};
 

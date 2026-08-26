@@ -272,3 +272,87 @@ QString MarkdownRenderer::toHtml(const QString &markdown) const
     cmark_parser_free(parser);
     return out;
 }
+
+QString MarkdownRenderer::plainTextWithMath(const QString &text, int fontPx,
+                                            const QColor &ink) const
+{
+    // Cheap reject: a pair of dollars is the least any math span needs.
+    if (text.count(QLatin1Char('$')) < 2)
+        return {};
+
+    LatexRenderer &lr = LatexRenderer::instance();
+    if (!lr.isAvailable())
+        return {};
+
+    const int px = fontPx > 0 ? fontPx : 16;
+    const QRgb rgb = ink.isValid() ? ink.rgba() : LatexRenderer::kDefaultInk;
+
+    // Same span grammar as the chat path (embedMath above): display math
+    // first so inline doesn't eat its inner dollars.
+    static const QRegularExpression dispRe(
+        QStringLiteral(R"(\$\$([\s\S]+?)\$\$)"));
+    static const QRegularExpression inlineRe(
+        QStringLiteral(R"(\$([^\$\n]+?)\$)"));
+
+    // Translated prose lives between the formulas, and CJK never occurs
+    // inside real LaTeX — a span containing any is a price or a stray
+    // dollar pair, not math, and stays literal.
+    const auto looksLikeMath = [](const QString &s) {
+        for (QChar c : s)
+            if (c.unicode() >= 0x2E80)
+                return false;
+        return !s.isEmpty();
+    };
+    const auto plain = [](const QString &s) {
+        QString h = htmlEscape(s);
+        h.replace(QLatin1Char('\n'), QStringLiteral("<br/>"));
+        return h;
+    };
+
+    bool rendered = false;
+    const auto inlinePass = [&](const QString &seg) {
+        QString out;
+        int last = 0;
+        QRegularExpressionMatchIterator it = inlineRe.globalMatch(seg);
+        while (it.hasNext()) {
+            const QRegularExpressionMatch m = it.next();
+            const QString raw = m.captured(1).trimmed();
+            if (!looksLikeMath(raw))
+                continue;
+            const QString url = lr.renderDataUrl(raw, LatexRenderer::Inline,
+                                                 px, rgb);
+            if (url.isEmpty())
+                continue;   // stays literal via the trailing plain() below
+            out += plain(seg.mid(last, m.capturedStart() - last));
+            out += QStringLiteral("<img src=\"%1\" alt=\"$%2$\" "
+                                  "style=\"vertical-align:middle\"/>")
+                       .arg(url, htmlEscape(raw));
+            rendered = true;
+            last = m.capturedEnd();
+        }
+        out += plain(seg.mid(last));
+        return out;
+    };
+
+    QString out;
+    int last = 0;
+    QRegularExpressionMatchIterator it = dispRe.globalMatch(text);
+    while (it.hasNext()) {
+        const QRegularExpressionMatch m = it.next();
+        const QString raw = m.captured(1).trimmed();
+        QString url;
+        if (looksLikeMath(raw))
+            url = lr.renderDataUrl(raw, LatexRenderer::Display, px + 2, rgb);
+        if (url.isEmpty())
+            continue;   // the span falls through to the inline pass intact
+        out += inlinePass(text.mid(last, m.capturedStart() - last));
+        out += QStringLiteral("<div style=\"text-align:center;margin:6px 0;\">"
+                              "<img src=\"%1\" alt=\"$$%2$$\"/></div>")
+                   .arg(url, htmlEscape(raw));
+        rendered = true;
+        last = m.capturedEnd();
+    }
+    out += inlinePass(text.mid(last));
+
+    return rendered ? out : QString();
+}

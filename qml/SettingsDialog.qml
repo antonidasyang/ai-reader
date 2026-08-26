@@ -347,6 +347,23 @@ AppDialog {
                         echoMode: TextInput.Password
                         placeholderText: qsTr("sk-…")
                     }
+                    Label {
+                        // Saving with an empty key is legal but leaves the
+                        // toolbar saying "LLM not configured" — say so here,
+                        // where the cure is, not only there. Keys live in
+                        // this machine's keychain and never travel with the
+                        // account, so a fresh machine lands exactly here.
+                        Layout.fillWidth: true
+                        visible: apiKeyField.text.trim().length === 0
+                        wrapMode: Text.Wrap
+                        font.pixelSize: 11
+                        color: Theme.danger
+                        text: qsTr("The key is empty — until one is saved, the "
+                                   + "toolbar will show \"LLM not configured\" "
+                                   + "and nothing can call the model. Keys stay "
+                                   + "on this machine; they do not sync with "
+                                   + "the account.")
+                    }
 
                     AppFormLabel { text: qsTr("Temperature") }
                     RowLayout {

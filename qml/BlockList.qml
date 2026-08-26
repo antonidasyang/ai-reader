@@ -490,11 +490,25 @@ Rectangle {
                             id: translationText
                             visible: blockDelegate._showTrans
                             Layout.fillWidth: true
-                            text: model.translation || ""
+                            // The model reconstructs the paper's flattened
+                            // formulas as $…$ LaTeX; when any of them
+                            // renders, the paragraph switches to rich text
+                            // with the math drawn in this element's own ink
+                            // and size — theme switches re-render through
+                            // the color dependency. Empty result = no math
+                            // (or renderer unavailable) = plain text as
+                            // before.
+                            readonly property string mathHtml:
+                                markdown.plainTextWithMath(
+                                    model.translation || "",
+                                    font.pixelSize, color)
+                            text: mathHtml.length > 0 ? mathHtml
+                                                      : (model.translation || "")
                             readOnly: true
                             selectByMouse: true
                             wrapMode: TextEdit.Wrap
-                            textFormat: TextEdit.PlainText
+                            textFormat: mathHtml.length > 0 ? TextEdit.RichText
+                                                            : TextEdit.PlainText
                             color: Theme.text
                             selectionColor: Theme.selection
                             selectedTextColor: Theme.text

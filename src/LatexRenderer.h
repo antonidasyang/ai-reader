@@ -2,6 +2,7 @@
 
 #include <QHash>
 #include <QImage>
+#include <QRgb>
 #include <QString>
 
 // Process-wide LaTeX → QImage renderer backed by MicroTeX. Initializes
@@ -10,23 +11,29 @@
 // a QImage owned by this class, so calls must originate from the GUI
 // thread (which is where MarkdownRenderer::toHtml currently runs).
 //
-// Cached by (mode, sizePx, latex) since every chat re-render walks the
-// same Markdown body and re-rendering the same formula is wasted work.
+// Cached by (mode, sizePx, ink, latex) since every chat re-render walks
+// the same Markdown body and re-rendering the same formula is wasted work.
 class LatexRenderer
 {
 public:
     enum Mode { Inline, Display };
+
+    // The historical ink, chosen for light surfaces. Callers drawing on
+    // a themed surface pass the theme's text color instead.
+    static constexpr QRgb kDefaultInk = 0xff1d1d1d;
 
     static LatexRenderer &instance();
 
     // Returns a transparent-background PNG of the rendered formula, or
     // a null QImage when MicroTeX failed to init or the source did not
     // parse. Caller is expected to fall back to plain styled text.
-    QImage render(const QString &latex, Mode mode, int textSizePx = 16);
+    QImage render(const QString &latex, Mode mode, int textSizePx = 16,
+                  QRgb ink = kDefaultInk);
 
     // Convenience: returns `data:image/png;base64,…` ready to drop into
     // an HTML <img src="…"/> attribute. Empty string on failure.
-    QString renderDataUrl(const QString &latex, Mode mode, int textSizePx = 16);
+    QString renderDataUrl(const QString &latex, Mode mode, int textSizePx = 16,
+                          QRgb ink = kDefaultInk);
 
     bool isAvailable() const { return m_initialized; }
 
