@@ -6,6 +6,7 @@
 #include <QSettings>
 #include <QString>
 #include <QStringList>
+#include <QVariant>
 
 class LlmClient;
 class QNetworkAccessManager;
@@ -261,6 +262,30 @@ public:
     // custom URL that only counts when the provider allows one.
     Q_INVOKABLE static QString resolveBaseUrl(const QString &provider,
                                               const QString &customUrl);
+
+    // The one place the translation fallback rules live, for saved values
+    // and the dialog's unsaved fields alike. Field by field: what the
+    // translation section leaves blank comes from the main configuration.
+    // The key follows the endpoint: the main key travels only when
+    // translation resolves to the very same server the main configuration
+    // talks to, never to a third party. Returns {provider, model, baseUrl,
+    // apiKey}; translation*InUse() and the settings dialog both resolve
+    // through here, so the dialog's Fetch button probes exactly what a
+    // translation request will use.
+    Q_INVOKABLE static QVariantMap resolveTranslationConfig(
+        const QString &transProvider, const QString &transModel,
+        const QString &transBaseUrl, const QString &transApiKey,
+        const QString &mainProvider, const QString &mainModel,
+        const QString &mainBaseUrl, const QString &mainApiKey);
+
+    // The saved configuration through the same rules, as one value.
+    struct TranslationConfig {
+        QString provider;
+        QString model;
+        QString baseUrl;
+        QString apiKey;
+    };
+    TranslationConfig translationConfigInUse() const;
 
     // ── Settings that follow the user's account ──────────────────────
     // The one authoritative list of QSettings keys that travel with the

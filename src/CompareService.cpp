@@ -229,7 +229,7 @@ void CompareService::compare()
     }
 
     // Rebuilt when the model configuration moved (a comparison is a single call).
-    m_client = m_clients.client(m_call.isNull());
+    m_client = m_clients.client();
 
     StructuredCall::Request req;
     req.system = AnalysisPrompts::compareSystem(

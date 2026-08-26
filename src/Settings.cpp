@@ -517,36 +517,97 @@ void Settings::setAnalysisConcurrency(int v)
     emit analysisConfigChanged();
 }
 
+namespace {
+
+// The single implementation of the translation fallback rules. Everything
+// that needs to know what a translation request runs on — the client the
+// service builds, the *InUse properties, the dialog's preview and its
+// Fetch button — comes through here with its own values, saved or typed.
+Settings::TranslationConfig resolveTranslationCore(
+    const QString &transProvider, const QString &transModel,
+    const QString &transBaseUrl, const QString &transApiKey,
+    const QString &mainProvider, const QString &mainModel,
+    const QString &mainBaseUrl, const QString &mainApiKey)
+{
+    Settings::TranslationConfig r;
+    r.provider = transProvider.isEmpty() ? mainProvider : transProvider;
+    r.model = transModel.isEmpty() ? mainModel : transModel;
+
+    // Both sides resolved to the endpoint a request would actually hit —
+    // official homes included — so the key decision below compares real
+    // destinations, not raw fields (a URL lingering in a hidden field, or
+    // one that differs by a trailing slash, must not change who gets the
+    // key).
+    r.baseUrl = Settings::resolveBaseUrl(
+        r.provider,
+        transBaseUrl.trimmed().isEmpty() ? mainBaseUrl : transBaseUrl);
+    const QString mainEndpoint =
+        Settings::resolveBaseUrl(mainProvider, mainBaseUrl);
+    const auto norm = [](QString url) {
+        url = url.trimmed();
+        while (url.endsWith(QChar('/')))
+            url.chop(1);
+        return url;
+    };
+
+    // A key only travels with its own endpoint: the main key goes along
+    // only when translation talks to the very server the main
+    // configuration does. Anywhere else, an empty override stays empty —
+    // a clean "no key configured" error beats leaking the main key to a
+    // third party. Keys are trimmed here because a pasted trailing space
+    // reads as dots in the dialog and as a 401 on the wire.
+    r.apiKey = transApiKey.trimmed();
+    if (r.apiKey.isEmpty() && !norm(r.baseUrl).isEmpty()
+        && norm(r.baseUrl) == norm(mainEndpoint))
+        r.apiKey = mainApiKey.trimmed();
+    return r;
+}
+
+} // namespace
+
+QVariantMap Settings::resolveTranslationConfig(
+    const QString &transProvider, const QString &transModel,
+    const QString &transBaseUrl, const QString &transApiKey,
+    const QString &mainProvider, const QString &mainModel,
+    const QString &mainBaseUrl, const QString &mainApiKey)
+{
+    const TranslationConfig r = resolveTranslationCore(
+        transProvider, transModel, transBaseUrl, transApiKey,
+        mainProvider, mainModel, mainBaseUrl, mainApiKey);
+    return {
+        {QStringLiteral("provider"), r.provider},
+        {QStringLiteral("model"), r.model},
+        {QStringLiteral("baseUrl"), r.baseUrl},
+        {QStringLiteral("apiKey"), r.apiKey},
+    };
+}
+
+Settings::TranslationConfig Settings::translationConfigInUse() const
+{
+    return resolveTranslationCore(
+        m_translationProvider, m_translationModel,
+        m_translationBaseUrl, m_translationApiKey,
+        m_provider, m_model, m_baseUrl, m_apiKey);
+}
+
 QString Settings::translationModelInUse() const
 {
-    return m_translationModel.isEmpty() ? m_model : m_translationModel;
+    return translationConfigInUse().model;
 }
 
 QString Settings::translationProviderInUse() const
 {
-    return m_translationProvider.isEmpty() ? m_provider : m_translationProvider;
+    return translationConfigInUse().provider;
 }
 
 QString Settings::translationBaseUrlInUse() const
 {
-    const QString provider = translationProviderInUse();
-    // Only a provider that takes an address of its own can be pointed at
-    // one; for the rest the endpoint follows the provider.
-    if (!providerTakesCustomUrl(provider))
-        return officialBaseUrl(provider);
-    return m_translationBaseUrl.isEmpty() ? m_baseUrl.trimmed()
-                                          : m_translationBaseUrl.trimmed();
+    return translationConfigInUse().baseUrl;
 }
 
 QString Settings::translationApiKeyInUse() const
 {
-    // A key only travels with its own endpoint: reusing the main key against
-    // someone else's base URL would leak it.
-    if (!m_translationApiKey.isEmpty())
-        return m_translationApiKey;
-    if (m_translationBaseUrl.isEmpty() || m_translationBaseUrl == m_baseUrl)
-        return m_apiKey;
-    return {};
+    return translationConfigInUse().apiKey;
 }
 
 bool Settings::translationOverridden() const
@@ -560,10 +621,11 @@ LlmClient *Settings::createTranslationClient(QObject *parent) const
     // Field by field: whatever the translation section leaves blank comes
     // from the main configuration, so pointing only the model name at a
     // cheaper model on the same gateway is a one-field change.
-    const QString provider = translationProviderInUse();
-    const QString model = translationModelInUse();
-    const QString baseUrl = translationBaseUrlInUse();
-    const QString apiKey = translationApiKeyInUse();
+    const TranslationConfig cfg = translationConfigInUse();
+    const QString provider = cfg.provider;
+    const QString model = cfg.model;
+    const QString baseUrl = cfg.baseUrl;
+    const QString apiKey = cfg.apiKey;
 
     LlmClient *client = nullptr;
     const QString p = provider.toLower();
@@ -665,17 +727,17 @@ void Settings::fetchModelsInto(ModelSlot slot, const QString &provider,
         const QByteArray body = reply->readAll();
         const auto err = reply->error();
         const QString netErr = reply->errorString();
+        const QString host = reply->url().host();
         const int httpCode = reply->attribute(
             QNetworkRequest::HttpStatusCodeAttribute).toInt();
         reply->deleteLater();
 
         if (err != QNetworkReply::NoError) {
-            QString msg = QString::fromUtf8(body);
-            if (msg.isEmpty())
-                msg = netErr;
-            if (httpCode > 0)
-                msg = tr("HTTP %1: %2").arg(httpCode).arg(msg);
-            setError(msg);
+            // Through the same formatter the chat clients use, so a probe
+            // and a request that failed the same way read the same — host
+            // included.
+            setError(LlmClient::describeHttpError(body, httpCode, netErr,
+                                                  host));
             return;
         }
 

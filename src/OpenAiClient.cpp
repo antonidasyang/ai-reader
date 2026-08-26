@@ -349,7 +349,8 @@ LlmReply *OpenAiClient::send(const Request &req)
             if (netReply->isReadable())
                 body += netReply->readAll();
             reply->setError(LlmClient::describeHttpError(
-                body, status, netReply->errorString()));
+                body, status, netReply->errorString(),
+                netReply->url().host()));
         } else if (!stream) {
             const QByteArray data = netReply->readAll();
             const QJsonDocument doc = QJsonDocument::fromJson(data);

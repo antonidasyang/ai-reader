@@ -783,6 +783,15 @@ void TranslationService::runRetryFailed(const QString &paperId)
                   tr("The paper's paragraphs are no longer loaded."));
         return;
     }
+    if (!m_settings || !m_settings->isConfigured()) {
+        setLastError(tr("LLM is not configured. Open Settings to add a model and API key."));
+        finishRun(paperId, false, m_lastError);
+        return;
+    }
+    // The paragraphs being retried most likely failed on a configuration
+    // that has since been fixed — resolve the client the same way every
+    // other entry point does, rather than reusing whatever it was.
+    refreshClient();
     if (paperId.isEmpty() || paperId != currentPaperId()) {
         cancelRun(paperId);
         return;
@@ -802,12 +811,6 @@ void TranslationService::runRetryFailed(const QString &paperId)
     }
     if (!added) {
         finishRun(paperId, true);
-        return;
-    }
-    if (!m_client) {
-        // No client yet — the full run builds one on its way past, and it
-        // picks these rows up along with everything else. Same task.
-        runTranslateAll(paperId);
         return;
     }
     emit progressChanged();
@@ -857,10 +860,10 @@ void TranslationService::translateBlock(int row)
 void TranslationService::refreshClient()
 {
     if (!m_settings) return;
-    // Rebuilt when the configuration moved, but only with nothing in flight:
-    // every LlmReply is a child of the client, and replacing it mid-run
-    // would strand the paragraphs already out for translation.
-    m_client = m_clients.client(m_inflight == 0);
+    // Always the current configuration. Paragraphs already in the air
+    // finish on the client that sent them — the cache keeps it alive
+    // until its last reply is gone.
+    m_client = m_clients.client();
 }
 
 void TranslationService::scheduleNext()
@@ -944,14 +947,6 @@ QString TranslationService::systemPrompt() const
     else
         tmpl = defaultSystemPrompt();
     return tmpl.replace(QStringLiteral("{{lang}}"), lang);
-}
-
-void TranslationService::translateRow(int row)
-{
-    Job job = jobForRow(row);
-    if (job.paperId.isEmpty())
-        return;
-    startJob(std::move(job));
 }
 
 void TranslationService::startJob(Job job)

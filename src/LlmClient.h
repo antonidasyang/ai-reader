@@ -110,9 +110,12 @@ public:
     // What the server actually said, out of the response body. Providers
     // put their explanation in {"error":{"message":…}} (or a bare string,
     // or an HTML page from a proxy); Qt's own errorString only ever says
-    // "server replied with status code 400", which is not a reason.
+    // "server replied with status code 400", which is not a reason. Pass
+    // the request's host so the message also says who answered — the
+    // provider's own text never does.
     static QString describeHttpError(const QByteArray &body, int httpStatus,
-                                     const QString &fallback);
+                                     const QString &fallback,
+                                     const QString &host = {});
 
     void setApiKey(const QString &key) { m_apiKey = key; }
     void setBaseUrl(const QUrl &url) { m_baseUrl = url; }

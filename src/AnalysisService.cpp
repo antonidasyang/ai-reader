@@ -462,7 +462,7 @@ void AnalysisService::refreshClient()
     // Rebuilt when the configuration moved -- but not while a job is in
     // flight: every LlmReply is a child of the client, so replacing it
     // would leave that job waiting for a signal that can never come.
-    m_client = m_clients.client(!m_job && m_deepInflight == 0);
+    m_client = m_clients.client();
 }
 
 void AnalysisService::setStatus(Status s, const QString &err)

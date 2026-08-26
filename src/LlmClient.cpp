@@ -78,7 +78,8 @@ LlmClient::LlmClient(QObject *parent)
 LlmClient::~LlmClient() = default;
 
 QString LlmClient::describeHttpError(const QByteArray &body, int httpStatus,
-                                     const QString &fallback)
+                                     const QString &fallback,
+                                     const QString &host)
 {
     QString detail;
     const QJsonDocument doc = QJsonDocument::fromJson(body);
@@ -100,7 +101,16 @@ QString LlmClient::describeHttpError(const QByteArray &body, int httpStatus,
             detail = detail.left(400) + QStringLiteral("…");
     }
     if (detail.isEmpty())
-        return fallback;
-    return httpStatus > 0 ? tr("HTTP %1: %2").arg(httpStatus).arg(detail)
-                          : detail;
+        detail = fallback;
+    if (detail.isEmpty())
+        return detail;
+    // Name the server that answered. A request that went to the wrong
+    // endpoint — a stale configuration, a fallback that resolved elsewhere
+    // — is invisible in the provider's own text, which never says who is
+    // speaking.
+    if (httpStatus > 0 && !host.isEmpty())
+        return tr("HTTP %1 from %2: %3").arg(httpStatus).arg(host).arg(detail);
+    if (httpStatus > 0)
+        return tr("HTTP %1: %2").arg(httpStatus).arg(detail);
+    return detail;
 }

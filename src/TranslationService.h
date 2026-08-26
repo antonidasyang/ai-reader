@@ -156,7 +156,6 @@ private:
     void rehydrateFromCache();
     void scheduleNext();
     void applyConcurrency();
-    void translateRow(int row);
     bool shouldSkip(const QString &text) const;
     QString systemPrompt() const;
     void setLastError(const QString &err);

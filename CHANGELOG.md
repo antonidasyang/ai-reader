@@ -1,5 +1,34 @@
 # AI Reader changelog
 
+## v1.3.7 — 2026-08-26
+
+### Every way of translating now resolves its settings the same way
+- There were four ways to start a translation — the whole paper, retry
+  the failed paragraphs, right-click a single paragraph, translate a
+  selection — and one of them was special: retrying kept whatever
+  endpoint and key the failed run had used, so fixing the settings and
+  clicking retry sent the retries to the old, broken endpoint. Every
+  entry point now resolves the current settings before it sends anything.
+- Changing the model settings now takes effect immediately, even while
+  paragraphs are in flight: new requests go out on the new endpoint, and
+  the ones already in the air finish quietly on the old one instead of
+  being cut off.
+- The settings dialog's translation section used to re-implement the
+  fallback rules ("blank means: same as the main configuration") in its
+  own way, so what its Fetch button probed could differ from what a
+  translation actually used. Both now go through the same single
+  resolver, and the "Translation will run on" line previews exactly what
+  a paragraph will be sent to — as you type, before saving.
+- The key now follows the endpoint it belongs to: if the translation
+  section points anywhere other than the exact server the main
+  configuration uses, the main key stays home instead of being sent to a
+  third party. A URL differing only by a trailing slash no longer counts
+  as "somewhere else", and stray whitespace around a pasted key is no
+  longer part of the key.
+- Errors from the model now say which server answered — "HTTP 401 from
+  api.deepseek.com: …" — so a request that went to the wrong place is
+  visible at a glance instead of looking like a bad key on the right one.
+
 ## v1.3.6 — 2026-08-26
 
 ### The zoom readout

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QList>
 #include <QPointer>
 
 class LlmClient;
@@ -17,7 +18,7 @@ class Settings;
 // talking to the previous one until it was restarted.
 //
 // This rebuilds the client whenever the configuration has moved, and is the
-// only place that decides when that is safe.
+// only place that decides how that happens safely.
 class LlmClientCache
 {
 public:
@@ -25,19 +26,23 @@ public:
     // the main configuration.
     LlmClientCache(Settings *settings, QObject *owner, bool translation = false);
 
-    // The client to use now.
+    // The client to use now, on the current configuration — always.
     //
-    // `mayRebuild` is false for a caller that still has replies in flight:
-    // every LlmReply is a child of its client, so replacing it would strand
-    // them with neither a finished nor an error signal. Such a caller gets
-    // the client it already had, and picks the new configuration up as soon
-    // as it is idle.
-    LlmClient *client(bool mayRebuild = true);
+    // Every LlmReply is a child of the client that made it, so the previous
+    // client is not deleted out from under its replies: it is retired and
+    // stays alive until the last of them is gone. New requests pick the new
+    // configuration up immediately; the ones already in the air finish on
+    // the endpoint they were sent to.
+    LlmClient *client();
 
 private:
+    // Delete retired clients whose replies have all been destroyed.
+    void sweepRetired();
+
     Settings *m_settings;
     QObject *m_owner;
     bool m_translation;
     QPointer<LlmClient> m_client;
+    QList<QPointer<LlmClient>> m_retired;
     int m_revision = -1;
 };

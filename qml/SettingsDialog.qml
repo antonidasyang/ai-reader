@@ -57,22 +57,21 @@ AppDialog {
     readonly property var translationProviderLabels:
         [qsTr("Same as the main provider")].concat(dialog.providerOptions)
 
-    // What the translation section resolves to, so its Fetch probes the
-    // endpoint translation will really use.
-    readonly property string translationProviderResolved:
-        translationProviderCodes[translationProviderBox.currentIndex]
-        || dialog.providerNow
+    // What the translation section resolves to — through the same C++
+    // rules the translation client is built with, so the Fetch button and
+    // the "will run on" line probe the endpoint translation will really
+    // use. No fallback logic lives on this side.
+    readonly property var translationResolved: settings.resolveTranslationConfig(
+        translationProviderCodes[translationProviderBox.currentIndex] || "",
+        translationModelBox.editText,
+        translationBaseUrlField.text,
+        translationApiKeyField.text,
+        dialog.providerNow,
+        modelBox.editText,
+        baseUrlField.text,
+        apiKeyField.text)
     readonly property bool translationCustomUrlAllowed:
-        settings.providerTakesCustomUrl(dialog.translationProviderResolved)
-    readonly property string translationBaseUrlResolved:
-        dialog.translationCustomUrlAllowed
-        ? (translationBaseUrlField.text.trim() || baseUrlField.text.trim())
-        : settings.officialBaseUrl(dialog.translationProviderResolved)
-    readonly property string translationApiKeyResolved:
-        translationApiKeyField.text
-        || (translationBaseUrlField.text.trim().length === 0
-            || translationBaseUrlField.text.trim() === baseUrlField.text.trim()
-            ? apiKeyField.text : "")
+        settings.providerTakesCustomUrl(dialog.translationResolved.provider)
 
     onOpened: {
         const idx = providerOptions.indexOf(settings.provider)
@@ -116,7 +115,7 @@ AppDialog {
         settings.provider          = providerOptions[providerBox.currentIndex]
         settings.model             = modelBox.editText.trim()
         settings.baseUrl           = baseUrlField.text.trim()
-        settings.apiKey            = apiKeyField.text
+        settings.apiKey            = apiKeyField.text.trim()
         settings.temperature       = tempSlider.value
         settings.maxTokens         = maxTokensField.value
         settings.contextWindow     = contextWindowField.value
@@ -127,7 +126,7 @@ AppDialog {
         settings.translationProvider = translationProviderCodes[translationProviderBox.currentIndex]
         settings.translationModel    = translationModelBox.editText.trim()
         settings.translationBaseUrl  = translationBaseUrlField.text.trim()
-        settings.translationApiKey   = translationApiKeyField.text
+        settings.translationApiKey   = translationApiKeyField.text.trim()
         settings.analysisMaxTokens = analysisMaxTokensField.value
         settings.analysisConcurrency = analysisConcurrencyField.value
         settings.autoCheckUpdates  = autoCheckBox.checked
@@ -447,11 +446,11 @@ AppDialog {
                             text: settings.fetchingTranslationModels
                                   ? qsTr("Fetching…") : qsTr("Fetch")
                             enabled: !settings.fetchingTranslationModels
-                                     && dialog.translationApiKeyResolved.length > 0
+                                     && dialog.translationResolved.apiKey.length > 0
                             onClicked: settings.fetchTranslationModels(
-                                dialog.translationProviderResolved,
-                                dialog.translationBaseUrlResolved,
-                                dialog.translationApiKeyResolved)
+                                dialog.translationResolved.provider,
+                                dialog.translationResolved.baseUrl,
+                                dialog.translationResolved.apiKey)
                         }
                     }
 
@@ -471,8 +470,7 @@ AppDialog {
                             elide: Text.ElideRight
                             font.pixelSize: 13
                             color: Theme.dimText
-                            text: settings.officialBaseUrl(
-                                      dialog.translationProviderResolved)
+                            text: dialog.translationResolved.baseUrl
                         }
                     }
 
@@ -506,7 +504,7 @@ AppDialog {
                                + "setting.")
                 }
                 AppHintLabel {
-                    text: qsTr("Translation will run on: %1").arg(settings.translationModelInUse)
+                    text: qsTr("Translation will run on: %1").arg(dialog.translationResolved.model)
                 }
 
                 AppSectionLabel {

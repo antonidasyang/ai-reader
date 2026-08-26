@@ -366,7 +366,7 @@ void BatchAnalysisService::onSourceReady(const QString &itemId,
     }
 
     // Rebuilt when the model configuration moved (a batch has several interpretations in flight at once).
-    m_client = m_clients.client(m_running == 0);
+    m_client = m_clients.client();
 
     QuickAnalysisJob::Input in;
     in.paperId = paperId;

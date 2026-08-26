@@ -355,7 +355,7 @@ void LibraryAnalysisService::startCall(const QString &kind,
         return;
     }
     // Rebuilt when the model configuration moved (one project-wide analysis runs at a time).
-    m_client = m_clients.client(m_call.isNull());
+    m_client = m_clients.client();
 
     StructuredCall::Request req;
     req.system = AnalysisPrompts::librarySystem(

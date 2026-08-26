@@ -411,7 +411,7 @@ void ChatService::runTurn()
 
     // Rebuilt when the configuration moved -- but never mid-turn: the tool
     // round-trips hold replies that are children of this client.
-    m_client = m_clients.client(!busy());
+    m_client = m_clients.client();
     if (!m_client) {
         setLastError(tr("No model is configured."));
         return;
