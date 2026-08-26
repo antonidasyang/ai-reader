@@ -882,28 +882,16 @@ ApplicationWindow {
             }
             ToolButton {
                 // Doubles as a "current zoom" readout and a zoom action:
-                // click = fit the page to the window width, double-click
-                // = back to 100%. A short timer tells the two apart.
+                // click = back to 100%. Fit-to-width lives on its own
+                // toolbar button.
                 text: pdfDoc.status === PdfDocument.Ready
                       ? Math.round(pdfView.renderScale * 100) + "%"
                       : "—"
                 enabled: pdfDoc.status === PdfDocument.Ready
                 ToolTip.visible: hovered
                 ToolTip.delay: 400
-                ToolTip.text: qsTr("Click: fit page width · double-click: 100%")
-                Timer {
-                    id: zoomClickTimer
-                    interval: 240
-                    onTriggered: window.fitWidth()
-                }
-                onClicked: {
-                    if (zoomClickTimer.running) {
-                        zoomClickTimer.stop()
-                        window.resetZoom()
-                    } else {
-                        zoomClickTimer.start()
-                    }
-                }
+                ToolTip.text: qsTr("Back to 100%")
+                onClicked: window.resetZoom()
             }
             ToolIcon {
                 icon.source: "qrc:/icons/zoom-in.svg"

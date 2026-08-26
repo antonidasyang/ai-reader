@@ -1,5 +1,15 @@
 # AI Reader changelog
 
+## v1.3.6 — 2026-08-26
+
+### The zoom readout
+- The percentage in the toolbar used to hide two gestures: one click
+  fitted the page to the window width, a double click went back to 100%.
+  Telling those apart meant every single click waited a quarter of a
+  second before doing anything. The fit-to-width button next door already
+  does the first job, so the readout now does only the second: one click,
+  straight back to 100%, no pause.
+
 ## v1.3.5 — 2026-08-25
 
 ### The saved-layouts menu
