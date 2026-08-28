@@ -1,5 +1,29 @@
 # AI Reader changelog
 
+## v1.3.9 — 2026-08-28
+
+### Emptying the API key no longer bends the settings page
+- The red note under an empty API key sat in the model page's two-column
+  grid as a cell of its own, so the moment it appeared every row below it
+  shifted by one: temperature, max output tokens and context window each
+  ended up with the label on the right and the field on the left. The note
+  now lives inside the key field's own cell, and the rows under it stay put
+  whether it is showing or not. The translation page has no such note,
+  which is why only the model page bent.
+
+### The app is in one language at a time
+- The right-click menu inside every text box — undo, redo, cut, copy,
+  paste, delete, select all — belongs to Qt, and Qt ships no Chinese for
+  it, so a Chinese interface had one stubbornly English menu in it. Those
+  seven words are now translated along with the rest of the app.
+- The app itself speaks English and Chinese; Qt speaks dozens. A German or
+  Japanese Windows used to get our English interface with German or
+  Japanese dialog buttons and menus, because Qt has a catalog for those
+  locales and we don't. The language is now resolved to one of the two the
+  app actually has, and Qt's own strings follow it: a Chinese system is
+  Chinese throughout, every other system is English throughout. Settings →
+  Appearance → UI language still overrides both.
+
 ## v1.3.8 — 2026-08-26
 
 ### Formulas in translations are drawn, not spelled

@@ -294,16 +294,35 @@ int main(int argc, char *argv[])
     });
 
     // Install translators based on the persisted ui/language setting.
-    // Empty ⇒ follow QLocale::system(); otherwise load the .qm matching
-    // the explicit code. qtbase translations come from the Qt install so
-    // standard dialog buttons (OK/Cancel/etc.) get translated too — if
-    // the qtbase file isn't present at runtime we silently skip it.
+    //
+    // The app is written in English and ships one catalog, zh_CN, so there
+    // are exactly two languages it can be in. Whatever we are asked for is
+    // resolved to one of them first, and Qt's own catalog is then loaded in
+    // that same language — handing QLocale::system() straight to both used
+    // to mix them: a German or Japanese Windows gave English menus with
+    // German or Japanese dialog buttons and context menus, because Qt has a
+    // catalog for those locales and we don't. Chinese in any script or
+    // region gets zh_CN (Simplified for a zh_TW reader beats English);
+    // everything else gets untranslated English on both sides, which is why
+    // "en" installs no translator at all.
     QTranslator appTranslator;
     QTranslator qtTranslator;
     auto applyLanguage = [&](const QString &code) {
-        const QLocale loc = code.isEmpty() ? QLocale::system() : QLocale(code);
+        const QLocale asked = code.isEmpty() ? QLocale::system() : QLocale(code);
+        const bool chinese = asked.language() == QLocale::Chinese;
         QCoreApplication::removeTranslator(&appTranslator);
         QCoreApplication::removeTranslator(&qtTranslator);
+        // "The app came up in the wrong language" is a support question, and
+        // the answer is this line: what was asked for, and what it became.
+        qInfo().noquote()
+            << QStringLiteral("UI language: %1 (setting: %2)")
+                   .arg(chinese ? QStringLiteral("zh_CN") : QStringLiteral("en"),
+                        code.isEmpty()
+                            ? QStringLiteral("system=%1").arg(asked.name())
+                            : code);
+        if (!chinese)
+            return;  // English is the source language; nothing to install.
+        const QLocale loc(QStringLiteral("zh_CN"));
         if (appTranslator.load(loc, QStringLiteral("ai-reader"),
                                QStringLiteral("_"), QStringLiteral(":/i18n")))
             QCoreApplication::installTranslator(&appTranslator);
