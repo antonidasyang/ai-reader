@@ -1,5 +1,35 @@
 # AI Reader changelog
 
+## v1.3.10 — 2026-08-29
+
+### The toolbar no longer runs off the edge of a narrow window
+- The toolbar is one long row, and a window narrower than that row used to
+  lose the right-hand end of it — settings, help, the account, half the
+  project group — drawn past the edge of the window where it could be
+  neither seen nor clicked. It now gives ground in three steps instead.
+- The readouts go first, because they are the only things in the toolbar
+  that cannot be clicked. The model name steps out, the account keeps its
+  icon and drops its name, the project list narrows, and the page counter
+  loses its words and then leaves. The "LLM not configured" warning is not
+  a readout and stays at every width: it is the reason half the buttons
+  above it are dead.
+- What is still too wide scrolls sideways, with an arrow at each end of the
+  row that shows how much is off in that direction, dimming when there is
+  nothing left that way. The wheel scrolls it too — a plain vertical wheel,
+  since that is the only wheel most mice have.
+- The app's own group never scrolls: settings, prompts and the tour stay
+  pinned against the right edge at every window size, one click away.
+- Where the toolbar decides to shed a readout is measured, not guessed. It
+  remembers what the row wants with everything spelled out and what it
+  wants with the words gone, and compares those to the room it has, so the
+  same window is roomy with no paper open and tight with a paper open, an
+  account signed in and a project chosen — and a step is undone against the
+  very number that called for it, which is what keeps it from flickering
+  between two answers.
+- The getting-started tour spotlights toolbar buttons, and a button
+  scrolled off the end cannot be pointed at, so each step now brings its
+  own targets back into view before the spotlight looks for them.
+
 ## v1.3.9 — 2026-08-28
 
 ### Emptying the API key no longer bends the settings page

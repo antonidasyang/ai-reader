@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.3.9 LANGUAGES CXX)
+project(ai-reader VERSION 1.3.10 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -504,6 +504,8 @@ qt_add_resources(ai-reader "icons"
         resources/icons/help.svg
         resources/icons/changelog.svg
         resources/icons/account.svg
+        resources/icons/chevron-left.svg
+        resources/icons/chevron-right.svg
         resources/icons/cursor-hand-open.svg
         resources/icons/cursor-hand-grab.svg
         resources/icons/app.svg

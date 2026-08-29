@@ -840,465 +840,691 @@ ApplicationWindow {
     }
 
     header: ToolBar {
+        id: toolBar
         // Grouped by what the buttons act on — the file, the view, this
         // paper, the panes, the project — with the words moved into
         // tooltips. Twenty-five labelled buttons in one row had stopped
         // being a toolbar and become a sentence.
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 8
-            anchors.rightMargin: 8
-            spacing: 2
+        //
+        // A sentence that long outgrows a narrow window, and it used to do
+        // it in silence: the row kept every button at its natural size and
+        // drew the right-hand end — settings, help, the account, half the
+        // project group — past the edge of the window, where it could be
+        // neither seen nor clicked. It now gives ground in three steps.
+        // The readouts go first, since they are the only things here that
+        // cannot be clicked. What is still too wide scrolls, with an arrow
+        // at each end pointing at the part that is off. And the app's own
+        // group never scrolls at all: settings and the tour sit against the
+        // right edge at every window size, one click away.
 
-            // ── the file ────────────────────────────────────────────
-            ToolIcon {
-                id: openBtn
-                icon.source: "qrc:/icons/open.svg"
-                tip: qsTr("Open a PDF…")
-                onClicked: fileDialog.open()
+        // How much room the row has, counting the arrows' lanes as spent
+        // whether or not they are showing: it keeps this number a plain
+        // function of the window, which is what lets the row measure itself
+        // below without measuring its own answer.
+        readonly property real room: width - appTail.width - 56
+        // What the row wants in each state, recorded rather than guessed:
+        // the row's own implicitWidth, sampled whenever it is in that
+        // state. A step is then undone against the very number that called
+        // for it, which is what keeps the answer still -- decide from the
+        // width the row happens to have and every step changes the question.
+        property real fullWidth: 0     // with every readout spelled out
+        property real compactWidth: 0  // with the words out of them
+        property bool compact: false
+        property bool tight: false
+        readonly property bool overflowing:
+            toolRow.implicitWidth > width - appTail.width - 12
+        // Two children now instead of one filling child, so the Pane can no
+        // longer work its own height out.
+        contentHeight: Math.max(toolRow.implicitHeight, appTail.implicitHeight)
+
+        function reflow() {
+            if (fullWidth <= 0)
+                return
+            compact = fullWidth > room
+            // Only if there was something left to shorten: with no paper
+            // open and no account there is nothing in the row that has a
+            // long form, and taking a step that saves nothing would just
+            // be a readout blinking out for no gain.
+            tight = compact && compactWidth > room
+        }
+        onRoomChanged: reflow()
+        Component.onCompleted: {
+            fullWidth = toolRow.implicitWidth
+            reflow()
+        }
+
+        // The tour spotlights toolbar buttons by where they are on the
+        // glass, and a button scrolled off the end is nowhere: put the
+        // step's targets back in view before it goes looking for them.
+        function reveal(items) {
+            if (!items || items.length === 0)
+                return
+            let lo = Infinity, hi = -Infinity
+            for (let i = 0; i < items.length; ++i) {
+                const it = items[i]
+                if (!it || !it.visible)
+                    continue
+                let inRow = false
+                for (let a = it.parent; a; a = a.parent)
+                    if (a === toolRow) { inRow = true; break }
+                if (!inRow)
+                    continue
+                const x = it.mapToItem(toolRow, 0, 0).x
+                lo = Math.min(lo, x)
+                hi = Math.max(hi, x + it.width)
             }
-            ToolIcon {
-                id: openFolderBtn
-                icon.source: "qrc:/icons/open-folder.svg"
-                tip: qsTr("Open a folder of PDFs…")
-                onClicked: openFolderDialog.open()
+            if (lo === Infinity)
+                return
+            if (lo < toolFlick.contentX)
+                toolFlick.glideTo(lo - 8)
+            else if (hi > toolFlick.contentX + toolFlick.width)
+                toolFlick.glideTo(hi - toolFlick.width + 8)
+        }
+
+        Connections {
+            target: welcomeWizard
+            // On every step, and on the first one too: opening the tour
+            // does not change which buttons it is pointing at.
+            function onTargetItemsChanged() {
+                if (welcomeWizard.opened)
+                    toolBar.reveal(welcomeWizard.targetItems)
             }
-            ToolIcon {
-                icon.source: "qrc:/icons/export.svg"
-                enabled: paperController.status === PaperController.Ready
-                tip: qsTr("Export text: the raw PDF text, per-line boxes and "
-                          + "detected paragraphs, to a .txt file")
-                onClicked: exportTextDialog.open()
+            function onOpenedChanged() {
+                if (welcomeWizard.opened)
+                    toolBar.reveal(welcomeWizard.targetItems)
+            }
+        }
+
+        Flickable {
+            id: toolFlick
+            anchors.left: parent.left
+            anchors.right: appTail.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            // The arrows get lanes of their own rather than floating over
+            // the row: half a covered button reads worse than a gap does.
+            anchors.leftMargin: toolBar.overflowing ? 28 : 8
+            anchors.rightMargin: toolBar.overflowing ? 28 : 4
+            clip: true
+            contentWidth: toolRow.width
+            contentHeight: height
+            flickableDirection: Flickable.HorizontalFlick
+            boundsBehavior: Flickable.StopAtBounds
+
+            // Every way of moving the row goes through these two, which is
+            // also where it gets clamped: a wider window, or a button that
+            // came or went, can otherwise leave the row parked past its end.
+            function jumpTo(x) {
+                scrollAnim.stop()
+                contentX = Math.max(0, Math.min(x, contentWidth - width))
+            }
+            function glideTo(x) {
+                scrollAnim.stop()
+                scrollAnim.to = Math.max(0, Math.min(x, contentWidth - width))
+                scrollAnim.start()
+            }
+            onWidthChanged: jumpTo(contentX)
+            onContentWidthChanged: jumpTo(contentX)
+
+            NumberAnimation {
+                id: scrollAnim
+                target: toolFlick
+                property: "contentX"
+                duration: Theme.animMs * 1.5
+                easing.type: Easing.OutCubic
             }
 
-            ToolSeparator {}
-
-            // ── the view ────────────────────────────────────────────
-            ToolIcon {
-                icon.source: "qrc:/icons/zoom-out.svg"
-                enabled: pdfDoc.status === PdfDocument.Ready
-                tip: qsTr("Zoom out")
-                onClicked: window.zoomOut()
-            }
-            ToolButton {
-                // Doubles as a "current zoom" readout and a zoom action:
-                // click = back to 100%. Fit-to-width lives on its own
-                // toolbar button.
-                text: pdfDoc.status === PdfDocument.Ready
-                      ? Math.round(pdfView.renderScale * 100) + "%"
-                      : "—"
-                enabled: pdfDoc.status === PdfDocument.Ready
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: qsTr("Back to 100%")
-                onClicked: window.resetZoom()
-            }
-            ToolIcon {
-                icon.source: "qrc:/icons/zoom-in.svg"
-                enabled: pdfDoc.status === PdfDocument.Ready
-                tip: qsTr("Zoom in")
-                onClicked: window.zoomIn()
-            }
-            ToolIcon {
-                icon.source: "qrc:/icons/fit-width.svg"
-                enabled: pdfDoc.status === PdfDocument.Ready
-                tip: qsTr("Fit the page to the window width")
-                onClicked: window.fitWidth()
-            }
-            ToolIcon {
-                id: panToggleBtn
-                icon.source: "qrc:/icons/pan.svg"
-                checkable: true
-                // Bound, not assigned: a click writes `checked` itself, and a
-                // plain binding would not survive that -- the button would stop
-                // following the pane the moment anything else showed it.
-                Binding on checked { value: window.panMode; restoreMode: Binding.RestoreNone }
-                enabled: pdfDoc.status === PdfDocument.Ready
-                tip: qsTr("Hand tool: drag to move the page. Off = select text.")
-                onClicked: window.panMode = !window.panMode
+            // Most mice have one wheel and this row runs sideways, so a
+            // vertical turn scrolls it too; a trackpad's sideways swipe
+            // arrives on the other axis and means the same thing.
+            WheelHandler {
+                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                onWheel: function (wheel) {
+                    toolFlick.jumpTo(toolFlick.contentX
+                                     - (wheel.angleDelta.x !== 0
+                                        ? wheel.angleDelta.x
+                                        : wheel.angleDelta.y))
+                }
             }
 
-            ToolSeparator {}
+            RowLayout {
+                id: toolRow
+                // Every change of state passes through here -- a paper
+                // opening, a sign-in, a step taken above -- so this is
+                // where the two natural widths are kept honest.
+                onImplicitWidthChanged: {
+                    if (!toolBar.compact)
+                        toolBar.fullWidth = implicitWidth
+                    else if (!toolBar.tight)
+                        toolBar.compactWidth = implicitWidth
+                    toolBar.reflow()
+                }
+                height: toolFlick.height
+                // Its natural width when that is the larger — that is what
+                // there is to scroll through — and the viewport's when there
+                // is room to spare, so the spacer further down still pushes
+                // the project group over to the right.
+                width: Math.max(implicitWidth, toolFlick.width)
+                spacing: 2
 
-            // ── this paper ──────────────────────────────────────────
-            ToolIcon {
-                // One button, two readings: with no paragraphs yet this is
-                // the primary "segment this paper" action (auto segmentation
-                // is off by default); once there are paragraphs it means
-                // "throw them away and redo it", which asks first.
-                readonly property bool _firstRun: paperController.blockCount === 0
-                icon.source: "qrc:/icons/segment.svg"
-                enabled: paperController.status === PaperController.Ready
-                         && !paperController.extracting
-                tip: _firstRun
-                    ? qsTr("Split this paper into paragraphs (needed for "
-                           + "translation, the outline and chat)")
-                    : qsTr("Split it into paragraphs again, discarding the "
-                           + "current division")
-                onClicked: resegmentDialog.ask()
-            }
-            ToolIcon {
-                id: translateBtn
-                icon.source: "qrc:/icons/translate.svg"
-                enabled: paperController.status === PaperController.Ready
-                         && (translation.busy || settings.isConfigured)
-                display: translation.busy ? AbstractButton.TextBesideIcon
-                                          : AbstractButton.IconOnly
-                text: translation.busy ? qsTr("Stop") : ""
-                tip: translation.busy ? qsTr("Stop translating")
-                                      : qsTr("Translate every paragraph")
-                onClicked: {
-                    if (translation.busy) {
-                        translation.cancel()
-                    } else if (translation.translatedParagraphs() > 0) {
-                        translateChoiceDialog.ask()
-                    } else {
-                        translation.translateAll()
+                // ── the file ────────────────────────────────────────────
+                ToolIcon {
+                    id: openBtn
+                    icon.source: "qrc:/icons/open.svg"
+                    tip: qsTr("Open a PDF…")
+                    onClicked: fileDialog.open()
+                }
+                ToolIcon {
+                    id: openFolderBtn
+                    icon.source: "qrc:/icons/open-folder.svg"
+                    tip: qsTr("Open a folder of PDFs…")
+                    onClicked: openFolderDialog.open()
+                }
+                ToolIcon {
+                    icon.source: "qrc:/icons/export.svg"
+                    enabled: paperController.status === PaperController.Ready
+                    tip: qsTr("Export text: the raw PDF text, per-line boxes and "
+                              + "detected paragraphs, to a .txt file")
+                    onClicked: exportTextDialog.open()
+                }
+
+                ToolSeparator {}
+
+                // ── the view ────────────────────────────────────────────
+                ToolIcon {
+                    icon.source: "qrc:/icons/zoom-out.svg"
+                    enabled: pdfDoc.status === PdfDocument.Ready
+                    tip: qsTr("Zoom out")
+                    onClicked: window.zoomOut()
+                }
+                ToolButton {
+                    // Doubles as a "current zoom" readout and a zoom action:
+                    // click = back to 100%. Fit-to-width lives on its own
+                    // toolbar button.
+                    text: pdfDoc.status === PdfDocument.Ready
+                          ? Math.round(pdfView.renderScale * 100) + "%"
+                          : "—"
+                    enabled: pdfDoc.status === PdfDocument.Ready
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 400
+                    ToolTip.text: qsTr("Back to 100%")
+                    onClicked: window.resetZoom()
+                }
+                ToolIcon {
+                    icon.source: "qrc:/icons/zoom-in.svg"
+                    enabled: pdfDoc.status === PdfDocument.Ready
+                    tip: qsTr("Zoom in")
+                    onClicked: window.zoomIn()
+                }
+                ToolIcon {
+                    icon.source: "qrc:/icons/fit-width.svg"
+                    enabled: pdfDoc.status === PdfDocument.Ready
+                    tip: qsTr("Fit the page to the window width")
+                    onClicked: window.fitWidth()
+                }
+                ToolIcon {
+                    id: panToggleBtn
+                    icon.source: "qrc:/icons/pan.svg"
+                    checkable: true
+                    // Bound, not assigned: a click writes `checked` itself, and a
+                    // plain binding would not survive that -- the button would stop
+                    // following the pane the moment anything else showed it.
+                    Binding on checked { value: window.panMode; restoreMode: Binding.RestoreNone }
+                    enabled: pdfDoc.status === PdfDocument.Ready
+                    tip: qsTr("Hand tool: drag to move the page. Off = select text.")
+                    onClicked: window.panMode = !window.panMode
+                }
+
+                ToolSeparator {}
+
+                // ── this paper ──────────────────────────────────────────
+                ToolIcon {
+                    // One button, two readings: with no paragraphs yet this is
+                    // the primary "segment this paper" action (auto segmentation
+                    // is off by default); once there are paragraphs it means
+                    // "throw them away and redo it", which asks first.
+                    readonly property bool _firstRun: paperController.blockCount === 0
+                    icon.source: "qrc:/icons/segment.svg"
+                    enabled: paperController.status === PaperController.Ready
+                             && !paperController.extracting
+                    tip: _firstRun
+                        ? qsTr("Split this paper into paragraphs (needed for "
+                               + "translation, the outline and chat)")
+                        : qsTr("Split it into paragraphs again, discarding the "
+                               + "current division")
+                    onClicked: resegmentDialog.ask()
+                }
+                ToolIcon {
+                    id: translateBtn
+                    icon.source: "qrc:/icons/translate.svg"
+                    enabled: paperController.status === PaperController.Ready
+                             && (translation.busy || settings.isConfigured)
+                    display: translation.busy ? AbstractButton.TextBesideIcon
+                                              : AbstractButton.IconOnly
+                    text: translation.busy ? qsTr("Stop") : ""
+                    tip: translation.busy ? qsTr("Stop translating")
+                                          : qsTr("Translate every paragraph")
+                    onClicked: {
+                        if (translation.busy) {
+                            translation.cancel()
+                        } else if (translation.translatedParagraphs() > 0) {
+                            translateChoiceDialog.ask()
+                        } else {
+                            translation.translateAll()
+                        }
                     }
                 }
-            }
-            ToolIcon {
-                icon.source: "qrc:/icons/retry.svg"
-                visible: !translation.busy && translation.failedCount > 0
-                display: AbstractButton.TextBesideIcon
-                text: translation.failedCount
-                tip: qsTr("Translate the paragraphs that failed")
-                onClicked: translation.retryFailed()
-            }
-            ToolIcon {
-                icon.source: "qrc:/icons/vision.svg"
-                enabled: paperController.status === PaperController.Ready
-                         && settings.isConfigured
-                         && vision.status !== VisionService.Generating
-                         && vision.status !== VisionService.Rendering
-                tip: qsTr("Read this page with vision: figures, tables and "
-                          + "equations as the model sees them")
-                onClicked: {
-                    visionDialog.open()
-                    vision.readPage(pdfView.currentPage)
+                ToolIcon {
+                    icon.source: "qrc:/icons/retry.svg"
+                    visible: !translation.busy && translation.failedCount > 0
+                    display: AbstractButton.TextBesideIcon
+                    text: translation.failedCount
+                    tip: qsTr("Translate the paragraphs that failed")
+                    onClicked: translation.retryFailed()
                 }
-            }
-            ToolIcon {
-                icon.source: "qrc:/icons/quote.svg"
-                visible: paperController.currentSelection.length > 0
-                tip: qsTr("Quote the highlighted text into the chat")
-                onClicked: {
-                    chatPane.visible = true
-                    chatPane.prefillInput(paperController.currentSelection,
-                                          paperController.currentSelectionPage + 1)
+                ToolIcon {
+                    icon.source: "qrc:/icons/vision.svg"
+                    enabled: paperController.status === PaperController.Ready
+                             && settings.isConfigured
+                             && vision.status !== VisionService.Generating
+                             && vision.status !== VisionService.Rendering
+                    tip: qsTr("Read this page with vision: figures, tables and "
+                              + "equations as the model sees them")
+                    onClicked: {
+                        visionDialog.open()
+                        vision.readPage(pdfView.currentPage)
+                    }
                 }
-            }
+                ToolIcon {
+                    icon.source: "qrc:/icons/quote.svg"
+                    visible: paperController.currentSelection.length > 0
+                    tip: qsTr("Quote the highlighted text into the chat")
+                    onClicked: {
+                        chatPane.visible = true
+                        chatPane.prefillInput(paperController.currentSelection,
+                                              paperController.currentSelectionPage + 1)
+                    }
+                }
 
-            ToolSeparator {}
+                ToolSeparator {}
 
-            // ── the panes ───────────────────────────────────────────
-            ToolIcon {
-                id: folderToggleBtn
-                icon.source: "qrc:/icons/pane-folder.svg"
-                checkable: true
-                // Bound, not assigned: a click writes `checked` itself, and a
-                // plain binding would not survive that -- the button would stop
-                // following the pane the moment anything else showed it.
-                Binding on checked { value: folderPane.visible; restoreMode: Binding.RestoreNone }
-                tip: qsTr("Folder pane: browse PDFs on this machine")
-                onClicked: folderPane.visible = !folderPane.visible
-            }
-            ToolIcon {
-                id: libToggleBtn
-                icon.source: "qrc:/icons/pane-library.svg"
-                checkable: true
-                // Bound, not assigned: a click writes `checked` itself, and a
-                // plain binding would not survive that -- the button would stop
-                // following the pane the moment anything else showed it.
-                Binding on checked { value: libraryPane.visible; restoreMode: Binding.RestoreNone }
-                tip: qsTr("Library pane: the papers in this project")
-                onClicked: libraryPane.visible = !libraryPane.visible
-            }
-            ToolIcon {
-                id: blocksToggleBtn
-                icon.source: "qrc:/icons/pane-paragraphs.svg"
-                checkable: true
-                // Bound, not assigned: a click writes `checked` itself, and a
-                // plain binding would not survive that -- the button would stop
-                // following the pane the moment anything else showed it.
-                Binding on checked { value: blockList.visible; restoreMode: Binding.RestoreNone }
-                tip: qsTr("Paragraph pane: the paper's text, its translation, "
-                          + "and the per-paragraph actions")
-                onClicked: blockList.visible = !blockList.visible
-            }
-            ToolIcon {
-                id: tocToggleBtn
-                icon.source: "qrc:/icons/pane-toc.svg"
-                checkable: true
-                // Bound, not assigned: a click writes `checked` itself, and a
-                // plain binding would not survive that -- the button would stop
-                // following the pane the moment anything else showed it.
-                Binding on checked { value: tocSidebar.visible; restoreMode: Binding.RestoreNone }
-                tip: qsTr("Outline pane: the paper's sections")
-                onClicked: tocSidebar.visible = !tocSidebar.visible
-            }
-            ToolIcon {
-                icon.source: "qrc:/icons/pane-interpret.svg"
-                checkable: true
-                // Bound, not assigned: a click writes `checked` itself, and a
-                // plain binding would not survive that -- the button would stop
-                // following the pane the moment anything else showed it.
-                Binding on checked { value: analysisPane.visible; restoreMode: Binding.RestoreNone }
-                tip: qsTr("Interpretation pane: relevance to this project, what "
-                          + "to read first, and every statement traced back to "
-                          + "the paper")
-                onClicked: analysisPane.visible = !analysisPane.visible
-            }
-            ToolIcon {
-                id: chatToggleBtn
-                icon.source: "qrc:/icons/pane-chat.svg"
-                checkable: true
-                // Bound, not assigned: a click writes `checked` itself, and a
-                // plain binding would not survive that -- the button would stop
-                // following the pane the moment anything else showed it.
-                Binding on checked { value: chatPane.visible; restoreMode: Binding.RestoreNone }
-                tip: qsTr("Chat pane: ask about this paper")
-                onClicked: chatPane.visible = !chatPane.visible
-            }
-            ToolButton {
-                // The last entry in the pane group, because it is about all
-                // of them at once: the arrangement the other buttons make,
-                // saved under a name and switched between.
-                id: layoutsBtn
-                ToolTip.visible: hovered
-                ToolTip.delay: 400
-                ToolTip.text: layouts.current.length > 0
-                              ? qsTr("Saved layouts — showing “%1”")
-                                    .arg(layouts.current)
-                              : qsTr("Saved layouts: arrange the panes, save "
-                                     + "that arrangement under a name, and "
-                                     + "switch between them")
-                // Drawn rather than an icon file: three columns with a wide
-                // one in the middle, which is what every one of these
-                // arrangements looks like from far enough away.
-                contentItem: Item {
-                    implicitWidth: 18
-                    implicitHeight: 18
-                    Row {
-                        anchors.centerIn: parent
-                        spacing: 2
-                        Repeater {
-                            model: [3, 7, 3]
-                            delegate: Rectangle {
-                                required property var modelData
-                                required property int index
-                                width: modelData
-                                height: 14
-                                radius: 1
-                                color: Theme.text
-                                opacity: index === 1 ? 0.5 : 0.9
+                // ── the panes ───────────────────────────────────────────
+                ToolIcon {
+                    id: folderToggleBtn
+                    icon.source: "qrc:/icons/pane-folder.svg"
+                    checkable: true
+                    // Bound, not assigned: a click writes `checked` itself, and a
+                    // plain binding would not survive that -- the button would stop
+                    // following the pane the moment anything else showed it.
+                    Binding on checked { value: folderPane.visible; restoreMode: Binding.RestoreNone }
+                    tip: qsTr("Folder pane: browse PDFs on this machine")
+                    onClicked: folderPane.visible = !folderPane.visible
+                }
+                ToolIcon {
+                    id: libToggleBtn
+                    icon.source: "qrc:/icons/pane-library.svg"
+                    checkable: true
+                    // Bound, not assigned: a click writes `checked` itself, and a
+                    // plain binding would not survive that -- the button would stop
+                    // following the pane the moment anything else showed it.
+                    Binding on checked { value: libraryPane.visible; restoreMode: Binding.RestoreNone }
+                    tip: qsTr("Library pane: the papers in this project")
+                    onClicked: libraryPane.visible = !libraryPane.visible
+                }
+                ToolIcon {
+                    id: blocksToggleBtn
+                    icon.source: "qrc:/icons/pane-paragraphs.svg"
+                    checkable: true
+                    // Bound, not assigned: a click writes `checked` itself, and a
+                    // plain binding would not survive that -- the button would stop
+                    // following the pane the moment anything else showed it.
+                    Binding on checked { value: blockList.visible; restoreMode: Binding.RestoreNone }
+                    tip: qsTr("Paragraph pane: the paper's text, its translation, "
+                              + "and the per-paragraph actions")
+                    onClicked: blockList.visible = !blockList.visible
+                }
+                ToolIcon {
+                    id: tocToggleBtn
+                    icon.source: "qrc:/icons/pane-toc.svg"
+                    checkable: true
+                    // Bound, not assigned: a click writes `checked` itself, and a
+                    // plain binding would not survive that -- the button would stop
+                    // following the pane the moment anything else showed it.
+                    Binding on checked { value: tocSidebar.visible; restoreMode: Binding.RestoreNone }
+                    tip: qsTr("Outline pane: the paper's sections")
+                    onClicked: tocSidebar.visible = !tocSidebar.visible
+                }
+                ToolIcon {
+                    icon.source: "qrc:/icons/pane-interpret.svg"
+                    checkable: true
+                    // Bound, not assigned: a click writes `checked` itself, and a
+                    // plain binding would not survive that -- the button would stop
+                    // following the pane the moment anything else showed it.
+                    Binding on checked { value: analysisPane.visible; restoreMode: Binding.RestoreNone }
+                    tip: qsTr("Interpretation pane: relevance to this project, what "
+                              + "to read first, and every statement traced back to "
+                              + "the paper")
+                    onClicked: analysisPane.visible = !analysisPane.visible
+                }
+                ToolIcon {
+                    id: chatToggleBtn
+                    icon.source: "qrc:/icons/pane-chat.svg"
+                    checkable: true
+                    // Bound, not assigned: a click writes `checked` itself, and a
+                    // plain binding would not survive that -- the button would stop
+                    // following the pane the moment anything else showed it.
+                    Binding on checked { value: chatPane.visible; restoreMode: Binding.RestoreNone }
+                    tip: qsTr("Chat pane: ask about this paper")
+                    onClicked: chatPane.visible = !chatPane.visible
+                }
+                ToolButton {
+                    // The last entry in the pane group, because it is about all
+                    // of them at once: the arrangement the other buttons make,
+                    // saved under a name and switched between.
+                    id: layoutsBtn
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 400
+                    ToolTip.text: layouts.current.length > 0
+                                  ? qsTr("Saved layouts — showing “%1”")
+                                        .arg(layouts.current)
+                                  : qsTr("Saved layouts: arrange the panes, save "
+                                         + "that arrangement under a name, and "
+                                         + "switch between them")
+                    // Drawn rather than an icon file: three columns with a wide
+                    // one in the middle, which is what every one of these
+                    // arrangements looks like from far enough away.
+                    contentItem: Item {
+                        implicitWidth: 18
+                        implicitHeight: 18
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 2
+                            Repeater {
+                                model: [3, 7, 3]
+                                delegate: Rectangle {
+                                    required property var modelData
+                                    required property int index
+                                    width: modelData
+                                    height: 14
+                                    radius: 1
+                                    color: Theme.text
+                                    opacity: index === 1 ? 0.5 : 0.9
+                                }
                             }
                         }
                     }
-                }
-                onClicked: layoutMenu.popup()
+                    onClicked: layoutMenu.popup()
 
-                LayoutMenu {
-                    id: layoutMenu
-                    onApplyRequested: function(name) { window.applyLayout(name) }
-                    onSaveRequested: saveLayoutDialog.openForSave()
-                    onManageRequested: manageLayoutsDialog.open()
-                }
-            }
-
-            Label {
-                text: pdfDoc.status === PdfDocument.Ready
-                      ? qsTr("page %1 / %2 · %3 paragraphs")
-                            .arg(pdfView.currentPage + 1)
-                            .arg(pdfDoc.pageCount)
-                            .arg(paperController.blockCount)
-                        + (paperController.extracting ? qsTr(" · Segmenting…")
-                           : structure.busy ? qsTr(" · GROBID…") : "")
-                      : ""
-                color: Theme.dimText
-                Layout.leftMargin: 8
-            }
-            Item { Layout.fillWidth: true }
-
-            // ── the project ─────────────────────────────────────────
-            ToolButton {
-                id: signInBtn
-                text: qsTr("Sign in")
-                visible: !auth.authenticated
-                onClicked: auth.startCasLogin()
-            }
-            BusyIndicator {
-                running: auth.busy
-                visible: auth.busy
-                implicitWidth: 16
-                implicitHeight: 16
-            }
-            ComboBox {
-                id: projectCombo
-                visible: auth.authenticated && projects.list.length > 0
-                Layout.preferredWidth: 170
-                model: projects.list
-                textRole: "name"
-                function syncIndex() {
-                    for (let i = 0; i < projects.list.length; ++i) {
-                        if (projects.list[i].id === projects.currentId) {
-                            currentIndex = i
-                            return
-                        }
+                    LayoutMenu {
+                        id: layoutMenu
+                        onApplyRequested: function(name) { window.applyLayout(name) }
+                        onSaveRequested: saveLayoutDialog.openForSave()
+                        onManageRequested: manageLayoutsDialog.open()
                     }
-                    currentIndex = -1
                 }
-                onActivated: function(idx) {
-                    if (idx >= 0)
-                        projects.selectProject(projects.list[idx].id)
-                }
-                Component.onCompleted: syncIndex()
-                Connections {
-                    target: projects
-                    function onCurrentChanged() { projectCombo.syncIndex() }
-                    function onListChanged() { projectCombo.syncIndex() }
-                }
-            }
-            ToolIcon {
-                icon.source: "qrc:/icons/project-new.svg"
-                visible: auth.authenticated
-                tip: qsTr("New project")
-                onClicked: createProjectDialog.open()
-            }
-            ToolIcon {
-                icon.source: "qrc:/icons/project-edit.svg"
-                needsProject: true
-                tip: qsTr("Rename this project, or delete it")
-                onClicked: {
-                    if (blocked) { window.resolveProjectBlock(); return }
-                    projectSettingsDialog.open()
-                }
-            }
-            ToolIcon {
-                icon.source: "qrc:/icons/members.svg"
-                needsProject: true
-                tip: qsTr("Members of this project")
-                onClicked: {
-                    if (blocked) { window.resolveProjectBlock(); return }
-                    projects.refreshMembers()
-                    membersDialog.open()
-                }
-            }
-            ToolIcon {
-                // The one place the reader tells the app what this project is
-                // for. Every interpretation is prompted with it, so the button
-                // carries a dot until it has been filled in.
-                icon.source: "qrc:/icons/profile.svg"
-                needsProject: true
-                display: profile.hasProfile ? AbstractButton.IconOnly
-                                            : AbstractButton.TextBesideIcon
-                text: profile.hasProfile ? "" : "•"
-                tip: profile.hasProfile
-                     ? qsTr("Research profile: %1").arg(profile.summary)
-                     : qsTr("Describe what this project is trying to find out — "
-                            + "every interpretation is written against it")
-                onClicked: {
-                    if (blocked) { window.resolveProjectBlock(); return }
-                    projectProfileDialog.open()
-                }
-            }
 
-            ToolSeparator { visible: auth.authenticated }
+                Label {
+                    // A readout, not a control, so it is the first thing
+                    // asked to give ground when the window narrows: the
+                    // words go, then the counter itself. What the app is
+                    // chewing on never goes — this is the only place the
+                    // toolbar says a paper is still being taken apart.
+                    readonly property string work:
+                        paperController.extracting ? qsTr("Segmenting…")
+                        : structure.busy ? qsTr("GROBID…") : ""
+                    readonly property string counter:
+                        pdfDoc.status !== PdfDocument.Ready || toolBar.tight
+                        ? ""
+                        : toolBar.compact
+                          ? qsTr("%1 / %2").arg(pdfView.currentPage + 1)
+                                           .arg(pdfDoc.pageCount)
+                          : qsTr("page %1 / %2 · %3 paragraphs")
+                                .arg(pdfView.currentPage + 1)
+                                .arg(pdfDoc.pageCount)
+                                .arg(paperController.blockCount)
+                    text: counter.length > 0 && work.length > 0
+                          ? counter + " · " + work : counter + work
+                    visible: text.length > 0
+                    color: Theme.dimText
+                    Layout.leftMargin: 8
+                }
+                Item { Layout.fillWidth: true }
 
-            ToolIcon {
-                // A running batch is owned by the app, not by the window it
-                // was started from — closing that window does not stop it, so
-                // the progress has to be visible here too.
-                icon.source: "qrc:/icons/batch.svg"
-                needsProject: true
-                display: batchAnalysis.busy ? AbstractButton.TextBesideIcon
-                                            : AbstractButton.IconOnly
-                text: batchAnalysis.busy
-                      ? (batchAnalysis.done + batchAnalysis.failed
-                         + batchAnalysis.skipped) + "/" + batchAnalysis.total
-                      : ""
-                tip: batchAnalysis.busy
-                     ? qsTr("Still interpreting — click to watch or stop")
-                     : qsTr("Interpret every paper in this project, then filter "
-                            + "by relevance")
-                onClicked: {
-                    if (blocked) { window.resolveProjectBlock(); return }
-                    batchAnalysisDialog.open()
+                // ── the project ─────────────────────────────────────────
+                ToolButton {
+                    id: signInBtn
+                    text: qsTr("Sign in")
+                    visible: !auth.authenticated
+                    onClicked: auth.startCasLogin()
                 }
-            }
-            ToolIcon {
-                icon.source: "qrc:/icons/compare.svg"
-                needsProject: true
-                display: compare.count > 0 ? AbstractButton.TextBesideIcon
-                                           : AbstractButton.IconOnly
-                text: compare.count > 0 ? compare.count : ""
-                tip: qsTr("Put papers side by side, with a warning where they "
-                          + "cannot honestly be compared")
-                onClicked: {
-                    if (blocked) { window.resolveProjectBlock(); return }
-                    compareDialog.open()
+                BusyIndicator {
+                    running: auth.busy
+                    visible: auth.busy
+                    implicitWidth: 16
+                    implicitHeight: 16
                 }
-            }
-            ToolIcon {
-                icon.source: "qrc:/icons/research.svg"
-                needsProject: true
-                checkable: true
-                // Bound, not assigned: a click writes `checked` itself, and a
-                // plain binding would not survive that -- the button would stop
-                // following the pane the moment anything else showed it.
-                Binding on checked { value: researchPane.visible; restoreMode: Binding.RestoreNone }
-                tip: qsTr("What this whole project adds up to: categories, the "
-                          + "research map, consensus and conflict, coverage, and "
-                          + "what to do next")
-                onClicked: {
-                    if (blocked) { window.resolveProjectBlock(); return }
-                    researchPane.visible = !researchPane.visible
+                ComboBox {
+                    id: projectCombo
+                    visible: auth.authenticated && projects.list.length > 0
+                    // The one wide control in the row; a narrow window buys
+                    // two buttons' worth of space back from it, and the
+                    // names it truncates are still readable in the popup.
+                    Layout.preferredWidth: toolBar.compact ? 120 : 170
+                    model: projects.list
+                    textRole: "name"
+                    function syncIndex() {
+                        for (let i = 0; i < projects.list.length; ++i) {
+                            if (projects.list[i].id === projects.currentId) {
+                                currentIndex = i
+                                return
+                            }
+                        }
+                        currentIndex = -1
+                    }
+                    onActivated: function(idx) {
+                        if (idx >= 0)
+                            projects.selectProject(projects.list[idx].id)
+                    }
+                    Component.onCompleted: syncIndex()
+                    Connections {
+                        target: projects
+                        function onCurrentChanged() { projectCombo.syncIndex() }
+                        function onListChanged() { projectCombo.syncIndex() }
+                    }
                 }
-            }
-            ToolIcon {
-                icon.source: "qrc:/icons/tasks.svg"
-                checkable: true
-                // Bound, not assigned: a click writes `checked` itself, and a
-                // plain binding would not survive that -- the button would stop
-                // following the pane the moment anything else showed it.
-                Binding on checked { value: tasksPane.visible; restoreMode: Binding.RestoreNone }
-                // The count is the point when something is running: it is
-                // the only place the toolbar admits the app is busy.
-                display: tasks.activeCount > 0 ? AbstractButton.TextBesideIcon
+                ToolIcon {
+                    icon.source: "qrc:/icons/project-new.svg"
+                    visible: auth.authenticated
+                    tip: qsTr("New project")
+                    onClicked: createProjectDialog.open()
+                }
+                ToolIcon {
+                    icon.source: "qrc:/icons/project-edit.svg"
+                    needsProject: true
+                    tip: qsTr("Rename this project, or delete it")
+                    onClicked: {
+                        if (blocked) { window.resolveProjectBlock(); return }
+                        projectSettingsDialog.open()
+                    }
+                }
+                ToolIcon {
+                    icon.source: "qrc:/icons/members.svg"
+                    needsProject: true
+                    tip: qsTr("Members of this project")
+                    onClicked: {
+                        if (blocked) { window.resolveProjectBlock(); return }
+                        projects.refreshMembers()
+                        membersDialog.open()
+                    }
+                }
+                ToolIcon {
+                    // The one place the reader tells the app what this project is
+                    // for. Every interpretation is prompted with it, so the button
+                    // carries a dot until it has been filled in.
+                    icon.source: "qrc:/icons/profile.svg"
+                    needsProject: true
+                    display: profile.hasProfile ? AbstractButton.IconOnly
+                                                : AbstractButton.TextBesideIcon
+                    text: profile.hasProfile ? "" : "•"
+                    tip: profile.hasProfile
+                         ? qsTr("Research profile: %1").arg(profile.summary)
+                         : qsTr("Describe what this project is trying to find out — "
+                                + "every interpretation is written against it")
+                    onClicked: {
+                        if (blocked) { window.resolveProjectBlock(); return }
+                        projectProfileDialog.open()
+                    }
+                }
+
+                ToolSeparator { visible: auth.authenticated }
+
+                ToolIcon {
+                    // A running batch is owned by the app, not by the window it
+                    // was started from — closing that window does not stop it, so
+                    // the progress has to be visible here too.
+                    icon.source: "qrc:/icons/batch.svg"
+                    needsProject: true
+                    display: batchAnalysis.busy ? AbstractButton.TextBesideIcon
+                                                : AbstractButton.IconOnly
+                    text: batchAnalysis.busy
+                          ? (batchAnalysis.done + batchAnalysis.failed
+                             + batchAnalysis.skipped) + "/" + batchAnalysis.total
+                          : ""
+                    tip: batchAnalysis.busy
+                         ? qsTr("Still interpreting — click to watch or stop")
+                         : qsTr("Interpret every paper in this project, then filter "
+                                + "by relevance")
+                    onClicked: {
+                        if (blocked) { window.resolveProjectBlock(); return }
+                        batchAnalysisDialog.open()
+                    }
+                }
+                ToolIcon {
+                    icon.source: "qrc:/icons/compare.svg"
+                    needsProject: true
+                    display: compare.count > 0 ? AbstractButton.TextBesideIcon
                                                : AbstractButton.IconOnly
-                text: tasks.activeCount > 0 ? tasks.activeCount : ""
-                tip: qsTr("Everything the app is working on: what is running, "
-                          + "how far along it is, and how long it has left")
-                onClicked: tasksPane.visible = !tasksPane.visible
-            }
-            ToolIcon {
-                id: accountBtn
-                icon.source: "qrc:/icons/account.svg"
-                visible: auth.authenticated
-                display: AbstractButton.TextBesideIcon
-                text: auth.userDisplayName.length > 0 ? auth.userDisplayName
-                                                      : auth.userEmail
-                tip: qsTr("Signed in — click to sign out")
-                onClicked: accountMenu.popup()
-                Menu {
-                    id: accountMenu
-                    MenuItem { text: qsTr("Sign out"); onTriggered: auth.logout() }
+                    text: compare.count > 0 ? compare.count : ""
+                    tip: qsTr("Put papers side by side, with a warning where they "
+                              + "cannot honestly be compared")
+                    onClicked: {
+                        if (blocked) { window.resolveProjectBlock(); return }
+                        compareDialog.open()
+                    }
+                }
+                ToolIcon {
+                    icon.source: "qrc:/icons/research.svg"
+                    needsProject: true
+                    checkable: true
+                    // Bound, not assigned: a click writes `checked` itself, and a
+                    // plain binding would not survive that -- the button would stop
+                    // following the pane the moment anything else showed it.
+                    Binding on checked { value: researchPane.visible; restoreMode: Binding.RestoreNone }
+                    tip: qsTr("What this whole project adds up to: categories, the "
+                              + "research map, consensus and conflict, coverage, and "
+                              + "what to do next")
+                    onClicked: {
+                        if (blocked) { window.resolveProjectBlock(); return }
+                        researchPane.visible = !researchPane.visible
+                    }
+                }
+                ToolIcon {
+                    icon.source: "qrc:/icons/tasks.svg"
+                    checkable: true
+                    // Bound, not assigned: a click writes `checked` itself, and a
+                    // plain binding would not survive that -- the button would stop
+                    // following the pane the moment anything else showed it.
+                    Binding on checked { value: tasksPane.visible; restoreMode: Binding.RestoreNone }
+                    // The count is the point when something is running: it is
+                    // the only place the toolbar admits the app is busy.
+                    display: tasks.activeCount > 0 ? AbstractButton.TextBesideIcon
+                                                   : AbstractButton.IconOnly
+                    text: tasks.activeCount > 0 ? tasks.activeCount : ""
+                    tip: qsTr("Everything the app is working on: what is running, "
+                              + "how far along it is, and how long it has left")
+                    onClicked: tasksPane.visible = !tasksPane.visible
+                }
+                ToolIcon {
+                    id: accountBtn
+                    icon.source: "qrc:/icons/account.svg"
+                    visible: auth.authenticated
+                    // Who is signed in is worth a name's width when there is
+                    // one to spare; when there is not, the icon still says
+                    // "signed in" and the tooltip still says who.
+                    display: toolBar.compact ? AbstractButton.IconOnly
+                                             : AbstractButton.TextBesideIcon
+                    text: auth.userDisplayName.length > 0 ? auth.userDisplayName
+                                                          : auth.userEmail
+                    tip: qsTr("Signed in as %1 — click to sign out")
+                             .arg(text.length > 0 ? text : auth.userEmail)
+                    onClicked: accountMenu.popup()
+                    Menu {
+                        id: accountMenu
+                        MenuItem { text: qsTr("Sign out"); onTriggered: auth.logout() }
+                    }
+                }
+
+                Label {
+                    // Informative when it is configured — the same two words
+                    // head the settings dialog — so it steps out of a narrow
+                    // toolbar. The unconfigured warning stays at every width:
+                    // that one explains why half these buttons are dead.
+                    visible: !toolBar.compact || !settings.isConfigured
+                    text: settings.isConfigured
+                          ? qsTr("%1 · %2").arg(settings.provider).arg(settings.model)
+                          : qsTr("LLM not configured")
+                    // Theme tokens, not hardcoded hex: the old indigo/red pair
+                    // was unreadable against the dark toolbar in dark mode.
+                    color: settings.isConfigured ? Theme.accent : Theme.danger
+                    font.pixelSize: 11
+                    Layout.rightMargin: 4
                 }
             }
+        }
+
+        // Which way the rest of the row is. Dimmed rather than hidden at
+        // either end, because a button that comes and goes as you scroll
+        // moves the row under the pointer you are scrolling it with.
+        ToolIcon {
+            anchors.left: parent.left
+            anchors.verticalCenter: toolFlick.verticalCenter
+            width: 24
+            visible: toolBar.overflowing
+            enabled: toolFlick.contentX > 0.5
+            autoRepeat: true
+            icon.source: "qrc:/icons/chevron-left.svg"
+            tip: qsTr("More toolbar buttons this way")
+            onClicked: toolFlick.glideTo(toolFlick.contentX
+                                         - toolFlick.width * 0.6)
+        }
+        ToolIcon {
+            anchors.right: appTail.left
+            anchors.rightMargin: 2
+            anchors.verticalCenter: toolFlick.verticalCenter
+            width: 24
+            visible: toolBar.overflowing
+            enabled: toolFlick.contentX
+                     < toolFlick.contentWidth - toolFlick.width - 0.5
+            autoRepeat: true
+            icon.source: "qrc:/icons/chevron-right.svg"
+            tip: qsTr("More toolbar buttons this way")
+            onClicked: toolFlick.glideTo(toolFlick.contentX
+                                         + toolFlick.width * 0.6)
+        }
+
+        // ── the app ─────────────────────────────────────────────────
+        // Outside the scrolling stretch on purpose: whatever the window's
+        // width costs the rest of the toolbar, the settings and the tour
+        // stay exactly where they have always been.
+        RowLayout {
+            id: appTail
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            spacing: 2
 
             ToolSeparator {}
-
-            // ── the app ─────────────────────────────────────────────
-            Label {
-                text: settings.isConfigured
-                      ? qsTr("%1 · %2").arg(settings.provider).arg(settings.model)
-                      : qsTr("LLM not configured")
-                // Theme tokens, not hardcoded hex: the old indigo/red pair
-                // was unreadable against the dark toolbar in dark mode.
-                color: settings.isConfigured ? Theme.accent : Theme.danger
-                font.pixelSize: 11
-                Layout.rightMargin: 4
-            }
             ToolIcon {
                 icon.source: "qrc:/icons/prompts.svg"
                 tip: qsTr("Edit the prompts the model is given")
