@@ -809,6 +809,12 @@ ApplicationWindow {
     Item {
         property int observedPage: pdfView.currentPage
         onObservedPageChanged: {
+            // Selection hit-testing is built per page, on demand: tell the
+            // model where the reader is so it builds the pages they can
+            // reach and nothing else. Sweeping the whole document up front
+            // is what used to hold QtPdf's global lock against every paper
+            // switch.
+            pdfSelection.prefetchAround(observedPage)
             if (scrollSync.suppressPdfSync) return
             if (observedPage === scrollSync.lastShownPage) return
             scrollSync.lastShownPage = observedPage

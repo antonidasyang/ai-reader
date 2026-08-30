@@ -1,5 +1,48 @@
 # AI Reader changelog
 
+## v1.3.12 — 2026-08-30
+
+### Switching papers no longer freezes the window for a second at a time
+- QtPdf funnels every call into PDFium through one global lock. Opening a
+  paper used to start a background sweep that built the selection index —
+  text, line boxes and link rectangles — for every page of the document,
+  and that sweep held the lock. Switching to another paper has to load the
+  new document and lay its pages out, which needs the same lock, so the
+  switch queued behind the sweep. Measured on a real paper: up to 1.1 s of
+  frozen window per switch, and worse the faster you switched, because the
+  sweep for a paper you had already left kept running. It is now 80 ms.
+- The sweep is gone. Selection structures are built for the pages the
+  reader is actually on — the current page and a couple either side — one
+  page at a time, on a thread that keeps the document open instead of
+  re-parsing the file for every batch. A paper you flip past is never
+  parsed at all, and the request is held for a fraction of a second so
+  scrolling fast or flipping through tabs does not build a trail of pages
+  nobody looked at.
+- Leaving a paper now stops the work that belongs to it. Both the
+  selection builder and the paragraph clusterer check between pages
+  whether anyone still wants the answer, so a switch waits at most one
+  page rather than a whole document.
+- Clicking somewhere the index has not reached yet still works exactly as
+  before: that one page is built on the spot.
+- The paper's id — a hash over the first four megabytes of the file — is
+  remembered per file, size and timestamp. Switching between two open
+  papers was re-reading four megabytes off disk each time to answer a
+  question whose answer had not changed.
+
+### The interpretation pane stops rebuilding all nine parts of a close reading
+- A close reading is nine parts and only the first is expanded to begin
+  with, but all nine were built anyway — and each one carried all nine
+  part layouts when it needed one, so the pane held 81 subtrees where 9
+  would do. Every time a part landed from the model, all of it was thrown
+  away and built again.
+- Now a part is built when it is first expanded, and each part carries
+  only its own layout. The pane holds a fifth of the items it used to.
+  Showing an interpretation went from 360 ms to 100 ms, and the rebuild
+  that happens every time a part lands — nine times while a close reading
+  is being written, and again on every sync — from 57 ms to 11 ms.
+- Expanding a part for the first time now costs about 60 ms, which is the
+  point: the work happens where the reader asked for it, once.
+
 ## v1.3.11 — 2026-08-30
 
 ### The interpretation's output length can be set as high as the model's

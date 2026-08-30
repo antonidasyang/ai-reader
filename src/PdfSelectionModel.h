@@ -3,18 +3,85 @@
 #include "Block.h"
 #include "PdfVisualLines.h"
 
-#include <QFutureWatcher>
 #include <QHash>
+#include <QList>
 #include <QObject>
 #include <QPointF>
 #include <QPolygonF>
 #include <QRectF>
 #include <QString>
+#include <QThread>
+#include <QTimer>
 #include <QUrl>
 #include <QVariantMap>
 #include <QVector>
 
+#include <memory>
+
 class QPdfDocument;
+
+// What one page's selection structures look like once built. Lives out
+// here (rather than nested in the model) because it travels between the
+// builder thread and the GUI thread as a queued-signal argument.
+namespace PdfSelection {
+
+struct LinkInfo {
+    QRectF rect;
+    int page = -1;
+    QPointF location;
+    qreal zoom = 0;
+    QUrl url;
+};
+
+struct PageBundle {
+    int page = -1;
+    QString text;
+    QVector<PdfVisualLines::Line> lines;
+    QVector<LinkInfo> links;
+};
+
+} // namespace PdfSelection
+
+Q_DECLARE_METATYPE(PdfSelection::PageBundle)
+
+// Builds one page's selection structures at a time, on a thread of its
+// own, against a QPdfDocument it opens once per paper.
+//
+// One page at a time and one document per paper are both deliberate.
+// QtPdf funnels every PDFium call through a single global mutex, so a
+// builder that swept the whole document up front — as this one used to —
+// held that mutex against the GUI thread for as long as the sweep ran,
+// and switching papers had to queue behind it. Now the model asks for
+// the handful of pages the reader can actually see, and asks for the
+// next one only once the last has landed, so a paper switch is never
+// more than one page away from a free lock.
+class PdfSelectionBuilder : public QObject
+{
+    Q_OBJECT
+
+public:
+    explicit PdfSelectionBuilder(QObject *parent = nullptr) : QObject(parent) {}
+    ~PdfSelectionBuilder() override;
+
+public slots:
+    // Adopt a new paper. The file is not opened here — a reader who
+    // flips past a paper should not pay for parsing it — only when the
+    // first page of it is actually asked for.
+    void open(const QString &path, const QString &password, int generation);
+    // Build one page and hand it back stamped with the generation it
+    // was asked for, so answers about a paper the reader has left are
+    // recognisable as stale.
+    void build(int page, int generation);
+
+signals:
+    void built(const PdfSelection::PageBundle &bundle, int generation);
+
+private:
+    std::unique_ptr<QPdfDocument> m_doc;
+    QString m_path;
+    QString m_password;
+    int m_generation = -1;
+};
 
 // Web-style text selection over a QPdfDocument: cross-page ranges,
 // word/paragraph snapping (double/triple click), hover hit-testing
@@ -68,6 +135,19 @@ public:
     // source/password.
     void setSource(const QString &localPath, const QString &password);
 
+    // Ask the builder for the pages around `page`, nearest first. The
+    // view calls this as the reader moves; nothing else is built, so a
+    // paper nobody scrolls through costs nothing. Pages already built —
+    // including ones a click built synchronously — are skipped.
+    //
+    // Coalesced on a short timer: flipping through tabs or scrolling
+    // fast would otherwise start a build for every paper and every page
+    // passed through, and each of those takes QtPdf's global lock away
+    // from the view that is trying to paint. A page the reader actually
+    // stops on is built a fraction of a second later; one they pass is
+    // never built at all.
+    Q_INVOKABLE void prefetchAround(int page, int radius = 2);
+
     // Paragraph rectangles from the app's block model (clusterer or
     // GROBID). Triple-click selects one of these, so it matches what
     // the reading pane shows as a paragraph. main.cpp pushes them on
@@ -98,19 +178,8 @@ private:
         QString text;
         QVector<LineInfo> lines;
     };
-    struct LinkInfo {
-        QRectF rect;
-        int page = -1;
-        QPointF location;
-        qreal zoom = 0;
-        QUrl url;
-    };
-    // One background job's output: every page's text/lines/links.
-    struct PageBundle {
-        QString text;
-        QVector<PdfVisualLines::Line> lines;
-        QVector<LinkInfo> links;
-    };
+    using LinkInfo = PdfSelection::LinkInfo;
+    using PageBundle = PdfSelection::PageBundle;
     enum Granularity { CharGrain, WordGrain, ParaGrain };
 
     bool docReady() const;
@@ -119,9 +188,13 @@ private:
     // rendering for QtPdf's global lock; use pageDataIfReady there.
     PageData &pageData(int page) const;
     const PageData *pageDataIfReady(int page) const;
-    void startBackgroundBuild();
-    void launchBuild(const QString &path, const QString &pw);
-    void onBuildFinished();
+    // What the coalescing timer above finally decided to build.
+    void startPrefetch();
+    // Queue `page` for the builder if nothing has built it yet.
+    void enqueue(int page);
+    // Hand the builder the next queued page, if it is idle.
+    void pump();
+    void onBuilt(const PdfSelection::PageBundle &bundle, int generation);
     const LineInfo *lineIn(const PageData &pd, QPointF pos,
                            bool *inside) const;
     const LineInfo *lineAt(int page, QPointF pos, bool *inside) const;
@@ -151,8 +224,18 @@ private:
 
     QString m_srcPath;
     QString m_srcPassword;
-    int m_buildGen = 0;   // invalidates in-flight background builds
-    QFutureWatcher<QVector<PageBundle>> m_buildWatcher;
+    // Bumped on every paper change; results stamped with an older one
+    // are dropped. Cancelling is exactly this plus an empty queue --
+    // the page already in the builder's hands is allowed to finish, so
+    // a switch waits at most one page rather than a whole document.
+    int m_buildGen = 0;
+    QThread m_builderThread;
+    PdfSelectionBuilder *m_builder = nullptr;
+    QList<int> m_queue;
+    bool m_building = false;
+    QTimer m_prefetchTimer;
+    int m_prefetchPage = -1;
+    int m_prefetchRadius = 2;
 
     Granularity m_grain = CharGrain;
     TextPos m_anchorStart, m_anchorEnd;  // unit range at press

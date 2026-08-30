@@ -2,6 +2,10 @@
 #include "BlockClusterer.h"
 
 #include <QCryptographicHash>
+#include <QDateTime>
+#include <QHash>
+#include <QMutex>
+#include <QPromise>
 #include <QFile>
 #include <QFileInfo>
 #include <QSize>
@@ -15,14 +19,37 @@ constexpr auto kKeyLastUrl = "paper/lastUrl";
 // Hash the first 4 MB of the PDF (and the file size) so we get a stable
 // id even when the file is moved or renamed, but we don't pay for full
 // SHA-256 over a 200 MB book. Cheap and good enough as a cache key.
+//
+// Memoised on (path, size, mtime): switching between two open papers
+// asks for the same two ids over and over, and re-reading four
+// megabytes off disk to answer a question whose answer cannot have
+// changed is time taken out of the switch the reader is waiting on.
 QString PaperController::paperIdForFile(const QString &filePath)
 {
+    struct Entry { qint64 size; qint64 mtime; QString id; };
+    static QHash<QString, Entry> cache;
+    static QMutex mutex;   // ImportService asks from a worker thread
+
+    const QFileInfo info(filePath);
+    const qint64 size = info.size();
+    const qint64 mtime = info.lastModified().toMSecsSinceEpoch();
+    {
+        QMutexLocker lock(&mutex);
+        const auto it = cache.constFind(filePath);
+        if (it != cache.constEnd() && it->size == size && it->mtime == mtime)
+            return it->id;
+    }
+
     QFile f(filePath);
     if (!f.open(QIODevice::ReadOnly)) return {};
     QCryptographicHash hash(QCryptographicHash::Sha256);
     hash.addData(QByteArray::number(qint64(f.size())));
     hash.addData(f.read(4 * 1024 * 1024));
-    return QString::fromUtf8(hash.result().toHex());
+    const QString id = QString::fromUtf8(hash.result().toHex());
+
+    QMutexLocker lock(&mutex);
+    cache.insert(filePath, Entry{size, mtime, id});
+    return id;
 }
 
 PaperController::PaperController(QObject *parent)
@@ -76,6 +103,12 @@ void PaperController::openPdf(const QUrl &url)
 
     if (src == m_source && m_status == Ready)
         return;
+    // Whatever is being clustered belongs to the paper being left. Its
+    // worker holds QtPdf's one global PDFium lock a page at a time, and
+    // the load and page layout this switch is about to do need the same
+    // lock -- so stop it before, not after.
+    if (m_extractWatcher.isRunning())
+        m_extractWatcher.future().cancel();
     m_source = src;
     m_password.clear();
     // Persist immediately so a hard crash mid-load still restores the
@@ -251,7 +284,7 @@ bool PaperController::applyCachedBlocks()
     // already looking at or has edited, and never race a running extraction.
     if (m_blocksEdited || m_model.blockCount() > 0)
         return false;
-    if (m_extractWatcher.isRunning())
+    if (extractionActive())
         return false;
     m_model.setBlocks(m_blockCache.blocks());
     emit blocksChanged();
@@ -261,7 +294,7 @@ bool PaperController::applyCachedBlocks()
 void PaperController::rebuildBlocks()
 {
     if (m_status != Ready) return;
-    if (m_extractWatcher.isRunning()) return;   // one rebuild at a time
+    if (extractionActive()) return;   // one rebuild at a time
     m_blockCache.clear();
     m_blocksEdited = false;
     m_forceExtract = true;
@@ -289,15 +322,21 @@ void PaperController::startAsyncExtraction()
         m_extracting = true;
         emit extractingChanged();
     }
-    m_extractWatcher.setFuture(QtConcurrent::run([path, password]() {
-        QPdfDocument doc;   // worker-owned: no shared state with the UI
-        doc.setPassword(password);
-        if (doc.load(path) != QPdfDocument::Error::None)
-            return QVector<Block>();
-        // Paced so the PDFium global lock stays available to the
-        // first page renders of the freshly-opened document.
-        return BlockClusterer::extract(doc, 20);
-    }));
+    m_extractWatcher.setFuture(QtConcurrent::run(
+        [path, password](QPromise<QVector<Block>> &promise) {
+            QPdfDocument doc;   // worker-owned: no shared state with the UI
+            doc.setPassword(password);
+            if (doc.load(path) != QPdfDocument::Error::None) {
+                promise.addResult(QVector<Block>());
+                return;
+            }
+            // Paced so the PDFium global lock stays available to the
+            // first page renders of the freshly-opened document, and
+            // cancellable so the paper the reader has left stops taking
+            // that lock at all.
+            promise.addResult(BlockClusterer::extract(
+                doc, 20, [&promise] { return promise.isCanceled(); }));
+        }));
 }
 
 void PaperController::onExtractionFinished()
@@ -306,6 +345,10 @@ void PaperController::onExtractionFinished()
         m_extracting = false;
         emit extractingChanged();
     }
+    // Cancelled when the reader moved on: there is no result to ask for.
+    if (m_extractWatcher.isCanceled()
+        || m_extractWatcher.future().resultCount() == 0)
+        return;
     // Stale results (paper switched mid-extraction) and anything the
     // user already touched are dropped, same rules as GROBID swaps.
     // An explicit re-segment (m_forceExtract) skips the second guard:

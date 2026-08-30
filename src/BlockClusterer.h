@@ -4,13 +4,22 @@
 #include <QString>
 #include <QVector>
 
+#include <functional>
+
 class QPdfDocument;
 
 namespace BlockClusterer {
 
+// Asked between pages: true means the caller has lost interest (the
+// reader moved to another paper) and extract() should give up.
+using CancelFn = std::function<bool()>;
+
 // pacePerPageMs > 0 sleeps between pages — background callers use it
 // so the PDFium global lock stays mostly free for page rendering.
-QVector<Block> extract(QPdfDocument &doc, int pacePerPageMs = 0);
+// A cancelled run returns an empty list: half a segmentation is worse
+// than none, and the caller drops the result either way.
+QVector<Block> extract(QPdfDocument &doc, int pacePerPageMs = 0,
+                       const CancelFn &canceled = {});
 
 // Diagnostic dump. Returns a UTF-8 text report covering, per page:
 // poly/raw-line counts, the raw text PDFium gave us, and every line we

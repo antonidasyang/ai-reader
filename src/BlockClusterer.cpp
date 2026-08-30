@@ -184,12 +184,17 @@ bool endsParagraph(const QString &t)
 
 } // namespace
 
-QVector<Block> BlockClusterer::extract(QPdfDocument &doc, int pacePerPageMs)
+QVector<Block> BlockClusterer::extract(QPdfDocument &doc, int pacePerPageMs,
+                                       const CancelFn &canceled)
 {
     QVector<Block> blocks;
     int nextId = 0;
 
     for (int p = 0; p < doc.pageCount(); ++p) {
+        // Checked before the page rather than after: the point is to stop
+        // taking QtPdf's global lock once nobody wants the answer.
+        if (canceled && canceled())
+            return {};
         if (pacePerPageMs > 0 && p > 0)
             QThread::msleep(pacePerPageMs);
         const QVector<Line> lines = extractPageLines(doc, p);

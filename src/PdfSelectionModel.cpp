@@ -10,9 +10,7 @@
 #include <QPdfSelection>
 #include <QTextBoundaryFinder>
 #include <QThread>
-#include <QTimer>
 #include <QUrl>
-#include <QtConcurrent>
 #include <algorithm>
 #include <limits>
 
@@ -110,106 +108,178 @@ QString cleanText(const QString &raw)
 
 } // namespace
 
+PdfSelectionBuilder::~PdfSelectionBuilder() = default;
+
+void PdfSelectionBuilder::open(const QString &path, const QString &password,
+                               int generation)
+{
+    m_doc.reset();          // the old paper's parse is dead weight now
+    m_path = path;
+    m_password = password;
+    m_generation = generation;
+}
+
+void PdfSelectionBuilder::build(int page, int generation)
+{
+    PdfSelection::PageBundle bundle;
+    bundle.page = page;
+    if (generation != m_generation || m_path.isEmpty()) {
+        emit built(bundle, generation);
+        return;
+    }
+    if (!m_doc) {
+        auto doc = std::make_unique<QPdfDocument>();
+        doc->setPassword(m_password);
+        if (doc->load(m_path) != QPdfDocument::Error::None) {
+            emit built(bundle, generation);
+            return;
+        }
+        m_doc = std::move(doc);
+    }
+    if (page < 0 || page >= m_doc->pageCount()) {
+        emit built(bundle, generation);
+        return;
+    }
+
+    bundle.lines = PdfVisualLines::extract(*m_doc, page, &bundle.text,
+                                           PdfVisualLines::Precise);
+    QPdfLinkModel lm;
+    lm.setDocument(m_doc.get());
+    lm.setPage(page);
+    const int rows = lm.rowCount(QModelIndex());
+    for (int r = 0; r < rows; ++r) {
+        const QPdfLink lk =
+            lm.data(lm.index(r, 0), int(QPdfLinkModel::Role::Link))
+                .value<QPdfLink>();
+        for (const QRectF &rc : lk.rectangles())
+            bundle.links.append(PdfSelection::LinkInfo{
+                rc, lk.page(), lk.location(), lk.zoom(), lk.url()});
+    }
+    emit built(bundle, generation);
+}
+
 PdfSelectionModel::PdfSelectionModel(QPdfDocument *doc, QObject *parent)
     : QObject(parent)
     , m_doc(doc)
 {
+    qRegisterMetaType<PdfSelection::PageBundle>();
+    m_builder = new PdfSelectionBuilder;
+    m_builder->moveToThread(&m_builderThread);
+    connect(&m_builderThread, &QThread::finished,
+            m_builder, &QObject::deleteLater);
+    connect(m_builder, &PdfSelectionBuilder::built,
+            this, &PdfSelectionModel::onBuilt);
+    m_builderThread.start();
+
+    m_prefetchTimer.setSingleShot(true);
+    m_prefetchTimer.setInterval(300);
+    connect(&m_prefetchTimer, &QTimer::timeout,
+            this, &PdfSelectionModel::startPrefetch);
+
     connect(m_doc, &QPdfDocument::statusChanged, this, [this] {
         reset();
-        if (docReady())
-            startBackgroundBuild();
+        if (docReady()) {
+            // Cover the opening screen; the view drives the rest through
+            // prefetchAround() as the reader moves.
+            prefetchAround(0);
+        }
     });
-    connect(&m_buildWatcher,
-            &QFutureWatcher<QVector<PageBundle>>::finished,
-            this, &PdfSelectionModel::onBuildFinished);
 }
 
-PdfSelectionModel::~PdfSelectionModel() = default;
+PdfSelectionModel::~PdfSelectionModel()
+{
+    m_builderThread.quit();
+    m_builderThread.wait();
+}
 
 void PdfSelectionModel::setSource(const QString &localPath,
                                   const QString &password)
 {
+    if (localPath == m_srcPath && password == m_srcPassword)
+        return;
     m_srcPath = localPath;
     m_srcPassword = password;
+    m_prefetchTimer.stop();
+    m_prefetchPage = -1;
+    // Everything queued belonged to the paper being left. The page the
+    // builder is holding right now is allowed to finish -- it is one
+    // page, and interrupting PDFium mid-page is not a thing -- but its
+    // answer arrives stamped with the old generation and is dropped.
+    ++m_buildGen;
+    m_queue.clear();
+    QMetaObject::invokeMethod(m_builder, "open", Qt::QueuedConnection,
+                              Q_ARG(QString, m_srcPath),
+                              Q_ARG(QString, m_srcPassword),
+                              Q_ARG(int, m_buildGen));
 }
 
-// Build every page's selection structures (text, rendered lines, link
-// rects) in one worker job against a private QPdfDocument. All the
-// PDFium traffic happens off the GUI thread, so scrolling and page
-// rendering never stall behind it; the GUI-thread fallbacks in
-// pageData()/linkAt() only run for clicks that arrive before the
-// build reaches that page.
-void PdfSelectionModel::startBackgroundBuild()
+void PdfSelectionModel::prefetchAround(int page, int radius)
 {
-    if (m_srcPath.isEmpty())
+    if (!docReady() || m_srcPath.isEmpty())
         return;
-    const QString path = m_srcPath;
-    const QString pw = m_srcPassword;
-    // Give the first page renders a head start: PDFium is guarded by
-    // one global lock, so launching the build immediately makes the
-    // freshly-opened document paint its pages in slow motion.
-    QTimer::singleShot(1200, this, [this, path, pw]() {
-        if (path != m_srcPath || !docReady())
-            return;   // paper changed while we waited
-        launchBuild(path, pw);
-    });
+    // The reader moved, so whatever was queued around where they were is
+    // no longer the most useful thing to build next.
+    m_queue.clear();
+    m_prefetchPage = page;
+    m_prefetchRadius = radius;
+    m_prefetchTimer.start();
 }
 
-void PdfSelectionModel::launchBuild(const QString &path, const QString &pw)
+void PdfSelectionModel::startPrefetch()
 {
-    m_buildWatcher.setFuture(QtConcurrent::run([path, pw]() {
-        QVector<PageBundle> out;
-        QPdfDocument doc;   // worker-owned: no shared state with the UI
-        doc.setPassword(pw);
-        if (doc.load(path) != QPdfDocument::Error::None)
-            return out;
-        const int n = doc.pageCount();
-        out.resize(n);
-        for (int p = 0; p < n; ++p) {
-            // Pace the lock churn: leave the global PDFium mutex free
-            // between pages so rendering and layout stay smooth.
-            if (p > 0)
-                QThread::msleep(25);
-            PageBundle &b = out[p];
-            b.lines = PdfVisualLines::extract(doc, p, &b.text,
-                                              PdfVisualLines::Precise);
-            QPdfLinkModel lm;
-            lm.setDocument(&doc);
-            lm.setPage(p);
-            const int rows = lm.rowCount(QModelIndex());
-            for (int r = 0; r < rows; ++r) {
-                const QPdfLink lk =
-                    lm.data(lm.index(r, 0),
-                            int(QPdfLinkModel::Role::Link))
-                        .value<QPdfLink>();
-                const QList<QRectF> rects = lk.rectangles();
-                for (const QRectF &rc : rects)
-                    b.links.append(LinkInfo{rc, lk.page(), lk.location(),
-                                            lk.zoom(), lk.url()});
-            }
-        }
-        return out;
-    }));
-}
-
-void PdfSelectionModel::onBuildFinished()
-{
-    if (!docReady())
+    if (!docReady() || m_srcPath.isEmpty() || m_prefetchPage < 0)
         return;
-    const QVector<PageBundle> bundles = m_buildWatcher.result();
+    enqueue(m_prefetchPage);
+    for (int d = 1; d <= m_prefetchRadius; ++d) {
+        enqueue(m_prefetchPage + d);
+        enqueue(m_prefetchPage - d);
+    }
+    pump();
+}
+
+void PdfSelectionModel::enqueue(int page)
+{
+    if (page < 0 || page >= m_doc->pageCount())
+        return;
     if (m_pages.size() != m_doc->pageCount())
         m_pages.resize(m_doc->pageCount());
-    // A build started for an older document would mismatch in page
-    // count more often than not, but the real guard is reset():
-    // it clears m_pages, and we only fill pages nothing else built.
-    const int n = qMin(int(bundles.size()), int(m_pages.size()));
-    for (int p = 0; p < n; ++p) {
-        PageData &pd = m_pages[p];
+    const PageData &pd = m_pages[page];
+    if (pd.loaded && pd.linksLoaded)
+        return;                       // a click already built this one
+    if (!m_queue.contains(page))
+        m_queue.append(page);
+}
+
+void PdfSelectionModel::pump()
+{
+    if (m_building || m_queue.isEmpty())
+        return;
+    const int page = m_queue.takeFirst();
+    m_building = true;
+    QMetaObject::invokeMethod(m_builder, "build", Qt::QueuedConnection,
+                              Q_ARG(int, page), Q_ARG(int, m_buildGen));
+}
+
+void PdfSelectionModel::onBuilt(const PdfSelection::PageBundle &bundle,
+                                int generation)
+{
+    m_building = false;
+    // An answer about the paper the reader has already left.
+    if (generation != m_buildGen || !docReady()) {
+        pump();
+        return;
+    }
+    const int page = bundle.page;
+    if (page >= 0 && page < m_doc->pageCount()) {
+        if (m_pages.size() != m_doc->pageCount())
+            m_pages.resize(m_doc->pageCount());
+        PageData &pd = m_pages[page];
+        // Never overwrite a page a click already built on the GUI thread.
         if (!pd.loaded) {
-            pd.text = bundles[p].text;
+            pd.text = bundle.text;
             pd.lines.clear();
-            pd.lines.reserve(bundles[p].lines.size());
-            for (const PdfVisualLines::Line &vl : bundles[p].lines) {
+            pd.lines.reserve(bundle.lines.size());
+            for (const PdfVisualLines::Line &vl : bundle.lines) {
                 LineInfo ln;
                 ln.start = vl.start;
                 ln.end = vl.end;
@@ -219,10 +289,11 @@ void PdfSelectionModel::onBuildFinished()
             pd.loaded = true;
         }
         if (!pd.linksLoaded) {
-            m_pageLinks[p] = bundles[p].links;
+            m_pageLinks[page] = bundle.links;
             pd.linksLoaded = true;
         }
     }
+    pump();
 }
 
 bool PdfSelectionModel::docReady() const

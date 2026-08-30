@@ -142,6 +142,11 @@ private:
     // the window for seconds while the first pages rendered.
     void startAsyncExtraction();
     void onExtractionFinished();
+    // A run that was cancelled when the reader left the paper is still
+    // "running" as far as QFuture is concerned until its worker notices.
+    // Nothing should wait on it: its result is already being thrown away.
+    bool extractionActive() const
+    { return m_extractWatcher.isRunning() && !m_extractWatcher.isCanceled(); }
 
     QPdfDocument m_doc;
     BlockListModel m_model;

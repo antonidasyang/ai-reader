@@ -755,6 +755,13 @@ ColumnLayout {
             readonly property bool busy: root.isBusy(sec.moduleId, root.rev)
             readonly property string err: root.errorOf(sec.moduleId, root.rev)
             readonly property bool open: root.isOpen(sec.moduleId, sec.index, root.rev)
+            // Nine expanded parts is a wall, so eight of them start
+            // collapsed -- and a collapsed part is not worth building.
+            // Once opened it is kept, so collapsing and expanding again
+            // costs nothing. This is what stops a close reading landing
+            // module by module from rebuilding all nine bodies each time.
+            property bool everOpened: sec.open
+            onOpenChanged: if (sec.open) sec.everOpened = true
 
             Layout.fillWidth: true
             spacing: 4
@@ -808,12 +815,15 @@ ColumnLayout {
             }
 
             // ── the body ────────────────────────────────────────────
-            ColumnLayout {
+            Loader {
+                Layout.fillWidth: true
+                active: sec.everOpened
+                visible: sec.open
+                sourceComponent: ColumnLayout {
                 Layout.fillWidth: true
                 Layout.leftMargin: 12
                 Layout.bottomMargin: 4
                 spacing: 6
-                visible: sec.open
 
                 Label {
                     Layout.fillWidth: true
@@ -849,51 +859,80 @@ ColumnLayout {
                     text: sec.mod && sec.mod.summary ? sec.mod.summary : ""
                 }
 
-                // What this part carries on top of the common shape.
-                BasicsPart {
-                    visible: sec.moduleId === "basics"
-                    mod: sec.mod
-                    moduleId: sec.moduleId
+                // What this part carries beyond the common shape --
+                // built only for the module it belongs to. Declaring all
+                // nine in every module meant 81 subtrees where 9 will do.
+                Loader {
+                    Layout.fillWidth: true
+                    active: sec.moduleId === "basics"
+                    sourceComponent: BasicsPart {
+                        mod: sec.mod
+                        moduleId: sec.moduleId
+                    }
                 }
-                BackgroundPart {
-                    visible: sec.moduleId === "background"
-                    mod: sec.mod
-                    moduleId: sec.moduleId
+                Loader {
+                    Layout.fillWidth: true
+                    active: sec.moduleId === "background"
+                    sourceComponent: BackgroundPart {
+                        mod: sec.mod
+                        moduleId: sec.moduleId
+                    }
                 }
-                MethodPart {
-                    visible: sec.moduleId === "method"
-                    mod: sec.mod
-                    moduleId: sec.moduleId
+                Loader {
+                    Layout.fillWidth: true
+                    active: sec.moduleId === "method"
+                    sourceComponent: MethodPart {
+                        mod: sec.mod
+                        moduleId: sec.moduleId
+                    }
                 }
-                ExperimentsPart {
-                    visible: sec.moduleId === "experiments"
-                    mod: sec.mod
-                    moduleId: sec.moduleId
+                Loader {
+                    Layout.fillWidth: true
+                    active: sec.moduleId === "experiments"
+                    sourceComponent: ExperimentsPart {
+                        mod: sec.mod
+                        moduleId: sec.moduleId
+                    }
                 }
-                ContributionsPart {
-                    visible: sec.moduleId === "contributions"
-                    mod: sec.mod
-                    moduleId: sec.moduleId
+                Loader {
+                    Layout.fillWidth: true
+                    active: sec.moduleId === "contributions"
+                    sourceComponent: ContributionsPart {
+                        mod: sec.mod
+                        moduleId: sec.moduleId
+                    }
                 }
-                CritiquePart {
-                    visible: sec.moduleId === "critique"
-                    mod: sec.mod
-                    moduleId: sec.moduleId
+                Loader {
+                    Layout.fillWidth: true
+                    active: sec.moduleId === "critique"
+                    sourceComponent: CritiquePart {
+                        mod: sec.mod
+                        moduleId: sec.moduleId
+                    }
                 }
-                LimitationsPart {
-                    visible: sec.moduleId === "limitations"
-                    mod: sec.mod
-                    moduleId: sec.moduleId
+                Loader {
+                    Layout.fillWidth: true
+                    active: sec.moduleId === "limitations"
+                    sourceComponent: LimitationsPart {
+                        mod: sec.mod
+                        moduleId: sec.moduleId
+                    }
                 }
-                ReproPart {
-                    visible: sec.moduleId === "repro"
-                    mod: sec.mod
-                    moduleId: sec.moduleId
+                Loader {
+                    Layout.fillWidth: true
+                    active: sec.moduleId === "repro"
+                    sourceComponent: ReproPart {
+                        mod: sec.mod
+                        moduleId: sec.moduleId
+                    }
                 }
-                FollowupsPart {
-                    visible: sec.moduleId === "followups"
-                    mod: sec.mod
-                    moduleId: sec.moduleId
+                Loader {
+                    Layout.fillWidth: true
+                    active: sec.moduleId === "followups"
+                    sourceComponent: FollowupsPart {
+                        mod: sec.mod
+                        moduleId: sec.moduleId
+                    }
                 }
 
                 // The common shape: sections of claims.
@@ -933,6 +972,7 @@ ColumnLayout {
                             parts.push(when)
                         return parts.join(" · ")
                     }
+                }
                 }
             }
         }
