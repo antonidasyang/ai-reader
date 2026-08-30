@@ -581,7 +581,10 @@ AppDialog {
                     AppSpinBox {
                         id: analysisMaxTokensField
                         Layout.fillWidth: true
-                        from: 512; to: 64000; stepSize: 512
+                        // Same ceiling as the model page's own field: a close
+                        // reading is the longest thing the app asks for, so it
+                        // was the wrong box to cap lower than the rest.
+                        from: 512; to: 131072; stepSize: 512
                     }
 
                     AppFormLabel { text: qsTr("Parallel interpretations") }

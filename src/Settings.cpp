@@ -101,6 +101,13 @@ constexpr int  kDefChatFontSize          = 14;
 constexpr auto kDefChatSendKey           = "enter";
 constexpr int  kDefAnalysisMaxTokens     = 8192;
 constexpr int  kDefAnalysisConcurrency   = 2;
+// The ceiling on the interpretation's output length. It was 64000 from the
+// day the feature landed -- a round number, not a model's limit -- while the
+// main model's own field went to 131072, so the one page that fires nine
+// requests per paper was the one that could not be given the room. Both ends
+// are the same number now; the model, not this box, is what says no.
+constexpr int  kMinAnalysisMaxTokens     = 512;
+constexpr int  kMaxAnalysisMaxTokens     = 131072;
 
 // ── Reading an account payload ─────────────────────────────────────────
 // Everything below treats the incoming object as untrusted: it was written
@@ -501,7 +508,7 @@ void Settings::setTranslationApiKey(const QString &v)
 
 void Settings::setAnalysisMaxTokens(int v)
 {
-    v = qBound(512, v, 64000);
+    v = qBound(kMinAnalysisMaxTokens, v, kMaxAnalysisMaxTokens);
     if (v == m_analysisMaxTokens) return;
     m_analysisMaxTokens = v;
     save();
@@ -956,7 +963,9 @@ void Settings::load()
             m_qs.remove(QString::fromLatin1(k));
     }
     m_analysisMaxTokens    =
-        qBound(512, m_qs.value(kKeyAnalysisMaxTokens, kDefAnalysisMaxTokens).toInt(), 64000);
+        qBound(kMinAnalysisMaxTokens,
+               m_qs.value(kKeyAnalysisMaxTokens, kDefAnalysisMaxTokens).toInt(),
+               kMaxAnalysisMaxTokens);
     m_analysisConcurrency  =
         qBound(1, m_qs.value(kKeyAnalysisConcurrency, kDefAnalysisConcurrency).toInt(), 8);
 }

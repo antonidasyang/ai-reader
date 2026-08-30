@@ -1,5 +1,18 @@
 # AI Reader changelog
 
+## v1.3.11 — 2026-08-30
+
+### The interpretation's output length can be set as high as the model's
+- Settings → Interpretation → Max output tokens stopped at 64000, while the
+  same field on the model page went to 131072. 64000 was a round number
+  picked the day the feature landed, not any model's limit, and it was the
+  wrong field to cap lower than the rest: a close reading is nine separate
+  requests and the longest thing the app asks a model for. Both fields now
+  end at 131072, and the ceiling is one named constant rather than the same
+  literal written in three places — the spin box, the setter, and the load.
+- A value above the ceiling is still refused rather than stored, and a
+  setting synced down from another machine goes through the same check.
+
 ## v1.3.10 — 2026-08-29
 
 ### The toolbar no longer runs off the edge of a narrow window
