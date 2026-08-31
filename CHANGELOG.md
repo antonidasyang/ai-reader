@@ -1,5 +1,24 @@
 # AI Reader changelog
 
+## v1.3.13 — 2026-08-31
+
+### The log now says where a freeze went
+- "It hangs on startup" is the report we could not act on: the log recorded
+  that the app started and nothing about how long any part of it took. It
+  now stamps every phase of startup — settings and the keychain read, the
+  folder pane, the sync and library services, building the QML scene,
+  reopening the papers that were open — against a clock started at the top
+  of main().
+- A watchdog on the GUI thread runs for the whole session. It is a timer
+  that expects to be woken twenty times a second; when it is late, the
+  thread was busy and the window was frozen for exactly that long. Anything
+  over 300 ms is written to the log with how long it lasted and what the app
+  was doing at the time. That covers freezes after startup too — switching
+  papers, a sync landing — which until now left no trace at all.
+- Both cost nothing to leave on, and they are on: a user who hits a freeze
+  once has already collected the evidence, without having to reproduce it
+  under a special build.
+
 ## v1.3.12 — 2026-08-30
 
 ### Switching papers no longer freezes the window for a second at a time

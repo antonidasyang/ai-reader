@@ -40,6 +40,7 @@
 #include "VisionService.h"
 
 #include <QDateTime>
+#include <QElapsedTimer>
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
@@ -118,6 +119,49 @@ void writeLaunchLog(QtMsgType type, const QMessageLogContext &ctx,
        << msg << '\n';
 }
 
+// ── where the time goes at startup, and where it goes afterwards ─────
+//
+// "It hangs" is the report we cannot act on. Both halves of the answer are
+// cheap enough to keep on permanently and both land in launch.log next to
+// everything else, so a user who hits it once has already collected the
+// evidence.
+//
+// bootMark() stamps each phase of startup against a clock started at the
+// top of main(). The watchdog is a plain timer on the GUI thread: if it is
+// late, the thread was busy, and the gap is how long the window was frozen
+// for. It names the phase it was in, which is the whole point -- a stall
+// during "restoring the session" and one during "syncing" are different
+// bugs.
+QElapsedTimer g_boot;
+const char *g_phase = "starting up";
+
+void bootMark(const char *phase)
+{
+    qInfo("[boot +%5lld ms] %s", g_boot.elapsed(), phase);
+    g_phase = phase;
+}
+
+// Below this a stall is a normal frame's worth of work; above it the user
+// sees the window stop responding.
+constexpr int kStallMs = 300;
+
+void installStallWatchdog(QObject *owner)
+{
+    auto *timer = new QTimer(owner);
+    // 20 wake-ups a second costs nothing next to what it catches.
+    timer->setInterval(50);
+    auto *last = new qint64(g_boot.elapsed());
+    QObject::connect(timer, &QTimer::timeout, owner, [last]() {
+        const qint64 now = g_boot.elapsed();
+        const qint64 gap = now - *last;
+        *last = now;
+        if (gap >= kStallMs)
+            qWarning("[t+%lld ms] the window was frozen for %lld ms during: %s",
+                     now, gap, g_phase);
+    });
+    timer->start();
+}
+
 void installLaunchLogger()
 {
     const QString dir = QStandardPaths::writableLocation(
@@ -191,6 +235,7 @@ int main(int argc, char *argv[])
     // Names the storage after the brand and the product (D2S / AIReader),
     // moving what the old names left behind. Before anything reads a
     // setting or a cache -- which includes the rendering hints below.
+    g_boot.start();
     StorageIdentity::apply();
     applyRemoteRenderingHints();
 
@@ -201,6 +246,7 @@ int main(int argc, char *argv[])
     // per-user AppData directory, so install the logger now — not
     // before — and any qWarning from this point on lands in the file.
     installLaunchLogger();
+    bootMark("logger installed");
 
     // Dump every storage location at startup so users (and us) can
     // tell at a glance where the app is reading + writing — useful
@@ -274,6 +320,7 @@ int main(int argc, char *argv[])
 
     Settings settings;
     settings.setRemoteRenderingActive(g_remoteRendering);
+    bootMark("settings loaded (includes the keychain read)");
 
     // Start Sentry as early as possible so it can catch crashes that
     // happen during the rest of bootstrap. Internally it's a no-op
@@ -357,6 +404,8 @@ int main(int argc, char *argv[])
     };
     applyLanguage(settings.uiLanguage());
 
+    bootMark("translators installed");
+
     PaperController paperController;
     PdfSelectionModel pdfSelection(paperController.document());
     CursorUtil cursorUtil;
@@ -367,7 +416,12 @@ int main(int argc, char *argv[])
     ChatService chat(&settings, &paperController, &toc);
     MarkdownRenderer markdown;
     ChatContent chatContent(&markdown);
+    // Its own mark: this is the one that touches the filesystem. Restoring
+    // a folder that lives on a disconnected network share is a stall the
+    // app cannot avoid, only name.
+    bootMark("reading services constructed");
     Library library;
+    bootMark("folder pane restored");
     LayoutSettings layoutSettings;
     // Named arrangements of the panes. The presets themselves ride the
     // account payload as one JSON string; which one this screen is showing
@@ -407,6 +461,7 @@ int main(int argc, char *argv[])
     // AnalysisStore persists every generated reading as an ordinary synced
     // object, and the research profile steers every prompt so the answers
     // are about this project rather than papers in general.
+    bootMark("library, sync and file services constructed");
     AnalysisStore analysisStore(&libraryDb, &projectController, &syncEngine,
                                 &auth);
     ProjectProfileController projectProfile(&analysisStore);
@@ -536,6 +591,7 @@ int main(int argc, char *argv[])
                      &pdfSelection, syncSelectionSource);
     syncSelectionSource();
 
+    bootMark("analysis and task services constructed");
     QQmlApplicationEngine engine;
     // Everything that calls a model goes through the one queue. Registered
     // here, after the manager exists and before the pending work from the
@@ -611,12 +667,16 @@ int main(int argc, char *argv[])
     engine.addImportPath(QStringLiteral(":/"));
     qInfo().noquote() << "QML import paths:" << engine.importPathList();
 
+    bootMark("QML engine configured");
     engine.loadFromModule("AiReader", "Main");
     if (engine.rootObjects().isEmpty()) {
         qCritical() << "Failed to instantiate AiReader/Main — check the lines"
                        " above for QML errors.";
         return 1;
     }
+    bootMark("QML scene built");
+    // From here on the window exists, so a stall is a frozen window.
+    installStallWatchdog(&app);
 
     // Auto-check for updates on launch if the user opted in. Deferred
     // a few seconds so the network call doesn't compete with the
@@ -637,8 +697,10 @@ int main(int argc, char *argv[])
     // after upgrade) we fall back to PaperController's legacy
     // single-paper restore so existing users don't see a blank
     // window on first launch with the new build.
+    g_phase = "restoring the papers that were open";
     if (!tabs.restoreSession())
         paperController.restoreLast();
+    bootMark("open papers restored");
 
     // Restore + persist the main window's geometry and visibility.
     // Done in C++ (rather than via Qt.labs.settings in QML) because
@@ -713,5 +775,7 @@ int main(int argc, char *argv[])
         }
     }
 
+    bootMark("window geometry restored -- handing over to the event loop");
+    g_phase = "idle (nothing startup-related left)";
     return app.exec();
 }
