@@ -62,6 +62,14 @@ private:
     void push(const QString &projectId, int attempt, int batch,
               std::function<void()> then);
     void applyServerObject(const QString &projectId, const QJsonObject &o);
+    // Walk one pulled page into the database a slice at a time, handing the
+    // event loop back between slices. A page of artifacts is tens of
+    // megabytes of paragraphs and translations; applying it in one turn is
+    // a frozen window for as long as it takes, and none of it is urgent
+    // enough to be worth that. `done` gets the highest version applied.
+    void applyPage(const QString &projectId, const QJsonArray &objects,
+                   int from, qint64 applied,
+                   const std::function<void(qint64)> &done);
     void indexObject(const SyncObjectRow &row);
     void setSyncing(bool v);
     void setError(const QString &e);

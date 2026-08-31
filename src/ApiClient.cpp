@@ -1,4 +1,5 @@
 #include "ApiClient.h"
+#include "Stall.h"
 
 #include <QNetworkReply>
 #include <QNetworkRequest>
@@ -75,19 +76,33 @@ void ApiClient::send(const QByteArray &verb, const QString &path,
         const QByteArray bytes = reply->readAll();
         reply->deleteLater();
 
+        // Parsed once, and named while it happens: a sync page carrying a
+        // paper's paragraphs or its translations is megabytes of JSON, and
+        // this is the one part of handling a reply that cannot be broken
+        // into slices -- so when it is what froze the window, the log has
+        // to say so rather than leave it as "idle".
+        QJsonDocument doc;
+        {
+            Stall::Mark mark("reading a reply from the server");
+            doc = QJsonDocument::fromJson(bytes);
+        }
+        if (bytes.size() >= 512 * 1024)
+            qInfo("api: %s answered with %lld KB",
+                  qUtf8Printable(path), qint64(bytes.size()) / 1024);
+
         // One transparent refresh + retry on an expired access token.
         if (status == 401 && allowRefresh && m_refreshFn) {
             m_refreshFn([=](bool refreshed) {
                 if (refreshed)
                     send(verb, path, data, h, /*allowRefresh=*/false);
                 else if (h)
-                    h(false, status, QJsonDocument::fromJson(bytes));
+                    h(false, status, doc);
             });
             return;
         }
 
         const bool ok = status >= 200 && status < 300;
         if (h)
-            h(ok, status, QJsonDocument::fromJson(bytes));
+            h(ok, status, doc);
     });
 }

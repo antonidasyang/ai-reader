@@ -1,5 +1,8 @@
 #include "SyncEngine.h"
 #include "Stall.h"
+
+#include <QElapsedTimer>
+#include <QTimer>
 #include "ApiClient.h"
 #include "AuthController.h"
 #include "ProjectController.h"
@@ -17,8 +20,17 @@ constexpr int kMaxPushAttempts = 5;
 // Pull one page at a time. Sized for the biggest objects we sync (a paper's
 // blocks or translations, a few hundred KB compressed) rather than for
 // items, which are tiny.
-constexpr int kPullPageLimit = 200;
-constexpr int kMaxPullPages = 500;
+// Objects per pulled page. Small on purpose: an `item` is a few hundred
+// bytes, but a `paper_data` artifact is a whole paper's paragraphs or a
+// whole paper's translations, and two hundred of those is a response the
+// GUI thread cannot parse inside a frame. The parse is the one part of a
+// pull that cannot be sliced, so the page is what has to be.
+constexpr int kPullPageLimit = 25;
+constexpr int kMaxPullPages = 4000;
+// How long one slice of a page may hold the thread before it hands back.
+// About a frame: long enough that the walk is not all overhead, short
+// enough that nobody sees it.
+constexpr int kApplySliceMs = 12;
 // Outbox batching. The server's JSON body limit is well above this; the point
 // is to keep any single request modest and to make progress incrementally.
 constexpr int kPushMaxObjects = 100;
@@ -149,33 +161,64 @@ void SyncEngine::pullPage(const QString &projectId, int page,
             const QJsonObject root = doc.object();
             const QJsonArray objects =
                 root.value(QStringLiteral("objects")).toArray();
-            qint64 applied = since;
-            for (const QJsonValue &v : objects) {
-                const QJsonObject o = v.toObject();
-                applyServerObject(projectId, o);
-                applied = qMax(applied,
-                               o.value(QStringLiteral("version"))
-                                   .toString().toLongLong());
-            }
             m_serverPushLimit =
                 qint64(root.value(QStringLiteral("pushLimitBytes")).toDouble());
             const qint64 newVersion =
                 root.value(QStringLiteral("newVersion")).toString().toLongLong();
-
             // A server that paginates says so; an older one never sets the
             // flag and answers in a single page, exactly as before.
             const bool more = root.value(QStringLiteral("hasMore")).toBool();
-            if (more && applied > since && page + 1 < kMaxPullPages) {
-                // Park the cursor on what we actually applied, so an
-                // interrupted multi-page pull resumes instead of restarting.
-                m_db->setLastVersion(projectId, applied);
-                pullPage(projectId, page + 1, then);
-                return;
-            }
-            m_db->setLastVersion(projectId, newVersion);
-            if (then)
-                then();
+
+            applyPage(
+                projectId, objects, 0, since,
+                [this, projectId, page, since, then, more, newVersion](
+                    qint64 applied) {
+                    if (more && applied > since && page + 1 < kMaxPullPages) {
+                        // Park the cursor on what we actually applied, so an
+                        // interrupted multi-page pull resumes instead of
+                        // restarting.
+                        m_db->setLastVersion(projectId, applied);
+                        pullPage(projectId, page + 1, then);
+                        return;
+                    }
+                    m_db->setLastVersion(projectId, newVersion);
+                    if (then)
+                        then();
+                });
         });
+}
+
+void SyncEngine::applyPage(const QString &projectId, const QJsonArray &objects,
+                           int from, qint64 applied,
+                           const std::function<void(qint64)> &done)
+{
+    if (from >= objects.size()) {
+        done(applied);
+        return;
+    }
+    int i = from;
+    {
+        Stall::Mark mark("taking in what a sync brought");
+        QElapsedTimer slice;
+        slice.start();
+        while (i < objects.size()) {
+            const QJsonObject o = objects.at(i).toObject();
+            applyServerObject(projectId, o);
+            applied = qMax(applied,
+                           o.value(QStringLiteral("version"))
+                               .toString().toLongLong());
+            ++i;
+            if (slice.elapsed() >= kApplySliceMs)
+                break;
+        }
+    }
+    if (i >= objects.size()) {
+        done(applied);
+        return;
+    }
+    QTimer::singleShot(0, this, [this, projectId, objects, i, applied, done] {
+        applyPage(projectId, objects, i, applied, done);
+    });
 }
 
 void SyncEngine::applyServerObject(const QString &projectId,

@@ -44,12 +44,34 @@ Popup {
     // doesn't clip the button's own bevel/shadow.
     property int spotPadding: 8
 
+    // Bumped while the tour is up, purely to re-run the binding below.
+    //
+    // That binding maps a target's position through every one of its
+    // ancestors, and a binding only depends on what it reads: the target's
+    // own x/y/w/h. An ancestor moving -- the splitter settling, the toolbar
+    // scrolling, a pane appearing -- moves the target on screen without
+    // touching any of them, so the spotlight and the card stayed where the
+    // layout used to be. On a slow start that is the whole window: the tour
+    // opens against a layout that has not finished, nothing it depends on
+    // changes afterwards, and the card sits off-screen until something
+    // resizes the window and forces the binding to run again. Four
+    // re-evaluations a second of three mapToItem calls costs nothing and
+    // makes the coach mark follow whatever it is pointing at.
+    property int geomRev: 0
+    Timer {
+        running: root.opened
+        interval: 250
+        repeat: true
+        onTriggered: root.geomRev = root.geomRev + 1
+    }
+
     // Bounding rect that covers every visible target item in this
     // popup's coordinate system. Reading each item's x/y/w/h + the
     // popup's own size makes the binding re-evaluate on resize, pane
     // toggles, etc.
     readonly property rect targetRect: {
         const w = root.width, h = root.height
+        const rev = root.geomRev          // see the note above
         if (targetItems.length === 0)
             return Qt.rect(w / 2 - 1, h / 2 - 1, 2, 2)
         let minX = Infinity, minY = Infinity

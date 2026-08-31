@@ -1,5 +1,38 @@
 # AI Reader changelog
 
+## v1.3.17 — 2026-08-31
+
+### A sync no longer freezes the window while it lands
+- Per-frame timing from the field settled what this was: `polish` never
+  went over 1 ms and `blockedForSync` never over 32 ms, so neither laying
+  the scene out nor drawing it was slow. The GUI thread simply did not run
+  Qt Quick at all for 4.2 seconds — it was somewhere else. And the freezes
+  that came later were 30 seconds apart, which is the sync poll interval.
+- A pulled page asked for two hundred objects. That is the right number for
+  a library entry of a few hundred bytes and the wrong one for a
+  `paper_data` artifact, which is a whole paper's paragraphs or a whole
+  paper's translations — so a page could be tens of megabytes of JSON,
+  parsed and written to the database in a single turn of the event loop. A
+  page is twenty-five objects now.
+- What a page carries is applied a slice at a time, about a frame's worth
+  per turn, handing the event loop back in between. The sync takes the same
+  time overall; the window stays usable throughout it.
+- Parsing a reply is the one part that cannot be sliced, so it says so in
+  the log while it happens, and any reply over half a megabyte is logged
+  with its size.
+
+### The tour's spotlight follows what it is pointing at
+- The coach mark maps its target's position through every ancestor, but a
+  binding depends only on what it reads — the target's own geometry. An
+  ancestor moving (the splitter settling, the toolbar scrolling, a pane
+  appearing) moved the target on screen without touching any of that, so
+  the spotlight and its card stayed where the layout used to be.
+- On a slow start that meant the whole tour: it opened against a layout
+  that had not finished, nothing it depended on changed afterwards, and the
+  card sat off-screen until the user resized the window and forced the
+  binding to run again. It now re-checks four times a second while it is
+  open, which costs nothing and cannot go stale.
+
 ## v1.3.16 — 2026-08-31
 
 ### A freeze is logged with when it began, and how big the scene was
