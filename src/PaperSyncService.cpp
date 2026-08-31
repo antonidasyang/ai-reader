@@ -1,4 +1,5 @@
 #include "PaperSyncService.h"
+#include "Stall.h"
 
 #include "PayloadCodec.h"
 
@@ -203,6 +204,7 @@ void PaperSyncService::onTranslationCacheReady(const QString &paperId)
 
 void PaperSyncService::onProjectSynced()
 {
+    Stall::Mark mark("taking in what a sync brought");
     const QString paperId = m_paper ? m_paper->paperId() : QString();
     if (paperId.isEmpty())
         return;
@@ -368,6 +370,7 @@ void PaperSyncService::flushPending()
 
 bool PaperSyncService::publishKind(bool blocks)
 {
+    Stall::Mark mark("packing this paper's work to share");
     if (!sharing())
         return false;
     if (blocks) {

@@ -33,6 +33,7 @@
 #include "PaperController.h"
 #include "PdfSelectionModel.h"
 #include "Settings.h"
+#include "Stall.h"
 #include "StructureService.h"
 #include "Tabs.h"
 #include "TocService.h"
@@ -133,12 +134,11 @@ void writeLaunchLog(QtMsgType type, const QMessageLogContext &ctx,
 // during "restoring the session" and one during "syncing" are different
 // bugs.
 QElapsedTimer g_boot;
-const char *g_phase = "starting up";
 
 void bootMark(const char *phase)
 {
     qInfo("[boot +%5lld ms] %s", g_boot.elapsed(), phase);
-    g_phase = phase;
+    Stall::setPhase(phase);
 }
 
 // Below this a stall is a normal frame's worth of work; above it the user
@@ -157,7 +157,7 @@ void installStallWatchdog(QObject *owner)
         *last = now;
         if (gap >= kStallMs)
             qWarning("[t+%lld ms] the window was frozen for %lld ms during: %s",
-                     now, gap, g_phase);
+                     now, gap, Stall::phase());
     });
     timer->start();
 }
@@ -697,7 +697,7 @@ int main(int argc, char *argv[])
     // after upgrade) we fall back to PaperController's legacy
     // single-paper restore so existing users don't see a blank
     // window on first launch with the new build.
-    g_phase = "restoring the papers that were open";
+    Stall::setPhase("restoring the papers that were open");
     if (!tabs.restoreSession())
         paperController.restoreLast();
     bootMark("open papers restored");
@@ -776,6 +776,6 @@ int main(int argc, char *argv[])
     }
 
     bootMark("window geometry restored -- handing over to the event loop");
-    g_phase = "idle (nothing startup-related left)";
+    Stall::setPhase("idle");
     return app.exec();
 }

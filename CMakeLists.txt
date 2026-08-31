@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.3.13 LANGUAGES CXX)
+project(ai-reader VERSION 1.3.14 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -212,6 +212,8 @@ qt_add_executable(ai-reader
     src/Block.h
     src/BlockClusterer.h
     src/BlockClusterer.cpp
+    src/Stall.h
+    src/Stall.cpp
     src/PdfVisualLines.h
     src/PdfVisualLines.cpp
     src/BlockListModel.h

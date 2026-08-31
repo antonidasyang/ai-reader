@@ -1,4 +1,5 @@
 #include "AnalysisStore.h"
+#include "Stall.h"
 
 #include "AnalysisTypes.h"
 #include "AuthController.h"
@@ -164,6 +165,7 @@ QList<AnalysisRecord> AnalysisStore::paperAnalysesFor(const QString &paperId,
 
 void AnalysisStore::ensureOthersIndex() const
 {
+    Stall::Mark mark("indexing the project's interpretations");
     if (m_othersIndexValid)
         return;
     m_othersIndex.clear();

@@ -1,5 +1,21 @@
 # AI Reader changelog
 
+## v1.3.14 — 2026-08-31
+
+### A freeze in the log now says what the app was doing
+- v1.3.13 could tell you the window froze for four seconds. It could not
+  tell you what for: everything after startup was reported as "idle",
+  which is the one answer that is no use. The phases now cover the work
+  that happens while the app is running, not just while it is starting.
+- The paths that can hold the GUI thread name themselves while they are on
+  it: opening a paper, loading the PDF and its paragraphs, putting a
+  paper's translations back, loading the interpretation from the project,
+  indexing the project's interpretations, packing a paper's work to share,
+  a sync landing, and taking in what a sync brought.
+- A freeze that still reports "idle" is now information rather than a gap:
+  it means the time went into QML or into drawing, not into any of the
+  work above.
+
 ## v1.3.13 — 2026-08-31
 
 ### The log now says where a freeze went

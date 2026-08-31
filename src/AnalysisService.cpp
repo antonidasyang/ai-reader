@@ -1,4 +1,5 @@
 #include "AnalysisService.h"
+#include "Stall.h"
 
 #include "AnalysisJob.h"
 #include "AnalysisPrompts.h"
@@ -225,6 +226,7 @@ void AnalysisService::clearQuick()
 
 void AnalysisService::reloadFromStore()
 {
+    Stall::Mark mark("loading the interpretation from the project");
     const QString id = paperId();
     if (id.isEmpty()) {
         if (!m_quick.isEmpty())

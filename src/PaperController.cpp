@@ -1,4 +1,5 @@
 #include "PaperController.h"
+#include "Stall.h"
 #include "BlockClusterer.h"
 
 #include <QCryptographicHash>
@@ -86,6 +87,7 @@ QString PaperController::fileName() const
 
 void PaperController::openPdf(const QUrl &url)
 {
+    Stall::Mark mark("opening a paper");
     // Accept a bare filesystem path as well as a real URL. QUrl parses
     // "/a/b.pdf" (and Windows' "C:/a/b.pdf", whose drive letter becomes
     // a scheme) as non-local, which silently degrades everything
@@ -183,6 +185,7 @@ void PaperController::setCurrentSelection(const QString &text, int page)
 
 void PaperController::reload()
 {
+    Stall::Mark mark("loading the PDF and its paragraphs");
     if (m_source.isEmpty()) {
         setStatus(Empty);
         return;

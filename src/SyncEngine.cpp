@@ -1,4 +1,5 @@
 #include "SyncEngine.h"
+#include "Stall.h"
 #include "ApiClient.h"
 #include "AuthController.h"
 #include "ProjectController.h"
@@ -116,6 +117,9 @@ void SyncEngine::syncProject(const QString &projectId)
     pull(projectId, [this, projectId] {
         push(projectId, 0, 0, [this, projectId] {
             setSyncing(false);
+            // Everything that reacts to a sync runs inside this emission,
+            // on the GUI thread; the watchdog should say so.
+            Stall::Mark mark("a sync landing");
             emit projectSynced(projectId);
         });
     });

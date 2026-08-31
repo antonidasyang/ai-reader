@@ -1,4 +1,5 @@
 #include "TranslationService.h"
+#include "Stall.h"
 
 #include "Block.h"
 #include "BlockListModel.h"
@@ -312,6 +313,7 @@ void TranslationService::refreshFromCache()
 
 void TranslationService::rehydrateFromCache()
 {
+    Stall::Mark mark("putting this paper's translations back");
     if (!m_settings || !m_model) return;
     if (m_cache.paperId().isEmpty()) return;
 
