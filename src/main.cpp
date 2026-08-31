@@ -42,6 +42,7 @@
 
 #include <QDateTime>
 #include <QElapsedTimer>
+#include <QLoggingCategory>
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
@@ -144,6 +145,18 @@ void bootMark(const char *phase)
 // Below this a stall is a normal frame's worth of work; above it the user
 // sees the window stop responding.
 constexpr int kStallMs = 300;
+// A stall this long is not a hiccup, it is the bug. When one happens, turn
+// on Qt's own per-frame timing for a while so the *next* one says where the
+// time went: `polish` is laying the scene out on this thread, and
+// `blockedForSync` is waiting on the renderer. Nothing else separates
+// "the layout is too expensive" from "the scene is too big to draw", and
+// the two lead to opposite fixes.
+//
+// Off until then, because it is a line per frame. Freezes come in runs --
+// the field logs show four in the first twelve seconds -- so arming on the
+// first one still catches the rest.
+constexpr int kFrameTimingTriggerMs = 1000;
+constexpr int kFrameTimingWindowMs  = 15000;
 
 void installStallWatchdog(QObject *owner)
 {
@@ -151,13 +164,34 @@ void installStallWatchdog(QObject *owner)
     // 20 wake-ups a second costs nothing next to what it catches.
     timer->setInterval(50);
     auto *last = new qint64(g_boot.elapsed());
-    QObject::connect(timer, &QTimer::timeout, owner, [last]() {
+    auto *armed = new bool(false);
+    QObject::connect(timer, &QTimer::timeout, owner, [last, armed, owner]() {
         const qint64 now = g_boot.elapsed();
         const qint64 gap = now - *last;
         *last = now;
-        if (gap >= kStallMs)
-            qWarning("[t+%lld ms] the window was frozen for %lld ms during: %s",
-                     now, gap, Stall::phase());
+        if (gap < kStallMs)
+            return;
+        qWarning("[t+%lld ms] the window was frozen for %lld ms during: %s",
+                 now, gap, Stall::phase());
+        if (*armed || gap < kFrameTimingTriggerMs)
+            return;
+        // An explicit QT_LOGGING_RULES belongs to whoever set it; do not
+        // overwrite someone's deliberate configuration to chase this.
+        if (qEnvironmentVariableIsSet("QT_LOGGING_RULES"))
+            return;
+        *armed = true;
+        qWarning("[t+%lld ms] ...that was a long one. Per-frame timing is on "
+                 "for the next %d s: `polish` is this thread laying the scene "
+                 "out, `blockedForSync` is it waiting on the renderer.",
+                 now, kFrameTimingWindowMs / 1000);
+        QLoggingCategory::setFilterRules(
+            QStringLiteral("qt.scenegraph.time.renderloop=true"));
+        QTimer::singleShot(kFrameTimingWindowMs, owner, [] {
+            QLoggingCategory::setFilterRules(
+                QStringLiteral("qt.scenegraph.time.renderloop=false"));
+            qWarning("[t+%lld ms] per-frame timing off again.",
+                     g_boot.elapsed());
+        });
     });
     timer->start();
 }

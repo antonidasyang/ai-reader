@@ -1,5 +1,21 @@
 # AI Reader changelog
 
+## v1.3.15 — 2026-08-31
+
+### A long freeze now turns on per-frame timing by itself
+- The field logs said the window froze for four seconds and that none of
+  the expensive C++ paths were on the thread at the time — so the time was
+  going into QML or into drawing, and nothing in the log could say which.
+- After a freeze of a second or more, the app now switches Qt's own
+  per-frame timing on for fifteen seconds. Each frame then records
+  `polish` — this thread laying the scene out — and `blockedForSync`,
+  which is it waiting on the renderer. Those two lead to opposite fixes,
+  and there was no way to tell them apart from outside.
+- It stays off until then, because it costs a line per frame, and it turns
+  itself off afterwards. Freezes come in runs, so arming on the first one
+  still catches the rest. An explicit QT_LOGGING_RULES is left alone —
+  that belongs to whoever set it.
+
 ## v1.3.14 — 2026-08-31
 
 ### A freeze in the log now says what the app was doing
