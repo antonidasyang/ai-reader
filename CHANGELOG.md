@@ -1,5 +1,18 @@
 # AI Reader changelog
 
+## v1.3.16 — 2026-08-31
+
+### A freeze is logged with when it began, and how big the scene was
+- The line now carries the moment the freeze started as well as the moment
+  it ended. "Frozen for 8374 ms" reported at t+22028 began at t+13654, and
+  matching a freeze to the frames inside it needs both ends.
+- When per-frame timing arms, the window's size and the number of items it
+  is carrying go in beside it. Laying a scene out and handing it to the
+  renderer are both walks over every item, so when the question is why a
+  frame took seconds, the size of the thing being walked is the first
+  number worth having — and it is the one that tells a slow machine apart
+  from a scene that got too big.
+
 ## v1.3.15 — 2026-08-31
 
 ### A long freeze now turns on per-frame timing by itself

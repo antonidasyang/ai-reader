@@ -59,6 +59,7 @@
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickStyle>
+#include <QQuickItem>
 #include <QQuickWindow>
 #include <QSettings>
 #include <QStandardPaths>
@@ -158,21 +159,36 @@ constexpr int kStallMs = 300;
 constexpr int kFrameTimingTriggerMs = 1000;
 constexpr int kFrameTimingWindowMs  = 15000;
 
-void installStallWatchdog(QObject *owner)
+// How many items the window is carrying. Laying out and syncing a scene is
+// walked per item, so when the question is "why does a frame take seconds"
+// the size of the thing being walked is the first number worth having.
+int countItems(QQuickItem *item)
+{
+    if (!item)
+        return 0;
+    int n = 1;
+    const auto kids = item->childItems();
+    for (QQuickItem *c : kids)
+        n += countItems(c);
+    return n;
+}
+
+void installStallWatchdog(QQuickWindow *win, QObject *owner)
 {
     auto *timer = new QTimer(owner);
     // 20 wake-ups a second costs nothing next to what it catches.
     timer->setInterval(50);
     auto *last = new qint64(g_boot.elapsed());
     auto *armed = new bool(false);
-    QObject::connect(timer, &QTimer::timeout, owner, [last, armed, owner]() {
+    QObject::connect(timer, &QTimer::timeout, owner, [last, armed, owner, win]() {
         const qint64 now = g_boot.elapsed();
         const qint64 gap = now - *last;
         *last = now;
         if (gap < kStallMs)
             return;
-        qWarning("[t+%lld ms] the window was frozen for %lld ms during: %s",
-                 now, gap, Stall::phase());
+        qWarning("[t+%lld ms] the window was frozen for %lld ms (it started at "
+                 "t+%lld ms) during: %s",
+                 now, gap, now - gap, Stall::phase());
         if (*armed || gap < kFrameTimingTriggerMs)
             return;
         // An explicit QT_LOGGING_RULES belongs to whoever set it; do not
@@ -180,6 +196,10 @@ void installStallWatchdog(QObject *owner)
         if (qEnvironmentVariableIsSet("QT_LOGGING_RULES"))
             return;
         *armed = true;
+        if (win)
+            qWarning("[t+%lld ms] the window is %dx%d and is carrying %d items.",
+                     now, int(win->width()), int(win->height()),
+                     countItems(win->contentItem()));
         qWarning("[t+%lld ms] ...that was a long one. Per-frame timing is on "
                  "for the next %d s: `polish` is this thread laying the scene "
                  "out, `blockedForSync` is it waiting on the renderer.",
@@ -710,7 +730,8 @@ int main(int argc, char *argv[])
     }
     bootMark("QML scene built");
     // From here on the window exists, so a stall is a frozen window.
-    installStallWatchdog(&app);
+    installStallWatchdog(
+        qobject_cast<QQuickWindow *>(engine.rootObjects().value(0)), &app);
 
     // Auto-check for updates on launch if the user opted in. Deferred
     // a few seconds so the network call doesn't compete with the
