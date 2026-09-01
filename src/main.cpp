@@ -173,18 +173,17 @@ public:
         if (m_depth > 0 || QThread::currentThread() != thread())
             return QGuiApplication::notify(receiver, event);
 
-        // All pointers into static data, and the parent is worth having: a
-        // bare QObject receiver says nothing on its own, and "…to QObject
-        // (a child of QQmlEngine)" usually says everything. The object name
-        // is an implicitly shared copy -- an atomic bump, not an allocation
-        // -- and it is taken now because a receiver may delete itself
-        // during the call.
+        // Pointers into static data, nothing built: this runs for every
+        // event the thread delivers. The parent is worth the two extra
+        // dereferences -- a bare QObject receiver says nothing on its own,
+        // and "…to QObject (a child of QQmlEngine)" usually says
+        // everything. They are read now rather than after, because a
+        // receiver is allowed to delete itself during the call.
         const char *cls =
             receiver ? receiver->metaObject()->className() : "(none)";
         const QObject *parent = receiver ? receiver->parent() : nullptr;
         const char *parentCls =
             parent ? parent->metaObject()->className() : "nothing";
-        const QString name = receiver ? receiver->objectName() : QString();
         const int type = int(event->type());
 
         ++m_depth;
@@ -216,11 +215,8 @@ public:
             where += "\n      " + QByteArray::number(qMax(qint64(0), ms - accounted))
                      + " ms  (nothing marked -- QML, the scene graph, or Qt itself)";
             qWarning("[t+%lld ms] %lld ms went into one %s delivered to "
-                     "%s%s%s%s (a child of %s):%s",
+                     "%s (a child of %s):%s",
                      g_boot.elapsed(), ms, evName ? evName : "event", cls,
-                     name.isEmpty() ? "" : " \"",
-                     name.isEmpty() ? "" : qUtf8Printable(name),
-                     name.isEmpty() ? "" : "\"",
                      parentCls, where.constData());
         }
         return handled;
@@ -270,8 +266,9 @@ int countItems(QQuickItem *item)
 void installStallWatchdog(QQuickWindow *win, QObject *owner)
 {
     auto *timer = new QTimer(owner);
-    // 20 wake-ups a second costs nothing next to what it catches.
-    timer->setInterval(50);
+    // Ten wake-ups a second: coarse enough to leave a laptop alone, fine
+    // enough that anything worth calling a freeze spans several ticks.
+    timer->setInterval(100);
     auto *last = new qint64(g_boot.elapsed());
     auto *lastEvents = new quint64(g_events);
     auto *armed = new bool(false);

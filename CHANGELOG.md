@@ -1,5 +1,23 @@
 # AI Reader changelog
 
+## v1.3.25 — 2026-09-01
+
+### The freeze instrumentation costs nothing to leave on
+- Three things were being paid for on every operation rather than only when
+  something was slow, and none of them earned it. The receiver's object name
+  was read for every event the thread delivered — a string built hundreds of
+  thousands of times a session, and not once did it identify anything the
+  class name and its parent's had not. A phase marker allocated a name to
+  file its time under even when it had taken no time at all, which is almost
+  always. And the watchdog woke twenty times a second where ten is plenty to
+  notice a freeze worth reporting.
+- What stays, stays on: the startup phases, the freeze watchdog, the marked
+  steps, the event timer, the per-frame timing that arms itself after a long
+  freeze, and the lines a sync and a download write about themselves. Between
+  them a single launch now names anything that holds the window for more than
+  a third of a second, and says where its time went. That is the difference
+  between "it hangs sometimes" and a fix.
+
 ## v1.3.24 — 2026-09-01
 
 ### Switching papers stops rebuilding the same things twice

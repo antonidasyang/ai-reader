@@ -65,7 +65,11 @@ Mark::~Mark()
     // Exclusive: whatever the marks nested inside this one already claimed
     // is theirs, not ours.
     const qint64 mine = qMax(qint64(0), lived - m_childMs);
-    g_totals[QByteArray(m_what)] += mine;
+    // Almost every Mark costs nothing, and a breakdown line for 0 ms is not
+    // worth a name to hash it under. Marks sit on paths that run thousands
+    // of times a second; this is what keeps them free when they are fast.
+    if (mine > 0)
+        g_totals[QByteArray(m_what)] += mine;
     if (m_parent)
         m_parent->m_childMs += lived;
     g_innermost = m_parent;
