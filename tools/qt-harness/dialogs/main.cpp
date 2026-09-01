@@ -361,6 +361,89 @@ int main(int argc, char **argv)
     auto *win = qobject_cast<QQuickWindow *>(winObj);
     pump(300);
 
+    // A library with no papers builds no row delegate, and the row is where
+    // nearly all of LibraryPane now lives -- and CompareDialog now picks its
+    // papers from the same library, so it is seeded before the dialogs too: the state dot, the star, the
+    // relevance and advice chips, the close-reading chip, the one-liner and
+    // the per-paper menu. Seeded for the same reason the layout presets and
+    // the task rows above are -- an empty list would exercise none of it.
+    // Three papers, picked for the branches they force open: one untouched,
+    // one interpreted and starred, one interpreted, close-read and set
+    // aside.
+    {
+        // The store first, the sign-in second: signing in is what opens the
+        // session and re-reads the cached project list, so a project written
+        // afterwards would be there on disk with the controller still
+        // holding an empty list -- no role, no canWrite, and every write
+        // below silently refused.
+        ProjectRow proj;
+        proj.id = QStringLiteral("harness-project");
+        proj.name = QStringLiteral("Harness project");
+        proj.role = QStringLiteral("owner");
+        libraryDb.replaceProjects(QList<ProjectRow>{proj});
+        libraryDb.claimProjects(QStringList{proj.id},
+                                QStringLiteral("harness-user"));
+
+        qputenv("TEST_USER_ID", "harness-user");
+        qputenv("TEST_USER_EMAIL", "harness@example.invalid");
+        auth.startCasLogin();
+        projectController.selectProject(proj.id);
+
+        const QString untouched = libraryModel.addPaper(
+            QStringLiteral("A paper nobody has read"),
+            QStringLiteral("paper-untouched"), QStringLiteral("/nowhere/a.pdf"));
+        const QString starred = libraryModel.addPaper(
+            QStringLiteral("A paper marked for a close read"),
+            QStringLiteral("paper-starred"), QStringLiteral("/nowhere/b.pdf"));
+        const QString aside = libraryModel.addPaper(
+            QStringLiteral("A paper already close-read, then set aside"),
+            QStringLiteral("paper-aside"), QStringLiteral("/nowhere/c.pdf"));
+
+        const QJsonObject digest{
+            {QStringLiteral("oneLiner"),
+             QStringLiteral("One line about what this paper is for.")},
+            {QStringLiteral("relevance"),
+             QJsonObject{{QStringLiteral("level"), QStringLiteral("high")}}},
+            {QStringLiteral("advice"),
+             QJsonObject{{QStringLiteral("code"), QStringLiteral("read_full")}}}};
+        analysisStore.putPaperAnalysis(
+            QStringLiteral("paper-starred"), Analysis::KindQuick, digest,
+            QStringLiteral("harness-model"), QStringLiteral("hash-1"),
+            Analysis::StatusOk, QString(), QStringLiteral("Starred"));
+        analysisStore.putPaperAnalysis(
+            QStringLiteral("paper-aside"), Analysis::KindQuick, digest,
+            QStringLiteral("harness-model"), QStringLiteral("hash-2"),
+            Analysis::StatusOk, QString(), QStringLiteral("Aside"));
+
+        QJsonObject modules;
+        for (const QString &id : Analysis::deepModules())
+            modules.insert(id, QJsonObject{{QStringLiteral("claims"),
+                                            QJsonArray{}}});
+        analysisStore.putPaperAnalysis(
+            QStringLiteral("paper-aside"), Analysis::KindDeep,
+            QJsonObject{{QStringLiteral("modules"), modules}},
+            QStringLiteral("harness-model"), QStringLiteral("hash-3"),
+            Analysis::StatusOk, QString(), QStringLiteral("Aside"));
+
+        analysisList.setToRead(starred, true);
+        analysisList.setExcluded(aside, true);
+        analysisList.setHideExcluded(false);
+        analysisList.reload();
+        check(QStringLiteral("the library pane has rows to draw before any of "
+                             "it is built"),
+              analysisList.rowCount() == 3 && analysisList.toReadCount() == 1
+                  && analysisList.deepDoneCount() == 1,
+              QStringLiteral("rows=%1 starred=%2 interpreted=%3 close-read=%4 "
+                             "canWrite=%5 project=%6 item=%7")
+                  .arg(analysisList.rowCount())
+                  .arg(analysisList.toReadCount())
+                  .arg(analysisList.interpretedCount())
+                  .arg(analysisList.deepDoneCount())
+                  .arg(analysisStore.canWrite())
+                  .arg(projectController.currentId())
+                  .arg(untouched));
+    }
+
     const QStringList dialogs = {
         QStringLiteral("SettingsDialog"),   QStringLiteral("PromptsDialog"),
         QStringLiteral("PasswordDialog"),   QStringLiteral("MetadataDialog"),
@@ -513,88 +596,6 @@ int main(int argc, char **argv)
         taskManager.finish(c, false, QStringLiteral("the gateway returned 502"));
     }
     pump(120);
-
-    // A library with no papers builds no row delegate, and the row is where
-    // nearly all of LibraryPane now lives: the state dot, the star, the
-    // relevance and advice chips, the close-reading chip, the one-liner and
-    // the per-paper menu. Seeded for the same reason the layout presets and
-    // the task rows above are -- an empty list would exercise none of it.
-    // Three papers, picked for the branches they force open: one untouched,
-    // one interpreted and starred, one interpreted, close-read and set
-    // aside.
-    {
-        // The store first, the sign-in second: signing in is what opens the
-        // session and re-reads the cached project list, so a project written
-        // afterwards would be there on disk with the controller still
-        // holding an empty list -- no role, no canWrite, and every write
-        // below silently refused.
-        ProjectRow proj;
-        proj.id = QStringLiteral("harness-project");
-        proj.name = QStringLiteral("Harness project");
-        proj.role = QStringLiteral("owner");
-        libraryDb.replaceProjects(QList<ProjectRow>{proj});
-        libraryDb.claimProjects(QStringList{proj.id},
-                                QStringLiteral("harness-user"));
-
-        qputenv("TEST_USER_ID", "harness-user");
-        qputenv("TEST_USER_EMAIL", "harness@example.invalid");
-        auth.startCasLogin();
-        projectController.selectProject(proj.id);
-
-        const QString untouched = libraryModel.addPaper(
-            QStringLiteral("A paper nobody has read"),
-            QStringLiteral("paper-untouched"), QStringLiteral("/nowhere/a.pdf"));
-        const QString starred = libraryModel.addPaper(
-            QStringLiteral("A paper marked for a close read"),
-            QStringLiteral("paper-starred"), QStringLiteral("/nowhere/b.pdf"));
-        const QString aside = libraryModel.addPaper(
-            QStringLiteral("A paper already close-read, then set aside"),
-            QStringLiteral("paper-aside"), QStringLiteral("/nowhere/c.pdf"));
-
-        const QJsonObject digest{
-            {QStringLiteral("oneLiner"),
-             QStringLiteral("One line about what this paper is for.")},
-            {QStringLiteral("relevance"),
-             QJsonObject{{QStringLiteral("level"), QStringLiteral("high")}}},
-            {QStringLiteral("advice"),
-             QJsonObject{{QStringLiteral("code"), QStringLiteral("read_full")}}}};
-        analysisStore.putPaperAnalysis(
-            QStringLiteral("paper-starred"), Analysis::KindQuick, digest,
-            QStringLiteral("harness-model"), QStringLiteral("hash-1"),
-            Analysis::StatusOk, QString(), QStringLiteral("Starred"));
-        analysisStore.putPaperAnalysis(
-            QStringLiteral("paper-aside"), Analysis::KindQuick, digest,
-            QStringLiteral("harness-model"), QStringLiteral("hash-2"),
-            Analysis::StatusOk, QString(), QStringLiteral("Aside"));
-
-        QJsonObject modules;
-        for (const QString &id : Analysis::deepModules())
-            modules.insert(id, QJsonObject{{QStringLiteral("claims"),
-                                            QJsonArray{}}});
-        analysisStore.putPaperAnalysis(
-            QStringLiteral("paper-aside"), Analysis::KindDeep,
-            QJsonObject{{QStringLiteral("modules"), modules}},
-            QStringLiteral("harness-model"), QStringLiteral("hash-3"),
-            Analysis::StatusOk, QString(), QStringLiteral("Aside"));
-
-        analysisList.setToRead(starred, true);
-        analysisList.setExcluded(aside, true);
-        analysisList.setHideExcluded(false);
-        analysisList.reload();
-        check(QStringLiteral("the library pane has rows to draw before any of "
-                             "it is built"),
-              analysisList.rowCount() == 3 && analysisList.toReadCount() == 1
-                  && analysisList.deepDoneCount() == 1,
-              QStringLiteral("rows=%1 starred=%2 interpreted=%3 close-read=%4 "
-                             "canWrite=%5 project=%6 item=%7")
-                  .arg(analysisList.rowCount())
-                  .arg(analysisList.toReadCount())
-                  .arg(analysisList.interpretedCount())
-                  .arg(analysisList.deepDoneCount())
-                  .arg(analysisStore.canWrite())
-                  .arg(projectController.currentId())
-                  .arg(untouched));
-    }
 
     // Panes are not dialogs -- they are docked into the split view rather
     // than opened -- but they are built out of the same shared controls and

@@ -16,10 +16,17 @@ ApplicationWindow {
     // after, so the first frame is already the right shape.
     visible: false
     // Every toolbar button: the icon carries the meaning, the tooltip
-    // carries the words. `tip` rather than ToolTip.text so each button is
-    // one line at the call site.
+    // carries the name. `name` is the button's name -- one or two words,
+    // the first line of the tooltip -- and `tip`, when there is one, a
+    // short clause under it. Neither is a sentence: a tooltip is read in
+    // the half second before the click, not studied. They used to be
+    // sentences, and a toolbar of twenty sentences is a toolbar nobody
+    // reads.
     component ToolIcon: ToolButton {
+        property string name: ""
         property string tip: ""
+        readonly property string label: tip.length > 0 ? name + "\n" + tip
+                                                       : name
         // A button that only means something inside a cloud project. It
         // stays on the toolbar when there is no project rather than
         // disappearing -- a control that vanishes reads as a feature that
@@ -38,9 +45,9 @@ ApplicationWindow {
         ToolTip.delay: 400
         ToolTip.text: blocked
                       ? (auth.authenticated
-                         ? qsTr("Choose a project first — then: %1").arg(tip)
-                         : qsTr("Sign in first — then: %1").arg(tip))
-                      : tip
+                         ? qsTr("%1 — choose a project first").arg(name)
+                         : qsTr("%1 — sign in first").arg(name))
+                      : label
     }
 
     // Everything project-wide -- members, the profile, batch interpretation,
@@ -655,7 +662,9 @@ ApplicationWindow {
     // objectNames, which is what a saved layout stores; this file is the
     // only one that knows both halves, so the map lives here and is handed
     // to whoever needs it. A pane missing from the map (a layout saved by
-    // a newer build) shows its id rather than disappearing.
+    // a newer build) shows its id rather than disappearing. The toolbar's
+    // pane buttons take their names from here too, so a pane is called one
+    // thing on the button and the same thing in the layout menu.
     readonly property var paneLabels: ({
         "folder":   qsTr("Folder"),
         "library":  qsTr("Library"),
@@ -1026,20 +1035,20 @@ ApplicationWindow {
                 ToolIcon {
                     id: openBtn
                     icon.source: "qrc:/icons/open.svg"
-                    tip: qsTr("Open a PDF…")
+                    name: qsTr("Open PDF")
                     onClicked: fileDialog.open()
                 }
                 ToolIcon {
                     id: openFolderBtn
                     icon.source: "qrc:/icons/open-folder.svg"
-                    tip: qsTr("Open a folder of PDFs…")
+                    name: qsTr("Open folder")
                     onClicked: openFolderDialog.open()
                 }
                 ToolIcon {
                     icon.source: "qrc:/icons/export.svg"
                     enabled: paperController.status === PaperController.Ready
-                    tip: qsTr("Export text: the raw PDF text, per-line boxes and "
-                              + "detected paragraphs, to a .txt file")
+                    name: qsTr("Export text")
+                    tip: qsTr("Raw text, line boxes and paragraphs, as .txt")
                     onClicked: exportTextDialog.open()
                 }
 
@@ -1049,7 +1058,7 @@ ApplicationWindow {
                 ToolIcon {
                     icon.source: "qrc:/icons/zoom-out.svg"
                     enabled: pdfDoc.status === PdfDocument.Ready
-                    tip: qsTr("Zoom out")
+                    name: qsTr("Zoom out")
                     onClicked: window.zoomOut()
                 }
                 ToolButton {
@@ -1068,13 +1077,13 @@ ApplicationWindow {
                 ToolIcon {
                     icon.source: "qrc:/icons/zoom-in.svg"
                     enabled: pdfDoc.status === PdfDocument.Ready
-                    tip: qsTr("Zoom in")
+                    name: qsTr("Zoom in")
                     onClicked: window.zoomIn()
                 }
                 ToolIcon {
                     icon.source: "qrc:/icons/fit-width.svg"
                     enabled: pdfDoc.status === PdfDocument.Ready
-                    tip: qsTr("Fit the page to the window width")
+                    name: qsTr("Fit width")
                     onClicked: window.fitWidth()
                 }
                 ToolIcon {
@@ -1086,7 +1095,8 @@ ApplicationWindow {
                     // following the pane the moment anything else showed it.
                     Binding on checked { value: window.panMode; restoreMode: Binding.RestoreNone }
                     enabled: pdfDoc.status === PdfDocument.Ready
-                    tip: qsTr("Hand tool: drag to move the page. Off = select text.")
+                    name: qsTr("Hand tool")
+                    tip: qsTr("Drag to move the page; off = select text")
                     onClicked: window.panMode = !window.panMode
                 }
 
@@ -1102,11 +1112,10 @@ ApplicationWindow {
                     icon.source: "qrc:/icons/segment.svg"
                     enabled: paperController.status === PaperController.Ready
                              && !paperController.extracting
-                    tip: _firstRun
-                        ? qsTr("Split this paper into paragraphs (needed for "
-                               + "translation, the outline and chat)")
-                        : qsTr("Split it into paragraphs again, discarding the "
-                               + "current division")
+                    name: _firstRun ? qsTr("Split into paragraphs")
+                                    : qsTr("Split again")
+                    tip: _firstRun ? qsTr("Needed for translation, outline and chat")
+                                   : qsTr("Discards the current division")
                     onClicked: resegmentDialog.ask()
                 }
                 ToolIcon {
@@ -1117,8 +1126,9 @@ ApplicationWindow {
                     display: translation.busy ? AbstractButton.TextBesideIcon
                                               : AbstractButton.IconOnly
                     text: translation.busy ? qsTr("Stop") : ""
-                    tip: translation.busy ? qsTr("Stop translating")
-                                          : qsTr("Translate every paragraph")
+                    name: translation.busy ? qsTr("Stop translating")
+                                           : qsTr("Translate")
+                    tip: translation.busy ? "" : qsTr("Every paragraph")
                     onClicked: {
                         if (translation.busy) {
                             translation.cancel()
@@ -1134,7 +1144,8 @@ ApplicationWindow {
                     visible: !translation.busy && translation.failedCount > 0
                     display: AbstractButton.TextBesideIcon
                     text: translation.failedCount
-                    tip: qsTr("Translate the paragraphs that failed")
+                    name: qsTr("Retry translation")
+                    tip: qsTr("Only the paragraphs that failed")
                     onClicked: translation.retryFailed()
                 }
                 ToolIcon {
@@ -1143,8 +1154,8 @@ ApplicationWindow {
                              && settings.isConfigured
                              && vision.status !== VisionService.Generating
                              && vision.status !== VisionService.Rendering
-                    tip: qsTr("Read this page with vision: figures, tables and "
-                              + "equations as the model sees them")
+                    name: qsTr("Read with vision")
+                    tip: qsTr("Figures, tables and equations on this page")
                     onClicked: {
                         visionDialog.open()
                         vision.readPage(pdfView.currentPage)
@@ -1153,7 +1164,8 @@ ApplicationWindow {
                 ToolIcon {
                     icon.source: "qrc:/icons/quote.svg"
                     visible: paperController.currentSelection.length > 0
-                    tip: qsTr("Quote the highlighted text into the chat")
+                    name: qsTr("Quote to chat")
+                    tip: qsTr("The highlighted text")
                     onClicked: {
                         chatPane.visible = true
                         chatPane.prefillInput(paperController.currentSelection,
@@ -1172,7 +1184,8 @@ ApplicationWindow {
                     // plain binding would not survive that -- the button would stop
                     // following the pane the moment anything else showed it.
                     Binding on checked { value: folderPane.visible; restoreMode: Binding.RestoreNone }
-                    tip: qsTr("Folder pane: browse PDFs on this machine")
+                    name: window.paneLabels.folder
+                    tip: qsTr("PDFs on this machine")
                     onClicked: folderPane.visible = !folderPane.visible
                 }
                 ToolIcon {
@@ -1194,13 +1207,12 @@ ApplicationWindow {
                           ? (batchAnalysis.done + batchAnalysis.failed
                              + batchAnalysis.skipped) + "/" + batchAnalysis.total
                           : ""
+                    name: window.paneLabels.library
                     tip: batchAnalysis.busy
-                         ? qsTr("Still %1 — click to watch or stop")
-                           .arg(batchAnalysis.deepMode ? qsTr("close-reading")
-                                                       : qsTr("interpreting"))
-                         : qsTr("Library pane: the papers in this project, what "
-                                + "has been made of each, and the batch that "
-                                + "interprets or close-reads them")
+                         ? qsTr("%1 — click to watch or stop")
+                           .arg(batchAnalysis.deepMode ? qsTr("Close-reading")
+                                                       : qsTr("Interpreting"))
+                         : qsTr("This project's papers")
                     onClicked: libraryPane.visible = !libraryPane.visible
                 }
                 ToolIcon {
@@ -1211,8 +1223,8 @@ ApplicationWindow {
                     // plain binding would not survive that -- the button would stop
                     // following the pane the moment anything else showed it.
                     Binding on checked { value: blockList.visible; restoreMode: Binding.RestoreNone }
-                    tip: qsTr("Paragraph pane: the paper's text, its translation, "
-                              + "and the per-paragraph actions")
+                    name: window.paneLabels.blocks
+                    tip: qsTr("Text and translation, paragraph by paragraph")
                     onClicked: blockList.visible = !blockList.visible
                 }
                 ToolIcon {
@@ -1223,7 +1235,8 @@ ApplicationWindow {
                     // plain binding would not survive that -- the button would stop
                     // following the pane the moment anything else showed it.
                     Binding on checked { value: tocSidebar.visible; restoreMode: Binding.RestoreNone }
-                    tip: qsTr("Outline pane: the paper's sections")
+                    name: window.paneLabels.toc
+                    tip: qsTr("The paper's sections")
                     onClicked: tocSidebar.visible = !tocSidebar.visible
                 }
                 ToolIcon {
@@ -1233,9 +1246,8 @@ ApplicationWindow {
                     // plain binding would not survive that -- the button would stop
                     // following the pane the moment anything else showed it.
                     Binding on checked { value: analysisPane.visible; restoreMode: Binding.RestoreNone }
-                    tip: qsTr("Interpretation pane: relevance to this project, what "
-                              + "to read first, and every statement traced back to "
-                              + "the paper")
+                    name: window.paneLabels.analysis
+                    tip: qsTr("Quick read, close read and notes")
                     onClicked: analysisPane.visible = !analysisPane.visible
                 }
                 ToolIcon {
@@ -1246,7 +1258,8 @@ ApplicationWindow {
                     // plain binding would not survive that -- the button would stop
                     // following the pane the moment anything else showed it.
                     Binding on checked { value: chatPane.visible; restoreMode: Binding.RestoreNone }
-                    tip: qsTr("Chat pane: ask about this paper")
+                    name: window.paneLabels.chat
+                    tip: qsTr("Ask about this paper")
                     onClicked: chatPane.visible = !chatPane.visible
                 }
                 ToolIcon {
@@ -1262,9 +1275,8 @@ ApplicationWindow {
                     // plain binding would not survive that -- the button would stop
                     // following the pane the moment anything else showed it.
                     Binding on checked { value: researchPane.visible; restoreMode: Binding.RestoreNone }
-                    tip: qsTr("Research pane: what this whole project adds up "
-                              + "to — categories, the research map, consensus "
-                              + "and conflict, coverage, and what to do next")
+                    name: window.paneLabels.research
+                    tip: qsTr("What the whole project adds up to")
                     onClicked: {
                         if (blocked) { window.resolveProjectBlock(); return }
                         researchPane.visible = !researchPane.visible
@@ -1282,9 +1294,8 @@ ApplicationWindow {
                     display: tasks.activeCount > 0 ? AbstractButton.TextBesideIcon
                                                    : AbstractButton.IconOnly
                     text: tasks.activeCount > 0 ? tasks.activeCount : ""
-                    tip: qsTr("Tasks pane: everything the app is working on — "
-                              + "what is running, how far along it is, and how "
-                              + "long it has left")
+                    name: window.paneLabels.tasks
+                    tip: qsTr("Everything running, and how far along")
                     onClicked: tasksPane.visible = !tasksPane.visible
                 }
                 ToolButton {
@@ -1405,13 +1416,14 @@ ApplicationWindow {
                 ToolIcon {
                     icon.source: "qrc:/icons/project-new.svg"
                     visible: auth.authenticated
-                    tip: qsTr("New project")
+                    name: qsTr("New project")
                     onClicked: createProjectDialog.open()
                 }
                 ToolIcon {
                     icon.source: "qrc:/icons/project-edit.svg"
                     needsProject: true
-                    tip: qsTr("Rename this project, or delete it")
+                    name: qsTr("Project settings")
+                    tip: qsTr("Rename or delete this project")
                     onClicked: {
                         if (blocked) { window.resolveProjectBlock(); return }
                         projectSettingsDialog.open()
@@ -1420,7 +1432,7 @@ ApplicationWindow {
                 ToolIcon {
                     icon.source: "qrc:/icons/members.svg"
                     needsProject: true
-                    tip: qsTr("Members of this project")
+                    name: qsTr("Members")
                     onClicked: {
                         if (blocked) { window.resolveProjectBlock(); return }
                         projects.refreshMembers()
@@ -1436,10 +1448,10 @@ ApplicationWindow {
                     display: profile.hasProfile ? AbstractButton.IconOnly
                                                 : AbstractButton.TextBesideIcon
                     text: profile.hasProfile ? "" : "•"
+                    name: qsTr("Research profile")
                     tip: profile.hasProfile
-                         ? qsTr("Research profile: %1").arg(profile.summary)
-                         : qsTr("Describe what this project is trying to find out — "
-                                + "every interpretation is written against it")
+                         ? profile.summary
+                         : qsTr("Not written yet — what is this project trying to find out?")
                     onClicked: {
                         if (blocked) { window.resolveProjectBlock(); return }
                         projectProfileDialog.open()
@@ -1454,13 +1466,10 @@ ApplicationWindow {
                     display: compare.count > 0 ? AbstractButton.TextBesideIcon
                                                : AbstractButton.IconOnly
                     text: compare.count > 0 ? compare.count : ""
+                    name: qsTr("Compare")
                     tip: compare.count > 0
-                         ? qsTr("Compare the %1 papers in the basket, with a "
-                                + "warning where they cannot honestly be "
-                                + "compared").arg(compare.count)
-                         : qsTr("Put papers side by side, with a warning where "
-                                + "they cannot honestly be compared. Add papers "
-                                + "from the library pane's right-click menu.")
+                         ? qsTr("%1 papers picked").arg(compare.count)
+                         : qsTr("Papers side by side")
                     onClicked: {
                         if (blocked) { window.resolveProjectBlock(); return }
                         compareDialog.open()
@@ -1477,8 +1486,9 @@ ApplicationWindow {
                                              : AbstractButton.TextBesideIcon
                     text: auth.userDisplayName.length > 0 ? auth.userDisplayName
                                                           : auth.userEmail
-                    tip: qsTr("Signed in as %1 — click to sign out")
-                             .arg(text.length > 0 ? text : auth.userEmail)
+                    name: qsTr("Signed in as %1")
+                              .arg(text.length > 0 ? text : auth.userEmail)
+                    tip: qsTr("Click to sign out")
                     onClicked: accountMenu.popup()
                     Menu {
                         id: accountMenu
@@ -1515,7 +1525,7 @@ ApplicationWindow {
             enabled: toolFlick.contentX > 0.5
             autoRepeat: true
             icon.source: "qrc:/icons/chevron-left.svg"
-            tip: qsTr("More toolbar buttons this way")
+            name: qsTr("More buttons")
             onClicked: toolFlick.glideTo(toolFlick.contentX
                                          - toolFlick.width * 0.6)
         }
@@ -1529,7 +1539,7 @@ ApplicationWindow {
                      < toolFlick.contentWidth - toolFlick.width - 0.5
             autoRepeat: true
             icon.source: "qrc:/icons/chevron-right.svg"
-            tip: qsTr("More toolbar buttons this way")
+            name: qsTr("More buttons")
             onClicked: toolFlick.glideTo(toolFlick.contentX
                                          + toolFlick.width * 0.6)
         }
@@ -1549,18 +1559,20 @@ ApplicationWindow {
             ToolSeparator {}
             ToolIcon {
                 icon.source: "qrc:/icons/prompts.svg"
-                tip: qsTr("Edit the prompts the model is given")
+                name: qsTr("Prompts")
+                tip: qsTr("What the model is told")
                 onClicked: promptsDialog.open()
             }
             ToolIcon {
                 id: settingsBtn
                 icon.source: "qrc:/icons/settings.svg"
-                tip: qsTr("Settings")
+                name: qsTr("Settings")
                 onClicked: settingsDialog.open()
             }
             ToolIcon {
                 icon.source: "qrc:/icons/help.svg"
-                tip: qsTr("Show the getting-started tour")
+                name: qsTr("Tour")
+                tip: qsTr("The getting-started walkthrough")
                 onClicked: welcomeWizard.start()
             }
         }

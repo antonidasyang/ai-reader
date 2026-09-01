@@ -19,6 +19,28 @@ AppDialog {
 
     readonly property var res: compare.result
     readonly property var papers: res && res.papers ? res.papers : []
+    // Bumped by every basket change made from this window, so the boxes
+    // and chips re-read contains(): it is an invokable and notifies nothing.
+    property int pickRevision: 0
+    // Library item ids of the picked papers that have no interpretation
+    // yet -- what "Interpret the N not yet read" sends to the batch. A
+    // paper the quick read gave up on is not among them: running it again
+    // would give the same answer.
+    readonly property var missingItemIds: {
+        compare.count; root.pickRevision; analysisList.revision
+        const out = []
+        const basket = compare.basket
+        for (let i = 0; i < basket.length; ++i) {
+            const state = analysisList.stateForPaper(basket[i].paperId)
+            if (state === "done" || state === "insufficient"
+                || state === "running" || state === "queued")
+                continue
+            const id = libraryModel.findByPaperId(basket[i].paperId)
+            if (id.length > 0)
+                out.push(id)
+        }
+        return out
+    }
 
     onOpened: compare.loadStored()
 
@@ -69,24 +91,95 @@ AppDialog {
         focus: true
         Keys.onPressed: (event) => ScrollKeys.handle(event, tableFlick)
 
-        // ── the basket ──────────────────────────────────────────────
+        // ── pick the papers ─────────────────────────────────────────
+        // Chosen here, in the window that compares them. They used to be
+        // reachable only from elsewhere -- the library pane's menu, a
+        // statement's ⋯ menu -- and a window that said "nothing selected"
+        // without offering anywhere to select was a wall: the reader was
+        // told to choose and could not see where.
         Label {
             Layout.fillWidth: true
             wrapMode: Text.Wrap
             color: Theme.dimText
-            // Where papers come from, in the order a reader would reach for
-            // them. The library pane came last and was missing entirely
-            // until 1.3.26, which is why a basket of three used to mean
-            // opening three PDFs one after another.
-            text: compare.count === 0
-                  ? qsTr("Nothing selected yet. Right-click any paper in the "
-                         + "library pane to add it — or add several at once "
-                         + "with “Compare everything shown”. A single "
-                         + "statement can also be added from the ⋯ menu beside "
-                         + "it in an interpretation.")
-                  : qsTr("%1 papers selected.").arg(compare.count)
+            text: libraryModel.count === 0
+                  ? qsTr("This project has no papers yet. Add some to the "
+                         + "library first.")
+                  : qsTr("Tick at least two papers. Each needs an "
+                         + "interpretation: the comparison is built from "
+                         + "those, not from the PDFs.")
+        }
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: Math.min(200, pickList.contentHeight + 2)
+            visible: libraryModel.count > 0
+            color: Theme.fieldBg
+            border.color: Theme.border
+            radius: 4
+            clip: true
+            ListView {
+                id: pickList
+                anchors.fill: parent
+                anchors.margins: 1
+                model: libraryModel
+                clip: true
+                ScrollBar.vertical: ScrollBar {}
+                delegate: RowLayout {
+                    id: pickRow
+                    required property string itemId
+                    required property string paperId
+                    required property string title
+                    width: ListView.view ? ListView.view.width : 0
+                    spacing: 4
+                    // Named so the invokables re-run: neither notifies on
+                    // its own.
+                    readonly property string _state:
+                        (analysisList.revision,
+                         analysisList.stateForPaper(pickRow.paperId))
+                    readonly property bool _picked:
+                        (compare.count, root.pickRevision,
+                         pickRow.paperId.length > 0
+                         && compare.contains(pickRow.paperId))
+                    CheckBox {
+                        Layout.fillWidth: true
+                        text: pickRow.title
+                        enabled: pickRow.paperId.length > 0 && !compare.busy
+                        // Bound, not assigned: a click writes `checked`
+                        // itself, and a plain binding would not survive
+                        // that -- Clear would then leave the box ticked.
+                        Binding on checked {
+                            value: pickRow._picked
+                            restoreMode: Binding.RestoreNone
+                        }
+                        onToggled: {
+                            if (checked)
+                                compare.add(pickRow.paperId, pickRow.title)
+                            else
+                                compare.removePaper(pickRow.paperId)
+                            root.pickRevision++
+                        }
+                    }
+                    Label {
+                        Layout.rightMargin: 8
+                        visible: pickRow._state !== "done"
+                        color: pickRow._state === "insufficient" ? Theme.danger
+                                                                 : Theme.dimText
+                        font.pixelSize: 11
+                        text: pickRow._state === "insufficient"
+                              ? qsTr("not enough text to interpret")
+                              : (pickRow._state === "running"
+                                 || pickRow._state === "queued")
+                                ? qsTr("interpreting…")
+                                : qsTr("not interpreted yet")
+                    }
+                }
+            }
         }
 
+        // Papers in the basket that are not in this project's library: a
+        // statement added from an open paper that was never added to the
+        // project. The list above cannot show them, so they get a chip
+        // with its own ✕, or there would be no way to take one out short
+        // of clearing everything.
         Flow {
             Layout.fillWidth: true
             spacing: 6
@@ -94,8 +187,11 @@ AppDialog {
                 model: compare.basket
                 delegate: Rectangle {
                     required property var modelData
-                    height: 26
-                    width: chipRow.implicitWidth + 12
+                    visible: (root.pickRevision,
+                              libraryModel.findByPaperId(modelData.paperId)
+                                  .length === 0)
+                    height: visible ? 26 : 0
+                    width: visible ? chipRow.implicitWidth + 12 : 0
                     radius: 13
                     color: Theme.cardBg
                     border.color: Theme.border
@@ -104,18 +200,22 @@ AppDialog {
                         anchors.centerIn: parent
                         spacing: 4
                         Label {
-                            text: modelData.title || qsTr("(untitled)")
+                            text: (modelData.title || qsTr("(untitled)"))
+                                  + qsTr(" (not in the library)")
                             color: Theme.text
                             font.pixelSize: 12
                             elide: Text.ElideRight
-                            Layout.maximumWidth: 220
+                            Layout.maximumWidth: 260
                         }
                         ToolButton {
                             text: "✕"
                             font.pixelSize: 10
                             implicitWidth: 18
                             implicitHeight: 18
-                            onClicked: compare.removePaper(modelData.paperId)
+                            onClicked: {
+                                compare.removePaper(modelData.paperId)
+                                root.pickRevision++
+                            }
                         }
                     }
                 }
@@ -142,14 +242,33 @@ AppDialog {
             AppButton {
                 text: qsTr("Clear")
                 enabled: compare.count > 0 && !compare.busy
-                onClicked: compare.clearBasket()
+                onClicked: {
+                    compare.clearBasket()
+                    root.pickRevision++
+                }
+            }
+            AppButton {
+                // A ticked paper with no interpretation is not a dead end:
+                // the thing it is missing is one click away.
+                visible: root.missingItemIds.length > 0
+                text: qsTr("Interpret the %1 not yet read")
+                      .arg(root.missingItemIds.length)
+                enabled: batchAnalysis.canRun && !batchAnalysis.busy
+                onClicked: batchAnalysis.startItems(root.missingItemIds, false)
             }
             Label {
                 Layout.fillWidth: true
                 wrapMode: Text.Wrap
-                color: Theme.danger
+                color: compare.lastError.length > 0 ? Theme.danger
+                                                    : Theme.dimText
                 font.pixelSize: 12
-                text: compare.lastError
+                text: compare.lastError.length > 0
+                      ? compare.lastError
+                      : (compare.count === 0
+                         ? ""
+                         : compare.count === 1
+                           ? qsTr("1 paper picked — one more to compare")
+                           : qsTr("%1 papers picked").arg(compare.count))
             }
         }
 

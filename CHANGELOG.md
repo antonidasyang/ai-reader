@@ -1,5 +1,27 @@
 # AI Reader changelog
 
+## v1.3.27 — 2026-09-01
+
+### The comparison picks its papers where it compares them
+- The compare window said "nothing selected" and pointed elsewhere — the
+  library pane's menu, a statement's ⋯ menu — so a reader who opened it was
+  told to choose and could not see where. The project's papers are now
+  listed in the window itself with a box beside each; tick two or more and
+  compare. A ticked paper that has not been interpreted yet is not a dead
+  end either: the button that interprets the missing ones sits beside
+  Compare. Papers put in the basket from an open paper that was never added
+  to the project still show, as a chip with its own ✕.
+
+### Every toolbar button has a name
+- The tooltips were sentences — "Interpretation pane: relevance to this
+  project, what to read first, and every statement traced back to the
+  paper" — and a toolbar of twenty sentences is a toolbar nobody reads.
+  Each button now has a name of one or two words on the first line and, where
+  it earns one, a short clause under it. The pane buttons take their names
+  from the same list the layout menu uses, so a pane is called one thing on
+  the button and the same thing in the menu; the research pane is 课题汇总
+  in both.
+
 ## v1.3.26 — 2026-09-01
 
 ### One list of papers, and the star finally means something

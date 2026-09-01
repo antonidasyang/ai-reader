@@ -1579,153 +1579,196 @@ Click to open this passage.</source>
         <translation>论文对比</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="27"/>
+        <location filename="../qml/CompareDialog.qml" line="49"/>
         <source>Export comparison</source>
         <translation>导出对比</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="30"/>
+        <location filename="../qml/CompareDialog.qml" line="52"/>
         <source>Markdown files (*.md)</source>
         <translation>Markdown 文件 (*.md)</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="30"/>
+        <location filename="../qml/CompareDialog.qml" line="52"/>
         <source>All files (*)</source>
         <translation>所有文件 (*)</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="36"/>
+        <location filename="../qml/CompareDialog.qml" line="58"/>
         <source>Research problem</source>
         <translation>研究问题</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="37"/>
+        <location filename="../qml/CompareDialog.qml" line="59"/>
         <source>Hypothesis</source>
         <translation>假设</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="38"/>
+        <location filename="../qml/CompareDialog.qml" line="60"/>
         <source>Method</source>
         <translation>方法</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="39"/>
+        <location filename="../qml/CompareDialog.qml" line="61"/>
         <source>Inputs / outputs</source>
         <translation>输入 / 输出</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="40"/>
+        <location filename="../qml/CompareDialog.qml" line="62"/>
         <source>Data / environment</source>
         <translation>数据 / 环境</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="41"/>
+        <location filename="../qml/CompareDialog.qml" line="63"/>
         <source>Baselines</source>
         <translation>基线</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="42"/>
+        <location filename="../qml/CompareDialog.qml" line="64"/>
         <source>Metrics</source>
         <translation>指标</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="43"/>
+        <location filename="../qml/CompareDialog.qml" line="65"/>
         <source>Main results</source>
         <translation>主要结果</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="44"/>
+        <location filename="../qml/CompareDialog.qml" line="66"/>
         <source>Contributions</source>
         <translation>贡献</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="45"/>
+        <location filename="../qml/CompareDialog.qml" line="67"/>
         <source>Limitations</source>
         <translation>局限</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="46"/>
+        <location filename="../qml/CompareDialog.qml" line="68"/>
         <source>Reproducibility</source>
         <translation>复现性</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="53"/>
-        <location filename="../qml/CompareDialog.qml" line="107"/>
-        <location filename="../qml/CompareDialog.qml" line="240"/>
+        <location filename="../qml/CompareDialog.qml" line="75"/>
+        <location filename="../qml/CompareDialog.qml" line="203"/>
+        <location filename="../qml/CompareDialog.qml" line="359"/>
         <source>(untitled)</source>
         <translation>(无标题)</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="82"/>
+        <location filename="../qml/CompareDialog.qml" line="105"/>
+        <source>This project has no papers yet. Add some to the library first.</source>
+        <translation>本课题还没有论文。先往文献库里加几篇。</translation>
+    </message>
+    <message>
+        <location filename="../qml/CompareDialog.qml" line="107"/>
+        <source>Tick at least two papers. Each needs an interpretation: the comparison is built from those, not from the PDFs.</source>
+        <translation>勾选至少两篇论文。每篇都得先解读过:对比是从解读结果做出来的,不是从 PDF。</translation>
+    </message>
+    <message>
+        <location filename="../qml/CompareDialog.qml" line="168"/>
+        <source>not enough text to interpret</source>
+        <translation>文字太少,无法解读</translation>
+    </message>
+    <message>
+        <location filename="../qml/CompareDialog.qml" line="171"/>
+        <source>interpreting…</source>
+        <translation>解读中…</translation>
+    </message>
+    <message>
+        <location filename="../qml/CompareDialog.qml" line="172"/>
+        <source>not interpreted yet</source>
+        <translation>还没解读</translation>
+    </message>
+    <message>
+        <location filename="../qml/CompareDialog.qml" line="204"/>
+        <source> (not in the library)</source>
+        <translation>(不在文献库里)</translation>
+    </message>
+    <message>
         <source>Nothing selected yet. Right-click any paper in the library pane to add it — or add several at once with “Compare everything shown”. A single statement can also be added from the ⋯ menu beside it in an interpretation.</source>
-        <translation>还没有选论文。在文献库面板里右键任意一篇就能加入,也可以用「对比当前显示的」一次加入多篇。解读里某条结论旁边的 ⋯ 菜单同样能把那一篇连同这句话加进来。</translation>
+        <translation type="vanished">还没有选论文。在文献库面板里右键任意一篇就能加入,也可以用「对比当前显示的」一次加入多篇。解读里某条结论旁边的 ⋯ 菜单同样能把那一篇连同这句话加进来。</translation>
     </message>
     <message>
         <source>Nothing selected yet. Add papers from the ⋯ menu next to any statement in an interpretation, or from the Interpret pane.</source>
         <translation type="vanished">还没有选中论文。在解读中任一条结论旁的 ⋯ 菜单里添加,或从解读面板添加。</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="87"/>
         <source>%1 papers selected.</source>
-        <translation>已选 %1 篇。</translation>
+        <translation type="vanished">已选 %1 篇。</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="130"/>
+        <location filename="../qml/CompareDialog.qml" line="230"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="131"/>
+        <location filename="../qml/CompareDialog.qml" line="231"/>
         <source>Compare again</source>
         <translation>重新对比</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="132"/>
+        <location filename="../qml/CompareDialog.qml" line="232"/>
         <source>Compare</source>
         <translation>对比</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="143"/>
+        <location filename="../qml/CompareDialog.qml" line="243"/>
         <source>Clear</source>
         <translation>清空</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="173"/>
+        <location filename="../qml/CompareDialog.qml" line="254"/>
+        <source>Interpret the %1 not yet read</source>
+        <translation>先解读没读过的 %1 篇</translation>
+    </message>
+    <message>
+        <location filename="../qml/CompareDialog.qml" line="270"/>
+        <source>1 paper picked — one more to compare</source>
+        <translation>已选 1 篇——再选一篇就能比</translation>
+    </message>
+    <message>
+        <location filename="../qml/CompareDialog.qml" line="271"/>
+        <source>%1 papers picked</source>
+        <translation>已选 %1 篇</translation>
+    </message>
+    <message>
+        <location filename="../qml/CompareDialog.qml" line="292"/>
         <source>Read the table with these in mind</source>
         <translation>看这张表时请注意</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="188"/>
+        <location filename="../qml/CompareDialog.qml" line="307"/>
         <source>Not directly comparable: </source>
         <translation>不能直接对比: </translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="189"/>
+        <location filename="../qml/CompareDialog.qml" line="308"/>
         <source>Careful: </source>
         <translation>注意: </translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="273"/>
+        <location filename="../qml/CompareDialog.qml" line="392"/>
         <source>What to take from this</source>
         <translation>从中能得到什么</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="297"/>
+        <location filename="../qml/CompareDialog.qml" line="416"/>
         <source>Compared from each paper&apos;s own interpretation, not from the PDFs. Generated by %1.</source>
         <translation>对比基于每篇论文自己的解读,而非 PDF 原文。由 %1 生成。</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="300"/>
+        <location filename="../qml/CompareDialog.qml" line="419"/>
         <source>Compared from each paper&apos;s own interpretation, not from the PDFs.</source>
         <translation>对比基于每篇论文自己的解读,而非 PDF 原文。</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="309"/>
+        <location filename="../qml/CompareDialog.qml" line="428"/>
         <source>Export as Markdown…</source>
         <translation>导出为 Markdown…</translation>
     </message>
     <message>
-        <location filename="../qml/CompareDialog.qml" line="315"/>
+        <location filename="../qml/CompareDialog.qml" line="434"/>
         <source>Close</source>
         <translation>关闭</translation>
     </message>
@@ -2617,193 +2660,193 @@ Click to open this passage.</source>
     </message>
     <message>
         <location filename="../qml/LibraryPane.qml" line="262"/>
-        <location filename="../qml/LibraryPane.qml" line="714"/>
+        <location filename="../qml/LibraryPane.qml" line="742"/>
         <source>Stop the run</source>
         <translation>停止本次运行</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="398"/>
+        <location filename="../qml/LibraryPane.qml" line="400"/>
         <source>Starred for a close read — “Close-read the starred” below reads these</source>
         <translation>已标星待精读——下面的「精读标星的」读的就是这些</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="399"/>
+        <location filename="../qml/LibraryPane.qml" line="401"/>
         <source>Star this for a close read</source>
         <translation>标星,表示这篇要精读</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="441"/>
+        <location filename="../qml/LibraryPane.qml" line="443"/>
         <source>close-read</source>
         <translation>已精读</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="442"/>
+        <location filename="../qml/LibraryPane.qml" line="444"/>
         <source>close read, part done</source>
         <translation>精读未完成</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="471"/>
+        <location filename="../qml/LibraryPane.qml" line="473"/>
         <source>interpreted by %1</source>
         <translation>由 %1 解读</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="483"/>
+        <location filename="../qml/LibraryPane.qml" line="511"/>
         <source>Open</source>
         <translation>打开</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="490"/>
+        <location filename="../qml/LibraryPane.qml" line="518"/>
         <source>Interpret again</source>
         <translation>重新解读</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="490"/>
+        <location filename="../qml/LibraryPane.qml" line="518"/>
         <source>Interpret</source>
         <translation>解读</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="497"/>
+        <location filename="../qml/LibraryPane.qml" line="525"/>
         <source>Close-read again</source>
         <translation>重新精读</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="497"/>
+        <location filename="../qml/LibraryPane.qml" line="525"/>
         <source>Close-read</source>
         <translation>精读</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="506"/>
+        <location filename="../qml/LibraryPane.qml" line="533"/>
         <source>Remove the star</source>
         <translation>取消标星</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="506"/>
+        <location filename="../qml/LibraryPane.qml" line="534"/>
         <source>Star for a close read</source>
         <translation>标星待精读</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="512"/>
+        <location filename="../qml/LibraryPane.qml" line="539"/>
         <source>Bring back</source>
         <translation>取消搁置</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="512"/>
+        <location filename="../qml/LibraryPane.qml" line="540"/>
         <source>Set aside</source>
         <translation>搁置</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="521"/>
+        <location filename="../qml/LibraryPane.qml" line="548"/>
         <source>Remove from the comparison</source>
         <translation>移出对比</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="522"/>
+        <location filename="../qml/LibraryPane.qml" line="549"/>
         <source>Add to the comparison</source>
         <translation>加入对比</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="534"/>
+        <location filename="../qml/LibraryPane.qml" line="561"/>
         <source>Edit metadata</source>
         <translation>编辑题录</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="538"/>
+        <location filename="../qml/LibraryPane.qml" line="565"/>
         <source>Remove from library</source>
         <translation>从库中移除</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="571"/>
+        <location filename="../qml/LibraryPane.qml" line="598"/>
         <source>(untitled)</source>
         <translation>(无标题)</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="601"/>
+        <location filename="../qml/LibraryPane.qml" line="628"/>
         <source>No matches.</source>
         <translation>无匹配结果。</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="603"/>
+        <location filename="../qml/LibraryPane.qml" line="630"/>
         <source>This library belongs to a different account. Sign in as that user to open it — papers you sync yourself will appear here.</source>
         <translation>这个文献库属于另一个账号,用那个账号登录后才能打开——你自己同步的论文会显示在这里。</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="606"/>
+        <location filename="../qml/LibraryPane.qml" line="633"/>
         <source>Sign in to use the library.</source>
         <translation>登录后使用文献库。</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="608"/>
+        <location filename="../qml/LibraryPane.qml" line="635"/>
         <source>Create or select a project.</source>
         <translation>请创建或选择一个课题。</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="610"/>
+        <location filename="../qml/LibraryPane.qml" line="637"/>
         <source>Nothing matches these filters.</source>
         <translation>没有符合筛选条件的论文。</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="611"/>
+        <location filename="../qml/LibraryPane.qml" line="638"/>
         <source>No papers yet. Open a PDF, then click + Add.</source>
         <translation>还没有文献。打开一个 PDF,然后点「+ 添加」。</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="631"/>
+        <location filename="../qml/LibraryPane.qml" line="658"/>
         <source>Interpret the %1 unread</source>
         <translation>解读未读的 %1 篇</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="633"/>
-        <location filename="../qml/LibraryPane.qml" line="670"/>
+        <location filename="../qml/LibraryPane.qml" line="660"/>
+        <location filename="../qml/LibraryPane.qml" line="698"/>
         <source>Close-read the %1 starred</source>
         <translation>精读标星的 %1 篇</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="634"/>
+        <location filename="../qml/LibraryPane.qml" line="661"/>
         <source>Everything is interpreted</source>
         <translation>全部已解读</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="647"/>
+        <location filename="../qml/LibraryPane.qml" line="674"/>
         <source>More…</source>
         <translation>更多…</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="652"/>
+        <location filename="../qml/LibraryPane.qml" line="680"/>
         <source>Interpret what the filters show (%1)</source>
         <translation>解读当前筛选出的 %1 篇</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="660"/>
+        <location filename="../qml/LibraryPane.qml" line="688"/>
         <source>Retry the %1 that failed</source>
         <translation>重试失败的 %1 篇</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="678"/>
+        <location filename="../qml/LibraryPane.qml" line="706"/>
         <source>Close-read what the filters show (%1)</source>
         <translation>精读当前筛选出的 %1 篇</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="688"/>
+        <location filename="../qml/LibraryPane.qml" line="716"/>
         <source>Star everything shown</source>
         <translation>把当前显示的全部标星</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="694"/>
+        <location filename="../qml/LibraryPane.qml" line="722"/>
         <source>Unstar everything shown</source>
         <translation>把当前显示的全部取消标星</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="700"/>
+        <location filename="../qml/LibraryPane.qml" line="728"/>
         <source>Set everything shown aside</source>
         <translation>把当前显示的全部搁置</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="707"/>
+        <location filename="../qml/LibraryPane.qml" line="735"/>
         <source>Compare everything shown (%1)</source>
         <translation>对比当前显示的 %1 篇</translation>
     </message>
     <message>
-        <location filename="../qml/LibraryPane.qml" line="720"/>
+        <location filename="../qml/LibraryPane.qml" line="748"/>
         <source>Check PDFs are in the cloud</source>
         <translation>检查 PDF 是否都在云端</translation>
     </message>
@@ -2867,12 +2910,13 @@ Click to open this passage.</source>
 <context>
     <name>Main</name>
     <message>
-        <location filename="../qml/Main.qml" line="204"/>
+        <location filename="../qml/Main.qml" line="211"/>
         <source>&quot;%1&quot; is encrypted. Enter the password:</source>
         <translation>「%1」已加密,请输入密码:</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="218"/>
+        <location filename="../qml/Main.qml" line="225"/>
+        <location filename="../qml/Main.qml" line="1038"/>
         <source>Open PDF</source>
         <translation>打开 PDF</translation>
     </message>
@@ -2885,12 +2929,13 @@ Click to open this passage.</source>
         <translation type="vanished">打开文件夹…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="240"/>
+        <location filename="../qml/Main.qml" line="247"/>
+        <location filename="../qml/Main.qml" line="1044"/>
         <source>Open folder</source>
         <translation>打开文件夹</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="225"/>
+        <location filename="../qml/Main.qml" line="232"/>
         <source>Export extracted text</source>
         <translation>导出提取的文本</translation>
     </message>
@@ -2911,21 +2956,67 @@ Click to open this passage.</source>
         <translation type="vanished">丢弃手动段落编辑并重新自动分段</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="232"/>
+        <location filename="../qml/Main.qml" line="239"/>
         <source>Failed to write extracted text.</source>
         <translation>写入提取文本失败。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="660"/>
+        <location filename="../qml/Main.qml" line="669"/>
         <source>Folder</source>
         <translation>文件夹</translation>
     </message>
     <message>
-        <source>Translate</source>
-        <translation type="vanished">翻译</translation>
+        <location filename="../qml/Main.qml" line="1050"/>
+        <source>Export text</source>
+        <translation>导出文本</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="374"/>
+        <location filename="../qml/Main.qml" line="1051"/>
+        <source>Raw text, line boxes and paragraphs, as .txt</source>
+        <translation>原始文字、行框和段落,存为 .txt</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1086"/>
+        <source>Fit width</source>
+        <translation>适应宽度</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1098"/>
+        <source>Hand tool</source>
+        <translation>抓手</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1099"/>
+        <source>Drag to move the page; off = select text</source>
+        <translation>拖动页面;关闭后可选中文字</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1115"/>
+        <source>Split into paragraphs</source>
+        <translation>分段</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1116"/>
+        <source>Split again</source>
+        <translation>重新分段</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1117"/>
+        <source>Needed for translation, outline and chat</source>
+        <translation>翻译、目录和对话都要先分段</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1118"/>
+        <source>Discards the current division</source>
+        <translation>会丢弃当前的分段</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1130"/>
+        <source>Translate</source>
+        <translation>翻译</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="381"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
@@ -2942,48 +3033,58 @@ Click to open this passage.</source>
         <translation type="vanished">视觉读页</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="582"/>
-        <location filename="../qml/Main.qml" line="668"/>
+        <location filename="../qml/Main.qml" line="589"/>
+        <location filename="../qml/Main.qml" line="677"/>
         <source>Chat</source>
         <translation>对话</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="570"/>
+        <location filename="../qml/Main.qml" line="577"/>
         <source>TOC</source>
         <translation>目录</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1071"/>
+        <location filename="../qml/Main.qml" line="1080"/>
         <source>Zoom in</source>
         <translation>放大</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1052"/>
+        <location filename="../qml/Main.qml" line="1061"/>
         <source>Zoom out</source>
         <translation>缩小</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="524"/>
+        <location filename="../qml/Main.qml" line="48"/>
+        <source>%1 — choose a project first</source>
+        <translation>%1——先选一个课题</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="49"/>
+        <source>%1 — sign in first</source>
+        <translation>%1——先登录</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="531"/>
         <source>6 · Sign in to sync</source>
         <translation>6 · 登录以同步</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="525"/>
+        <location filename="../qml/Main.qml" line="532"/>
         <source>Click &lt;b&gt;Sign in&lt;/b&gt; to log in through your organisation&apos;s CAS page in the browser — the app never stores your password. Signed in, your library lives in the cloud: papers, metadata and AI interpretations sync across devices and stay readable offline.</source>
         <translation>点击&lt;b&gt;登录&lt;/b&gt;，在浏览器中通过所在机构的 CAS 页面完成登录——应用不会保存你的密码。登录后，文库保存在云端：论文、元数据和 AI 解读跨设备同步，离线也可阅读。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="529"/>
+        <location filename="../qml/Main.qml" line="536"/>
         <source>7 · Share a project library</source>
         <translation>7 · 共享课题文库</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="530"/>
+        <location filename="../qml/Main.qml" line="537"/>
         <source>The &lt;b&gt;Lib&lt;/b&gt; pane organises papers by research project. Invite teammates by email as &lt;b&gt;owner / editor / viewer&lt;/b&gt; — everyone shares the same library, full-text search included, and shared AI interpretations appear under &lt;b&gt;Shared&lt;/b&gt;.</source>
         <translation>&lt;b&gt;文库&lt;/b&gt;面板按课题组织文献。用邮箱邀请同事加入，角色分&lt;b&gt;所有者 / 编辑者 / 查看者&lt;/b&gt;——大家共用同一个文库（含全文检索），共享的 AI 解读会出现在&lt;b&gt;共享&lt;/b&gt;标签下。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="534"/>
+        <location filename="../qml/Main.qml" line="541"/>
         <source>8 · Configure your LLM</source>
         <translation>8 · 配置你的大模型</translation>
     </message>
@@ -3004,12 +3105,12 @@ Click to open this passage.</source>
         <translation type="vanished">%1 页 · %2 段</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1496"/>
+        <location filename="../qml/Main.qml" line="1506"/>
         <source>%1 · %2</source>
         <translation>%1 · %2</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1497"/>
+        <location filename="../qml/Main.qml" line="1507"/>
         <source>LLM not configured</source>
         <translation>未配置 LLM</translation>
     </message>
@@ -3026,38 +3127,38 @@ Click to open this passage.</source>
         <translation type="vanished">显示新手向导</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="2163"/>
+        <location filename="../qml/Main.qml" line="2175"/>
         <source>Drag a PDF here, or click Open…</source>
         <translation>将 PDF 拖到此处,或点击「打开…」</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="2169"/>
+        <location filename="../qml/Main.qml" line="2181"/>
         <source>AI Reader — milestone 3.2 (TOC sidebar)</source>
         <translation>AI Reader — 里程碑 3.2(目录侧栏)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="2503"/>
+        <location filename="../qml/Main.qml" line="2515"/>
         <source>Drop PDF to open</source>
         <translation>松开以打开 PDF</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1584"/>
+        <location filename="../qml/Main.qml" line="1596"/>
         <source>Dropped file is not a PDF.</source>
         <translation>拖入的文件不是 PDF。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="543"/>
+        <location filename="../qml/Main.qml" line="550"/>
         <source>%1: %2</source>
         <translation>%1:%2</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="554"/>
-        <location filename="../qml/Main.qml" line="663"/>
+        <location filename="../qml/Main.qml" line="561"/>
+        <location filename="../qml/Main.qml" line="672"/>
         <source>PDF</source>
         <translation>PDF</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="564"/>
+        <location filename="../qml/Main.qml" line="571"/>
         <source>Translation</source>
         <translation>翻译</translation>
     </message>
@@ -3066,38 +3167,36 @@ Click to open this passage.</source>
         <translation type="vanished">解读</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="577"/>
+        <location filename="../qml/Main.qml" line="584"/>
         <source>Vision</source>
         <translation>视觉</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="494"/>
+        <location filename="../qml/Main.qml" line="501"/>
         <source>1 · Open a paper</source>
         <translation>1 · 打开论文</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="41"/>
         <source>Choose a project first — then: %1</source>
-        <translation>请先选择一个课题——然后：%1</translation>
+        <translation type="vanished">请先选择一个课题——然后：%1</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="42"/>
         <source>Sign in first — then: %1</source>
-        <translation>请先登录——然后：%1</translation>
+        <translation type="vanished">请先登录——然后：%1</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="219"/>
+        <location filename="../qml/Main.qml" line="226"/>
         <source>PDF files (*.pdf)</source>
         <translation>PDF 文件 (*.pdf)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="219"/>
-        <location filename="../qml/Main.qml" line="228"/>
+        <location filename="../qml/Main.qml" line="226"/>
+        <location filename="../qml/Main.qml" line="235"/>
         <source>All files (*)</source>
         <translation>所有文件 (*)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="228"/>
+        <location filename="../qml/Main.qml" line="235"/>
         <source>Text files (*.txt)</source>
         <translation>文本文件 (*.txt)</translation>
     </message>
@@ -3114,145 +3213,231 @@ Click to open this passage.</source>
         <translation type="vanished">删除</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="323"/>
+        <location filename="../qml/Main.qml" line="330"/>
         <source>Segment this paper again?</source>
         <translation>重新对这篇分段?</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="348"/>
+        <location filename="../qml/Main.qml" line="355"/>
         <source>This paper is already split into %1 paragraphs, and %2 of them are translated.</source>
         <translation>这篇论文已经分成 %1 段,其中 %2 段已经翻译。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="352"/>
+        <location filename="../qml/Main.qml" line="359"/>
         <source>This paper is already split into %1 paragraphs.</source>
         <translation>这篇论文已经分成 %1 段。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="361"/>
+        <location filename="../qml/Main.qml" line="368"/>
         <source>Splitting it again replaces that division and any paragraph you merged or split by hand. The existing translations are tied to the old paragraphs, so most of them will no longer match and would have to be translated again.</source>
         <translation>重新分段会替换掉现在的划分,包括你手动合并或拆分过的段落。现有译文是跟旧段落绑定的,重分之后大多会对不上,需要重新翻译。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="366"/>
+        <location filename="../qml/Main.qml" line="373"/>
         <source>Splitting it again replaces that division, including any paragraph you merged or split by hand.</source>
         <translation>重新分段会替换掉现在的划分,包括你手动合并或拆分过的段落。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="378"/>
+        <location filename="../qml/Main.qml" line="385"/>
         <source>Segment again</source>
         <translation>重新分段</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="392"/>
-        <location filename="../qml/Main.qml" line="1408"/>
+        <location filename="../qml/Main.qml" line="399"/>
+        <location filename="../qml/Main.qml" line="1419"/>
         <source>New project</source>
         <translation>新建课题</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="407"/>
+        <location filename="../qml/Main.qml" line="414"/>
         <source>Project name</source>
         <translation>课题名称</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="412"/>
+        <location filename="../qml/Main.qml" line="419"/>
         <source>Description (optional)</source>
         <translation>描述(可选)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="423"/>
+        <location filename="../qml/Main.qml" line="430"/>
         <source>Translate this paper</source>
         <translation>翻译这篇文章</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="447"/>
+        <location filename="../qml/Main.qml" line="454"/>
         <source>%1 of these paragraphs are already translated and %2 are not.</source>
         <translation>其中 %1 段已经翻译过,%2 段还没有。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="450"/>
+        <location filename="../qml/Main.qml" line="457"/>
         <source>All %1 paragraphs are already translated.</source>
         <translation>全部 %1 段都已经翻译过了。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="457"/>
+        <location filename="../qml/Main.qml" line="464"/>
         <source>Translate the remaining %1</source>
         <translation>只翻剩下的 %1 段</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="466"/>
+        <location filename="../qml/Main.qml" line="473"/>
         <source>Start over — re-translate all %1</source>
         <translation>从头再来——重新翻译全部 %1 段</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="479"/>
+        <location filename="../qml/Main.qml" line="486"/>
         <source>Starting over asks the model again for every paragraph, including the ones already done.</source>
         <translation>从头再来会把每一段都重新问一遍模型,包括已经翻好的那些。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="495"/>
+        <location filename="../qml/Main.qml" line="502"/>
         <source>Click &lt;b&gt;Open…&lt;/b&gt; to load a single PDF, or &lt;b&gt;Open folder…&lt;/b&gt; to browse a whole library. You can also drag a .pdf into the window. Each paper opens in its own tab.</source>
         <translation>点击 &lt;b&gt;打开…&lt;/b&gt; 加载单个 PDF,或 &lt;b&gt;打开文件夹…&lt;/b&gt; 浏览整个库。也可以将 .pdf 拖入窗口。每个论文会在单独的标签页中打开。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="499"/>
+        <location filename="../qml/Main.qml" line="506"/>
         <source>2 · Toggle panels</source>
         <translation>2 · 切换面板</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="500"/>
+        <location filename="../qml/Main.qml" line="507"/>
         <source>Use the toolbar&apos;s &lt;b&gt;Folder / TOC / Chat&lt;/b&gt; buttons to show or hide each pane.</source>
         <translation>使用工具栏的 &lt;b&gt;文件夹 / 目录 / 对话&lt;/b&gt; 按钮显示或隐藏对应面板。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="504"/>
+        <location filename="../qml/Main.qml" line="511"/>
         <source>3 · Move panels</source>
         <translation>3 · 移动面板</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="505"/>
+        <location filename="../qml/Main.qml" line="512"/>
         <source>Each pane has a small &lt;b&gt;⋮⋮ grip&lt;/b&gt; in its top-left corner. Press and drag a grip horizontally to slide that pane to a new slot in the layout — a vertical marker shows where it will land. The arrangement is remembered between launches.</source>
         <translation>每个面板左上角都有 &lt;b&gt;⋮⋮ 拖柄&lt;/b&gt;。按住并水平拖动拖柄,可以把该面板移到布局中的新位置——会出现一条竖线标记落点。下次启动时会保留你的布局。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="509"/>
+        <location filename="../qml/Main.qml" line="516"/>
         <source>4 · Translate paragraphs</source>
         <translation>4 · 段落翻译</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="510"/>
+        <location filename="../qml/Main.qml" line="517"/>
         <source>Click &lt;b&gt;Translate&lt;/b&gt; to translate every paragraph at once. Or right-click a single paragraph to translate, split, merge, delete, or quote it into the chat.</source>
         <translation>点击 &lt;b&gt;翻译&lt;/b&gt; 一键翻译所有段落。也可以右键单个段落,执行翻译、拆分、合并、删除,或将其引用到对话中。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="514"/>
+        <location filename="../qml/Main.qml" line="521"/>
         <source>5 · Chat with the paper</source>
         <translation>5 · 与论文对话</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="515"/>
+        <location filename="../qml/Main.qml" line="522"/>
         <source>Open the &lt;b&gt;Chat&lt;/b&gt; pane and ask questions. The model can read pages, search the text, and view rendered figures with vision. Each paper keeps its own list of &lt;b&gt;chat sessions&lt;/b&gt; in the tab strip on top — + to add, × to close, double-click to rename.</source>
         <translation>打开 &lt;b&gt;对话&lt;/b&gt; 面板向 AI 提问。模型可读取页面、搜索文本,并通过视觉模型查看渲染后的图表。每篇论文在面板顶部的标签栏中维护自己的 &lt;b&gt;对话会话&lt;/b&gt; 列表——+ 新建,× 关闭,双击重命名。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1198"/>
+        <location filename="../qml/Main.qml" line="1131"/>
+        <source>Every paragraph</source>
+        <translation>翻译每一段</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1147"/>
+        <source>Retry translation</source>
+        <translation>重试翻译</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1148"/>
+        <source>Only the paragraphs that failed</source>
+        <translation>只重试失败的段落</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1157"/>
+        <source>Read with vision</source>
+        <translation>视觉解读</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1158"/>
+        <source>Figures, tables and equations on this page</source>
+        <translation>本页的图、表和公式</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1167"/>
+        <source>Quote to chat</source>
+        <translation>引用到对话</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1168"/>
+        <source>The highlighted text</source>
+        <translation>把选中的文字发到对话</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1188"/>
+        <source>PDFs on this machine</source>
+        <translation>本机上的 PDF</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1212"/>
+        <source>%1 — click to watch or stop</source>
+        <translation>%1——点击查看或停止</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1213"/>
+        <source>Close-reading</source>
+        <translation>正在精读</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1214"/>
+        <source>Interpreting</source>
+        <translation>正在解读</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1215"/>
+        <source>This project&apos;s papers</source>
+        <translation>本课题的论文</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1227"/>
+        <source>Text and translation, paragraph by paragraph</source>
+        <translation>逐段的原文与译文</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1239"/>
+        <source>The paper&apos;s sections</source>
+        <translation>论文的章节</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1250"/>
+        <source>Quick read, close read and notes</source>
+        <translation>快速解读、精读和笔记</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1262"/>
+        <source>Ask about this paper</source>
+        <translation>问这篇论文的问题</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1279"/>
+        <source>What the whole project adds up to</source>
+        <translation>整个课题合起来说明了什么</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1298"/>
+        <source>Everything running, and how far along</source>
+        <translation>正在跑的任务和进度</translation>
+    </message>
+    <message>
         <source>Still %1 — click to watch or stop</source>
-        <translation>仍在%1——点击查看或停止</translation>
+        <translation type="vanished">仍在%1——点击查看或停止</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1199"/>
         <source>close-reading</source>
-        <translation>精读</translation>
+        <translation type="vanished">精读</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1200"/>
         <source>interpreting</source>
-        <translation>解读</translation>
+        <translation type="vanished">解读</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1201"/>
         <source>Library pane: the papers in this project, what has been made of each, and the batch that interprets or close-reads them</source>
-        <translation>文献库面板:本课题的论文、每篇解读到了哪一步,以及批量解读与批量精读</translation>
+        <translation type="vanished">文献库面板:本课题的论文、每篇解读到了哪一步,以及批量解读与批量精读</translation>
     </message>
     <message>
         <source>Segment</source>
@@ -3275,8 +3460,9 @@ Click to open this passage.</source>
         <translation type="vanished">对比 (%1)</translation>
     </message>
     <message>
+        <location filename="../qml/Main.qml" line="1469"/>
         <source>Compare</source>
-        <translation type="vanished">对比</translation>
+        <translation>对比</translation>
     </message>
     <message>
         <source>Put papers side by side, with a warning where they cannot honestly be compared</source>
@@ -3303,7 +3489,7 @@ Click to open this passage.</source>
         <translation type="vanished">结构化解读:与本课题的相关度、先读哪部分,每条结论都能追溯到原文</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="664"/>
+        <location filename="../qml/Main.qml" line="673"/>
         <source>Paragraphs</source>
         <translation>段落</translation>
     </message>
@@ -3312,7 +3498,7 @@ Click to open this passage.</source>
         <translation type="vanished">段落面板:论文正文、译文,以及每一段上的操作</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1351"/>
+        <location filename="../qml/Main.qml" line="1362"/>
         <source>page %1 / %2 · %3 paragraphs</source>
         <translation>第 %1 / %2 页 · %3 段</translation>
     </message>
@@ -3325,9 +3511,8 @@ Click to open this passage.</source>
         <translation type="vanished">编辑课题</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1414"/>
         <source>Rename this project, or delete it</source>
-        <translation>重命名或删除该课题</translation>
+        <translation type="vanished">重命名或删除该课题</translation>
     </message>
     <message>
         <source>Profile</source>
@@ -3338,53 +3523,46 @@ Click to open this passage.</source>
         <translation type="vanished">档案 •</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1440"/>
         <source>Research profile: %1</source>
-        <translation>研究档案:%1</translation>
+        <translation type="vanished">研究档案:%1</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1441"/>
         <source>Describe what this project is trying to find out — every interpretation is written against it</source>
-        <translation>写清这个课题想弄明白什么——所有解读都照着它来写</translation>
+        <translation type="vanished">写清这个课题想弄明白什么——所有解读都照着它来写</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1458"/>
         <source>Compare the %1 papers in the basket, with a warning where they cannot honestly be compared</source>
-        <translation>对比已选的 %1 篇论文,遇到不能公平比较的地方会先说明</translation>
+        <translation type="vanished">对比已选的 %1 篇论文,遇到不能公平比较的地方会先说明</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1461"/>
         <source>Put papers side by side, with a warning where they cannot honestly be compared. Add papers from the library pane&apos;s right-click menu.</source>
-        <translation>把论文并排比较,遇到不能公平比较的地方会先说明。在文献库面板里右键论文即可加入。</translation>
+        <translation type="vanished">把论文并排比较,遇到不能公平比较的地方会先说明。在文献库面板里右键论文即可加入。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1480"/>
         <source>Signed in as %1 — click to sign out</source>
-        <translation>已登录：%1——点击可退出</translation>
+        <translation type="vanished">已登录：%1——点击可退出</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1518"/>
-        <location filename="../qml/Main.qml" line="1532"/>
         <source>More toolbar buttons this way</source>
-        <translation>这个方向还有工具栏按钮</translation>
+        <translation type="vanished">这个方向还有工具栏按钮</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="2605"/>
+        <location filename="../qml/Main.qml" line="2617"/>
         <source>Restarting…</source>
         <translation>即将重启…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="2607"/>
+        <location filename="../qml/Main.qml" line="2619"/>
         <source>Downloading… %1%</source>
         <translation>下载中… %1%</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="2609"/>
+        <location filename="../qml/Main.qml" line="2621"/>
         <source>Update now</source>
         <translation>立即更新</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="2615"/>
+        <location filename="../qml/Main.qml" line="2627"/>
         <source>Downloads and installs automatically, then restarts the app.</source>
         <translation>自动下载并安装，随后自动重启应用。</translation>
     </message>
@@ -3393,7 +3571,7 @@ Click to open this passage.</source>
         <translation type="vanished">6 · 配置你的大模型</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="535"/>
+        <location filename="../qml/Main.qml" line="542"/>
         <source>Open &lt;b&gt;Settings…&lt;/b&gt; to add a model and API key (Anthropic Claude or any OpenAI-compatible endpoint). Use &lt;b&gt;Prompts…&lt;/b&gt; to customise system prompts. Re-open this tour any time from the &lt;b&gt;?&lt;/b&gt; button.</source>
         <translation>打开 &lt;b&gt;设置…&lt;/b&gt; 添加模型和 API 密钥(Anthropic Claude 或任意 OpenAI 兼容端点)。使用 &lt;b&gt;提示词…&lt;/b&gt; 自定义系统提示词。任何时候都可以从 &lt;b&gt;?&lt;/b&gt; 按钮重新打开本向导。</translation>
     </message>
@@ -3402,9 +3580,8 @@ Click to open this passage.</source>
         <translation type="vanished">单击：适应页宽 · 双击：恢复 100%</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1089"/>
         <source>Hand tool: drag to move the page. Off = select text.</source>
-        <translation>手形工具:拖动移动页面;关闭则为选择文字。</translation>
+        <translation type="vanished">手形工具:拖动移动页面;关闭则为选择文字。</translation>
     </message>
     <message>
         <source>Lib</source>
@@ -3419,21 +3596,88 @@ Click to open this passage.</source>
         <translation type="vanished"> · GROBID…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1366"/>
+        <location filename="../qml/Main.qml" line="1377"/>
         <source>Sign in</source>
         <translation>登录</translation>
     </message>
     <message>
-        <source>Members</source>
-        <translation type="vanished">成员</translation>
+        <location filename="../qml/Main.qml" line="1425"/>
+        <source>Project settings</source>
+        <translation>课题设置</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1485"/>
+        <location filename="../qml/Main.qml" line="1426"/>
+        <source>Rename or delete this project</source>
+        <translation>重命名或删除本课题</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1435"/>
+        <source>Members</source>
+        <translation>成员</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1451"/>
+        <source>Research profile</source>
+        <translation>研究档案</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1454"/>
+        <source>Not written yet — what is this project trying to find out?</source>
+        <translation>还没写——这个课题想弄清楚什么?</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1471"/>
+        <source>%1 papers picked</source>
+        <translation>已选 %1 篇</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1472"/>
+        <source>Papers side by side</source>
+        <translation>把论文并排比较</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1489"/>
+        <source>Signed in as %1</source>
+        <translation>已登录:%1</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1491"/>
+        <source>Click to sign out</source>
+        <translation>点击退出登录</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1495"/>
         <source>Sign out</source>
         <translation>退出登录</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="2592"/>
+        <location filename="../qml/Main.qml" line="1528"/>
+        <location filename="../qml/Main.qml" line="1542"/>
+        <source>More buttons</source>
+        <translation>更多按钮</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1562"/>
+        <source>Prompts</source>
+        <translation>提示词</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1563"/>
+        <source>What the model is told</source>
+        <translation>编辑发给模型的提示词</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1574"/>
+        <source>Tour</source>
+        <translation>新手引导</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="1575"/>
+        <source>The getting-started walkthrough</source>
+        <translation>重看入门引导</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="2604"/>
         <source>Update available: v%1</source>
         <translation>有可用更新:v%1</translation>
     </message>
@@ -3442,148 +3686,130 @@ Click to open this passage.</source>
         <translation type="vanished">下载</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="2642"/>
+        <location filename="../qml/Main.qml" line="2654"/>
         <source>Dismiss</source>
         <translation>忽略</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="2616"/>
+        <location filename="../qml/Main.qml" line="2628"/>
         <source>No download for this platform yet — check the website.</source>
         <translation>当前平台暂无下载——请到项目网站查看。</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1029"/>
         <source>Open a PDF…</source>
-        <translation>打开 PDF…</translation>
+        <translation type="vanished">打开 PDF…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1035"/>
         <source>Open a folder of PDFs…</source>
-        <translation>打开 PDF 文件夹…</translation>
+        <translation type="vanished">打开 PDF 文件夹…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1041"/>
         <source>Export text: the raw PDF text, per-line boxes and detected paragraphs, to a .txt file</source>
-        <translation>导出文本:把 PDF 原始文字、每行的位置框和识别出的段落写成 .txt</translation>
+        <translation type="vanished">导出文本:把 PDF 原始文字、每行的位置框和识别出的段落写成 .txt</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1065"/>
+        <location filename="../qml/Main.qml" line="1074"/>
         <source>Back to 100%</source>
         <translation>恢复 100%</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1077"/>
         <source>Fit the page to the window width</source>
-        <translation>按窗口宽度显示整页</translation>
+        <translation type="vanished">按窗口宽度显示整页</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1106"/>
         <source>Split this paper into paragraphs (needed for translation, the outline and chat)</source>
-        <translation>把这篇论文分成段落(翻译、目录和对话都需要)</translation>
+        <translation type="vanished">把这篇论文分成段落(翻译、目录和对话都需要)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1108"/>
         <source>Split it into paragraphs again, discarding the current division</source>
-        <translation>重新分段,丢弃现在的段落划分</translation>
+        <translation type="vanished">重新分段,丢弃现在的段落划分</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1119"/>
+        <location filename="../qml/Main.qml" line="1128"/>
         <source>Stop</source>
         <translation>停止</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1120"/>
+        <location filename="../qml/Main.qml" line="1129"/>
         <source>Stop translating</source>
         <translation>停止翻译</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1121"/>
         <source>Translate every paragraph</source>
-        <translation>翻译全部段落</translation>
+        <translation type="vanished">翻译全部段落</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1137"/>
         <source>Translate the paragraphs that failed</source>
-        <translation>重试翻译失败的段落</translation>
+        <translation type="vanished">重试翻译失败的段落</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1146"/>
         <source>Read this page with vision: figures, tables and equations as the model sees them</source>
-        <translation>用视觉读这一页:图、表和公式,按模型看到的样子</translation>
+        <translation type="vanished">用视觉读这一页:图、表和公式,按模型看到的样子</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1156"/>
         <source>Quote the highlighted text into the chat</source>
-        <translation>把选中的文字引用到对话里</translation>
+        <translation type="vanished">把选中的文字引用到对话里</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1175"/>
         <source>Folder pane: browse PDFs on this machine</source>
-        <translation>文件夹面板:浏览本机的 PDF</translation>
+        <translation type="vanished">文件夹面板:浏览本机的 PDF</translation>
     </message>
     <message>
         <source>Library pane: the papers in this project</source>
         <translation type="vanished">文献库面板:这个课题里的论文</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1214"/>
         <source>Paragraph pane: the paper&apos;s text, its translation, and the per-paragraph actions</source>
-        <translation>段落面板:论文正文、译文,以及每一段上的操作</translation>
+        <translation type="vanished">段落面板:论文正文、译文,以及每一段上的操作</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1226"/>
         <source>Outline pane: the paper&apos;s sections</source>
-        <translation>目录面板:论文的章节</translation>
+        <translation type="vanished">目录面板:论文的章节</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1236"/>
         <source>Interpretation pane: relevance to this project, what to read first, and every statement traced back to the paper</source>
-        <translation>解读面板:与本课题的相关度、先读哪里,以及每条结论回到原文的出处</translation>
+        <translation type="vanished">解读面板:与本课题的相关度、先读哪里,以及每条结论回到原文的出处</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1249"/>
         <source>Chat pane: ask about this paper</source>
-        <translation>对话面板:就这篇论文提问</translation>
+        <translation type="vanished">对话面板:就这篇论文提问</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1265"/>
         <source>Research pane: what this whole project adds up to — categories, the research map, consensus and conflict, coverage, and what to do next</source>
-        <translation>课题汇总面板:整个课题合起来说明了什么——分类、研究图谱、共识与冲突、覆盖情况,以及接下来该做什么</translation>
+        <translation type="vanished">课题汇总面板:整个课题合起来说明了什么——分类、研究图谱、共识与冲突、覆盖情况,以及接下来该做什么</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1285"/>
         <source>Tasks pane: everything the app is working on — what is running, how far along it is, and how long it has left</source>
-        <translation>任务面板:应用正在做的全部工作——哪些在跑、进行到哪里、还要多久</translation>
+        <translation type="vanished">任务面板:应用正在做的全部工作——哪些在跑、进行到哪里、还要多久</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1298"/>
+        <location filename="../qml/Main.qml" line="1309"/>
         <source>Saved layouts — showing “%1”</source>
         <translation>已保存的布局——当前显示“%1”</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1300"/>
+        <location filename="../qml/Main.qml" line="1311"/>
         <source>Saved layouts: arrange the panes, save that arrangement under a name, and switch between them</source>
         <translation>已保存的布局:排布面板、将排布保存为一个名称,并在其间切换</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1343"/>
+        <location filename="../qml/Main.qml" line="1354"/>
         <source>Segmenting…</source>
         <translation>正在分段…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1344"/>
+        <location filename="../qml/Main.qml" line="1355"/>
         <source>GROBID…</source>
         <translation>GROBID…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1349"/>
+        <location filename="../qml/Main.qml" line="1360"/>
         <source>%1 / %2</source>
         <translation>第 %1 / %2 页</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1423"/>
         <source>Members of this project</source>
-        <translation>这个课题的成员</translation>
+        <translation type="vanished">这个课题的成员</translation>
     </message>
     <message>
         <source>Everything the app is working on: what is running, how far along it is, and how long it has left</source>
@@ -3594,57 +3820,55 @@ Click to open this passage.</source>
         <translation type="vanished">已登录——点击可退出</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1552"/>
         <source>Edit the prompts the model is given</source>
-        <translation>编辑发给模型的提示词</translation>
+        <translation type="vanished">编辑发给模型的提示词</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1558"/>
+        <location filename="../qml/Main.qml" line="1569"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1563"/>
         <source>Show the getting-started tour</source>
-        <translation>显示新手引导</translation>
+        <translation type="vanished">显示新手引导</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1754"/>
+        <location filename="../qml/Main.qml" line="1766"/>
         <source>Close Tab</source>
         <translation>关闭此页</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1758"/>
+        <location filename="../qml/Main.qml" line="1770"/>
         <source>Close Others</source>
         <translation>关闭其他页</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1763"/>
+        <location filename="../qml/Main.qml" line="1775"/>
         <source>Close All</source>
         <translation>全部关闭</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="661"/>
+        <location filename="../qml/Main.qml" line="670"/>
         <source>Library</source>
         <translation>文献库</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="662"/>
+        <location filename="../qml/Main.qml" line="671"/>
         <source>Outline</source>
         <translation>目录</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="665"/>
+        <location filename="../qml/Main.qml" line="674"/>
         <source>Interpretation</source>
         <translation>解读</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="666"/>
+        <location filename="../qml/Main.qml" line="675"/>
         <source>Project analyses</source>
-        <translation>全库分析</translation>
+        <translation>课题汇总</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="667"/>
+        <location filename="../qml/Main.qml" line="676"/>
         <source>Tasks</source>
         <translation>任务</translation>
     </message>
