@@ -199,21 +199,28 @@ public:
             const char *evName =
                 QMetaEnum::fromType<QEvent::Type>().valueToKey(type);
             // Not phase(): every Mark inside the event is gone by now and
-            // that would always read "idle". This is the longest one that
-            // ran while the event did -- and an empty answer means the time
-            // went somewhere no marker covers, which is worth knowing too.
-            qint64 markMs = 0;
-            const QByteArray inner = Stall::takeLongestMark(&markMs);
+            // that would always read "idle". This is where the time went,
+            // biggest first, with whatever no marker covers as the
+            // remainder -- which is the number that says to stop marking
+            // and go look at Qt or at QML.
+            QByteArray where;
+            qint64 accounted = 0;
+            const auto breakdown = Stall::takeBreakdown();
+            for (int i = 0; i < breakdown.size(); ++i) {
+                accounted += breakdown.at(i).second;
+                if (i < 4 && breakdown.at(i).second >= 5)
+                    where += "\n      " + QByteArray::number(breakdown.at(i).second)
+                             + " ms  " + breakdown.at(i).first;
+            }
+            where += "\n      " + QByteArray::number(qMax(qint64(0), ms - accounted))
+                     + " ms  (nothing marked -- QML, the scene graph, or Qt itself)";
             qWarning("[t+%lld ms] %lld ms went into one %s delivered to "
-                     "%s%s%s%s (a child of %s); the longest marked step "
-                     "inside it was %s (%lld ms)",
+                     "%s%s%s%s (a child of %s):%s",
                      g_boot.elapsed(), ms, evName ? evName : "event", cls,
                      name.isEmpty() ? "" : " \"",
                      name.isEmpty() ? "" : qUtf8Printable(name),
                      name.isEmpty() ? "" : "\"",
-                     parentCls,
-                     inner.isEmpty() ? "nothing marked" : inner.constData(),
-                     markMs);
+                     parentCls, where.constData());
         }
         return handled;
     }
@@ -711,7 +718,10 @@ int main(int argc, char *argv[])
     tabs.setTitleResolver(paperDisplayName);
     // Titles land with a sync, after the tabs are already drawn.
     QObject::connect(&syncEngine, &SyncEngine::projectSynced, &tabs,
-                     [&tabs](const QString &) { tabs.refreshTitles(); });
+                     [&tabs](const QString &) {
+                         Stall::Mark mark("renaming the open tabs");
+                         tabs.refreshTitles();
+                     });
 
     QObject::connect(&paperController, &PaperController::pdfSourceChanged,
                      &analysisService, [&]() {

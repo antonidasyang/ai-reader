@@ -31,6 +31,8 @@ constexpr int kMaxPullPages = 4000;
 // About a frame: long enough that the walk is not all overhead, short
 // enough that nobody sees it.
 constexpr int kApplySliceMs = 12;
+// How long a local write waits for its neighbours before asking for a sync.
+constexpr int kWriteSyncDebounceMs = 1500;
 // Outbox batching. The server's JSON body limit is well above this; the point
 // is to keep any single request modest and to make progress incrementally.
 constexpr int kPushMaxObjects = 100;
@@ -49,6 +51,10 @@ SyncEngine::SyncEngine(ApiClient *api, AuthController *auth,
 {
     m_poll.setInterval(kPollMs);
     connect(&m_poll, &QTimer::timeout, this, [this] { syncNow(); });
+
+    m_writeSync.setSingleShot(true);
+    m_writeSync.setInterval(kWriteSyncDebounceMs);
+    connect(&m_writeSync, &QTimer::timeout, this, [this] { syncNow(); });
 
     m_wsReconnect.setSingleShot(true);
     m_wsReconnect.setInterval(5000);
@@ -132,8 +138,16 @@ void SyncEngine::syncProject(const QString &projectId)
     pull(projectId, [this, projectId] {
         push(projectId, 0, 0, [this, projectId] {
             setSyncing(false);
+            const int moved = m_appliedThisSync + m_pushedThisSync;
             qInfo("sync: %d objects in, %d out, %lld ms",
                   m_appliedThisSync, m_pushedThisSync, m_syncClock.elapsed());
+            // Nothing came in and nothing went out, so there is nothing for
+            // anyone to react to. Saying so anyway made every caller reload
+            // the library, re-read the project's interpretations and re-run
+            // the panes bound to them -- measured at 1.4 seconds of frozen
+            // window, for a sync that moved not one object.
+            if (moved == 0)
+                return;
             // Everything that reacts to a sync runs inside this emission,
             // on the GUI thread; the watchdog should say so.
             Stall::Mark mark("a sync landing");
@@ -295,6 +309,7 @@ void SyncEngine::push(const QString &projectId, int attempt, int batch,
             for (const QJsonValue &v : root.value(QStringLiteral("applied")).toArray())
                 appliedIds << v.toString();
             m_db->markPushed(projectId, appliedIds, newVersion);
+            m_pushedThisSync += int(appliedIds.size());
 
             bool producedDirty = false;
             for (const QJsonValue &v :
@@ -420,7 +435,11 @@ void SyncEngine::putObject(const QString &type, const QString &id,
     row.data = data;
     row.deleted = deleted;
     indexObject(row);
-    syncNow();
+    // Not syncNow(): a burst of writes -- publishing a paper's paragraphs
+    // and its translations, storing an interpretation and its notes -- used
+    // to be one full round trip each, and each of those ends in work on the
+    // GUI thread. Coalesce them; a second and a half is still prompt.
+    m_writeSync.start();
 }
 
 QString SyncEngine::wsUrl() const

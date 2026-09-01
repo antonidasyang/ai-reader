@@ -67,6 +67,7 @@ private:
     // Plain bookkeeping so a sync can say what it did. A loop of syncs is
     // invisible when each step is under the freeze threshold; a line per
     // sync makes it obvious.
+    QTimer m_writeSync;      // coalesces "something changed locally"
     QElapsedTimer m_syncClock;
     int m_appliedThisSync = 0;
     int m_pushedThisSync = 0;

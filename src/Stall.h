@@ -1,33 +1,30 @@
 #pragma once
 
 #include <QByteArray>
+#include <QList>
+#include <QPair>
 
-// What the GUI thread is doing right now, in a few words.
+// What the GUI thread is doing right now, in a few words -- and, once an
+// event is over, where its time actually went.
 //
-// The watchdog in main.cpp notices when the thread was blocked; on its own
-// it cannot say what blocked it, and "the window froze for four seconds
-// doing something" is not a bug report anyone can act on. Marking the
-// handful of paths that are known to be expensive costs a pointer store
-// each and turns that line into "...during: opening a paper".
-//
-// A phase that is never marked stays "idle", which is itself an answer: it
-// means the time went somewhere no marker covers -- in QML, in the scene
-// graph, or inside Qt.
+// The watchdog and the event probe in main.cpp both notice when the thread
+// was blocked; neither can say what blocked it. Marking the paths that are
+// known to be expensive costs a clock read each and turns "the window froze
+// for four seconds" into a breakdown.
 namespace Stall {
 
 void setPhase(const char *what);
 const char *phase();
 
-// The longest-lived Mark since this was last taken, and how long it lived.
-// By the time an event returns, every Mark inside it has been destroyed and
-// the current phase is whatever it was before -- so an event probe that
-// reads phase() afterwards always says "idle". This is what it should read
-// instead. Returns an empty name when nothing was marked.
-QByteArray takeLongestMark(qint64 *ms);
+// Exclusive time per marked phase since this was last taken, biggest
+// first. Exclusive: a marked path that calls another marked path is not
+// charged for the inner one, so the numbers add up rather than nest. What
+// they do not add up to is the whole event -- the difference is time no
+// marker covers, and the probe reports that residual too, because it is the
+// number that says "stop marking and go look at Qt".
+QList<QPair<QByteArray, qint64>> takeBreakdown();
 
-// Scoped, and restores whatever was current before it -- so a marked path
-// that calls another marked path reports the inner one while it is inside
-// it, and the outer one again afterwards.
+// Scoped, and restores whatever was current before it.
 class Mark
 {
 public:
@@ -46,6 +43,8 @@ private:
     const char *m_what = nullptr;
     QByteArray m_own;
     qint64 m_startedAt = 0;
+    qint64 m_childMs = 0;      // time spent inside marks nested in this one
+    Mark *m_parent = nullptr;
 };
 
 } // namespace Stall

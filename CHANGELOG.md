@@ -1,5 +1,34 @@
 # AI Reader changelog
 
+## v1.3.21 — 2026-09-01
+
+### A sync that moved nothing stops costing a second and a half
+- With the probe reporting honestly, the field log named it: every freeze
+  was "a sync landing", 1.4 seconds of it, over and over. And the syncs
+  themselves were arriving every two seconds instead of every thirty —
+  including this one: `sync: 0 objects in, 0 out, 1338 ms`. A sync that
+  moved not one object still told everything that listens to reload, and
+  everything that listens reloads the library, re-reads the project's
+  interpretations and re-runs the panes bound to them.
+- Nothing came in and nothing went out means there is nothing to react to,
+  so nobody is told any more.
+- Every local write used to ask for a full sync of its own, immediately.
+  Publishing a paper's paragraphs and its translations, storing an
+  interpretation and its notes — each was a round trip, and each round trip
+  ended in that work. Writes now wait a second and a half for their
+  neighbours and go together.
+- The receivers of a sync name themselves now too, so what is left of that
+  1.4 seconds has somewhere to show up.
+
+### A slow event is reported as a breakdown, not a single name
+- The probe used to name the longest marked step inside a slow event, which
+  is the right answer only when one step dominates. It now lists where the
+  time went, biggest first — and, last, how much of it no marker covers at
+  all. That remainder is the number that says to stop marking and go look
+  at QML, at the scene graph, or at Qt.
+- The times are exclusive: a marked path that calls another marked path is
+  not charged for the inner one, so the lines add up instead of nesting.
+
 ## v1.3.20 — 2026-09-01
 
 ### The window stops freezing every time the app talks to the server

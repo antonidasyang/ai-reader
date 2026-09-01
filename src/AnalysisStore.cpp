@@ -44,7 +44,10 @@ AnalysisStore::AnalysisStore(LibraryDb *db, ProjectController *projects,
     connect(this, &AnalysisStore::changed, this,
             [this] { m_othersIndexValid = false; });
     connect(m_sync, &SyncEngine::projectSynced, this,
-            [this](const QString &) { emit changed(); });
+            [this](const QString &) {
+                Stall::Mark mark("telling everything the project changed");
+                emit changed();
+            });
     connect(m_projects, &ProjectController::currentChanged, this,
             &AnalysisStore::changed);
     connect(m_auth, &AuthController::authenticatedChanged, this,
