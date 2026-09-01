@@ -386,6 +386,65 @@ int main(int argc, char **argv)
           gateway.requests() == before2 && batch.skipped() == 2,
           QStringLiteral("skipped=%1").arg(batch.skipped()));
 
+    // ── §7 × §3: close-reading a whole starred set ──────────────────
+    // The star used to be a note to self and nothing else: the batch could
+    // only ever run the quick interpretation, so a reader could mark thirty
+    // papers and find nothing in the app that would read them.
+    check("the two papers starred earlier are what a close read would cost",
+          list.deepPendingCount() == 2,
+          QStringLiteral("got %1").arg(list.deepPendingCount()));
+
+    const int before3 = gateway.requests();
+    batch.startDeepItems(list.toReadItemIds(), false);
+    const bool deepBatchDone =
+        waitFor([&] { return !batch.busy() && batch.total() > 0; }, 180000);
+    check("the starred papers were close-read without being opened",
+          deepBatchDone && batch.done() == 2,
+          QStringLiteral("done=%1 failed=%2 skipped=%3 — %4")
+              .arg(batch.done()).arg(batch.failed()).arg(batch.skipped())
+              .arg(batch.status()));
+    check("...nine calls for each of them, one per part of the reading",
+          gateway.requests() - before3 == 18,
+          QStringLiteral("got %1").arg(gateway.requests() - before3));
+    list.reload();
+    check("...and the list says both carry a close reading now",
+          list.deepDoneCount() == 2,
+          QStringLiteral("got %1").arg(list.deepDoneCount()));
+    check("...so the star has nothing left to spend",
+          list.deepPendingCount() == 0,
+          QStringLiteral("got %1").arg(list.deepPendingCount()));
+
+    const int before4 = gateway.requests();
+    batch.startDeepItems(list.toReadItemIds(), false);
+    waitFor([&] { return !batch.busy(); }, 30000);
+    check("a second close-read run buys none of it again",
+          gateway.requests() == before4 && batch.skipped() == 2,
+          QStringLiteral("skipped=%1").arg(batch.skipped()));
+
+    // The nine parts are written against the quick interpretation, so a
+    // paper reached without one has to be interpreted first rather than
+    // failed for not having been.
+    const QString dPath = QString::fromLocal8Bit(qgetenv("PDF_D"));
+    const QString dItem =
+        library.addPaper(QStringLiteral("Never interpreted"),
+                         PaperController::paperIdForFile(dPath), dPath);
+    list.reload();
+    const int before5 = gateway.requests();
+    batch.startDeepItems(QStringList{dItem}, false);
+    const bool dDone =
+        waitFor([&] { return !batch.busy() && batch.total() > 0; }, 180000);
+    check("a paper with no interpretation gets one first, then the nine parts",
+          dDone && gateway.requests() - before5 == 10,
+          QStringLiteral("%1 calls — %2")
+              .arg(gateway.requests() - before5)
+              .arg(batch.status()));
+    list.reload();
+    check("...and both are on record when it is over",
+          list.interpretedCount() == 3 && list.deepDoneCount() == 3,
+          QStringLiteral("quick=%1 deep=%2")
+              .arg(list.interpretedCount())
+              .arg(list.deepDoneCount()));
+
     // A paper the batch segmented is cached, so opening it later is free.
     BlockCacheProbe probe(PaperController::paperIdForFile(fixtures.at(0)));
     check("the segmentation the batch paid for was kept for the reader",

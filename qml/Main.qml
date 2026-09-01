@@ -313,7 +313,6 @@ ApplicationWindow {
     MembersDialog { id: membersDialog }
     ProjectSettingsDialog { id: projectSettingsDialog }
     ProjectProfileDialog { id: projectProfileDialog }
-    BatchAnalysisDialog { id: batchAnalysisDialog }
     CompareDialog { id: compareDialog }
     // Re-segmenting is destructive in a way that is not obvious: the
     // paragraph ids change, so translations keyed to them stop matching and
@@ -1184,7 +1183,24 @@ ApplicationWindow {
                     // plain binding would not survive that -- the button would stop
                     // following the pane the moment anything else showed it.
                     Binding on checked { value: libraryPane.visible; restoreMode: Binding.RestoreNone }
-                    tip: qsTr("Library pane: the papers in this project")
+                    // A batch is owned by the app, not by the pane it was
+                    // started from: closing the pane does not stop it, so the
+                    // count belongs on the button that opens the pane again.
+                    // It used to live on a separate toolbar button that
+                    // opened a separate list of the same papers.
+                    display: batchAnalysis.busy ? AbstractButton.TextBesideIcon
+                                                : AbstractButton.IconOnly
+                    text: batchAnalysis.busy
+                          ? (batchAnalysis.done + batchAnalysis.failed
+                             + batchAnalysis.skipped) + "/" + batchAnalysis.total
+                          : ""
+                    tip: batchAnalysis.busy
+                         ? qsTr("Still %1 — click to watch or stop")
+                           .arg(batchAnalysis.deepMode ? qsTr("close-reading")
+                                                       : qsTr("interpreting"))
+                         : qsTr("Library pane: the papers in this project, what "
+                                + "has been made of each, and the batch that "
+                                + "interprets or close-reads them")
                     onClicked: libraryPane.visible = !libraryPane.visible
                 }
                 ToolIcon {
@@ -1232,6 +1248,44 @@ ApplicationWindow {
                     Binding on checked { value: chatPane.visible; restoreMode: Binding.RestoreNone }
                     tip: qsTr("Chat pane: ask about this paper")
                     onClicked: chatPane.visible = !chatPane.visible
+                }
+                ToolIcon {
+                    // Project-wide, but a pane all the same -- it opens and
+                    // closes exactly like the six above it and is saved in
+                    // the same layout. It used to sit in the project group
+                    // with the dialogs, which is where a reader went looking
+                    // for a window and found a pane.
+                    icon.source: "qrc:/icons/pane-research.svg"
+                    needsProject: true
+                    checkable: true
+                    // Bound, not assigned: a click writes `checked` itself, and a
+                    // plain binding would not survive that -- the button would stop
+                    // following the pane the moment anything else showed it.
+                    Binding on checked { value: researchPane.visible; restoreMode: Binding.RestoreNone }
+                    tip: qsTr("Research pane: what this whole project adds up "
+                              + "to — categories, the research map, consensus "
+                              + "and conflict, coverage, and what to do next")
+                    onClicked: {
+                        if (blocked) { window.resolveProjectBlock(); return }
+                        researchPane.visible = !researchPane.visible
+                    }
+                }
+                ToolIcon {
+                    icon.source: "qrc:/icons/pane-tasks.svg"
+                    checkable: true
+                    // Bound, not assigned: a click writes `checked` itself, and a
+                    // plain binding would not survive that -- the button would stop
+                    // following the pane the moment anything else showed it.
+                    Binding on checked { value: tasksPane.visible; restoreMode: Binding.RestoreNone }
+                    // The count is the point when something is running: it is
+                    // the only place the toolbar admits the app is busy.
+                    display: tasks.activeCount > 0 ? AbstractButton.TextBesideIcon
+                                                   : AbstractButton.IconOnly
+                    text: tasks.activeCount > 0 ? tasks.activeCount : ""
+                    tip: qsTr("Tasks pane: everything the app is working on — "
+                              + "what is running, how far along it is, and how "
+                              + "long it has left")
+                    onClicked: tasksPane.visible = !tasksPane.visible
                 }
                 ToolButton {
                     // The last entry in the pane group, because it is about all
@@ -1395,70 +1449,22 @@ ApplicationWindow {
                 ToolSeparator { visible: auth.authenticated }
 
                 ToolIcon {
-                    // A running batch is owned by the app, not by the window it
-                    // was started from — closing that window does not stop it, so
-                    // the progress has to be visible here too.
-                    icon.source: "qrc:/icons/batch.svg"
-                    needsProject: true
-                    display: batchAnalysis.busy ? AbstractButton.TextBesideIcon
-                                                : AbstractButton.IconOnly
-                    text: batchAnalysis.busy
-                          ? (batchAnalysis.done + batchAnalysis.failed
-                             + batchAnalysis.skipped) + "/" + batchAnalysis.total
-                          : ""
-                    tip: batchAnalysis.busy
-                         ? qsTr("Still interpreting — click to watch or stop")
-                         : qsTr("Interpret every paper in this project, then filter "
-                                + "by relevance")
-                    onClicked: {
-                        if (blocked) { window.resolveProjectBlock(); return }
-                        batchAnalysisDialog.open()
-                    }
-                }
-                ToolIcon {
                     icon.source: "qrc:/icons/compare.svg"
                     needsProject: true
                     display: compare.count > 0 ? AbstractButton.TextBesideIcon
                                                : AbstractButton.IconOnly
                     text: compare.count > 0 ? compare.count : ""
-                    tip: qsTr("Put papers side by side, with a warning where they "
-                              + "cannot honestly be compared")
+                    tip: compare.count > 0
+                         ? qsTr("Compare the %1 papers in the basket, with a "
+                                + "warning where they cannot honestly be "
+                                + "compared").arg(compare.count)
+                         : qsTr("Put papers side by side, with a warning where "
+                                + "they cannot honestly be compared. Add papers "
+                                + "from the library pane's right-click menu.")
                     onClicked: {
                         if (blocked) { window.resolveProjectBlock(); return }
                         compareDialog.open()
                     }
-                }
-                ToolIcon {
-                    icon.source: "qrc:/icons/research.svg"
-                    needsProject: true
-                    checkable: true
-                    // Bound, not assigned: a click writes `checked` itself, and a
-                    // plain binding would not survive that -- the button would stop
-                    // following the pane the moment anything else showed it.
-                    Binding on checked { value: researchPane.visible; restoreMode: Binding.RestoreNone }
-                    tip: qsTr("What this whole project adds up to: categories, the "
-                              + "research map, consensus and conflict, coverage, and "
-                              + "what to do next")
-                    onClicked: {
-                        if (blocked) { window.resolveProjectBlock(); return }
-                        researchPane.visible = !researchPane.visible
-                    }
-                }
-                ToolIcon {
-                    icon.source: "qrc:/icons/tasks.svg"
-                    checkable: true
-                    // Bound, not assigned: a click writes `checked` itself, and a
-                    // plain binding would not survive that -- the button would stop
-                    // following the pane the moment anything else showed it.
-                    Binding on checked { value: tasksPane.visible; restoreMode: Binding.RestoreNone }
-                    // The count is the point when something is running: it is
-                    // the only place the toolbar admits the app is busy.
-                    display: tasks.activeCount > 0 ? AbstractButton.TextBesideIcon
-                                                   : AbstractButton.IconOnly
-                    text: tasks.activeCount > 0 ? tasks.activeCount : ""
-                    tip: qsTr("Everything the app is working on: what is running, "
-                              + "how far along it is, and how long it has left")
-                    onClicked: tasksPane.visible = !tasksPane.visible
                 }
                 ToolIcon {
                     id: accountBtn
@@ -1650,6 +1656,9 @@ ApplicationWindow {
                 SplitView.minimumWidth: 0
                 onWidthChanged: layoutSettings.setPaneWidth("library", width)
                 onOpenRequested: function(path) { tabs.openPaper(path) }
+                // "Compare everything shown" builds a basket and then wants
+                // to be looking at it.
+                onCompareRequested: compareDialog.open()
 
                 DockGrip {
                     anchors.left: parent.left

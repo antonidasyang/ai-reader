@@ -1,5 +1,43 @@
 # AI Reader changelog
 
+## v1.3.26 — 2026-09-01
+
+### One list of papers, and the star finally means something
+- The library pane and the "Interpret the library" window were two lists of
+  the same papers, and neither could act on what the other was showing. A set
+  filtered down to "everything the model called high-relevance" could be
+  starred in the window but not opened from it; a paper opened from the pane
+  could not be interpreted there. They are one list now, in the pane: the
+  filters, the progress, the failures and their reasons, and every per-paper
+  action — open it, interpret it, close-read it, star it, compare it, set it
+  aside — on the row itself. The separate window is gone, and the running
+  count moved onto the button that opens the pane.
+- The star was a note to self with nothing downstream of it. Marking thirty
+  papers for a close read was possible; reading them was not, because the
+  batch could only ever run the quick interpretation. It runs the nine-part
+  close reading now — "Close-read the starred" — a paper at a time, its nine
+  parts paced against the concurrency limit, resuming at the part it stopped
+  on and skipping papers a collaborator has already read. A paper reached
+  without a quick interpretation gets one first rather than being failed for
+  not having one: the nine parts are written against it.
+- Papers can be put into the comparison from the library. Until now the only
+  way in was the ⋯ menu beside a statement inside an open paper's
+  interpretation, so comparing three papers meant opening three PDFs one
+  after another. Right-click any row, or take everything the filters are
+  showing in one go.
+
+### The two panes that were filed as dialogs
+- The research summary and the task list are panes — they dock, they resize,
+  they are saved in layouts — but their buttons sat in the project group
+  beside the dialogs, which is where a reader went looking for a window and
+  found a pane instead. Both moved into the pane group with the other six.
+
+### Fixed
+- A batch stopped counting itself as busy while it was fetching and
+  segmenting a paper, so on the last paper of a run the progress bar and the
+  Stop button vanished for the whole of that and the buttons that start a run
+  came back to life on top of one.
+
 ## v1.3.25 — 2026-09-01
 
 ### The freeze instrumentation costs nothing to leave on

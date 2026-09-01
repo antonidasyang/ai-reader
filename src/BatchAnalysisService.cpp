@@ -98,7 +98,8 @@ void BatchAnalysisService::setTasks(TaskManager *tasks)
             // "Regenerate all" that got half way through has already been
             // paid for, and resuming must pick up what is left rather than
             // buy the finished papers a second time.
-            startItems(itemIds, /*force=*/false);
+            beginBatch(itemIds, /*force=*/false,
+                       resume.value(QStringLiteral("deep")).toBool());
             return !m_taskId.isEmpty();
         });
 }
@@ -116,6 +117,23 @@ void BatchAnalysisService::startPending()
 
 void BatchAnalysisService::startItems(const QStringList &itemIds, bool force)
 {
+    beginBatch(itemIds, force, /*deep=*/false);
+}
+
+void BatchAnalysisService::startDeepItems(const QStringList &itemIds,
+                                          bool force)
+{
+    beginBatch(itemIds, force, /*deep=*/true);
+}
+
+int BatchAnalysisService::deepPartsTotal() const
+{
+    return int(Analysis::deepModules().size());
+}
+
+void BatchAnalysisService::beginBatch(const QStringList &itemIds, bool force,
+                                      bool deep)
+{
     if (itemIds.isEmpty())
         return;
     if (!canRun()) {
@@ -126,6 +144,8 @@ void BatchAnalysisService::startItems(const QStringList &itemIds, bool force)
     }
 
     if (!m_tasks) {
+        if (!busy())
+            m_deep = deep;
         startRun(itemIds, force);
         return;
     }
@@ -150,9 +170,11 @@ void BatchAnalysisService::startItems(const QStringList &itemIds, bool force)
         return;
     }
 
+    m_deep = deep;
     Tasks::Request req;
     req.kind = Tasks::Kind::BatchInterpret;
-    req.title = tr("Interpret the library");
+    req.title = deep ? tr("Close-read the library")
+                     : tr("Interpret the library");
     req.projectId = m_store->projectId();
     // Not the default key: this is project work, not one paper's, and two
     // batches over one project would fight over the same rows.
@@ -167,7 +189,8 @@ void BatchAnalysisService::startItems(const QStringList &itemIds, bool force)
     // through, and resuming must skip what is stored rather than buy it
     // twice.
     req.resume = QJsonObject{{QStringLiteral("projectId"), req.projectId},
-                             {QStringLiteral("itemIds"), items}};
+                             {QStringLiteral("itemIds"), items},
+                             {QStringLiteral("deep"), deep}};
 
     const QString project = req.projectId;
     const QString id = m_tasks->submit(
@@ -294,6 +317,14 @@ void BatchAnalysisService::cancelTask()
         m_tasks->markCanceled(id);
 }
 
+QStringList BatchAnalysisService::claimKeys(const QString &paperId) const
+{
+    QStringList keys{QStringLiteral("quick_interpret|") + paperId};
+    if (m_deep)
+        keys.append(QStringLiteral("deep_interpret|") + paperId);
+    return keys;
+}
+
 void BatchAnalysisService::claimPaper(const QString &paperId)
 {
     if (!m_tasks || m_taskId.isEmpty() || paperId.isEmpty())
@@ -305,17 +336,18 @@ void BatchAnalysisService::claimPaper(const QString &paperId)
     // paper, so without this the reader could click Interpret on the very
     // paper the batch is working on: two paid calls, two writes of one
     // record, and whichever answered last would win.
-    m_tasks->claim(m_taskId,
-                   QStringLiteral("quick_interpret|") + paperId);
+    for (const QString &key : claimKeys(paperId))
+        m_tasks->claim(m_taskId, key);
 }
 
 void BatchAnalysisService::releasePaper(const QString &paperId)
 {
     if (!m_claimed.remove(paperId))
         return;
-    if (m_tasks && !m_taskId.isEmpty())
-        m_tasks->releaseClaim(m_taskId,
-                              QStringLiteral("quick_interpret|") + paperId);
+    if (!m_tasks || m_taskId.isEmpty())
+        return;
+    for (const QString &key : claimKeys(paperId))
+        m_tasks->releaseClaim(m_taskId, key);
 }
 
 void BatchAnalysisService::releaseAllPapers()
@@ -330,7 +362,10 @@ void BatchAnalysisService::pump()
     if (m_cancelled)
         return;
     const int limit = m_settings ? m_settings->analysisConcurrency() : 2;
-    while (!m_sourceBusy && !m_queue.isEmpty() && m_running < limit) {
+    // A close reading is nine calls, already paced against the cap among
+    // themselves; taking two papers at once would multiply that by two.
+    const int paperLimit = m_deep ? 1 : limit;
+    while (!m_sourceBusy && !m_queue.isEmpty() && m_running < paperLimit) {
         // Which paper an item points at is only known once its fields have
         // been read, so the "already interpreted" skip happens where the
         // paperId is in hand -- in onSourceReady.
@@ -353,10 +388,23 @@ void BatchAnalysisService::onSourceReady(const QString &itemId,
     if (m_cancelled)
         return;
 
+    const AnalysisRecord quick =
+        m_store->paperAnalysis(paperId, Analysis::KindQuick);
+    const bool hasQuick = quick.valid && !quick.payload.isEmpty();
+
     if (!m_force) {
-        const AnalysisRecord existing =
-            m_store->paperAnalysis(paperId, Analysis::KindQuick);
-        if (existing.valid && !existing.payload.isEmpty()) {
+        bool alreadyDone = false;
+        if (m_deep) {
+            const AnalysisRecord deep =
+                m_store->paperAnalysis(paperId, Analysis::KindDeep);
+            alreadyDone =
+                deep.valid
+                && deep.payload.value(QStringLiteral("modules")).toObject().size()
+                       >= deepPartsTotal();
+        } else {
+            alreadyDone = hasQuick;
+        }
+        if (alreadyDone) {
             ++m_skipped;
             m_model->setRuntime(itemId, QString());
             emit progressChanged();
@@ -365,6 +413,43 @@ void BatchAnalysisService::onSourceReady(const QString &itemId,
         }
     }
 
+    // A paper the quick read already gave up on has nothing for nine more
+    // calls to work with. Skipping it is not a failure -- it is the answer
+    // the quick read already paid for.
+    if (m_deep && hasQuick && quick.status == Analysis::StatusInsufficient) {
+        ++m_skipped;
+        m_model->setRuntime(itemId, QString());
+        emit progressChanged();
+        pump();
+        return;
+    }
+
+    // Counted and spoken for once per paper, whichever of the two runs
+    // below ends up doing the work.
+    ++m_running;
+    claimPaper(paperId);
+    emit progressChanged();
+
+    if (!m_deep) {
+        startQuick(itemId, paperId, title, blocks, /*thenDeep=*/false);
+        pump();
+        return;
+    }
+    if (!hasQuick) {
+        // The nine parts are written against the quick interpretation, so a
+        // paper reached without one gets it first rather than being failed.
+        startQuick(itemId, paperId, title, blocks, /*thenDeep=*/true);
+        return;
+    }
+    beginDeepRun(itemId, paperId, title, blocks, quick.payload);
+}
+
+void BatchAnalysisService::startQuick(const QString &itemId,
+                                      const QString &paperId,
+                                      const QString &title,
+                                      const QVector<Block> &blocks,
+                                      bool thenDeep)
+{
     // Rebuilt when the model configuration moved (a batch has several interpretations in flight at once).
     m_client = m_clients.client();
 
@@ -378,18 +463,13 @@ void BatchAnalysisService::onSourceReady(const QString &itemId,
         qBound(20000, int(m_settings->contextWindow() * 1.4), 400000);
     in.maxTokens = m_settings->analysisMaxTokens();
 
-    ++m_running;
-    // Held from here until the answer lands: while the batch is on this
-    // paper, nothing else may interpret it.
-    claimPaper(paperId);
-    emit progressChanged();
-    setStatus(tr("Interpreting %1…").arg(title));
+    setStatus(thenDeep ? tr("Interpreting %1 first…").arg(title)
+                       : tr("Interpreting %1…").arg(title));
 
     auto *job = QuickAnalysisJob::start(m_client, in, this);
     connect(job, &QuickAnalysisJob::succeeded, this,
-            [this, itemId, paperId, title, job](const QJsonObject &digest) {
-                --m_running;
-                releasePaper(paperId);
+            [this, itemId, paperId, title, blocks, thenDeep,
+             job](const QJsonObject &digest) {
                 const bool insufficient =
                     digest.value(QStringLiteral("insufficient")).toBool();
                 m_store->putPaperAnalysis(
@@ -402,6 +482,14 @@ void BatchAnalysisService::onSourceReady(const QString &itemId,
                     insufficient ? Analysis::StatusInsufficient
                                  : Analysis::StatusOk,
                     QString(), title);
+                if (thenDeep && !insufficient && !m_cancelled) {
+                    // Still the same paper, still counted, still claimed:
+                    // the context it needed has just arrived.
+                    beginDeepRun(itemId, paperId, title, blocks, digest);
+                    return;
+                }
+                --m_running;
+                releasePaper(paperId);
                 ++m_done;
                 m_model->setRuntime(itemId, QString());
                 emit progressChanged();
@@ -414,6 +502,154 @@ void BatchAnalysisService::onSourceReady(const QString &itemId,
                 recordFailure(itemId, error);
                 pump();
             });
+}
+
+void BatchAnalysisService::beginDeepRun(const QString &itemId,
+                                        const QString &paperId,
+                                        const QString &title,
+                                        const QVector<Block> &blocks,
+                                        const QJsonObject &digest)
+{
+    m_deepRun = DeepRun{};
+    m_deepRun.active = true;
+    m_deepRun.itemId = itemId;
+    m_deepRun.paperId = paperId;
+    m_deepRun.title = title;
+    m_deepRun.blocks = blocks;
+    m_deepRun.digest = digest;
+
+    // A reading interrupted after six parts picks up at the seventh. Only a
+    // forced run asks for the ones that are already on disk again.
+    if (!m_force) {
+        const AnalysisRecord existing =
+            m_store->paperAnalysis(paperId, Analysis::KindDeep);
+        if (existing.valid)
+            m_deepRun.modules =
+                existing.payload.value(QStringLiteral("modules")).toObject();
+    }
+    for (const QString &id : Analysis::deepModules()) {
+        if (!m_deepRun.modules.contains(id))
+            m_deepRun.queue.append(id);
+    }
+    m_deepRun.done = int(m_deepRun.modules.size());
+    pumpDeepModules();
+}
+
+void BatchAnalysisService::pumpDeepModules()
+{
+    if (!m_deepRun.active)
+        return;
+    if (m_cancelled) {
+        // Same bargain as the quick run: nothing new is asked for, but the
+        // parts already at the model are let land and filed.
+        m_deepRun.queue.clear();
+        if (m_deepRun.inflight == 0)
+            finishDeepRun();
+        return;
+    }
+    const int limit = m_settings ? m_settings->analysisConcurrency() : 2;
+    while (m_deepRun.inflight < limit && !m_deepRun.queue.isEmpty())
+        startDeepModule(m_deepRun.queue.takeFirst());
+    if (m_deepRun.inflight == 0 && m_deepRun.queue.isEmpty())
+        finishDeepRun();
+}
+
+void BatchAnalysisService::startDeepModule(const QString &moduleId)
+{
+    m_client = m_clients.client();
+
+    DeepModuleJob::Input in;
+    in.paperId = m_deepRun.paperId;
+    in.title = m_deepRun.title;
+    in.moduleId = moduleId;
+    in.blocks = m_deepRun.blocks;
+    in.lang = m_settings->targetLang();
+    in.profileBlock = m_profile->promptBlock();
+    in.digest = m_deepRun.digest;
+    in.contextChars =
+        qBound(20000, int(m_settings->contextWindow() * 1.4), 400000);
+    in.maxTokens = m_settings->analysisMaxTokens();
+
+    ++m_deepRun.inflight;
+    setStatus(tr("%1 — %2 (%3/%4)")
+                  .arg(m_deepRun.title, Analysis::deepModuleTitle(moduleId))
+                  .arg(m_deepRun.done + 1)
+                  .arg(deepPartsTotal()));
+    emit progressChanged();
+
+    // The run this job belongs to. By the time it answers the service may
+    // be on another paper entirely, and that answer is not for this one.
+    const QString paperAtStart = m_deepRun.paperId;
+    auto *job = DeepModuleJob::start(m_client, in, this);
+    connect(job, &DeepModuleJob::succeeded, this,
+            [this, paperAtStart, job](const QString &moduleId,
+                                      const QJsonObject &result) {
+                if (!m_deepRun.active || m_deepRun.paperId != paperAtStart)
+                    return;
+                --m_deepRun.inflight;
+                m_deepRun.modules.insert(moduleId, result);
+                m_deepRun.contentHash = job->contentHash();
+                ++m_deepRun.done;
+                ++m_deepRun.fetched;
+                emit progressChanged();
+                pumpDeepModules();
+            });
+    connect(job, &DeepModuleJob::failed, this,
+            [this, paperAtStart](const QString &, const QString &error) {
+                if (!m_deepRun.active || m_deepRun.paperId != paperAtStart)
+                    return;
+                --m_deepRun.inflight;
+                if (m_deepRun.firstError.isEmpty())
+                    m_deepRun.firstError = error;
+                emit progressChanged();
+                pumpDeepModules();
+            });
+}
+
+void BatchAnalysisService::finishDeepRun()
+{
+    if (!m_deepRun.active)
+        return;
+    const QString itemId = m_deepRun.itemId;
+    const QString paperId = m_deepRun.paperId;
+    const QString title = m_deepRun.title;
+    const QString error = m_deepRun.firstError;
+    const int have = int(m_deepRun.modules.size());
+
+    // Whatever came back is filed, even a partial reading: eight parts paid
+    // for and thrown away because the ninth timed out is the one outcome
+    // nobody wants. Nothing new fetched means nothing to write -- the parts
+    // in hand are the ones already on disk.
+    if (m_deepRun.fetched > 0) {
+        QJsonObject payload;
+        payload.insert(QStringLiteral("modules"), m_deepRun.modules);
+        payload.insert(
+            QStringLiteral("meta"),
+            QJsonObject{{QStringLiteral("model"), m_settings->model()},
+                        {QStringLiteral("modulesTotal"), deepPartsTotal()}});
+        m_store->putPaperAnalysis(
+            paperId, Analysis::KindDeep, payload, m_settings->model(),
+            Analysis::inputHash(m_deepRun.contentHash,
+                                AnalysisPrompts::promptVersion(),
+                                m_profile->hash(), m_settings->model()),
+            Analysis::StatusOk, QString(), title);
+    }
+    m_deepRun = DeepRun{};
+
+    --m_running;
+    releasePaper(paperId);
+    if (have >= deepPartsTotal()) {
+        ++m_done;
+        m_model->setRuntime(itemId, QString());
+        emit progressChanged();
+    } else {
+        recordFailure(itemId,
+                      error.isEmpty()
+                          ? tr("Only %1 of the %2 parts came back.")
+                                .arg(have)
+                                .arg(deepPartsTotal())
+                          : error);
+    }
     pump();
 }
 
@@ -444,17 +680,23 @@ void BatchAnalysisService::finishIfIdle()
         return;
     if (m_total == 0)
         return;
-    setStatus(tr("%1 interpreted, %2 failed, %3 already done.")
-                  .arg(m_done)
-                  .arg(m_failed)
-                  .arg(m_skipped));
+    setStatus(m_deep ? tr("%1 close-read, %2 failed, %3 already done.")
+                           .arg(m_done)
+                           .arg(m_failed)
+                           .arg(m_skipped)
+                     : tr("%1 interpreted, %2 failed, %3 already done.")
+                           .arg(m_done)
+                           .arg(m_failed)
+                           .arg(m_skipped));
     emit progressChanged();
     finishTask(m_failed == 0,
-               m_failed == 0
-                   ? QString()
-                   : tr("%1 of %2 could not be interpreted.")
-                         .arg(m_failed)
-                         .arg(m_total));
+               m_failed == 0 ? QString()
+               : m_deep     ? tr("%1 of %2 could not be close-read.")
+                                  .arg(m_failed)
+                                  .arg(m_total)
+                            : tr("%1 of %2 could not be interpreted.")
+                                  .arg(m_failed)
+                                  .arg(m_total));
     emit finished(m_done, m_failed, m_skipped);
 }
 

@@ -74,10 +74,16 @@ AppDialog {
             Layout.fillWidth: true
             wrapMode: Text.Wrap
             color: Theme.dimText
+            // Where papers come from, in the order a reader would reach for
+            // them. The library pane came last and was missing entirely
+            // until 1.3.26, which is why a basket of three used to mean
+            // opening three PDFs one after another.
             text: compare.count === 0
-                  ? qsTr("Nothing selected yet. Add papers from the ⋯ menu next "
-                         + "to any statement in an interpretation, or from the "
-                         + "Interpret pane.")
+                  ? qsTr("Nothing selected yet. Right-click any paper in the "
+                         + "library pane to add it — or add several at once "
+                         + "with “Compare everything shown”. A single "
+                         + "statement can also be added from the ⋯ menu beside "
+                         + "it in an interpretation.")
                   : qsTr("%1 papers selected.").arg(compare.count)
         }
 

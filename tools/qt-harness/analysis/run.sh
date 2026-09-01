@@ -29,6 +29,8 @@ open(sys.argv[1],'w').write('\n'.join(out))
 mk analysis-a 7 5
 mk analysis-b 8 4
 mk analysis-c 9 3
+mk analysis-d 10 6
 
 PDF_A=$OUT/analysis-a.pdf PDF_B=$OUT/analysis-b.pdf PDF_C=$OUT/analysis-c.pdf \
+  PDF_D=$OUT/analysis-d.pdf \
   "$OUT/analysis"

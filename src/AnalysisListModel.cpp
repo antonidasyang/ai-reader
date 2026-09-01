@@ -6,6 +6,8 @@
 #include "LibraryModel.h"
 #include "ProjectController.h"
 
+#include <QJsonArray>
+#include <QSet>
 #include <QJsonObject>
 
 AnalysisListModel::AnalysisListModel(LibraryDb *db, LibraryModel *library,
@@ -49,7 +51,12 @@ QHash<int, QByteArray> AnalysisListModel::roleNames() const
             {MineRole, "mine"},
             {ToReadRole, "toRead"},
             {ExcludedRole, "excluded"},
-            {HasFileRole, "hasFile"}};
+            {HasFileRole, "hasFile"},
+            {DeepStateRole, "deepState"},
+            {CreatorsRole, "creators"},
+            {YearRole, "year"},
+            {PublicationRole, "publication"},
+            {LocalPathRole, "localPath"}};
 }
 
 QString AnalysisListModel::stateOf(const Row &row) const
@@ -67,6 +74,16 @@ QString AnalysisListModel::stateOf(const Row &row) const
     return QStringLiteral("done");
 }
 
+QString AnalysisListModel::deepStateOf(const Row &row) const
+{
+    const int have = m_deepModuleCounts.value(row.paperId, 0);
+    if (have <= 0)
+        return QStringLiteral("none");
+    return have >= int(Analysis::deepModules().size())
+               ? QStringLiteral("done")
+               : QStringLiteral("partial");
+}
+
 QVariant AnalysisListModel::data(const QModelIndex &index, int role) const
 {
     if (index.row() < 0 || index.row() >= m_visible.size())
@@ -79,6 +96,11 @@ QVariant AnalysisListModel::data(const QModelIndex &index, int role) const
     case ToReadRole:  return row.toRead;
     case ExcludedRole:return row.excluded;
     case HasFileRole: return row.hasFile;
+    case CreatorsRole:return row.creators;
+    case YearRole:    return row.year;
+    case PublicationRole: return row.publication;
+    case LocalPathRole:   return row.localPath;
+    case DeepStateRole:   return deepStateOf(row);
     case StateRole:   return stateOf(row);
     case ErrorRole:   return m_runtimeError.value(row.itemId);
     default: break;
@@ -168,8 +190,17 @@ void AnalysisListModel::reload()
     Stall::Mark mark("rebuilding the paper list");
     m_all.clear();
     m_digests.clear();
+    m_deepModuleCounts.clear();
     for (const AnalysisRecord &r : m_store->paperAnalyses(Analysis::KindQuick))
         m_digests.insert(r.paperId, r);
+    // Only the count of parts is kept: nine payloads per paper across a
+    // hundred-paper project is a lot of JSON to hold for a row that just
+    // wants to draw a star differently.
+    for (const AnalysisRecord &r : m_store->paperAnalyses(Analysis::KindDeep)) {
+        m_deepModuleCounts.insert(
+            r.paperId,
+            r.payload.value(QStringLiteral("modules")).toObject().size());
+    }
     const QString project = m_projects->currentId();
     if (!project.isEmpty()) {
         const QList<SyncObjectRow> items =
@@ -181,6 +212,15 @@ void AnalysisListModel::reload()
             r.title = o.data.value(QStringLiteral("title")).toString();
             if (r.title.isEmpty())
                 r.title = tr("(untitled)");
+            QStringList names;
+            for (const QJsonValue &v :
+                 o.data.value(QStringLiteral("creators")).toArray())
+                names << v.toString();
+            r.creators = names.join(QStringLiteral(", "));
+            const QJsonValue y = o.data.value(QStringLiteral("year"));
+            r.year = y.isDouble() ? QString::number(y.toInt()) : y.toString();
+            r.publication = o.data.value(QStringLiteral("publication")).toString();
+            r.localPath = o.data.value(QStringLiteral("localPath")).toString();
             r.toRead = o.data.value(QStringLiteral("toRead")).toBool();
             r.excluded = o.data.value(QStringLiteral("excluded")).toBool();
             r.hasFile = !r.paperId.isEmpty();
@@ -239,6 +279,27 @@ int AnalysisListModel::toReadCount() const
     return n;
 }
 
+int AnalysisListModel::deepDoneCount() const
+{
+    int n = 0;
+    for (const Row &r : m_all)
+        if (deepStateOf(r) == QLatin1String("done"))
+            ++n;
+    return n;
+}
+
+int AnalysisListModel::deepPendingCount() const
+{
+    int n = 0;
+    for (const Row &r : m_all) {
+        if (!r.toRead || r.excluded || !r.hasFile)
+            continue;
+        if (deepStateOf(r) != QLatin1String("done"))
+            ++n;
+    }
+    return n;
+}
+
 QString AnalysisListModel::stateForPaper(const QString &paperId) const
 {
     if (paperId.isEmpty())
@@ -276,6 +337,42 @@ QStringList AnalysisListModel::pendingItemIds() const
             continue;
         if (stateOf(r) == QLatin1String("none"))
             out.append(r.itemId);
+    }
+    return out;
+}
+
+QStringList AnalysisListModel::toReadItemIds() const
+{
+    QStringList out;
+    for (const Row &r : m_all) {
+        if (r.toRead && !r.excluded && r.hasFile)
+            out.append(r.itemId);
+    }
+    return out;
+}
+
+QStringList AnalysisListModel::deepPendingAmong(const QStringList &itemIds) const
+{
+    const QSet<QString> wanted(itemIds.begin(), itemIds.end());
+    QStringList out;
+    for (const Row &r : m_all) {
+        if (!wanted.contains(r.itemId) || r.excluded || !r.hasFile)
+            continue;
+        if (deepStateOf(r) != QLatin1String("done"))
+            out.append(r.itemId);
+    }
+    return out;
+}
+
+QVariantList AnalysisListModel::visiblePapers() const
+{
+    QVariantList out;
+    for (int i : m_visible) {
+        const Row &r = m_all.at(i);
+        if (r.paperId.isEmpty())
+            continue;
+        out.append(QVariantMap{{QStringLiteral("paperId"), r.paperId},
+                               {QStringLiteral("title"), r.title}});
     }
     return out;
 }

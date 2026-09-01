@@ -10,6 +10,7 @@
 #include "AnalysisListModel.h"
 #include "AnalysisService.h"
 #include "AnalysisStore.h"
+#include "AnalysisTypes.h"
 #include "ApiClient.h"
 #include "AuthController.h"
 #include "BatchAnalysisService.h"
@@ -23,6 +24,9 @@
 #include "LayoutSettings.h"
 #include "Library.h"
 #include "LibraryDb.h"
+
+#include <QJsonArray>
+#include <QJsonObject>
 #include "LibraryModel.h"
 #include "LibraryAnalysisService.h"
 #include "TaskManager.h"
@@ -363,7 +367,7 @@ int main(int argc, char **argv)
         QStringLiteral("MembersDialog"),    QStringLiteral("ProjectSettingsDialog"),
         QStringLiteral("ProjectProfileDialog"),
         QStringLiteral("VisionDialog"),     QStringLiteral("ChangelogDialog"),
-        QStringLiteral("BatchAnalysisDialog"), QStringLiteral("CompareDialog"),
+        QStringLiteral("CompareDialog"),
         QStringLiteral("QuitTasksDialog"), QStringLiteral("ResumeTasksDialog"),
         QStringLiteral("SaveLayoutDialog"), QStringLiteral("ManageLayoutsDialog"),
     };
@@ -510,12 +514,99 @@ int main(int argc, char **argv)
     }
     pump(120);
 
+    // A library with no papers builds no row delegate, and the row is where
+    // nearly all of LibraryPane now lives: the state dot, the star, the
+    // relevance and advice chips, the close-reading chip, the one-liner and
+    // the per-paper menu. Seeded for the same reason the layout presets and
+    // the task rows above are -- an empty list would exercise none of it.
+    // Three papers, picked for the branches they force open: one untouched,
+    // one interpreted and starred, one interpreted, close-read and set
+    // aside.
+    {
+        // The store first, the sign-in second: signing in is what opens the
+        // session and re-reads the cached project list, so a project written
+        // afterwards would be there on disk with the controller still
+        // holding an empty list -- no role, no canWrite, and every write
+        // below silently refused.
+        ProjectRow proj;
+        proj.id = QStringLiteral("harness-project");
+        proj.name = QStringLiteral("Harness project");
+        proj.role = QStringLiteral("owner");
+        libraryDb.replaceProjects(QList<ProjectRow>{proj});
+        libraryDb.claimProjects(QStringList{proj.id},
+                                QStringLiteral("harness-user"));
+
+        qputenv("TEST_USER_ID", "harness-user");
+        qputenv("TEST_USER_EMAIL", "harness@example.invalid");
+        auth.startCasLogin();
+        projectController.selectProject(proj.id);
+
+        const QString untouched = libraryModel.addPaper(
+            QStringLiteral("A paper nobody has read"),
+            QStringLiteral("paper-untouched"), QStringLiteral("/nowhere/a.pdf"));
+        const QString starred = libraryModel.addPaper(
+            QStringLiteral("A paper marked for a close read"),
+            QStringLiteral("paper-starred"), QStringLiteral("/nowhere/b.pdf"));
+        const QString aside = libraryModel.addPaper(
+            QStringLiteral("A paper already close-read, then set aside"),
+            QStringLiteral("paper-aside"), QStringLiteral("/nowhere/c.pdf"));
+
+        const QJsonObject digest{
+            {QStringLiteral("oneLiner"),
+             QStringLiteral("One line about what this paper is for.")},
+            {QStringLiteral("relevance"),
+             QJsonObject{{QStringLiteral("level"), QStringLiteral("high")}}},
+            {QStringLiteral("advice"),
+             QJsonObject{{QStringLiteral("code"), QStringLiteral("read_full")}}}};
+        analysisStore.putPaperAnalysis(
+            QStringLiteral("paper-starred"), Analysis::KindQuick, digest,
+            QStringLiteral("harness-model"), QStringLiteral("hash-1"),
+            Analysis::StatusOk, QString(), QStringLiteral("Starred"));
+        analysisStore.putPaperAnalysis(
+            QStringLiteral("paper-aside"), Analysis::KindQuick, digest,
+            QStringLiteral("harness-model"), QStringLiteral("hash-2"),
+            Analysis::StatusOk, QString(), QStringLiteral("Aside"));
+
+        QJsonObject modules;
+        for (const QString &id : Analysis::deepModules())
+            modules.insert(id, QJsonObject{{QStringLiteral("claims"),
+                                            QJsonArray{}}});
+        analysisStore.putPaperAnalysis(
+            QStringLiteral("paper-aside"), Analysis::KindDeep,
+            QJsonObject{{QStringLiteral("modules"), modules}},
+            QStringLiteral("harness-model"), QStringLiteral("hash-3"),
+            Analysis::StatusOk, QString(), QStringLiteral("Aside"));
+
+        analysisList.setToRead(starred, true);
+        analysisList.setExcluded(aside, true);
+        analysisList.setHideExcluded(false);
+        analysisList.reload();
+        check(QStringLiteral("the library pane has rows to draw before any of "
+                             "it is built"),
+              analysisList.rowCount() == 3 && analysisList.toReadCount() == 1
+                  && analysisList.deepDoneCount() == 1,
+              QStringLiteral("rows=%1 starred=%2 interpreted=%3 close-read=%4 "
+                             "canWrite=%5 project=%6 item=%7")
+                  .arg(analysisList.rowCount())
+                  .arg(analysisList.toReadCount())
+                  .arg(analysisList.interpretedCount())
+                  .arg(analysisList.deepDoneCount())
+                  .arg(analysisStore.canWrite())
+                  .arg(projectController.currentId())
+                  .arg(untouched));
+    }
+
     // Panes are not dialogs -- they are docked into the split view rather
     // than opened -- but they are built out of the same shared controls and
     // break the same way, so they are instantiated here too. Every tab's
     // subtree is declared inline, so creating one exercises all of them.
     const QStringList panes = { QStringLiteral("ResearchPane"),
-                                QStringLiteral("TasksPane") };
+                                QStringLiteral("TasksPane"),
+                                // The library pane absorbed the batch dialog
+                                // in 1.3.26 -- filters, a progress bar, a
+                                // bulk menu and a per-row menu, all of which
+                                // used to be exercised here as a dialog.
+                                QStringLiteral("LibraryPane") };
     int built = 0;
     for (const QString &name : panes) {
         const int before = g_problems.size();
@@ -536,6 +627,37 @@ int main(int argc, char **argv)
         if (auto *item = qobject_cast<QQuickItem *>(obj))
             item->setParentItem(win->contentItem());
         pump(400);
+        // A menu's items are not built until it is popped, exactly as a
+        // dialog's are not until it is opened -- and the library pane's two
+        // menus are where most of what it can do now lives. The row menu
+        // takes its values rather than the row, so it can be opened from
+        // here without a real right-click.
+        if (name == QStringLiteral("LibraryPane")) {
+            for (const QString &menuName : {QStringLiteral("libraryBulkMenu"),
+                                            QStringLiteral("libraryRowMenu")}) {
+                QObject *menu = obj->findChild<QObject *>(menuName);
+                if (!menu) {
+                    g_problems.append(QStringLiteral("%1 has no %2")
+                                          .arg(name, menuName));
+                    continue;
+                }
+                if (menuName.endsWith(QStringLiteral("RowMenu")))
+                    QMetaObject::invokeMethod(
+                        menu, "openFor",
+                        Q_ARG(QVariant, QStringLiteral("some-item")),
+                        Q_ARG(QVariant, QStringLiteral("paper-aside")),
+                        Q_ARG(QVariant, QStringLiteral("A paper")),
+                        Q_ARG(QVariant, QStringLiteral("/nowhere/c.pdf")),
+                        Q_ARG(QVariant, QStringLiteral("done")),
+                        Q_ARG(QVariant, QStringLiteral("done")),
+                        Q_ARG(QVariant, true), Q_ARG(QVariant, true));
+                else
+                    QMetaObject::invokeMethod(menu, "popup");
+                pump(250);
+                QMetaObject::invokeMethod(menu, "close");
+                pump(80);
+            }
+        }
         ++built;
         const int added = g_problems.size() - before;
         qInfo().noquote() << (added == 0 ? "PASS  " : "FAIL  ") << name

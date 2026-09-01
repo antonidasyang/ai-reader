@@ -2,6 +2,7 @@
 
 #include <QAbstractListModel>
 #include <QHash>
+#include <QVariantList>
 #include <QTimer>
 #include <QString>
 
@@ -17,11 +18,18 @@ class ProjectController;
 // was, and whether the reader has since marked it for a close read or ruled
 // it out.
 //
-// This is the list §7 works on -- generate in bulk, watch the progress, see
-// why one failed, filter by relevance or by advice, then send a whole
-// filtered set to the deep-read list or out of the project's way. Runtime
-// state (queued / running / just failed) is pushed in by BatchAnalysisService
-// rather than stored, so a restart shows what is really on disk.
+// This is the list §7 works on, and since 1.3.26 it is also the model behind
+// the library pane itself -- generate in bulk, watch the progress, see why one
+// failed, filter by relevance or by advice, then send a whole filtered set to
+// the deep read, to the comparison, or out of the project's way. Runtime state
+// (queued / running / just failed) is pushed in by BatchAnalysisService rather
+// than stored, so a restart shows what is really on disk.
+//
+// It carries the bibliographic fields as well (creators, year, publication,
+// local path). There used to be two lists of the same papers -- LibraryModel's
+// and this one -- each with its own filters and its own row menu; the pane
+// draws from this one so that "what the filters are showing" and "what the
+// batch buttons act on" are the same set by construction.
 class AnalysisListModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -32,6 +40,11 @@ class AnalysisListModel : public QAbstractListModel
     Q_PROPERTY(int failedCount READ failedCount NOTIFY countsChanged)
     Q_PROPERTY(int excludedCount READ excludedCount NOTIFY countsChanged)
     Q_PROPERTY(int toReadCount READ toReadCount NOTIFY countsChanged)
+    // Papers carrying a complete close reading (all nine parts).
+    Q_PROPERTY(int deepDoneCount READ deepDoneCount NOTIFY countsChanged)
+    // Starred papers that do not have one yet -- what "close-read the starred"
+    // would actually pay for.
+    Q_PROPERTY(int deepPendingCount READ deepPendingCount NOTIFY countsChanged)
     // Bumped whenever the join is rebuilt. Bind it alongside a
     // stateForPaper() call to make that call re-run: it is an invokable,
     // and an invokable notifies nothing on its own.
@@ -62,6 +75,13 @@ public:
         ToReadRole,
         ExcludedRole,
         HasFileRole,
+        // The close reading: none | partial | done.
+        DeepStateRole,
+        // Bibliographic fields, so this model can be the library list too.
+        CreatorsRole,
+        YearRole,
+        PublicationRole,
+        LocalPathRole,
     };
 
     AnalysisListModel(LibraryDb *db, LibraryModel *library,
@@ -78,6 +98,8 @@ public:
     int failedCount() const;
     int excludedCount() const;
     int toReadCount() const;
+    int deepDoneCount() const;
+    int deepPendingCount() const;
     int revision() const { return m_revision; }
 
     // §17, where the reader actually looks: the state of one paper's
@@ -100,6 +122,18 @@ public:
     Q_INVOKABLE QStringList visibleItemIds() const;
     // Ids with no current interpretation, in list order.
     Q_INVOKABLE QStringList pendingItemIds() const;
+    // Starred ids, whether or not the filters are showing them: a star is a
+    // decision the reader already made, and hiding it behind the current
+    // filter would make "close-read the starred" mean something different
+    // every time it is clicked.
+    Q_INVOKABLE QStringList toReadItemIds() const;
+    // Of a set of items, the ones a close reading would actually be run for:
+    // they have a file, they are not set aside, and they are missing at least
+    // one of the nine parts.
+    Q_INVOKABLE QStringList deepPendingAmong(const QStringList &itemIds) const;
+    // paperId + title for each visible row, which is what the comparison
+    // basket takes.
+    Q_INVOKABLE QVariantList visiblePapers() const;
 
     Q_INVOKABLE void setToRead(const QString &itemId, bool on);
     Q_INVOKABLE void setExcluded(const QString &itemId, bool on);
@@ -120,6 +154,10 @@ private:
         QString itemId;
         QString paperId;
         QString title;
+        QString creators;
+        QString year;
+        QString publication;
+        QString localPath;
         bool toRead = false;
         bool excluded = false;
         bool hasFile = false;
@@ -128,6 +166,7 @@ private:
     void rebuildVisible();
     bool passes(const Row &row) const;
     QString stateOf(const Row &row) const;
+    QString deepStateOf(const Row &row) const;
 
     LibraryDb *m_db;
     LibraryModel *m_library;
@@ -140,6 +179,9 @@ private:
     // paperId. Looking each row up through the store instead would decode
     // the whole project's payloads once per row per repaint.
     QHash<QString, AnalysisRecord> m_digests;
+    // The same snapshot for the close readings, so a row can say whether one
+    // exists without decoding the payload on every repaint.
+    QHash<QString, int> m_deepModuleCounts;   // paperId -> parts present
     QHash<QString, QString> m_runtime;    // itemId -> queued|running
     QHash<QString, QString> m_runtimeError;
 
