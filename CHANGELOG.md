@@ -1,5 +1,36 @@
 # AI Reader changelog
 
+## v1.3.20 — 2026-09-01
+
+### The window stops freezing every time the app talks to the server
+- The event probe finally named it: every freeze was one MetaCall delivered
+  to QNetworkReplyHttpImpl — 4075 ms for the first, then about 1400 ms
+  each. No marked step was inside any of them, the replies were all under
+  half a megabyte, and one of those syncs moved a single object. The time
+  was not in parsing, applying, drawing or laying out. It was in starting
+  the request.
+- Qt asks the operating system which proxy to use for every request, and it
+  asks on the thread the reply belongs to, which is the one drawing the
+  window. On Windows with "automatically detect settings" on, that question
+  is WPAD: a DHCP/DNS round trip, and on some networks a PAC fetch. It
+  blocks whoever asked, for as long as it takes.
+- The answer cannot change often enough to be worth asking twice. It is now
+  asked once, off the GUI thread, at launch — several seconds before the
+  first request — and cached for the session. A request that somehow beats
+  the lookup waits for it, once, with a ceiling; everything after is
+  instant.
+- The lookup logs how long the system took, so a machine where this was the
+  whole problem says so in one line.
+
+### The freeze log stopped lying about what it caught
+- The event probe timed events on every thread, so a background page build
+  minding its own business looked like a frozen window. It only counts this
+  thread now.
+- It also read the phase after the event, by which time every marker inside
+  had been unwound and the answer was always "idle". It now reports the
+  longest marked step that ran while the event did, and says plainly when
+  nothing marked was inside — which is what pointed at Qt's own code here.
+
 ## v1.3.19 — 2026-09-01
 
 ### Everything that can hold the GUI thread now says so

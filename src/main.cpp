@@ -32,6 +32,7 @@
 #include "MarkdownRenderer.h"
 #include "PaperController.h"
 #include "PdfSelectionModel.h"
+#include "ProxyConfig.h"
 #include "Settings.h"
 #include "Stall.h"
 #include "StructureService.h"
@@ -44,6 +45,7 @@
 #include <QElapsedTimer>
 #include <QLoggingCategory>
 #include <QMetaEnum>
+#include <QThread>
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
@@ -165,8 +167,11 @@ public:
 
     bool notify(QObject *receiver, QEvent *event) override
     {
-        if (m_depth > 0)      // nested delivery: the outer one already owns
-            return QGuiApplication::notify(receiver, event);   // this time
+        // notify() runs for every thread's event loop, and a worker taking
+        // half a second is its job, not a freeze. Only this thread's events
+        // can hold the window.
+        if (m_depth > 0 || QThread::currentThread() != thread())
+            return QGuiApplication::notify(receiver, event);
 
         // All pointers into static data, and the parent is worth having: a
         // bare QObject receiver says nothing on its own, and "…to QObject
@@ -193,13 +198,22 @@ public:
         if (ms >= kSlowEventMs) {
             const char *evName =
                 QMetaEnum::fromType<QEvent::Type>().valueToKey(type);
+            // Not phase(): every Mark inside the event is gone by now and
+            // that would always read "idle". This is the longest one that
+            // ran while the event did -- and an empty answer means the time
+            // went somewhere no marker covers, which is worth knowing too.
+            qint64 markMs = 0;
+            const QByteArray inner = Stall::takeLongestMark(&markMs);
             qWarning("[t+%lld ms] %lld ms went into one %s delivered to "
-                     "%s%s%s%s (a child of %s) -- phase: %s",
+                     "%s%s%s%s (a child of %s); the longest marked step "
+                     "inside it was %s (%lld ms)",
                      g_boot.elapsed(), ms, evName ? evName : "event", cls,
                      name.isEmpty() ? "" : " \"",
                      name.isEmpty() ? "" : qUtf8Printable(name),
                      name.isEmpty() ? "" : "\"",
-                     parentCls, Stall::phase());
+                     parentCls,
+                     inner.isEmpty() ? "nothing marked" : inner.constData(),
+                     markMs);
         }
         return handled;
     }
@@ -392,6 +406,15 @@ int main(int argc, char *argv[])
                              "the basic render loop (Settings -> Appearance to "
                              "change)";
     }
+    // Before anything can make a request: Qt asks the system for a proxy on
+    // every one of them, on the thread that owns the reply, and on Windows
+    // that question can take seconds. Ask once now, off this thread.
+    ProxyConfig::install(
+        QUrl(QSettings()
+                 .value(QStringLiteral("server/url"),
+                        QStringLiteral("https://aireader.d2ssoft.com"))
+                 .toString()));
+
     qInfo().noquote() << "Storage:";
     qInfo().noquote() << "  AppData       :"
                       << QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
