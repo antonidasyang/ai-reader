@@ -82,6 +82,12 @@ public:
     // One per paper across the project — the unit every library-level
     // analysis reads (design decision A: digests, never full text).
     QList<AnalysisRecord> paperAnalyses(const QString &kind) const;
+    // The same set, without decoding a single payload. Everything that only
+    // wants to know how many there are, or which papers and when, goes
+    // through here: decoding a project's close readings to count them cost
+    // seconds of frozen window on every sync.
+    QList<PaperAnalysisRef> paperAnalysisRefs(const QString &kind) const;
+    int paperAnalysisCount(const QString &kind) const;
     void removePaperAnalysis(const QString &paperId, const QString &kind);
     // The last couple of versions of our own interpretation of a paper, so
     // regenerating one is recoverable (§16 历史版本).
@@ -134,6 +140,12 @@ private:
 
     mutable QHash<QString, QHash<QString, QString>> m_othersIndex;
     mutable bool m_othersIndexValid = false;
+
+    // objectId -> (the updatedAt it was decoded at, the decoded record).
+    // A sync that changes one interpretation should cost one decode, not a
+    // project's worth; the stamp is what makes that safe.
+    struct Decoded { QString updatedAt; AnalysisRecord record; };
+    mutable QHash<QString, Decoded> m_decodeCache;
 
     LibraryDb *m_db;
     ProjectController *m_projects;

@@ -124,7 +124,10 @@ void LibraryAnalysisService::setTasks(TaskManager *tasks)
 int LibraryAnalysisService::digestCount() const
 {
     Stall::Mark mark("counting the project's interpretations");
-    return m_store->paperAnalyses(Analysis::KindQuick).size();
+    // A count needs no payloads. This is bound in the research pane, so it
+    // is re-asked on every state change; decoding a project's readings to
+    // answer it was seconds of frozen window per sync.
+    return m_store->paperAnalysisCount(Analysis::KindQuick);
 }
 
 bool LibraryAnalysisService::canSubmit() const
@@ -159,7 +162,9 @@ QString LibraryAnalysisService::inputHashNow() const
     // The set of interpretations this rests on: add a paper, or re-interpret
     // one, and everything derived from them is out of date.
     QStringList parts;
-    for (const AnalysisRecord &r : m_store->paperAnalyses(Analysis::KindQuick))
+    // Which papers and when: metadata, not readings.
+    for (const PaperAnalysisRef &r :
+         m_store->paperAnalysisRefs(Analysis::KindQuick))
         parts.append(r.paperId + QChar(':') + r.updatedAt);
     parts.sort();
     return Analysis::inputHash(sha1(parts.join(QChar(','))),

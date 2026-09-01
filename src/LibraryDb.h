@@ -53,6 +53,26 @@ struct PaperDataRef {
     QString updatedAt;
 };
 
+// One stored interpretation, without the interpretation.
+//
+// Same idea as PaperDataRef, and for the same reason: a paper_analysis row
+// carries a whole close reading plus the last two versions of it, several
+// hundred kilobytes of JSON, and almost everything that asks about
+// interpretations wants to know which papers have one, whose it is and when
+// it was written -- not what it says. Scanning the objects to answer that
+// parsed megabytes per question.
+struct PaperAnalysisRef {
+    QString objectId;
+    QString projectId;
+    QString paperId;
+    QString kind;          // "quick" | "deep"
+    QString author;
+    QString authorEmail;
+    QString status;
+    QString title;
+    QString updatedAt;
+};
+
 // Offline-first local store: a SQLite mirror of the cloud library. Owns the
 // per-project objects (+ outbox), the sync cursor, a projects cache, and an
 // FTS5 full-text index. SyncEngine / LibraryModel / SearchService go through it.
@@ -122,6 +142,13 @@ public:
     QList<PaperDataRef> paperData(const QString &projectId,
                                   const QString &paperId,
                                   const QString &kind) const;
+
+    // ── interpretation index ──────────────────────────────────────────
+    void indexPaperAnalysis(const PaperAnalysisRef &ref);
+    void dropPaperAnalysisIndex(const QString &objectId);
+    // Every stored interpretation of `kind` in the project, metadata only.
+    QList<PaperAnalysisRef> paperAnalysisRefs(const QString &projectId,
+                                              const QString &kind) const;
 
     // ── the account gate ──────────────────────────────────────────────
     // The account this copy of the store holds data for. Empty until the

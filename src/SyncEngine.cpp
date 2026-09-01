@@ -402,6 +402,28 @@ void SyncEngine::indexObject(const SyncObjectRow &row)
             m_db->indexPaperData(ref);
         return;
     }
+    if (row.type == QLatin1String("paper_analysis")) {
+        // Metadata only; the reading itself stays in sync_objects and is
+        // decoded when somebody actually wants to read it.
+        if (row.deleted) {
+            m_db->dropPaperAnalysisIndex(row.id);
+            return;
+        }
+        PaperAnalysisRef ref;
+        ref.objectId = row.id;
+        ref.projectId = row.projectId;
+        ref.paperId = row.data.value(QStringLiteral("paperId")).toString();
+        ref.kind = row.data.value(QStringLiteral("kind")).toString();
+        ref.author = row.data.value(QStringLiteral("author")).toString();
+        ref.authorEmail =
+            row.data.value(QStringLiteral("authorEmail")).toString();
+        ref.status = row.data.value(QStringLiteral("status")).toString();
+        ref.title = row.data.value(QStringLiteral("title")).toString();
+        ref.updatedAt = row.data.value(QStringLiteral("updatedAt")).toString();
+        if (!ref.paperId.isEmpty() && !ref.kind.isEmpty())
+            m_db->indexPaperAnalysis(ref);
+        return;
+    }
     if (row.type != QLatin1String("item"))
         return;
     if (row.deleted) {

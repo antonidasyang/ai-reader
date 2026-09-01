@@ -9,6 +9,7 @@
 
 #include <QDateTime>
 #include <QHash>
+#include <QSet>
 
 #include <algorithm>
 
@@ -170,7 +171,6 @@ QList<AnalysisRecord> AnalysisStore::paperAnalysesFor(const QString &paperId,
 
 void AnalysisStore::ensureOthersIndex() const
 {
-    Stall::Mark mark("indexing the project's interpretations");
     if (m_othersIndexValid)
         return;
     m_othersIndex.clear();
@@ -179,27 +179,24 @@ void AnalysisStore::ensureOthersIndex() const
     if (project.isEmpty())
         return;
     const QString me = userId();
-    for (const SyncObjectRow &row :
-         m_db->objectsByType(project, Analysis::TypePaperAnalysis)) {
-        const QString author = row.data.value(QStringLiteral("author")).toString();
-        if (author.isEmpty() || author == me)
-            continue;                       // ours is found by its id
-        const QString paperId =
-            row.data.value(QStringLiteral("paperId")).toString();
-        const QString kind = row.data.value(QStringLiteral("kind")).toString();
-        if (paperId.isEmpty() || kind.isEmpty())
-            continue;
+    for (const QString &kind : {Analysis::KindQuick, Analysis::KindDeep}) {
         QHash<QString, QString> &byPaper = m_othersIndex[kind];
-        // Newest wins, so a paper several members read shows the last word.
-        const auto it = byPaper.constFind(paperId);
-        if (it != byPaper.constEnd()) {
-            SyncObjectRow prev;
-            if (m_db->getObject(project, it.value(), prev)
-                && prev.data.value(QStringLiteral("updatedAt")).toString()
-                       > row.data.value(QStringLiteral("updatedAt")).toString())
+        QHash<QString, QString> newest;   // paperId -> updatedAt
+        // Metadata only: whose it is and when, which is the whole question.
+        // This used to parse every stored reading -- payload, history and
+        // all -- to answer it.
+        for (const PaperAnalysisRef &r : m_db->paperAnalysisRefs(project, kind)) {
+            if (r.author.isEmpty() || r.author == me)
+                continue;               // ours is found by its id
+            if (r.paperId.isEmpty())
                 continue;
+            // Newest wins, so a paper several members read shows the last word.
+            const auto seen = newest.constFind(r.paperId);
+            if (seen != newest.constEnd() && seen.value() >= r.updatedAt)
+                continue;
+            newest.insert(r.paperId, r.updatedAt);
+            byPaper.insert(r.paperId, r.objectId);
         }
-        byPaper.insert(paperId, row.id);
     }
 }
 
@@ -231,6 +228,24 @@ AnalysisRecord AnalysisStore::paperAnalysis(const QString &paperId,
     return decodePaper(row);
 }
 
+QList<PaperAnalysisRef>
+AnalysisStore::paperAnalysisRefs(const QString &kind) const
+{
+    const QString project = projectId();
+    if (project.isEmpty())
+        return {};
+    return m_db->paperAnalysisRefs(project, kind);
+}
+
+int AnalysisStore::paperAnalysisCount(const QString &kind) const
+{
+    QSet<QString> papers;
+    for (const PaperAnalysisRef &r : paperAnalysisRefs(kind))
+        if (!r.paperId.isEmpty())
+            papers.insert(r.paperId);
+    return papers.size();
+}
+
 QList<AnalysisRecord> AnalysisStore::paperAnalyses(const QString &kind) const
 {
     Stall::Mark mark("decoding every interpretation in the project");
@@ -238,27 +253,51 @@ QList<AnalysisRecord> AnalysisStore::paperAnalyses(const QString &kind) const
     const QString project = projectId();
     if (project.isEmpty())
         return out;
-    const QList<SyncObjectRow> rows =
-        m_db->objectsByType(project, Analysis::TypePaperAnalysis);
-    QHash<QString, int> byPaper;    // paperId -> index in out
-    for (const SyncObjectRow &row : rows) {
-        if (row.data.value(QStringLiteral("kind")).toString() != kind)
+
+    // Which rows exist is answered from the index; only the ones that will
+    // be returned are fetched, and only the ones whose stamp moved since we
+    // last looked are decoded again.
+    QHash<QString, PaperAnalysisRef> best;   // paperId -> the one that wins
+    const QString me = userId();
+    for (const PaperAnalysisRef &r : m_db->paperAnalysisRefs(project, kind)) {
+        if (r.paperId.isEmpty())
             continue;
-        const AnalysisRecord r = decodePaper(row);
-        if (r.paperId.isEmpty() || r.payload.isEmpty())
-            continue;
-        const auto it = byPaper.constFind(r.paperId);
-        if (it == byPaper.constEnd()) {
-            byPaper.insert(r.paperId, out.size());
-            out.append(r);
+        const bool mine = !r.author.isEmpty() && r.author == me;
+        const auto it = best.constFind(r.paperId);
+        if (it == best.constEnd()) {
+            best.insert(r.paperId, r);
             continue;
         }
         // One digest per paper: ours wins, then whichever is newer. A
         // five-person project should pay for a paper once (§ R4).
-        AnalysisRecord &cur = out[it.value()];
-        if ((r.mine && !cur.mine)
-            || (r.mine == cur.mine && r.updatedAt > cur.updatedAt))
-            cur = r;
+        const bool curMine = !it->author.isEmpty() && it->author == me;
+        if ((mine && !curMine)
+            || (mine == curMine && r.updatedAt > it->updatedAt))
+            best.insert(r.paperId, r);
+    }
+
+    out.reserve(best.size());
+    for (const PaperAnalysisRef &r : std::as_const(best)) {
+        const auto cached = m_decodeCache.constFind(r.objectId);
+        if (cached != m_decodeCache.constEnd()
+            && cached->updatedAt == r.updatedAt) {
+            if (!cached->record.payload.isEmpty())
+                out.append(cached->record);
+            continue;
+        }
+        SyncObjectRow row;
+        if (!m_db->getObject(project, r.objectId, row) || row.deleted)
+            continue;
+        const AnalysisRecord rec = decodePaper(row);
+        // Bounded, but not below the size of one answer: a cap smaller than
+        // the project is a cache that clears itself on every call and
+        // therefore never hits. A quick digest is a few kilobytes decoded,
+        // so five hundred of them is a few megabytes.
+        if (m_decodeCache.size() > 512)
+            m_decodeCache.clear();
+        m_decodeCache.insert(r.objectId, Decoded{r.updatedAt, rec});
+        if (!rec.payload.isEmpty())
+            out.append(rec);
     }
     return out;
 }

@@ -1,5 +1,31 @@
 # AI Reader changelog
 
+## v1.3.22 — 2026-09-01
+
+### Interpretations are counted without being read
+- The breakdown in the field log left nothing to guess at. Every freeze was
+  the same two lines, and the residual was zero: 2881 ms "reading every
+  object of one kind out of the database", 1178 ms "decoding every
+  interpretation in the project", then 1899 + 772, then 955 + 394. Nothing
+  in QML, nothing in the scene graph, nothing in Qt.
+- A stored interpretation carries the reading itself plus the last two
+  versions of it — several hundred kilobytes of JSON. Ten papers is
+  megabytes. And almost everything that asks about interpretations wants to
+  know which papers have one, whose it is and when it was written, not what
+  it says: how many digests exist (the research pane binds that, so it is
+  re-asked on every change), whether a collaborator has one for this paper,
+  what the set of them hashes to. Each of those parsed the lot.
+- There is now a side index of exactly that metadata, kept in step as
+  objects arrive — the same thing paper_data has had all along, for the
+  same reason and in the same shape. Counting, indexing and hashing read it
+  and never touch a payload.
+- What genuinely needs the readings decodes them through a cache stamped
+  with each one's updatedAt, so a sync that changed one interpretation
+  costs one decode rather than a project's worth.
+- Measured against a 200-paper project holding 28 MB of interpretations:
+  one change went from 416 ms to 13–23 ms, and counting the digests from
+  47 ms to nothing.
+
 ## v1.3.21 — 2026-09-01
 
 ### A sync that moved nothing stops costing a second and a half

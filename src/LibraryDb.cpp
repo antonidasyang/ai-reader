@@ -154,6 +154,52 @@ bool LibraryDb::migrate()
         }
     }
 
+    // The same trick for interpretations, and for the same reason: a
+    // close reading plus its history is hundreds of KB, and "which papers
+    // have one" is asked on every sync, by several callers at once.
+    ok &= run(QStringLiteral(
+        "CREATE TABLE IF NOT EXISTS paper_analysis_index ("
+        " object_id TEXT PRIMARY KEY,"
+        " project_id TEXT NOT NULL,"
+        " paper_id TEXT NOT NULL,"
+        " kind TEXT NOT NULL,"
+        " author TEXT,"
+        " author_email TEXT,"
+        " status TEXT,"
+        " title TEXT,"
+        " updated_at TEXT)"));
+    ok &= run(QStringLiteral(
+        "CREATE INDEX IF NOT EXISTS idx_paper_analysis_lookup "
+        "ON paper_analysis_index(project_id, kind)"));
+    {
+        QSqlQuery c(db);
+        if (c.exec(QStringLiteral("SELECT COUNT(*) FROM paper_analysis_index"))
+            && c.next() && c.value(0).toInt() == 0) {
+            QSqlQuery scan(db);
+            if (scan.exec(QStringLiteral(
+                    "SELECT id, project_id, data FROM sync_objects "
+                    "WHERE type='paper_analysis' AND deleted=0"))) {
+                while (scan.next()) {
+                    const QJsonObject d = textToJson(scan.value(2).toString());
+                    PaperAnalysisRef ref;
+                    ref.objectId = scan.value(0).toString();
+                    ref.projectId = scan.value(1).toString();
+                    ref.paperId = d.value(QStringLiteral("paperId")).toString();
+                    ref.kind = d.value(QStringLiteral("kind")).toString();
+                    ref.author = d.value(QStringLiteral("author")).toString();
+                    ref.authorEmail =
+                        d.value(QStringLiteral("authorEmail")).toString();
+                    ref.status = d.value(QStringLiteral("status")).toString();
+                    ref.title = d.value(QStringLiteral("title")).toString();
+                    ref.updatedAt =
+                        d.value(QStringLiteral("updatedAt")).toString();
+                    if (!ref.paperId.isEmpty() && !ref.kind.isEmpty())
+                        indexPaperAnalysis(ref);
+                }
+            }
+        }
+    }
+
     // Who this store belongs to, and whose session is open on it. One row
     // per fact, in the database rather than in QSettings — see the header.
     ok &= run(QStringLiteral(
@@ -669,6 +715,71 @@ void LibraryDb::removePaperData(const QString &objectId)
     q.prepare(QStringLiteral("DELETE FROM paper_data_index WHERE object_id=?"));
     q.addBindValue(objectId);
     q.exec();
+}
+
+void LibraryDb::indexPaperAnalysis(const PaperAnalysisRef &ref)
+{
+    QSqlQuery q(database());
+    q.prepare(QStringLiteral(
+        "INSERT INTO paper_analysis_index"
+        "(object_id, project_id, paper_id, kind, author, author_email,"
+        " status, title, updated_at) VALUES(?,?,?,?,?,?,?,?,?) "
+        "ON CONFLICT(object_id) DO UPDATE SET project_id=excluded.project_id,"
+        " paper_id=excluded.paper_id, kind=excluded.kind,"
+        " author=excluded.author, author_email=excluded.author_email,"
+        " status=excluded.status, title=excluded.title,"
+        " updated_at=excluded.updated_at"));
+    q.addBindValue(ref.objectId);
+    q.addBindValue(ref.projectId);
+    q.addBindValue(ref.paperId);
+    q.addBindValue(ref.kind);
+    q.addBindValue(ref.author);
+    q.addBindValue(ref.authorEmail);
+    q.addBindValue(ref.status);
+    q.addBindValue(ref.title);
+    q.addBindValue(ref.updatedAt);
+    if (!q.exec())
+        qWarning() << "LibraryDb::indexPaperAnalysis:" << q.lastError().text();
+}
+
+void LibraryDb::dropPaperAnalysisIndex(const QString &objectId)
+{
+    QSqlQuery q(database());
+    q.prepare(QStringLiteral(
+        "DELETE FROM paper_analysis_index WHERE object_id=?"));
+    q.addBindValue(objectId);
+    q.exec();
+}
+
+QList<PaperAnalysisRef> LibraryDb::paperAnalysisRefs(const QString &projectId,
+                                                     const QString &kind) const
+{
+    QList<PaperAnalysisRef> out;
+    if (!canRead(projectId))
+        return out;
+    QSqlQuery q(database());
+    q.prepare(QStringLiteral(
+        "SELECT object_id, project_id, paper_id, kind, author, author_email,"
+        " status, title, updated_at FROM paper_analysis_index "
+        "WHERE project_id=? AND kind=? ORDER BY updated_at DESC"));
+    q.addBindValue(projectId);
+    q.addBindValue(kind);
+    if (!q.exec())
+        return out;
+    while (q.next()) {
+        PaperAnalysisRef r;
+        r.objectId    = q.value(0).toString();
+        r.projectId   = q.value(1).toString();
+        r.paperId     = q.value(2).toString();
+        r.kind        = q.value(3).toString();
+        r.author      = q.value(4).toString();
+        r.authorEmail = q.value(5).toString();
+        r.status      = q.value(6).toString();
+        r.title       = q.value(7).toString();
+        r.updatedAt   = q.value(8).toString();
+        out.append(r);
+    }
+    return out;
 }
 
 QList<PaperDataRef> LibraryDb::paperData(const QString &projectId,

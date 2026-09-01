@@ -945,5 +945,6 @@ int main(int argc, char *argv[])
 
     bootMark("window geometry restored -- handing over to the event loop");
     Stall::setPhase("idle");
+
     return app.exec();
 }
