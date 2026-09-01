@@ -54,6 +54,19 @@ public:
     // Label the row's translation as somebody else's (empty = ours).
     void setTranslationOrigin(int row, const QString &origin);
 
+    // One paragraph's cached translation, for the bulk path below.
+    struct CachedTranslation {
+        int row = -1;
+        QString text;
+        QString origin;      // empty when it is this account's own work
+    };
+    // Put a whole paper's cached translations back in one go. Row by row
+    // this was three dataChanged notifications per paragraph -- nine hundred
+    // of them for a fully translated paper, every time it was opened. The
+    // rows are contiguous in practice, so one notification over the range
+    // says the same thing.
+    void applyCachedTranslations(const QVector<CachedTranslation> &items);
+
     Q_INVOKABLE int firstRowOnPage(int page) const;
     Q_INVOKABLE int pageOfRow(int row) const;
     // Which row carries a given block id. Evidence citations name block

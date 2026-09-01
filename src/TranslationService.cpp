@@ -322,6 +322,10 @@ void TranslationService::rehydrateFromCache()
     const QString lang       = m_settings->targetLang();
 
     int hits = 0;
+    // Collected and applied in one go: row by row this was three
+    // notifications per paragraph, and a fully translated paper is hundreds
+    // of paragraphs every time it is opened.
+    QVector<BlockListModel::CachedTranslation> found;
     for (int row = 0; row < m_model->blockCount(); ++row) {
         const Block *b = m_model->blockAt(row);
         if (!b) continue;
@@ -332,14 +336,13 @@ void TranslationService::rehydrateFromCache()
         const QString cached =
             m_cache.lookup(b->id, b->text, model, promptHash, lang);
         if (cached.isEmpty()) continue;
-        m_model->setTranslation(row, cached);
-        m_model->setTranslationStatus(row, Block::Translated);
-        // Label it if it came from the project rather than from us — the
-        // status must be set first, since starting a translation clears this.
-        m_model->setTranslationOrigin(
-            row, m_cache.originOf(b->id, b->text, model, promptHash, lang));
+        // The origin names the member it was adopted from, and is empty for
+        // our own work — the same rule setTranslationOrigin followed.
+        found.append({row, cached,
+                      m_cache.originOf(b->id, b->text, model, promptHash, lang)});
         ++hits;
     }
+    m_model->applyCachedTranslations(found);
     if (hits > 0)
         emit progressChanged();
 }

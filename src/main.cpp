@@ -189,6 +189,7 @@ public:
 
         ++m_depth;
         ++g_events;
+        Stall::resetBreakdown();
         QElapsedTimer t;
         t.start();
         const bool handled = QGuiApplication::notify(receiver, event);
@@ -954,6 +955,7 @@ int main(int argc, char *argv[])
 
     bootMark("window geometry restored -- handing over to the event loop");
     Stall::setPhase("idle");
+
 
     return app.exec();
 }

@@ -158,6 +158,31 @@ void BlockListModel::setTranslationStatus(int row,
                       TranslationOriginRole});
 }
 
+void BlockListModel::applyCachedTranslations(
+    const QVector<CachedTranslation> &items)
+{
+    if (items.isEmpty())
+        return;
+    int lo = m_blocks.size();
+    int hi = -1;
+    for (const CachedTranslation &c : items) {
+        if (c.row < 0 || c.row >= m_blocks.size())
+            continue;
+        Block &b = m_blocks[c.row];
+        b.translation = c.text;
+        b.translationStatus = Block::Translated;
+        b.translationError.clear();
+        b.translationOrigin = c.origin;
+        lo = qMin(lo, c.row);
+        hi = qMax(hi, c.row);
+    }
+    if (hi < 0)
+        return;
+    emit dataChanged(index(lo), index(hi),
+                     {TranslationRole, TranslationStatusRole,
+                      TranslationErrorRole, TranslationOriginRole});
+}
+
 void BlockListModel::setTranslationOrigin(int row, const QString &origin)
 {
     if (row < 0 || row >= m_blocks.size())

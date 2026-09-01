@@ -123,8 +123,14 @@ void PaperController::openPdf(const QUrl &url)
         m_qs.remove(kKeyLastUrl);
         m_qs.sync();
     }
-    emit pdfSourceChanged();
-    emit pdfPasswordChanged();
+    {
+        // The viewer reloads the document and re-lays out its page table
+        // inside this, which is the one part of a switch that was still
+        // landing in the log as unaccounted-for time.
+        Stall::Mark mark("handing the new PDF to the viewer");
+        emit pdfSourceChanged();
+        emit pdfPasswordChanged();
+    }
     m_model.clear();
     emit blocksChanged();
     reload();

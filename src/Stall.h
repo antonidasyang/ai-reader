@@ -23,6 +23,11 @@ const char *phase();
 // marker covers, and the probe reports that residual too, because it is the
 // number that says "stop marking and go look at Qt".
 QList<QPair<QByteArray, qint64>> takeBreakdown();
+// Start a fresh breakdown. Called at the top of every top-level event:
+// without it the marks that ran between two slow events are charged to
+// whichever one is reported next, and the parts add up to more than the
+// whole -- which is exactly how wrong the first breakdowns looked.
+void resetBreakdown();
 
 // Scoped, and restores whatever was current before it.
 class Mark

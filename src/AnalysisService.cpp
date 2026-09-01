@@ -39,7 +39,7 @@ AnalysisService::AnalysisService(Settings *settings, PaperController *paper,
     connect(m_profile, &ProjectProfileController::changed, this, [this]() {
         // The profile is part of the staleness key: editing it means last
         // week's readings were written against different goals.
-        emit quickChanged();
+        announceQuick();
     });
     if (m_settings) {
         connect(m_settings, &Settings::analysisConfigChanged, this,
@@ -81,7 +81,7 @@ void AnalysisService::setTasks(TaskManager *tasks)
                     if (it.value() != id)
                         continue;
                     m_moduleTaskIds.erase(it);
-                    emit deepChanged();
+                    announceDeep();
                     return;
                 }
             });
@@ -164,12 +164,48 @@ int AnalysisService::contextChars() const
     return qBound(20000, int(window * 1.4), 400000);
 }
 
+void AnalysisService::announceQuick()
+{
+    if (m_batching) {
+        m_quickDirty = true;
+        return;
+    }
+    emit quickChanged();
+}
+
+void AnalysisService::announceDeep()
+{
+    if (m_batching) {
+        m_deepDirty = true;
+        return;
+    }
+    emit deepChanged();
+}
+
+void AnalysisService::beginBatch() { m_batching = true; }
+
+void AnalysisService::endBatch()
+{
+    m_batching = false;
+    if (m_quickDirty) {
+        m_quickDirty = false;
+        emit quickChanged();
+    }
+    if (m_deepDirty) {
+        m_deepDirty = false;
+        emit deepChanged();
+    }
+}
+
 void AnalysisService::onPaperChanged()
 {
     const QString id = paperId();
     if (id == m_lastPaperId)
         return;                    // a paragraph edit, not a new paper
     m_lastPaperId = id;
+    // Emptying and refilling is one change as far as anyone watching is
+    // concerned, and the pane rebuilds its whole tree for each one it hears.
+    beginBatch();
     cancel();
     cancelDeep();
     clearQuick();
@@ -177,6 +213,7 @@ void AnalysisService::onPaperChanged()
     m_contentHash.clear();
     emit paperChanged();
     reloadFromStore();
+    endBatch();
 }
 
 QString AnalysisService::currentInputHash() const
@@ -209,7 +246,7 @@ void AnalysisService::clearDeep()
     m_deepErrors.clear();
     m_deepBusy.clear();
     m_deepRunModules.clear();
-    emit deepChanged();
+    announceDeep();
 }
 
 void AnalysisService::clearQuick()
@@ -221,7 +258,7 @@ void AnalysisService::clearQuick()
     m_quickUpdatedAt.clear();
     m_quickIsMine = true;
     m_quickSaved = false;
-    emit quickChanged();
+    announceQuick();
 }
 
 void AnalysisService::reloadFromStore()
@@ -252,7 +289,7 @@ void AnalysisService::reloadFromStore()
                 m_deepUpdatedAt = deep.updatedAt;
                 m_deepIsMine = deep.mine;
                 m_deepSaved = true;
-                emit deepChanged();
+                announceDeep();
             }
         } else if (m_deepSaved) {
             clearDeep();
@@ -276,7 +313,7 @@ void AnalysisService::reloadFromStore()
     m_quickSaved = true;
     if (m_status != Running)
         setStatus(Done);
-    emit quickChanged();
+    announceQuick();
 }
 
 void AnalysisService::generateQuick(bool force)
@@ -399,7 +436,7 @@ void AnalysisService::startQuickRun()
                     m_store->paperAnalysis(paperAtStart, Analysis::KindQuick)
                         .updatedAt;
                 setStatus(Done);
-                emit quickChanged();
+                announceQuick();
             });
     connect(m_job, &QuickAnalysisJob::failed, this,
             [this, paperAtStart](const QString &error) {
@@ -672,7 +709,7 @@ void AnalysisService::startDeepRun(const QStringList &modules, bool force)
             m_deepQueue.append(id);
     }
     m_deepErrors.clear();
-    emit deepChanged();
+    announceDeep();
     pumpDeep();
 }
 
@@ -729,7 +766,7 @@ void AnalysisService::regenerateModule(const QString &id)
     if (taskId.isEmpty())
         return;                    // this module is already on its way
     m_moduleTaskIds.insert(id, taskId);
-    emit deepChanged();
+    announceDeep();
 }
 
 void AnalysisService::startModuleRun(const QString &id)
@@ -739,7 +776,7 @@ void AnalysisService::startModuleRun(const QString &id)
     // tasks are watching this module -- so it is not asked for twice.
     if (!m_deepQueue.contains(id) && !m_deepBusy.contains(id))
         m_deepQueue.append(id);
-    emit deepChanged();
+    announceDeep();
     pumpDeep();
 }
 
@@ -750,7 +787,7 @@ void AnalysisService::cancelModule(const QString &id)
     // handle here to abort a single job with -- but its row is over.
     m_deepQueue.removeAll(id);
     cancelModuleTask(id);
-    emit deepChanged();
+    announceDeep();
     pumpDeep();
 }
 
@@ -771,7 +808,7 @@ void AnalysisService::cancelDeep()
     const QStringList redoing = m_moduleTaskIds.keys();
     for (const QString &id : redoing)
         cancelModuleTask(id);
-    emit deepChanged();
+    announceDeep();
 }
 
 QString AnalysisService::firstDeepError(const QSet<QString> &only) const
@@ -879,7 +916,7 @@ void AnalysisService::pumpDeep()
     const int limit = m_settings ? m_settings->analysisConcurrency() : 2;
     while (m_deepInflight < limit && !m_deepQueue.isEmpty())
         startModule(m_deepQueue.takeFirst());
-    emit deepChanged();
+    announceDeep();
     reportDeepProgress();
     // The run is over the moment none of its own modules is left; the ones
     // that failed decide whether it counts as a success. A task still
@@ -942,7 +979,7 @@ void AnalysisService::startModule(const QString &id)
                 m_contentHash = job->contentHash();
                 persistDeep();
                 finishModuleTask(moduleId, true);
-                emit deepChanged();
+                announceDeep();
                 pumpDeep();
             });
     connect(job, &DeepModuleJob::failed, this,
@@ -956,10 +993,10 @@ void AnalysisService::startModule(const QString &id)
                 }
                 m_deepErrors.insert(moduleId, error);
                 finishModuleTask(moduleId, false, error);
-                emit deepChanged();
+                announceDeep();
                 pumpDeep();
             });
-    emit deepChanged();
+    announceDeep();
 }
 
 void AnalysisService::persistDeep()

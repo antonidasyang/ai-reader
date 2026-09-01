@@ -43,6 +43,8 @@ QList<QPair<QByteArray, qint64>> takeBreakdown()
     return out;
 }
 
+void resetBreakdown() { g_totals.clear(); }
+
 Mark::Mark(const char *what) { begin(what); }
 
 Mark::Mark(const QByteArray &what) : m_own(what) { begin(m_own.constData()); }

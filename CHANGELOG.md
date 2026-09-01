@@ -1,5 +1,27 @@
 # AI Reader changelog
 
+## v1.3.24 — 2026-09-01
+
+### Switching papers stops rebuilding the same things twice
+- The interpretation pane was built three times for one click. Switching
+  papers empties the interpretation and then fills it from the project, and
+  each half announced itself separately, so the pane tore its tree down and
+  built it again — empty, then full — before settling. Those are one change
+  as far as anyone watching is concerned, and it is announced once now.
+- Putting a paper's translations back was three notifications per paragraph.
+  A fully translated paper is hundreds of paragraphs, and it happened every
+  time the paper was opened. They go back in one.
+- The step where the viewer reloads the document and re-lays out its page
+  table is now named in the log too, so what is left of a switch has nowhere
+  to hide.
+
+### A freeze's breakdown belongs to that freeze
+- The per-phase breakdown was cleared when it was reported rather than when
+  an event began, so the marked work that ran between two slow events was
+  charged to whichever one was reported next. The parts added up to more
+  than the whole, which is how the error showed itself. Each event now
+  starts from zero.
+
 ## v1.3.23 — 2026-09-01
 
 ### A maximized window opens maximized, without the small one first

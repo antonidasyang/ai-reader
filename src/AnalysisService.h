@@ -161,6 +161,19 @@ private:
     void refreshClient();
     void clearQuick();
     void clearDeep();
+    // Switching papers empties the interpretation and then fills it from the
+    // store, and each half used to announce itself: the pane tore its tree
+    // down and built it again three times over for one click. While a batch
+    // is open these record what moved, and one announcement goes out at the
+    // end of it.
+    void announceQuick();
+    void announceDeep();
+    void beginBatch();
+    void endBatch();
+
+    bool m_batching = false;
+    bool m_quickDirty = false;
+    bool m_deepDirty = false;
     void pumpDeep();
     void startModule(const QString &id);
     // The work itself, split out of generateQuick()/generateDeep() so the
