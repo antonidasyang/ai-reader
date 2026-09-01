@@ -1,4 +1,5 @@
 #include "LibraryDb.h"
+#include "Stall.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -532,6 +533,7 @@ QList<SyncObjectRow> LibraryDb::objectsByType(const QString &projectId,
                                               const QString &type,
                                               bool includeDeleted) const
 {
+    Stall::Mark mark("reading every object of one kind out of the database");
     QList<SyncObjectRow> rows;
     if (!canRead(projectId))
         return rows;

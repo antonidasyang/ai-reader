@@ -1,4 +1,5 @@
 #include "TranslationCache.h"
+#include "Stall.h"
 
 #include <QCryptographicHash>
 #include <QDir>
@@ -59,6 +60,7 @@ void TranslationCache::setPaperId(const QString &paperId)
 
 void TranslationCache::load()
 {
+    Stall::Mark mark("reading the translation cache");
     const QString path = filePath();
     if (path.isEmpty()) return;
     QFile f(path);
@@ -192,6 +194,7 @@ void TranslationCache::scheduleSave()
 
 void TranslationCache::saveNow()
 {
+    Stall::Mark mark("writing the translation cache");
     const QString path = filePath();
     if (path.isEmpty()) return;
 

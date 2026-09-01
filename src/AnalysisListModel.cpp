@@ -1,4 +1,5 @@
 #include "AnalysisListModel.h"
+#include "Stall.h"
 
 #include "AnalysisStore.h"
 #include "AnalysisTypes.h"
@@ -150,6 +151,7 @@ bool AnalysisListModel::passes(const Row &row) const
 
 void AnalysisListModel::rebuildVisible()
 {
+    Stall::Mark mark("filtering the paper list");
     beginResetModel();
     m_visible.clear();
     for (int i = 0; i < m_all.size(); ++i) {
@@ -163,6 +165,7 @@ void AnalysisListModel::rebuildVisible()
 
 void AnalysisListModel::reload()
 {
+    Stall::Mark mark("rebuilding the paper list");
     m_all.clear();
     m_digests.clear();
     for (const AnalysisRecord &r : m_store->paperAnalyses(Analysis::KindQuick))

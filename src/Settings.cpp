@@ -1,4 +1,5 @@
 #include "Settings.h"
+#include "Stall.h"
 
 #include "AnthropicClient.h"
 #include "LayoutPresets.h"
@@ -972,6 +973,7 @@ void Settings::load()
 
 void Settings::save()
 {
+    Stall::Mark mark("writing the settings file");
     m_qs.setValue(kKeyProvider,      m_provider);
     m_qs.setValue(kKeyModel,         m_model);
     m_qs.setValue(kKeyBaseUrl,       m_baseUrl);

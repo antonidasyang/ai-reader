@@ -1,4 +1,5 @@
 #include "LibraryAnalysisService.h"
+#include "Stall.h"
 
 #include "AnalysisPrompts.h"
 #include "AnalysisStore.h"
@@ -122,6 +123,7 @@ void LibraryAnalysisService::setTasks(TaskManager *tasks)
 
 int LibraryAnalysisService::digestCount() const
 {
+    Stall::Mark mark("counting the project's interpretations");
     return m_store->paperAnalyses(Analysis::KindQuick).size();
 }
 

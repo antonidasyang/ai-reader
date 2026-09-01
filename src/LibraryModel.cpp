@@ -1,4 +1,5 @@
 #include "LibraryModel.h"
+#include "Stall.h"
 #include "ProjectController.h"
 #include "SyncEngine.h"
 
@@ -98,6 +99,7 @@ QHash<int, QByteArray> LibraryModel::roleNames() const
 
 void LibraryModel::reload()
 {
+    Stall::Mark mark("reloading the library");
     beginResetModel();
     // Always the project that is current *now*, and always through the
     // store's gate: no project, no session, or a store that belongs to

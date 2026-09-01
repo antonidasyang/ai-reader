@@ -1,5 +1,28 @@
 # AI Reader changelog
 
+## v1.3.19 — 2026-09-01
+
+### Everything that can hold the GUI thread now says so
+- The event timer's threshold drops to 150 ms and its line carries more:
+  the kind of event, the receiver's class, its object name, its parent's
+  class, and the phase the app thought it was in.
+- A freeze now records how many events the thread delivered while it lasted.
+  One means a single slow slot — and the line above it names that slot.
+  Thousands mean a storm of small work. None at all means the thread was
+  blocked outside event delivery entirely, waiting on a lock, a thread or a
+  file, which is a different bug and could not be told apart before.
+- Twenty more paths name themselves while they run: reading every object of
+  one kind out of the database, decoding the project's interpretations,
+  counting them, rebuilding and filtering the paper list, reloading the
+  library, the comparison basket, switching the outline and the chat to a
+  paper and putting them back, reading and writing the paragraph and
+  translation caches, hashing a PDF, saving a downloaded one, packing an
+  interpretation to store, and writing the settings file.
+- A sync logs what it moved and how long it took, and a downloaded PDF logs
+  its size and transfer time. Work that loops is invisible when each turn of
+  the loop is under the freeze threshold; a line per turn makes the loop
+  itself obvious.
+
 ## v1.3.18 — 2026-09-01
 
 ### The log names whatever froze the window, marked or not

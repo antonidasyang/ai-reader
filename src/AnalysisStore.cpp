@@ -72,6 +72,7 @@ bool AnalysisStore::putPaperAnalysis(const QString &paperId,
                                      const QString &error,
                                      const QString &title)
 {
+    Stall::Mark mark("packing an interpretation to store");
     if (!canWrite() || paperId.isEmpty())
         return false;
     const QString project = projectId();
@@ -141,6 +142,7 @@ AnalysisRecord AnalysisStore::decodePaper(const SyncObjectRow &row) const
 QList<AnalysisRecord> AnalysisStore::paperAnalysesFor(const QString &paperId,
                                                       const QString &kind) const
 {
+    Stall::Mark mark("decoding one paper's interpretations");
     QList<AnalysisRecord> out;
     const QString project = projectId();
     if (project.isEmpty() || paperId.isEmpty())
@@ -228,6 +230,7 @@ AnalysisRecord AnalysisStore::paperAnalysis(const QString &paperId,
 
 QList<AnalysisRecord> AnalysisStore::paperAnalyses(const QString &kind) const
 {
+    Stall::Mark mark("decoding every interpretation in the project");
     QList<AnalysisRecord> out;
     const QString project = projectId();
     if (project.isEmpty())

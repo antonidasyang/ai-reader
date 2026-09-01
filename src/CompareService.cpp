@@ -1,4 +1,5 @@
 #include "CompareService.h"
+#include "Stall.h"
 
 #include "AnalysisPrompts.h"
 #include "AnalysisStore.h"
@@ -184,6 +185,7 @@ bool CompareService::canRun() const
 
 void CompareService::loadStored()
 {
+    Stall::Mark mark("loading the comparison basket");
     if (m_basket.size() < 2) {
         if (!m_result.isEmpty()) {
             m_result = QJsonObject();

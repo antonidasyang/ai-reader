@@ -1,4 +1,5 @@
 #include "BlockCache.h"
+#include "Stall.h"
 
 #include <QDebug>
 #include <QDir>
@@ -32,6 +33,7 @@ QString BlockCache::filePath() const
 
 void BlockCache::flush()
 {
+    Stall::Mark mark("writing the paragraph cache");
     if (m_saveTimer.isActive()) {
         m_saveTimer.stop();
         saveNow();
@@ -183,6 +185,7 @@ bool BlockCache::adopt(const QJsonObject &doc, const QString &author,
 
 void BlockCache::load()
 {
+    Stall::Mark mark("reading the paragraph cache");
     const QString path = filePath();
     if (path.isEmpty()) return;
     QFile f(path);

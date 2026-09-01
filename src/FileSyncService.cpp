@@ -1,12 +1,16 @@
 #include "FileSyncService.h"
+#include "Stall.h"
 #include "ApiClient.h"
 #include "ProjectController.h"
 #include "SyncEngine.h"
 
 #include <QCryptographicHash>
 #include <QDir>
+#include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
+
+#include <memory>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QNetworkReply>
@@ -40,6 +44,7 @@ QString FileSyncService::toLocalPath(const QString &pathOrUrl)
 
 QString FileSyncService::sha256File(const QString &path)
 {
+    Stall::Mark mark("hashing a PDF");
     QFile f(path);
     if (!f.open(QIODevice::ReadOnly))
         return {};
@@ -406,9 +411,14 @@ void FileSyncService::downloadBlob(const QString &key, const QString &sha256,
             QNetworkReply *reply = m_nam.get(blobRequest(
                 QStringLiteral("/projects/") + m_projects->currentId()
                 + QStringLiteral("/attachments/blob?key=") + key));
+            auto clock = std::make_shared<QElapsedTimer>();
+            clock->start();
             connect(reply, &QNetworkReply::finished, this,
-                    [this, reply, sha256, done] {
+                    [this, reply, sha256, done, clock] {
+                Stall::Mark mark("saving a downloaded PDF");
                 const QByteArray bytes = reply->readAll();
+                qInfo("blob: %lld KB arrived in %lld ms",
+                      qint64(bytes.size()) / 1024, clock->elapsed());
                 const int s = reply->attribute(
                     QNetworkRequest::HttpStatusCodeAttribute).toInt();
                 reply->deleteLater();

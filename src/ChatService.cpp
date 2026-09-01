@@ -1,4 +1,5 @@
 #include "ChatService.h"
+#include "Stall.h"
 
 #include "Block.h"
 #include "BlockListModel.h"
@@ -102,6 +103,7 @@ void ChatService::ensureAtLeastOneSession()
 
 void ChatService::onPaperChanged()
 {
+    Stall::Mark mark("switching the chat to this paper");
     cancel();
     m_messages.clear();
     m_apiMessages.clear();
@@ -120,6 +122,7 @@ void ChatService::onPaperChanged()
 
 void ChatService::rehydrateFromCache()
 {
+    Stall::Mark mark("putting this paper's chat back");
     if (m_cache.paperId().isEmpty()) return;
     ChatHistoryCache::Snapshot snap = m_cache.load();
     if (snap.sessions.isEmpty()) return;

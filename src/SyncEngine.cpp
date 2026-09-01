@@ -126,9 +126,14 @@ void SyncEngine::syncProject(const QString &projectId)
     if (projectId.isEmpty() || m_syncing)
         return;
     setSyncing(true);
+    m_syncClock.start();
+    m_appliedThisSync = 0;
+    m_pushedThisSync = 0;
     pull(projectId, [this, projectId] {
         push(projectId, 0, 0, [this, projectId] {
             setSyncing(false);
+            qInfo("sync: %d objects in, %d out, %lld ms",
+                  m_appliedThisSync, m_pushedThisSync, m_syncClock.elapsed());
             // Everything that reacts to a sync runs inside this emission,
             // on the GUI thread; the watchdog should say so.
             Stall::Mark mark("a sync landing");
@@ -232,6 +237,7 @@ void SyncEngine::applyServerObject(const QString &projectId,
     const SyncObjectRow row = parseServer(projectId, o);
     m_db->upsertFromServer(row);
     indexObject(row);
+    ++m_appliedThisSync;
 }
 
 void SyncEngine::push(const QString &projectId, int attempt, int batch,

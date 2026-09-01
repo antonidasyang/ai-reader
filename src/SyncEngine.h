@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QElapsedTimer>
+#include <QJsonArray>
 #include <QObject>
 #include <QString>
 #include <QTimer>
@@ -62,6 +64,12 @@ private:
     void push(const QString &projectId, int attempt, int batch,
               std::function<void()> then);
     void applyServerObject(const QString &projectId, const QJsonObject &o);
+    // Plain bookkeeping so a sync can say what it did. A loop of syncs is
+    // invisible when each step is under the freeze threshold; a line per
+    // sync makes it obvious.
+    QElapsedTimer m_syncClock;
+    int m_appliedThisSync = 0;
+    int m_pushedThisSync = 0;
     // Walk one pulled page into the database a slice at a time, handing the
     // event loop back between slices. A page of artifacts is tens of
     // megabytes of paragraphs and translations; applying it in one turn is

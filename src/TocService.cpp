@@ -1,4 +1,5 @@
 #include "TocService.h"
+#include "Stall.h"
 
 #include "Block.h"
 #include "BlockListModel.h"
@@ -59,6 +60,7 @@ TocService::~TocService() = default;
 
 void TocService::onPaperChanged()
 {
+    Stall::Mark mark("switching the outline to this paper");
     // blocksChanged fires both when a new paper loads and when the
     // user splits/merges/deletes a paragraph on the current paper.
     // Only the former is a real "paper changed" event for us; for
@@ -76,6 +78,7 @@ void TocService::onPaperChanged()
 
 void TocService::rehydrateFromCache()
 {
+    Stall::Mark mark("putting this paper's outline back");
     if (!m_settings || !m_blocks) return;
     if (m_cache.paperId().isEmpty()) return;
 

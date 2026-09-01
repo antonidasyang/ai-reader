@@ -149,7 +149,14 @@ QElapsedTimer g_boot;
 // allocation. Nothing is built unless the event was actually slow -- and
 // the class name is captured *before* the call, because a receiver is
 // allowed to delete itself during it.
-constexpr int kSlowEventMs = 250;
+constexpr int kSlowEventMs = 150;
+
+// How many top-level events the GUI thread has delivered. The watchdog
+// reads it: a freeze that spans zero events is a thread blocked *outside*
+// event delivery -- a lock, a wait, a synchronous read -- and that is a
+// different bug from a slow slot, so the log has to be able to tell them
+// apart.
+quint64 g_events = 0;
 
 class TimedApplication : public QGuiApplication
 {
@@ -161,17 +168,22 @@ public:
         if (m_depth > 0)      // nested delivery: the outer one already owns
             return QGuiApplication::notify(receiver, event);   // this time
 
-        // Both are pointers into static data, and the parent is worth
-        // having: a bare QObject receiver says nothing on its own, and
-        // "…to QObject (a child of QQmlEngine)" usually says everything.
+        // All pointers into static data, and the parent is worth having: a
+        // bare QObject receiver says nothing on its own, and "…to QObject
+        // (a child of QQmlEngine)" usually says everything. The object name
+        // is an implicitly shared copy -- an atomic bump, not an allocation
+        // -- and it is taken now because a receiver may delete itself
+        // during the call.
         const char *cls =
             receiver ? receiver->metaObject()->className() : "(none)";
         const QObject *parent = receiver ? receiver->parent() : nullptr;
         const char *parentCls =
             parent ? parent->metaObject()->className() : "nothing";
+        const QString name = receiver ? receiver->objectName() : QString();
         const int type = int(event->type());
 
         ++m_depth;
+        ++g_events;
         QElapsedTimer t;
         t.start();
         const bool handled = QGuiApplication::notify(receiver, event);
@@ -181,10 +193,13 @@ public:
         if (ms >= kSlowEventMs) {
             const char *evName =
                 QMetaEnum::fromType<QEvent::Type>().valueToKey(type);
-            qWarning("[t+%lld ms] %lld ms went into one %s delivered to %s "
-                     "(a child of %s)",
-                     g_boot.elapsed(), ms,
-                     evName ? evName : "event", cls, parentCls);
+            qWarning("[t+%lld ms] %lld ms went into one %s delivered to "
+                     "%s%s%s%s (a child of %s) -- phase: %s",
+                     g_boot.elapsed(), ms, evName ? evName : "event", cls,
+                     name.isEmpty() ? "" : " \"",
+                     name.isEmpty() ? "" : qUtf8Printable(name),
+                     name.isEmpty() ? "" : "\"",
+                     parentCls, Stall::phase());
         }
         return handled;
     }
@@ -236,16 +251,24 @@ void installStallWatchdog(QQuickWindow *win, QObject *owner)
     // 20 wake-ups a second costs nothing next to what it catches.
     timer->setInterval(50);
     auto *last = new qint64(g_boot.elapsed());
+    auto *lastEvents = new quint64(g_events);
     auto *armed = new bool(false);
-    QObject::connect(timer, &QTimer::timeout, owner, [last, armed, owner, win]() {
+    QObject::connect(timer, &QTimer::timeout, owner,
+                     [last, lastEvents, armed, owner, win]() {
         const qint64 now = g_boot.elapsed();
         const qint64 gap = now - *last;
         *last = now;
+        const quint64 events = g_events - *lastEvents;
+        *lastEvents = g_events;
         if (gap < kStallMs)
             return;
+        // One event means one slow slot, and the line above this one names
+        // it. Thousands mean a storm of small work. None at all means the
+        // thread was blocked outside event delivery entirely -- waiting on
+        // a lock, a thread, or a file -- which is a different bug.
         qWarning("[t+%lld ms] the window was frozen for %lld ms (it started at "
-                 "t+%lld ms) during: %s",
-                 now, gap, now - gap, Stall::phase());
+                 "t+%lld ms, and delivered %llu events while it was) during: %s",
+                 now, gap, now - gap, events, Stall::phase());
         if (*armed || gap < kFrameTimingTriggerMs)
             return;
         // An explicit QT_LOGGING_RULES belongs to whoever set it; do not
