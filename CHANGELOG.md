@@ -1,5 +1,26 @@
 # AI Reader changelog
 
+## v1.3.23 — 2026-09-01
+
+### A maximized window opens maximized, without the small one first
+- The window was shown the moment QML finished building it, at the size
+  written in the QML, and last session's geometry arrived a moment later.
+  That gap is the small window that appears and jumps.
+- It now stays hidden until the geometry and the maximized/full-screen
+  state have both been put back, and is shown into that state. The first
+  frame is already the right shape.
+
+### A pane nobody has opened is not built
+- All nine panes were built at launch whether or not they were showing, and
+  every one of them was paid for in the seconds before the window appeared.
+  A reader with four panes open was still paying for the folder browser,
+  the outline, the research pane, the task list and the chat.
+- They are built the first time they are opened, and kept after that, so
+  toggling one costs nothing the second time. With five put away, the
+  window carries 655 items instead of 1162.
+- The drag-to-reorder grip, the saved layouts and the pane widths all key
+  off the same names as before, so nothing about arranging panes changes.
+
 ## v1.3.22 — 2026-09-01
 
 ### Interpretations are counted without being read

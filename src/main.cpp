@@ -882,7 +882,14 @@ int main(int argc, char *argv[])
     // timer — collapses bursts (e.g. width and visibility both change
     // when maximizing) into one save once the dust settles.
     if (auto *root = engine.rootObjects().value(0)) {
-        if (auto *win = qobject_cast<QQuickWindow *>(root)) {
+        auto *win = qobject_cast<QQuickWindow *>(root);
+        if (!win) {
+            // Not the window we expected. It is still hidden, so show it
+            // rather than leave the user staring at nothing.
+            if (auto *anyWindow = qobject_cast<QWindow *>(root))
+                anyWindow->setVisible(true);
+        }
+        if (win) {
             QSettings ws;
             ws.beginGroup(QStringLiteral("window"));
             const bool hasGeom = ws.contains(QStringLiteral("width"))
@@ -895,19 +902,21 @@ int main(int argc, char *argv[])
                 win->setX(ws.value(QStringLiteral("x")).toInt());
             if (ws.contains(QStringLiteral("y")))
                 win->setY(ws.value(QStringLiteral("y")).toInt());
+            // Main.qml leaves the window hidden so everything above lands
+            // before anyone sees it; this is where it is finally shown, and
+            // it is shown straight into the state it was left in. Restoring
+            // "Minimized" or "Hidden" would mean the user cannot see the
+            // app at launch, so anything else becomes Windowed.
+            QWindow::Visibility vis = QWindow::Windowed;
             if (ws.contains(QStringLiteral("visibility"))) {
-                const int vis = ws.value(QStringLiteral("visibility")).toInt();
-                // Only honor sensible visibilities. Restoring "Minimized"
-                // or "Hidden" would mean the user can't see the app at
-                // launch — clamp to Windowed in that case.
-                const auto v = static_cast<QWindow::Visibility>(vis);
-                if (v == QWindow::Maximized
-                    || v == QWindow::FullScreen
-                    || v == QWindow::Windowed) {
-                    win->setVisibility(v);
-                }
+                const auto v = static_cast<QWindow::Visibility>(
+                    ws.value(QStringLiteral("visibility")).toInt());
+                if (v == QWindow::Maximized || v == QWindow::FullScreen
+                    || v == QWindow::Windowed)
+                    vis = v;
             }
             ws.endGroup();
+            win->setVisibility(vis);
 
             auto *saveTimer = new QTimer(win);
             saveTimer->setSingleShot(true);

@@ -9,7 +9,12 @@ ApplicationWindow {
     id: window
     width: 1400
     height: 900
-    visible: true
+    // Deliberately not shown here. Showing the window the moment QML builds
+    // it means showing it at the size declared above, and the geometry from
+    // last session lands a moment later -- which is the small window that
+    // flashes and jumps. main.cpp restores the geometry first and shows it
+    // after, so the first frame is already the right shape.
+    visible: false
     // Every toolbar button: the icon carries the meaning, the tooltip
     // carries the words. `tip` rather than ToolTip.text so each button is
     // one line at the call site.
@@ -120,6 +125,11 @@ ApplicationWindow {
     // library and the caption has to give the same answer. tabs.count is
     // named so the binding re-runs when the titles are refreshed after a
     // sync — nameAt is an invokable and notifies nothing by itself.
+    // The central SplitView, under a name no child property shadows.
+    // DockGrip has a `split` property of its own, so `split: split` inside a
+    // pane's component binds to itself; this is what those bindings use.
+    readonly property var paneSplit: split
+
     readonly property string paperDisplayName: {
         const named = (tabs.count, tabs.activeIndex >= 0
                        ? tabs.nameAt(tabs.activeIndex) : "")
@@ -1584,42 +1594,46 @@ ApplicationWindow {
             // ── Far left: folder browser (toggleable) ──────────────────
             // Visible by default if the user previously had a folder
             // open; auto-hidden otherwise so first-launch isn't crowded.
-            FolderPane {
+            Loader {
                 id: folderPane
-                // The library knows which file on disk a paper came from,
-                // which is how a paper opened out of the project (and so
-                // playing from a sha256-named blob) still highlights its own
-                // row here. Naming paperId re-runs the lookup on each open.
-                openPaperPath: (paperController.paperId,
-                                libraryModel.localPathForPaperId(
-                                    paperController.paperId))
                 objectName: "folder"
-                // Default: visible iff the user has a folder open
-                // already (so a brand-new install with no library
-                // doesn't waste a column on an empty pane). Once
-                // the user toggles via the toolbar, the imperative
-                // assignment breaks the binding and the new value
-                // is persisted via onVisibleChanged below.
+                // A pane nobody has opened is not built. All nine used to be,
+                // whether or not they were showing, and every one of them is
+                // paid for in the two and a half seconds the window takes to
+                // appear. Once opened it is kept, so toggling it back and
+                // forth costs nothing.
+                property bool everShown: false
                 visible: layoutSettings.paneVisible("folder",
                     library.currentFolder.length > 0)
+                active: folderPane.visible || folderPane.everShown
                 onVisibleChanged: {
-                    layoutSettings.setPaneVisible("folder", visible)
+                    if (folderPane.visible) folderPane.everShown = true
+                    layoutSettings.setPaneVisible("folder", folderPane.visible)
                     window.layoutTouched()
                 }
                 SplitView.preferredWidth: layoutSettings.paneWidth("folder", 240)
                 SplitView.minimumWidth: 0
-                onWidthChanged: layoutSettings.setPaneWidth("folder", width)
-                onPdfChosen: function(path) { tabs.openPaper(path) }
+                onWidthChanged: layoutSettings.setPaneWidth("folder", folderPane.width)
+                sourceComponent: FolderPane {
+                    // The library knows which file on disk a paper came from,
+                    // which is how a paper opened out of the project (and so
+                    // playing from a sha256-named blob) still highlights its own
+                    // row here. Naming paperId re-runs the lookup on each open.
+                    openPaperPath: (paperController.paperId,
+                                    libraryModel.localPathForPaperId(
+                                        paperController.paperId))
+                    onPdfChosen: function(path) { tabs.openPaper(path) }
 
-                DockGrip {
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    anchors.leftMargin: 4
-                    anchors.topMargin: 7
-                    pane: folderPane
-                    split: split
-                    marker: dropMarker
-                    onReordered: window.persistPaneOrder()
+                    DockGrip {
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.leftMargin: 4
+                        anchors.topMargin: 7
+                        pane: folderPane
+                        split: window.paneSplit
+                        marker: dropMarker
+                        onReordered: window.persistPaneOrder()
+                    }
                 }
             }
 
@@ -1643,38 +1657,48 @@ ApplicationWindow {
                     anchors.leftMargin: 4
                     anchors.topMargin: 7
                     pane: libraryPane
-                    split: split
+                    split: window.paneSplit
                     marker: dropMarker
                     onReordered: window.persistPaneOrder()
                 }
             }
 
             // ── TOC sidebar ────────────────────────────────────────────
-            TocSidebar {
+            Loader {
                 id: tocSidebar
                 objectName: "toc"
+                // A pane nobody has opened is not built. All nine used to be,
+                // whether or not they were showing, and every one of them is
+                // paid for in the two and a half seconds the window takes to
+                // appear. Once opened it is kept, so toggling it back and
+                // forth costs nothing.
+                property bool everShown: false
                 visible: layoutSettings.paneVisible("toc", true)
+                active: tocSidebar.visible || tocSidebar.everShown
                 onVisibleChanged: {
-                    layoutSettings.setPaneVisible("toc", visible)
+                    if (tocSidebar.visible) tocSidebar.everShown = true
+                    layoutSettings.setPaneVisible("toc", tocSidebar.visible)
                     window.layoutTouched()
                 }
                 SplitView.preferredWidth: layoutSettings.paneWidth("toc", 220)
                 SplitView.minimumWidth: 0
-                onWidthChanged: layoutSettings.setPaneWidth("toc", width)
-                onSectionClicked: function(blockId, page) {
-                    blockList.showPage(page)
-                    pdfView.goToPage(page)
-                }
+                onWidthChanged: layoutSettings.setPaneWidth("toc", tocSidebar.width)
+                sourceComponent: TocSidebar {
+                    onSectionClicked: function(blockId, page) {
+                        blockList.showPage(page)
+                        pdfView.goToPage(page)
+                    }
 
-                DockGrip {
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    anchors.leftMargin: 4
-                    anchors.topMargin: 7
-                    pane: tocSidebar
-                    split: split
-                    marker: dropMarker
-                    onReordered: window.persistPaneOrder()
+                    DockGrip {
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.leftMargin: 4
+                        anchors.topMargin: 7
+                        pane: tocSidebar
+                        split: window.paneSplit
+                        marker: dropMarker
+                        onReordered: window.persistPaneOrder()
+                    }
                 }
             }
 
@@ -1952,7 +1976,7 @@ ApplicationWindow {
                             id: pdfView
                             // Relaying out the page table per mouse move is
                             // what made dragging a handle crawl.
-                            resizing: split.resizing
+                            resizing: window.paneSplit.resizing
                             anchors.fill: parent
                             document: pdfDoc
                             visible: pdfDoc.status === PdfDocument.Ready
@@ -2192,7 +2216,7 @@ ApplicationWindow {
                     anchors.leftMargin: 4
                     anchors.topMargin: 6
                     pane: pdfPane
-                    split: split
+                    split: window.paneSplit
                     marker: dropMarker
                     onReordered: window.persistPaneOrder()
                 }
@@ -2216,7 +2240,7 @@ ApplicationWindow {
                 paperStatus: paperController.status
                 // Wrapped text is expensive to re-lay-out; the pane holds
                 // its layout width while a handle is being dragged.
-                resizing: split.resizing
+                resizing: window.paneSplit.resizing
 
                 DockGrip {
                     anchors.left: parent.left
@@ -2224,7 +2248,7 @@ ApplicationWindow {
                     anchors.leftMargin: 4
                     anchors.topMargin: 7
                     pane: blockList
-                    split: split
+                    split: window.paneSplit
                     marker: dropMarker
                     onReordered: window.persistPaneOrder()
                 }
@@ -2234,7 +2258,7 @@ ApplicationWindow {
             AnalysisPane {
                 id: analysisPane
                 objectName: "analysis"
-                resizing: split.resizing
+                resizing: window.paneSplit.resizing
                 visible: layoutSettings.paneVisible("analysis", false)
                 onVisibleChanged: {
                     layoutSettings.setPaneVisible("analysis", visible)
@@ -2273,7 +2297,7 @@ ApplicationWindow {
                     anchors.leftMargin: 4
                     anchors.topMargin: 7
                     pane: analysisPane
-                    split: split
+                    split: window.paneSplit
                     marker: dropMarker
                     onReordered: window.persistPaneOrder()
                 }
@@ -2283,94 +2307,130 @@ ApplicationWindow {
             // A pane rather than a dialog: reading a category or an opening
             // means looking at a paper at the same time, and a modal window
             // covering the library made that impossible.
-            ResearchPane {
+            Loader {
                 id: researchPane
                 objectName: "research"
-                resizing: split.resizing
+                // A pane nobody has opened is not built. All nine used to be,
+                // whether or not they were showing, and every one of them is
+                // paid for in the two and a half seconds the window takes to
+                // appear. Once opened it is kept, so toggling it back and
+                // forth costs nothing.
+                property bool everShown: false
                 visible: layoutSettings.paneVisible("research", false)
+                active: researchPane.visible || researchPane.everShown
                 onVisibleChanged: {
-                    layoutSettings.setPaneVisible("research", visible)
+                    if (researchPane.visible) researchPane.everShown = true
+                    layoutSettings.setPaneVisible("research", researchPane.visible)
                     window.layoutTouched()
                 }
                 SplitView.preferredWidth: layoutSettings.paneWidth("research", 420)
                 SplitView.minimumWidth: 300
-                onWidthChanged: layoutSettings.setPaneWidth("research", width)
+                onWidthChanged: layoutSettings.setPaneWidth("research", researchPane.width)
+                sourceComponent: ResearchPane {
+                    resizing: window.paneSplit.resizing
 
-                // A paper named anywhere in a project-wide analysis opens
-                // from there.
-                onPaperActivated: function(paperId) {
-                    const id = libraryModel.findByPaperId(paperId)
-                    if (!id || id.length === 0)
-                        return
-                    const fields = libraryModel.itemFields(id)
-                    fileSync.openItem(id, fields.localPath ? fields.localPath : "")
-                }
-                onAskAiRequested: function(text) {
-                    chatPane.visible = true
-                    chatPane.prefillInput(text, 0)
-                }
+                    // A paper named anywhere in a project-wide analysis opens
+                    // from there.
+                    onPaperActivated: function(paperId) {
+                        const id = libraryModel.findByPaperId(paperId)
+                        if (!id || id.length === 0)
+                            return
+                        const fields = libraryModel.itemFields(id)
+                        fileSync.openItem(id, fields.localPath ? fields.localPath : "")
+                    }
+                    onAskAiRequested: function(text) {
+                        chatPane.visible = true
+                        chatPane.prefillInput(text, 0)
+                    }
 
-                DockGrip {
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    anchors.leftMargin: 4
-                    anchors.topMargin: 7
-                    pane: researchPane
-                    split: split
-                    marker: dropMarker
-                    onReordered: window.persistPaneOrder()
+                    DockGrip {
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.leftMargin: 4
+                        anchors.topMargin: 7
+                        pane: researchPane
+                        split: window.paneSplit
+                        marker: dropMarker
+                        onReordered: window.persistPaneOrder()
+                    }
                 }
             }
 
             // ── What the app is working on (toggleable) ────────────────
-            TasksPane {
+            Loader {
                 id: tasksPane
                 objectName: "tasks"
-                resizing: split.resizing
+                // A pane nobody has opened is not built. All nine used to be,
+                // whether or not they were showing, and every one of them is
+                // paid for in the two and a half seconds the window takes to
+                // appear. Once opened it is kept, so toggling it back and
+                // forth costs nothing.
+                property bool everShown: false
                 visible: layoutSettings.paneVisible("tasks", false)
+                active: tasksPane.visible || tasksPane.everShown
                 onVisibleChanged: {
-                    layoutSettings.setPaneVisible("tasks", visible)
+                    if (tasksPane.visible) tasksPane.everShown = true
+                    layoutSettings.setPaneVisible("tasks", tasksPane.visible)
                     window.layoutTouched()
                 }
                 SplitView.preferredWidth: layoutSettings.paneWidth("tasks", 360)
                 SplitView.minimumWidth: 260
-                onWidthChanged: layoutSettings.setPaneWidth("tasks", width)
+                onWidthChanged: layoutSettings.setPaneWidth("tasks", tasksPane.width)
+                sourceComponent: TasksPane {
+                    resizing: window.paneSplit.resizing
 
-                DockGrip {
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    anchors.leftMargin: 4
-                    anchors.topMargin: 7
-                    pane: tasksPane
-                    split: split
-                    marker: dropMarker
-                    onReordered: window.persistPaneOrder()
+                    DockGrip {
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.leftMargin: 4
+                        anchors.topMargin: 7
+                        pane: tasksPane
+                        split: window.paneSplit
+                        marker: dropMarker
+                        onReordered: window.persistPaneOrder()
+                    }
                 }
             }
 
             // ── Far right: chat pane (toggleable) ──────────────────────
-            ChatPane {
+            Loader {
                 id: chatPane
                 objectName: "chat"
-                resizing: split.resizing
+                // A pane nobody has opened is not built. All nine used to be,
+                // whether or not they were showing, and every one of them is
+                // paid for in the two and a half seconds the window takes to
+                // appear. Once opened it is kept, so toggling it back and
+                // forth costs nothing.
+                property bool everShown: false
                 visible: layoutSettings.paneVisible("chat", false)
+                active: chatPane.visible || chatPane.everShown
                 onVisibleChanged: {
-                    layoutSettings.setPaneVisible("chat", visible)
+                    if (chatPane.visible) chatPane.everShown = true
+                    layoutSettings.setPaneVisible("chat", chatPane.visible)
                     window.layoutTouched()
                 }
                 SplitView.preferredWidth: layoutSettings.paneWidth("chat", 360)
                 SplitView.minimumWidth: 240
-                onWidthChanged: layoutSettings.setPaneWidth("chat", width)
+                onWidthChanged: layoutSettings.setPaneWidth("chat", chatPane.width)
+                // The two places that put a question in the composer reach the
+                // pane through here, so they do not have to know it is loaded.
+                function prefillInput(text, page) {
+                    if (chatPane.item)
+                        chatPane.item.prefillInput(text, page)
+                }
+                sourceComponent: ChatPane {
+                    resizing: window.paneSplit.resizing
 
-                DockGrip {
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    anchors.leftMargin: 4
-                    anchors.topMargin: 7
-                    pane: chatPane
-                    split: split
-                    marker: dropMarker
-                    onReordered: window.persistPaneOrder()
+                    DockGrip {
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.leftMargin: 4
+                        anchors.topMargin: 7
+                        pane: chatPane
+                        split: window.paneSplit
+                        marker: dropMarker
+                        onReordered: window.persistPaneOrder()
+                    }
                 }
             }
 
