@@ -237,6 +237,9 @@ void SyncEngine::applyServerObject(const QString &projectId,
 void SyncEngine::push(const QString &projectId, int attempt, int batch,
                       std::function<void()> then)
 {
+    // Reading the dirty rows out and serialising them is up to six megabytes
+    // of JSON built on this thread, once per batch.
+    Stall::Mark mark("packing what this machine has to send");
     // Stay inside whatever the server admitted to accepting, with room for the
     // JSON envelope around the objects.
     const qint64 budget = m_serverPushLimit > 0

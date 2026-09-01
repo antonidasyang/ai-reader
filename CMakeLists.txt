@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.3.17 LANGUAGES CXX)
+project(ai-reader VERSION 1.3.18 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

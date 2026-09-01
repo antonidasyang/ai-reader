@@ -1,5 +1,24 @@
 # AI Reader changelog
 
+## v1.3.18 — 2026-09-01
+
+### The log names whatever froze the window, marked or not
+- Hand-placed markers only cover the paths someone thought to mark, and
+  three rounds of field logs have now come back saying the freeze was in
+  none of them — while the frame timing ruled out layout (`polish` never
+  over 7 ms) and drawing (`blockedForSync` never over 32 ms) just as
+  firmly. The thread was busy with something nobody had a name for.
+- Every event the GUI thread delivers now passes through a timer. One that
+  takes a quarter of a second or more is logged with the kind of event it
+  was and the class of the object it was delivered to — and a queued signal
+  arrives as a MetaCall on the object about to run the slot, so a slow slot
+  names its own class whether or not anyone marked it.
+- It costs two clock reads per top-level event and builds nothing unless
+  the event was actually slow.
+- The push side of a sync is marked too: reading the dirty rows out and
+  serialising them is up to six megabytes of JSON built on this thread,
+  once per batch, and it was the last unnamed step in a sync.
+
 ## v1.3.17 — 2026-08-31
 
 ### A sync no longer freezes the window while it lands

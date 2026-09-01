@@ -43,6 +43,7 @@
 #include <QDateTime>
 #include <QElapsedTimer>
 #include <QLoggingCategory>
+#include <QMetaEnum>
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
@@ -136,6 +137,62 @@ void writeLaunchLog(QtMsgType type, const QMessageLogContext &ctx,
 // during "restoring the session" and one during "syncing" are different
 // bugs.
 QElapsedTimer g_boot;
+
+// Every event the GUI thread delivers goes through notify(). Timing the
+// outermost one and naming its receiver catches work no hand-placed marker
+// was ever going to find: a queued signal arrives as a MetaCall on the
+// object that is about to run the slot, so a slow slot names its class
+// whether or not anyone thought to mark it.
+//
+// The cost is two monotonic clock reads per top-level event, and a
+// className() that is a pointer into static data rather than an
+// allocation. Nothing is built unless the event was actually slow -- and
+// the class name is captured *before* the call, because a receiver is
+// allowed to delete itself during it.
+constexpr int kSlowEventMs = 250;
+
+class TimedApplication : public QGuiApplication
+{
+public:
+    using QGuiApplication::QGuiApplication;
+
+    bool notify(QObject *receiver, QEvent *event) override
+    {
+        if (m_depth > 0)      // nested delivery: the outer one already owns
+            return QGuiApplication::notify(receiver, event);   // this time
+
+        // Both are pointers into static data, and the parent is worth
+        // having: a bare QObject receiver says nothing on its own, and
+        // "…to QObject (a child of QQmlEngine)" usually says everything.
+        const char *cls =
+            receiver ? receiver->metaObject()->className() : "(none)";
+        const QObject *parent = receiver ? receiver->parent() : nullptr;
+        const char *parentCls =
+            parent ? parent->metaObject()->className() : "nothing";
+        const int type = int(event->type());
+
+        ++m_depth;
+        QElapsedTimer t;
+        t.start();
+        const bool handled = QGuiApplication::notify(receiver, event);
+        const qint64 ms = t.elapsed();
+        --m_depth;
+
+        if (ms >= kSlowEventMs) {
+            const char *evName =
+                QMetaEnum::fromType<QEvent::Type>().valueToKey(type);
+            qWarning("[t+%lld ms] %lld ms went into one %s delivered to %s "
+                     "(a child of %s)",
+                     g_boot.elapsed(), ms,
+                     evName ? evName : "event", cls, parentCls);
+        }
+        return handled;
+    }
+
+private:
+    int m_depth = 0;
+};
+
 
 void bootMark(const char *phase)
 {
@@ -293,7 +350,7 @@ int main(int argc, char *argv[])
     StorageIdentity::apply();
     applyRemoteRenderingHints();
 
-    QGuiApplication app(argc, argv);
+    TimedApplication app(argc, argv);
     app.setWindowIcon(loadAppIcon());
 
     // QStandardPaths needs the org/app names above to resolve the
