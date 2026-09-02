@@ -94,11 +94,17 @@ compile "$HERE/$DRIVER/main.cpp"  "$OUT/$DRIVER-main.o"
 compile "$HERE/common/AuthStub.cpp" "$OUT/AuthStub.o"
 compile "$OUT/Settings.stub.cpp"    "$OUT/Settings.stub.o"
 
+# Only the objects the current build graph knows. Ninja never deletes the
+# object of a source that was removed, and a stale one drags its dead
+# symbols into this link -- the day CompareService went, every driver
+# failed on a vtable the app no longer has.
+KNOWN=$(ninja -t targets all | awk -F: '/\.o:/{print $1}')
 OBJS=()
 for o in $(find CMakeFiles/ai-reader.dir -name '*.o' | sort); do
   case $o in
     */src/main.cpp.o|*/src/AuthController.cpp.o|*/src/Settings.cpp.o) continue ;;
   esac
+  grep -qx -- "$o" <<<"$KNOWN" || continue
   OBJS+=$o
 done
 

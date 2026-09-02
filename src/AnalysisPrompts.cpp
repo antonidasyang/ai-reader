@@ -355,83 +355,6 @@ QJsonObject digestBrief(const QString &paperId, const QString &title,
         {QStringLiteral("facets"), digest.value(QStringLiteral("facets"))}};
 }
 
-QJsonObject compareSchema()
-{
-    const QStringList dims{
-        QStringLiteral("research_problem"), QStringLiteral("hypothesis"),
-        QStringLiteral("method"),           QStringLiteral("inputs_outputs"),
-        QStringLiteral("data"),             QStringLiteral("baselines"),
-        QStringLiteral("metrics"),          QStringLiteral("results"),
-        QStringLiteral("contributions"),    QStringLiteral("limitations"),
-        QStringLiteral("reproducibility")};
-
-    QJsonObject cell = object(
-        QJsonObject{
-            {QStringLiteral("paperId"),
-             str(QStringLiteral("The paper this cell is about."))},
-            {QStringLiteral("text"),
-             str(QStringLiteral("What this paper does on this dimension, in "
-                                "one short phrase or sentence. Write \"not "
-                                "stated\" when its interpretation does not "
-                                "say -- never fill the gap."))}},
-        {QStringLiteral("paperId"), QStringLiteral("text")});
-
-    QJsonObject row = object(
-        QJsonObject{
-            {QStringLiteral("dimension"),
-             enumStr(dims, QStringLiteral("Which comparison dimension."))},
-            {QStringLiteral("cells"),
-             QJsonObject{{QStringLiteral("type"), QStringLiteral("array")},
-                         {QStringLiteral("description"),
-                          QStringLiteral("One cell per paper, all of them.")},
-                         {QStringLiteral("items"), cell}}}},
-        {QStringLiteral("dimension"), QStringLiteral("cells")});
-
-    QJsonObject warning = object(
-        QJsonObject{
-            {QStringLiteral("papers"),
-             strArray(QStringLiteral("The paper ids this applies to."))},
-            {QStringLiteral("issue"),
-             str(QStringLiteral("Why these cannot be compared directly -- "
-                                "different task, different data, different "
-                                "metric, different setting."))},
-            {QStringLiteral("severity"),
-             enumStr({QStringLiteral("blocking"), QStringLiteral("caution")},
-                     QStringLiteral("blocking: the numbers must not be put "
-                                    "side by side at all. caution: comparable "
-                                    "with a caveat."))}},
-        {QStringLiteral("papers"), QStringLiteral("issue"),
-         QStringLiteral("severity")});
-
-    return object(
-        QJsonObject{
-            {QStringLiteral("rows"),
-             QJsonObject{{QStringLiteral("type"), QStringLiteral("array")},
-                         {QStringLiteral("description"),
-                          QStringLiteral("One row per dimension, in the order "
-                                         "listed in the enum.")},
-                         {QStringLiteral("items"), row}}},
-            {QStringLiteral("comparability"),
-             QJsonObject{{QStringLiteral("type"), QStringLiteral("array")},
-                         {QStringLiteral("description"),
-                          QStringLiteral("Every reason these papers are not "
-                                         "directly comparable. Empty only when "
-                                         "they genuinely are.")},
-                         {QStringLiteral("items"), warning}}},
-            {QStringLiteral("takeaways"),
-             claimArraySchema(QStringLiteral(
-                 "What the reader should take from the comparison, for their "
-                 "own project. Use source `ai_analysis` -- this is your "
-                 "reading of their interpretations, and leave evidence "
-                 "empty."))},
-            {QStringLiteral("ranking"),
-             str(QStringLiteral("Say plainly whether these papers can be "
-                                "ranked at all, and if they cannot, say so "
-                                "instead of ranking them."))}},
-        {QStringLiteral("rows"), QStringLiteral("comparability"),
-         QStringLiteral("takeaways"), QStringLiteral("ranking")});
-}
-
 QJsonObject librarySchema(const QString &kind)
 {
     auto idArray = [](const QString &desc) {
@@ -897,48 +820,6 @@ QString libraryUser(const QString &kind, const QJsonArray &briefs,
             QJsonDocument(extra).toJson(QJsonDocument::Indented));
     }
     Q_UNUSED(kind);
-    return out;
-}
-
-QString compareSystem(const QString &lang, const QString &profileBlock)
-{
-    QString s = QStringLiteral(
-        "You are putting several papers side by side for a researcher, in "
-        "%1.\n\n"
-        "You are given each paper's interpretation, not its full text. Work "
-        "only from what is there.\n\n"
-        "Rules:\n"
-        "1. Fill every cell for every paper. Where an interpretation does not "
-        "say, write \"not stated\" -- do not infer a dataset, a baseline or a "
-        "number that is not in front of you.\n"
-        "2. Comparability comes first. Papers on different tasks, different "
-        "data, different metrics or different settings CANNOT be ranked by "
-        "their numbers, and saying so is more useful than a tidy table. List "
-        "every such conflict, and mark it `blocking` when the numbers must not "
-        "be put side by side at all.\n"
-        "3. Never produce a winner unless the papers are genuinely measured "
-        "the same way on the same thing.\n"
-        "4. Takeaways are your own reading; label them `ai_analysis` and leave "
-        "their evidence empty.\n")
-                    .arg(lang);
-    if (!profileBlock.isEmpty())
-        s += QStringLiteral("\nCompare them for this reader's purposes.\n\n%1")
-                 .arg(profileBlock);
-    return s;
-}
-
-QString compareUser(const QJsonArray &digests, const QStringList &notes)
-{
-    QString out = QStringLiteral("The papers, as they were interpreted:\n\n");
-    out += QString::fromUtf8(
-        QJsonDocument(digests).toJson(QJsonDocument::Indented));
-    if (!notes.isEmpty()) {
-        out += QStringLiteral(
-                   "\nThe reader added these to the comparison with the "
-                   "following in mind:\n");
-        for (const QString &n : notes)
-            out += QStringLiteral("- %1\n").arg(n);
-    }
     return out;
 }
 

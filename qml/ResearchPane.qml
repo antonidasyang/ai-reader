@@ -560,10 +560,9 @@ Rectangle {
                     Layout.fillWidth: true
                     claim: root.asClaim(gi.modelData)
                     fs: root.fs
-                    // Nothing here is about one paper, so the two actions
-                    // that need one are hidden rather than left inert.
+                    // Nothing here is about one paper, so the action that
+                    // needs one is hidden rather than left inert.
                     allowNotes: false
-                    allowCompare: false
                     onAskAiRequested: (text) => root.askAiRequested(text)
                 }
                 Label {
@@ -608,7 +607,6 @@ Rectangle {
                     claim: root.asClaim(ci.modelData)
                     fs: root.fs
                     allowNotes: false
-                    allowCompare: false
                     onAskAiRequested: (text) => root.askAiRequested(text)
                 }
                 Flow {

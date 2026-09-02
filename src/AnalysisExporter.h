@@ -7,7 +7,6 @@
 #include <QUrl>
 
 class AnalysisStore;
-class CompareService;
 class LibraryAnalysisService;
 class ProjectController;
 class ProjectProfileController;
@@ -25,14 +24,12 @@ class AnalysisExporter : public QObject
 public:
     AnalysisExporter(AnalysisStore *store, ProjectController *projects,
                      ProjectProfileController *profile,
-                     LibraryAnalysisService *research, CompareService *compare,
+                     LibraryAnalysisService *research,
                      QObject *parent = nullptr);
 
     // One paper: the quick interpretation, the close reading and the
     // reader's own notes.
     Q_INVOKABLE QString paperMarkdown(const QString &paperId) const;
-    // The current comparison.
-    Q_INVOKABLE QString comparisonMarkdown() const;
     // The whole project: the profile, every project-wide analysis that has
     // been generated, and a one-line index of every interpreted paper.
     Q_INVOKABLE QString projectMarkdown() const;
@@ -53,5 +50,4 @@ private:
     ProjectController *m_projects;
     ProjectProfileController *m_profile;
     LibraryAnalysisService *m_research;
-    CompareService *m_compare;
 };

@@ -22,152 +22,147 @@
 <context>
     <name>Analysis</name>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="68"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="66"/>
         <source>author&apos;s claim</source>
         <translation>作者结论</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="70"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="68"/>
         <source>supported by experiment</source>
         <translation>实验支持</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="72"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="70"/>
         <source>speculation</source>
         <translation>推测</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="73"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="71"/>
         <source>AI analysis</source>
         <translation>AI 分析</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="79"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="77"/>
         <source>Read the whole paper</source>
         <translation>通读全文</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="81"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="79"/>
         <source>Read method + experiments</source>
         <translation>读方法和实验</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="83"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="81"/>
         <source>Use as background / related work</source>
         <translation>作为背景 / 相关工作</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="85"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="83"/>
         <source>Low relevance to this project</source>
         <translation>与本课题相关度低</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="86"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="84"/>
         <source>Not enough information — check by hand</source>
         <translation>信息不足——需人工确认</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="92"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="90"/>
         <source>highly relevant</source>
         <translation>高度相关</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="94"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="92"/>
         <source>somewhat relevant</source>
         <translation>比较相关</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="96"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="94"/>
         <source>barely relevant</source>
         <translation>几乎不相关</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="97"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="95"/>
         <source>relevance unclear</source>
         <translation>相关度不明</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="116"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="114"/>
         <source>What this paper is</source>
         <translation>这篇论文讲什么</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="118"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="116"/>
         <source>Background &amp; terminology</source>
         <translation>背景与术语</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="120"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="118"/>
         <source>Method, step by step</source>
         <translation>方法逐步拆解</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="122"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="120"/>
         <source>Experiments</source>
         <translation>实验</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="124"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="122"/>
         <source>Contributions</source>
         <translation>贡献</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="126"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="124"/>
         <source>Critical reading</source>
         <translation>批判性阅读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="128"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="126"/>
         <source>Limitations</source>
         <translation>局限</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="130"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="128"/>
         <source>Reproducibility</source>
         <translation>复现性</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="132"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="130"/>
         <source>What to do next</source>
         <translation>下一步做什么</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="139"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="137"/>
         <source>Categories</source>
         <translation>分类</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="141"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="139"/>
         <source>Research map</source>
         <translation>研究图谱</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="143"/>
-        <source>Comparison</source>
-        <translation>对比</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="145"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="141"/>
         <source>Consensus &amp; conflicts</source>
         <translation>共识与分歧</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="147"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="143"/>
         <source>How the field moved</source>
         <translation>领域演进</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="149"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="145"/>
         <source>Coverage of this library</source>
         <translation>文献库覆盖</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="151"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="147"/>
         <source>Candidate openings</source>
         <translation>可切入的方向</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="153"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisTypes.cpp" line="149"/>
         <source>What to read and try next</source>
         <translation>下一步读什么、试什么</translation>
     </message>
@@ -175,207 +170,192 @@
 <context>
     <name>AnalysisExporter</name>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="56"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="54"/>
         <source>no evidence found</source>
         <translation>未找到证据</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="68"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="66"/>
         <source>p%1</source>
         <translation>第 %1 页</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="69"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="67"/>
         <source>%1, p%2</source>
         <translation>%1,第 %2 页</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="75"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="73"/>
         <source>unverified</source>
         <translation>未核实</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="117"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="115"/>
         <source>Verdict:</source>
         <translation>判断:</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="129"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="127"/>
         <source>The problem</source>
         <translation>要解决的问题</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="130"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="128"/>
         <source>Why it matters</source>
         <translation>为什么重要</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="131"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="129"/>
         <source>What they did</source>
         <translation>他们做了什么</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="132"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="130"/>
         <source>Main results</source>
         <translation>主要结果</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="133"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="131"/>
         <source>Contributions</source>
         <translation>贡献</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="134"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="132"/>
         <source>Limitations</source>
         <translation>局限</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="151"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="149"/>
         <source>Read first</source>
         <translation>优先阅读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="168"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="166"/>
         <source>Close reading</source>
         <translation>精读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="209"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="207"/>
         <source>new here</source>
         <translation>本文新增</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="210"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="208"/>
         <source>prior work</source>
         <translation>已有工作</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="229"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="227"/>
         <source>Acknowledged by the authors</source>
         <translation>作者已承认</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="230"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="228"/>
         <source>Not acknowledged</source>
         <translation>作者未提及</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="231"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="229"/>
         <source>Threats to validity</source>
         <translation>有效性风险</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="232"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="230"/>
         <source>Practical constraints</source>
         <translation>实际约束</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="233"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="231"/>
         <source>Still open</source>
         <translation>尚未解决</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="234"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="232"/>
         <source>Questions for the authors or a supervisor</source>
         <translation>想问作者或导师的问题</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="236"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="234"/>
         <source>Directions</source>
         <translation>后续方向</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="237"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="235"/>
         <source>Smallest experiments</source>
         <translation>最小可行实验</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="238"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="236"/>
         <source>Worth reading next</source>
         <translation>值得接着读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="239"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="237"/>
         <source>What would block a reproduction</source>
         <translation>复现的障碍</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="240"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="238"/>
         <source>What to learn first</source>
         <translation>需要先补的基础</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="269"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="267"/>
         <source>Interpreted by AI Reader. Every statement carries where it came from, and every page reference was checked against the paper before it was written down.</source>
         <translation>由 AI Reader 解读。每条结论都标注了出处,每个页码引用在写下之前都已对照原文核实。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="286"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="284"/>
         <source>Quick interpretation</source>
         <translation>快速解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="295"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="293"/>
         <source>My notes</source>
         <translation>我的笔记</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="315"/>
-        <source>Comparison</source>
-        <translation>对比</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="317"/>
         <source>Built from each paper&apos;s interpretation, not from the PDFs.</source>
-        <translation>根据每篇论文的解读生成,不是直接读 PDF。</translation>
+        <translation type="vanished">根据每篇论文的解读生成,不是直接读 PDF。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="322"/>
         <source>Read this table with these in mind</source>
-        <translation>看这张表时请注意</translation>
+        <translation type="vanished">看这张表时请注意</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="328"/>
-        <source>Not directly comparable:</source>
-        <translation>不可直接比较:</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="329"/>
         <source>Careful:</source>
-        <translation>注意:</translation>
+        <translation type="vanished">注意:</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="338"/>
         <source>Dimension</source>
-        <translation>维度</translation>
+        <translation type="vanished">维度</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="375"/>
         <source>What to take from this</source>
-        <translation>可以得出什么</translation>
+        <translation type="vanished">可以得出什么</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="465"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="389"/>
         <source>Generated by %1 over %2 papers, %3</source>
         <translation>由 %1 基于 %2 篇论文生成,%3</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="477"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="401"/>
         <source>Research report</source>
         <translation>研究报告</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="480"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="404"/>
         <source>Generated by AI Reader from the interpretations of the papers in this project. It describes this collection, not the field: work that is not collected here is not work that does not exist.</source>
         <translation>由 AI Reader 根据本课题各篇论文的解读生成。它描述的是这批文献,而不是整个领域:没有收进来的工作,不等于不存在。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="487"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="411"/>
         <source>The project</source>
         <translation>课题</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="500"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/AnalysisExporter.cpp" line="424"/>
         <source>The papers</source>
         <translation>论文列表</translation>
     </message>
@@ -404,232 +384,232 @@
 <context>
     <name>AnalysisPane</name>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="66"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="65"/>
         <source>Read the whole paper</source>
         <translation>通读全文</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="67"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="66"/>
         <source>Read method + experiments</source>
         <translation>读方法和实验</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="68"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="67"/>
         <source>Background / related work</source>
         <translation>背景 / 相关工作</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="69"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="68"/>
         <source>Low relevance</source>
         <translation>相关度低</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="70"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="69"/>
         <source>Not enough information</source>
         <translation>信息不足</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="75"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="74"/>
         <source>highly relevant</source>
         <translation>高度相关</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="76"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="75"/>
         <source>somewhat relevant</source>
         <translation>比较相关</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="77"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="76"/>
         <source>barely relevant</source>
         <translation>几乎不相关</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="78"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="77"/>
         <source>relevance unclear</source>
         <translation>相关度不明</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="89"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="88"/>
         <source>The problem</source>
         <translation>要解决的问题</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="90"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="89"/>
         <source>Why it matters</source>
         <translation>为什么重要</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="91"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="90"/>
         <source>What they did</source>
         <translation>他们做了什么</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="92"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="91"/>
         <source>Main results</source>
         <translation>主要结果</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="93"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="92"/>
         <source>Contributions</source>
         <translation>贡献</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="94"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="93"/>
         <source>Limitations</source>
         <translation>局限</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="126"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="125"/>
         <source>Export interpretation</source>
         <translation>导出解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="129"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="128"/>
         <source>Markdown files (*.md)</source>
         <translation>Markdown 文件 (*.md)</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="129"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="128"/>
         <source>All files (*)</source>
         <translation>所有文件 (*)</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="152"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="151"/>
         <source>Interpretation</source>
         <translation>解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="165"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="164"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="166"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="165"/>
         <source>Regenerate</source>
         <translation>重新生成</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="167"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="166"/>
         <source>Interpret</source>
         <translation>解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="183"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="182"/>
         <source>Discard this interpretation</source>
         <translation>丢弃这份解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="191"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="190"/>
         <source>Restore the previous version</source>
         <translation>恢复上一个版本</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="203"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="202"/>
         <source>Export this paper as Markdown…</source>
         <translation>将这篇论文导出为 Markdown…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="248"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="247"/>
         <source>The paper, the research profile or the model has changed since this was written — it may be out of date.</source>
         <translation>论文、研究档案或模型在这份解读生成之后有变动——它可能已过期。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="257"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="256"/>
         <source>Written by %1. Regenerate to make your own.</source>
         <translation>由 %1 生成。重新生成可得到你自己的版本。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="266"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="265"/>
         <source>Not saved: sign in and pick a project you can write to, and interpretations are kept and shared.</source>
         <translation>未保存:登录并选择一个有写权限的课题后,解读才会保存并共享。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="275"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="274"/>
         <source>Not enough usable text: %1</source>
         <translation>可用文本不足:%1</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="285"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="284"/>
         <source>The paper was too long to send in full — only the first %1 of %2 paragraphs were read.</source>
         <translation>论文太长,无法整篇发送——只读了 %2 段中的前 %1 段。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="303"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="302"/>
         <source>Quick</source>
         <translation>快速</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="307"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="306"/>
         <source>Close read (%1/%2)</source>
         <translation>精读 (%1/%2)</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="309"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="308"/>
         <source>Close read</source>
         <translation>精读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="313"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="312"/>
         <source>Notes (%1)</source>
         <translation>笔记 (%1)</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="314"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="313"/>
         <source>Notes</source>
         <translation>笔记</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="330"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="329"/>
         <source>A quick interpretation says what the paper is about, how relevant it is to this project, what to read first, and where each statement comes from — with every citation checked against the paper itself.</source>
         <translation>快速解读会说明这篇论文讲什么、与本课题的相关度、先读哪部分,以及每条结论的来源——每处引用都对照原文核实过。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="341"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="340"/>
         <source>Tip: fill in the project&apos;s research profile first (toolbar → Profile). Relevance and reading advice are judged against it.</source>
         <translation>提示:先填好课题的研究档案(工具栏 → 研究档案)。相关度和阅读建议都以它为准。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="346"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="345"/>
         <source>Interpret this paper</source>
         <translation>解读这篇论文</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="422"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="421"/>
         <source>Read first</source>
         <translation>优先阅读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="504"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="499"/>
         <source>At a glance</source>
         <translation>速览</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="546"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="541"/>
         <source>%1 of %2 citations check out</source>
         <translation>%1/%2 处引用核实通过</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="550"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="545"/>
         <source>%1 statement(s) demoted to AI reading</source>
         <translation>%1 条结论降级为 AI 分析</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="596"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="587"/>
         <source>Your own notes on this paper. They are kept in their own place, so regenerating an interpretation never touches them.</source>
         <translation>你自己对这篇论文的笔记。它们单独保存,重新生成解读不会动到它们。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="648"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="639"/>
         <source>Nothing yet. Any statement in an interpretation can be saved here from its ⋯ menu.</source>
         <translation>还没有笔记。解读里的任何一条结论,都可以从它的 ⋯ 菜单存到这里。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="661"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="652"/>
         <source>Write a note…</source>
         <translation>写点笔记…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="668"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/AnalysisPane.qml" line="659"/>
         <source>Add</source>
         <translation>添加</translation>
     </message>
@@ -1333,122 +1313,122 @@ _[工具调用次数已达上限（%1 次）。如有需要可在设置中调高
 <context>
     <name>ClaimBlock</name>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="44"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="42"/>
         <source>authors</source>
         <translation>作者</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="45"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="43"/>
         <source>experiment</source>
         <translation>实验</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="46"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="44"/>
         <source>speculation</source>
         <translation>推测</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="47"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="45"/>
         <source>AI reading</source>
         <translation>AI 分析</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="52"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="50"/>
         <source>The authors state this.</source>
         <translation>作者在文中这样说。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="53"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="51"/>
         <source>An experiment in this paper shows this.</source>
         <translation>本文的实验说明了这一点。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="54"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="52"/>
         <source>A guess — nothing in the paper supports it.</source>
         <translation>只是猜测——文中没有任何依据。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="55"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="53"/>
         <source>The model&apos;s own reading, not stated in the paper.</source>
         <translation>模型自己的判断,文中并没有这样说。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="60"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="58"/>
         <source>new problem</source>
         <translation>新问题</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="61"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="59"/>
         <source>new method</source>
         <translation>新方法</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="62"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="60"/>
         <source>system</source>
         <translation>系统</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="63"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="61"/>
         <source>dataset / benchmark</source>
         <translation>数据集 / 基准</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="64"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="62"/>
         <source>empirical finding</source>
         <translation>实证发现</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="65"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="63"/>
         <source>theory</source>
         <translation>理论</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="66"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="64"/>
         <source>engineering</source>
         <translation>工程</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="80"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="78"/>
         <source>holds up</source>
         <translation>站得住</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="81"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="79"/>
         <source>adequate</source>
         <translation>尚可</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="82"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="80"/>
         <source>weak</source>
         <translation>偏弱</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="83"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="81"/>
         <source>can&apos;t tell</source>
         <translation>无法判断</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="140"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="138"/>
         <source>no evidence found</source>
         <translation>未找到证据</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="142"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="140"/>
         <source>This was presented as the authors&apos; or as an experimental result, but nothing in the paper backed it up, so it is shown as the model&apos;s own reading.</source>
         <translation>这条本来标为作者结论或实验结果,但文中找不到支撑,所以按模型自己的判断显示。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="157"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="155"/>
         <source>p%1</source>
         <translation>第 %1 页</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="158"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="156"/>
         <source>unverified</source>
         <translation>未核实</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="165"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="163"/>
         <source>%1, page %2
 “%3”
 Click to open this passage.</source>
@@ -1457,24 +1437,24 @@ Click to open this passage.</source>
 点击跳到这段原文。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="168"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="166"/>
         <source>“%1”
 Click to open this passage.</source>
         <translation>「%1」
 点击打开这段原文。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="170"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="168"/>
         <source>The model cited a passage that is not in the paper: “%1”</source>
         <translation>模型引用了论文中不存在的原文:「%1」</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="188"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="186"/>
         <source>Explain this more simply</source>
         <translation>讲得更简单些</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="190"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="188"/>
         <source>Explain this more simply, for someone new to the area:
 
 %1</source>
@@ -1483,12 +1463,12 @@ Click to open this passage.</source>
 %1</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="194"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="192"/>
         <source>Give me an example</source>
         <translation>举个例子</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="196"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="194"/>
         <source>Give a concrete example that makes this clear:
 
 %1</source>
@@ -1497,12 +1477,12 @@ Click to open this passage.</source>
 %1</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="200"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="198"/>
         <source>Explain the equation / figure behind it</source>
         <translation>讲讲背后的公式 / 图表</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="202"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="200"/>
         <source>Walk me through the equation, figure or table this rests on, step by step:
 
 %1</source>
@@ -1511,12 +1491,12 @@ Click to open this passage.</source>
 %1</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="206"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="204"/>
         <source>Challenge this</source>
         <translation>质疑这一点</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="208"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="206"/>
         <source>I am not convinced by this. What would have to be true for it to hold, what in the paper argues against it, and what would settle it?
 
 %1</source>
@@ -1525,12 +1505,12 @@ Click to open this passage.</source>
 %1</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="214"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="212"/>
         <source>Ask about this</source>
         <translation>就这一点提问</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="216"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="214"/>
         <source>About this point:
 
 %1
@@ -1543,14 +1523,9 @@ Click to open this passage.</source>
 </translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="222"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="220"/>
         <source>Save as a note</source>
         <translation>存为笔记</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ClaimBlock.qml" line="228"/>
-        <source>Add to the comparison</source>
-        <translation>加入对比</translation>
     </message>
 </context>
 <context>
@@ -1569,275 +1544,6 @@ Click to open this passage.</source>
         <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CodeBlock.qml" line="88"/>
         <source>Copy code to clipboard</source>
         <translation>复制代码到剪贴板</translation>
-    </message>
-</context>
-<context>
-    <name>CompareDialog</name>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="15"/>
-        <source>Compare papers</source>
-        <translation>论文对比</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="71"/>
-        <source>Waiting for a free slot behind the other model calls… %1</source>
-        <translation>排在其他模型调用后面，等待空闲名额… %1</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="74"/>
-        <source>Comparing %1 papers — the model is writing, %2 so far · %3</source>
-        <translation>正在对比 %1 篇论文——模型正在输出，已收到 %2 · %3</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="77"/>
-        <source>Comparing %1 papers — waiting for the model&apos;s first words · %2</source>
-        <translation>正在对比 %1 篇论文——等待模型开始输出 · %2</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="83"/>
-        <source>Export comparison</source>
-        <translation>导出对比</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="86"/>
-        <source>Markdown files (*.md)</source>
-        <translation>Markdown 文件 (*.md)</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="86"/>
-        <source>All files (*)</source>
-        <translation>所有文件 (*)</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="92"/>
-        <source>Research problem</source>
-        <translation>研究问题</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="93"/>
-        <source>Hypothesis</source>
-        <translation>假设</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="94"/>
-        <source>Method</source>
-        <translation>方法</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="95"/>
-        <source>Inputs / outputs</source>
-        <translation>输入 / 输出</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="96"/>
-        <source>Data / environment</source>
-        <translation>数据 / 环境</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="97"/>
-        <source>Baselines</source>
-        <translation>基线</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="98"/>
-        <source>Metrics</source>
-        <translation>指标</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="99"/>
-        <source>Main results</source>
-        <translation>主要结果</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="100"/>
-        <source>Contributions</source>
-        <translation>贡献</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="101"/>
-        <source>Limitations</source>
-        <translation>局限</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="102"/>
-        <source>Reproducibility</source>
-        <translation>复现性</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="109"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="237"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="401"/>
-        <source>(untitled)</source>
-        <translation>(无标题)</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="139"/>
-        <source>This project has no papers yet. Add some to the library first.</source>
-        <translation>本课题还没有论文。先往文献库里加几篇。</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="141"/>
-        <source>Tick at least two papers. Each needs an interpretation: the comparison is built from those, not from the PDFs.</source>
-        <translation>勾选至少两篇论文。每篇都得先解读过:对比是从解读结果做出来的,不是从 PDF。</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="202"/>
-        <source>not enough text to interpret</source>
-        <translation>文字太少,无法解读</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="205"/>
-        <source>interpreting…</source>
-        <translation>解读中…</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="206"/>
-        <source>not interpreted yet</source>
-        <translation>还没解读</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="238"/>
-        <source> (not in the library)</source>
-        <translation>(不在文献库里)</translation>
-    </message>
-    <message>
-        <source>Nothing selected yet. Right-click any paper in the library pane to add it — or add several at once with “Compare everything shown”. A single statement can also be added from the ⋯ menu beside it in an interpretation.</source>
-        <translation type="vanished">还没有选论文。在文献库面板里右键任意一篇就能加入,也可以用「对比当前显示的」一次加入多篇。解读里某条结论旁边的 ⋯ 菜单同样能把那一篇连同这句话加进来。</translation>
-    </message>
-    <message>
-        <source>Nothing selected yet. Add papers from the ⋯ menu next to any statement in an interpretation, or from the Interpret pane.</source>
-        <translation type="vanished">还没有选中论文。在解读中任一条结论旁的 ⋯ 菜单里添加,或从解读面板添加。</translation>
-    </message>
-    <message>
-        <source>%1 papers selected.</source>
-        <translation type="vanished">已选 %1 篇。</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="264"/>
-        <source>Cancel</source>
-        <translation>取消</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="265"/>
-        <source>Compare again</source>
-        <translation>重新对比</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="266"/>
-        <source>Compare</source>
-        <translation>对比</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="277"/>
-        <source>Clear</source>
-        <translation>清空</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="288"/>
-        <source>Interpret the %1 not yet read</source>
-        <translation>先解读没读过的 %1 篇</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="309"/>
-        <source>1 paper picked — one more to compare</source>
-        <translation>已选 1 篇——再选一篇就能比</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="311"/>
-        <source>%1 papers picked — %2</source>
-        <translation>已选 %1 篇——%2</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="313"/>
-        <source>%1 papers picked</source>
-        <translation>已选 %1 篇</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="334"/>
-        <source>Read the table with these in mind</source>
-        <translation>看这张表时请注意</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="349"/>
-        <source>Not directly comparable: </source>
-        <translation>不能直接对比: </translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="350"/>
-        <source>Careful: </source>
-        <translation>注意: </translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="434"/>
-        <source>What to take from this</source>
-        <translation>从中能得到什么</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="458"/>
-        <source>Compared from each paper&apos;s own interpretation, not from the PDFs. Generated by %1.</source>
-        <translation>对比基于每篇论文自己的解读,而非 PDF 原文。由 %1 生成。</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="461"/>
-        <source>Compared from each paper&apos;s own interpretation, not from the PDFs.</source>
-        <translation>对比基于每篇论文自己的解读,而非 PDF 原文。</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="470"/>
-        <source>Export as Markdown…</source>
-        <translation>导出为 Markdown…</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/CompareDialog.qml" line="476"/>
-        <source>Close</source>
-        <translation>关闭</translation>
-    </message>
-</context>
-<context>
-    <name>CompareService</name>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/CompareService.cpp" line="228"/>
-        <source>No model is configured — add one in Settings first.</source>
-        <translation>尚未配置模型——请先在「设置」里添加。</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/CompareService.cpp" line="243"/>
-        <source>One of the picked papers has no interpretation yet.</source>
-        <translation>所选论文中有 1 篇还没有解读。</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/CompareService.cpp" line="245"/>
-        <source>%1 of the picked papers have no interpretation yet.</source>
-        <translation>所选论文中有 %1 篇还没有解读。</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/CompareService.cpp" line="282"/>
-        <source>Put at least two papers in the comparison.</source>
-        <translation>对比至少需要放入两篇论文。</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/CompareService.cpp" line="296"/>
-        <source>Compare papers</source>
-        <translation>论文对比</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/CompareService.cpp" line="338"/>
-        <source>A comparison of these papers is already running.</source>
-        <translation>这几篇论文的对比已经在进行中。</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/CompareService.cpp" line="383"/>
-        <source>%1 interpretations sent; waiting for the model</source>
-        <translation>已发送 %1 篇解读，等待模型回答</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/CompareService.cpp" line="468"/>
-        <source>the model is writing — %1 received so far</source>
-        <translation>模型正在输出——已收到 %1</translation>
-    </message>
-    <message>
-        <source>Every paper in the comparison needs an interpretation first.</source>
-        <translation type="vanished">参与对比的论文都要先有解读。</translation>
     </message>
 </context>
 <context>
@@ -1867,318 +1573,318 @@ Click to open this passage.</source>
 <context>
     <name>DeepReadView</name>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="98"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="97"/>
         <source>writing…</source>
         <translation>生成中…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="100"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="99"/>
         <source>failed</source>
         <translation>失败</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="102"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="101"/>
         <source>not written</source>
         <translation>未生成</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="105"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="962"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="104"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="958"/>
         <source>%1 of %2 citations check out</source>
         <translation>%1/%2 条引用已核实</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="119"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="118"/>
         <source>available</source>
         <translation>已提供</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="120"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="119"/>
         <source>partial</source>
         <translation>部分提供</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="121"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="120"/>
         <source>absent</source>
         <translation>未提供</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="122"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="121"/>
         <source>unclear</source>
         <translation>不清楚</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="240"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="238"/>
         <source>The research area.</source>
         <translation>所属研究领域。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="246"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="244"/>
         <source>What kind of paper this is.</source>
         <translation>这是什么类型的论文。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="250"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="248"/>
         <source>The question it asks</source>
         <translation>它要回答的问题</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="255"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="253"/>
         <source>What it concludes</source>
         <translation>它的结论</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="260"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="258"/>
         <source>Where it sits</source>
         <translation>在领域中的位置</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="277"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="275"/>
         <source>Terms you need first</source>
         <translation>需要先懂的术语</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="308"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="306"/>
         <source>In this paper: %1</source>
         <translation>在本文中:%1</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="315"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="313"/>
         <source>Worth learning first</source>
         <translation>值得先补的基础</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="328"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="326"/>
         <source>What goes in</source>
         <translation>输入是什么</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="332"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="330"/>
         <source>What comes out</source>
         <translation>输出是什么</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="339"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="337"/>
         <source>Step by step</source>
         <translation>逐步拆解</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="363"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="360"/>
         <source>new here</source>
         <translation>本文新提</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="364"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="361"/>
         <source>prior work</source>
         <translation>沿用已有</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="367"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="364"/>
         <source>This step is the paper&apos;s own contribution.</source>
         <translation>这一步是本文自己的贡献。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="368"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="365"/>
         <source>This step is taken from earlier work.</source>
         <translation>这一步沿用了已有工作。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="377"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="374"/>
         <source>A worked example</source>
         <translation>一个完整例子</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="398"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="395"/>
         <source>Datasets / environments</source>
         <translation>数据集 / 环境</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="402"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="399"/>
         <source>Compared against</source>
         <translation>对比对象</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="406"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="403"/>
         <source>Metrics</source>
         <translation>指标</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="410"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="407"/>
         <source>What each metric measures</source>
         <translation>各指标衡量什么</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="417"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="414"/>
         <source>What the experiments cover</source>
         <translation>实验覆盖了什么</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="427"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="424"/>
         <source>ablation</source>
         <translation>消融</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="428"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="425"/>
         <source>robustness</source>
         <translation>鲁棒性</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="429"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="426"/>
         <source>generalization</source>
         <translation>泛化</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="430"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="427"/>
         <source>efficiency</source>
         <translation>效率</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="437"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="434"/>
         <source>The paper reports this.</source>
         <translation>论文报告了这一项。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="438"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="435"/>
         <source>Nothing in the paper reports this.</source>
         <translation>论文没有报告这一项。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="444"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="441"/>
         <source>Do the experiments back the conclusions?</source>
         <translation>实验撑得住结论吗?</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="495"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="492"/>
         <source>The authors admit</source>
         <translation>作者承认的</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="500"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="497"/>
         <source>They do not raise</source>
         <translation>作者没提的</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="505"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="502"/>
         <source>Threats to validity</source>
         <translation>有效性威胁</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="510"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="507"/>
         <source>Cost, privacy and deployment</source>
         <translation>成本、隐私与部署</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="527"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="524"/>
         <source>What a reproduction would need</source>
         <translation>复现需要什么</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="573"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="569"/>
         <source>What would stop someone reproducing it</source>
         <translation>复现的障碍</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="586"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="582"/>
         <source>Still unanswered</source>
         <translation>仍未回答的问题</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="590"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="586"/>
         <source>Worth putting to the authors or your advisor</source>
         <translation>值得问作者或导师</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="594"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="590"/>
         <source>Where this could go</source>
         <translation>可能的发展方向</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="598"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="594"/>
         <source>Small experiments that would test it</source>
         <translation>可以验证的小实验</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="602"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="598"/>
         <source>Read these next</source>
         <translation>接下来读这些</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="622"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="618"/>
         <source>%1 of %2 written</source>
         <translation>已生成 %1/%2</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="639"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="635"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="640"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="636"/>
         <source>Continue</source>
         <translation>继续</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="641"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="637"/>
         <source>Read closely</source>
         <translation>精读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="655"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="651"/>
         <source>Rewrite everything</source>
         <translation>全部重新生成</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="660"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="656"/>
         <source>Discard this close reading</source>
         <translation>删除这份精读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="694"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="690"/>
         <source>The paper, the research profile or the model has changed since this was written — it may be out of date.</source>
         <translation>生成之后论文、研究档案或模型有过变动——内容可能已过期。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="704"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="700"/>
         <source>Written by %1. Rewrite a part to make it your own.</source>
         <translation>由 %1 生成。重新生成某一部分,就变成你自己的。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="713"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="709"/>
         <source>Not saved: sign in and pick a project you can write to, and close readings are kept and shared.</source>
         <translation>未保存:登录并选择一个有写权限的课题后,精读才会保存并共享。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="726"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="722"/>
         <source>A close reading works through the paper in nine parts — what it is, the background you need, the method, the experiments, the contributions, a critical look, the limitations, what reproducing it would take, and what to do next. Each part is written on its own, so you can redo one without redoing the rest.</source>
         <translation>精读把论文拆成九个部分:这是什么、需要的背景、方法、实验、贡献、批判性阅读、局限、复现要什么、接下来做什么。每个部分单独生成,可以只重做其中一个,不用重做其余部分。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="739"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="735"/>
         <source>Tip: fill in the project&apos;s research profile first (toolbar → Profile). The critical reading and the follow-ups are written against it.</source>
         <translation>提示:先填好课题的研究档案(工具栏 → 档案)。批判性阅读和后续建议都是照着它写的。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="811"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="807"/>
         <source>Write this part again, on its own</source>
         <translation>单独重新生成这一部分</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="842"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="838"/>
         <source>Writing this part now…</source>
         <translation>正在生成这一部分…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="850"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="846"/>
         <source>Not written yet — use ↻ to write just this part.</source>
         <translation>还没有生成——点 ↻ 可只生成这一部分。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="966"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="962"/>
         <source>%1 statement(s) demoted to AI reading</source>
         <translation>%1 条结论已降为 AI 分析</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="969"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/DeepReadView.qml" line="965"/>
         <source>the paper was too long to send in full</source>
         <translation>论文太长,未能全文发送</translation>
     </message>
@@ -2536,7 +2242,7 @@ Click to open this passage.</source>
 <context>
     <name>LibraryPane</name>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="116"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="103"/>
         <source>Library (%1)</source>
         <translation>文献库(%1)</translation>
     </message>
@@ -2549,22 +2255,22 @@ Click to open this passage.</source>
         <translation type="vanished">检查每篇论文的 PDF 是否真的在云端,并补传缺失的</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="131"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="118"/>
         <source>+ Add</source>
         <translation>+ 添加</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="136"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="123"/>
         <source>Add the current paper to this project</source>
         <translation>把当前文献加入此课题</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="157"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="144"/>
         <source>Search the project library…</source>
         <translation>搜索课题文献库…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="158"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="145"/>
         <source>Search unavailable (no FTS5)</source>
         <translation>搜索不可用(无 FTS5)</translation>
     </message>
@@ -2581,326 +2287,311 @@ Click to open this passage.</source>
         <translation type="vanished">已解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="51"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="181"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="48"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="168"/>
         <source>interpreted</source>
         <translation>已解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="52"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="49"/>
         <source>queued</source>
         <translation>排队中</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="53"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="50"/>
         <source>working…</source>
         <translation>解读中…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="54"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="182"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="51"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="169"/>
         <source>failed</source>
         <translation>失败</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="55"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="52"/>
         <source>not enough text</source>
         <translation>文本不足</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="56"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="181"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="53"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="168"/>
         <source>not read</source>
         <translation>未解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="70"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="194"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="67"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="181"/>
         <source>high</source>
         <translation>高</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="71"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="194"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="68"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="181"/>
         <source>medium</source>
         <translation>中</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="72"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="195"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="69"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="182"/>
         <source>low</source>
         <translation>低</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="73"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="195"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="70"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="182"/>
         <source>unclear</source>
         <translation>不明</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="79"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="201"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="76"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="188"/>
         <source>read in full</source>
         <translation>通读全文</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="80"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="202"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="77"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="189"/>
         <source>method + experiments</source>
         <translation>方法 + 实验</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="81"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="202"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="78"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="189"/>
         <source>background</source>
         <translation>背景</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="82"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="203"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="79"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="190"/>
         <source>low relevance</source>
         <translation>相关度低</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="83"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="203"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="80"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="190"/>
         <source>needs a human</source>
         <translation>需人工判断</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="117"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="104"/>
         <source>Library (%1 of %2)</source>
         <translation>文献库(%1/%2)</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="181"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="168"/>
         <source>all papers</source>
         <translation>全部论文</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="182"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="169"/>
         <source>starred</source>
         <translation>已标星</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="182"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="169"/>
         <source>set aside</source>
         <translation>已搁置</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="194"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="181"/>
         <source>any relevance</source>
         <translation>不限相关度</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="201"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="188"/>
         <source>any advice</source>
         <translation>不限建议</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="220"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="207"/>
         <source>%1 interpreted · %2 not read · %3 close-read · %4 starred</source>
         <translation>已解读 %1 · 未读 %2 · 已精读 %3 · 标星 %4</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="226"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="213"/>
         <source> · %1 failed</source>
         <translation> · 失败 %1</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="228"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="215"/>
         <source> · %1 set aside</source>
         <translation> · 已搁置 %1</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="262"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="742"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="249"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="692"/>
         <source>Stop the run</source>
         <translation>停止本次运行</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="400"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="375"/>
         <source>Starred for a close read — “Close-read the starred” below reads these</source>
         <translation>已标星待精读——下面的「精读标星的」读的就是这些</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="401"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="376"/>
         <source>Star this for a close read</source>
         <translation>标星,表示这篇要精读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="443"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="418"/>
         <source>close-read</source>
         <translation>已精读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="444"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="419"/>
         <source>close read, part done</source>
         <translation>精读未完成</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="473"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="448"/>
         <source>interpreted by %1</source>
         <translation>由 %1 解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="511"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="483"/>
         <source>Open</source>
         <translation>打开</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="518"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="490"/>
         <source>Interpret again</source>
         <translation>重新解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="518"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="490"/>
         <source>Interpret</source>
         <translation>解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="525"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="497"/>
         <source>Close-read again</source>
         <translation>重新精读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="525"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="497"/>
         <source>Close-read</source>
         <translation>精读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="533"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="505"/>
         <source>Remove the star</source>
         <translation>取消标星</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="534"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="506"/>
         <source>Star for a close read</source>
         <translation>标星待精读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="539"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="511"/>
         <source>Bring back</source>
         <translation>取消搁置</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="540"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="512"/>
         <source>Set aside</source>
         <translation>搁置</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="548"/>
-        <source>Remove from the comparison</source>
-        <translation>移出对比</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="549"/>
-        <source>Add to the comparison</source>
-        <translation>加入对比</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="561"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="518"/>
         <source>Edit metadata</source>
         <translation>编辑题录</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="565"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="522"/>
         <source>Remove from library</source>
         <translation>从库中移除</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="598"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="555"/>
         <source>(untitled)</source>
         <translation>(无标题)</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="628"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="585"/>
         <source>No matches.</source>
         <translation>无匹配结果。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="630"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="587"/>
         <source>This library belongs to a different account. Sign in as that user to open it — papers you sync yourself will appear here.</source>
         <translation>这个文献库属于另一个账号,用那个账号登录后才能打开——你自己同步的论文会显示在这里。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="633"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="590"/>
         <source>Sign in to use the library.</source>
         <translation>登录后使用文献库。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="635"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="592"/>
         <source>Create or select a project.</source>
         <translation>请创建或选择一个课题。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="637"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="594"/>
         <source>Nothing matches these filters.</source>
         <translation>没有符合筛选条件的论文。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="638"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="595"/>
         <source>No papers yet. Open a PDF, then click + Add.</source>
         <translation>还没有文献。打开一个 PDF,然后点「+ 添加」。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="658"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="615"/>
         <source>Interpret the %1 unread</source>
         <translation>解读未读的 %1 篇</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="660"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="698"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="617"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="655"/>
         <source>Close-read the %1 starred</source>
         <translation>精读标星的 %1 篇</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="661"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="618"/>
         <source>Everything is interpreted</source>
         <translation>全部已解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="674"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="631"/>
         <source>More…</source>
         <translation>更多…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="680"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="637"/>
         <source>Interpret what the filters show (%1)</source>
         <translation>解读当前筛选出的 %1 篇</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="688"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="645"/>
         <source>Retry the %1 that failed</source>
         <translation>重试失败的 %1 篇</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="706"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="663"/>
         <source>Close-read what the filters show (%1)</source>
         <translation>精读当前筛选出的 %1 篇</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="716"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="673"/>
         <source>Star everything shown</source>
         <translation>把当前显示的全部标星</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="722"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="679"/>
         <source>Unstar everything shown</source>
         <translation>把当前显示的全部取消标星</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="728"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="685"/>
         <source>Set everything shown aside</source>
         <translation>把当前显示的全部搁置</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="735"/>
-        <source>Compare everything shown (%1)</source>
-        <translation>对比当前显示的 %1 篇</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="748"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/LibraryPane.qml" line="698"/>
         <source>Check PDFs are in the cloud</source>
         <translation>检查 PDF 是否都在云端</translation>
     </message>
@@ -2908,12 +2599,12 @@ Click to open this passage.</source>
 <context>
     <name>LlmClient</name>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/LlmClient.cpp" line="123"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/LlmClient.cpp" line="112"/>
         <source>HTTP %1 from %2: %3</source>
         <translation>HTTP %1(来自 %2):%3</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/LlmClient.cpp" line="125"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/LlmClient.cpp" line="114"/>
         <source>HTTP %1: %2</source>
         <translation>HTTP %1:%2</translation>
     </message>
@@ -2964,13 +2655,13 @@ Click to open this passage.</source>
 <context>
     <name>Main</name>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="211"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="210"/>
         <source>&quot;%1&quot; is encrypted. Enter the password:</source>
         <translation>「%1」已加密,请输入密码:</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="225"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1033"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="224"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1031"/>
         <source>Open PDF</source>
         <translation>打开 PDF</translation>
     </message>
@@ -2983,13 +2674,13 @@ Click to open this passage.</source>
         <translation type="vanished">打开文件夹…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="247"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1039"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="246"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1037"/>
         <source>Open folder</source>
         <translation>打开文件夹</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="232"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="231"/>
         <source>Export extracted text</source>
         <translation>导出提取的文本</translation>
     </message>
@@ -3010,67 +2701,67 @@ Click to open this passage.</source>
         <translation type="vanished">丢弃手动段落编辑并重新自动分段</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="239"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="238"/>
         <source>Failed to write extracted text.</source>
         <translation>写入提取文本失败。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="664"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="662"/>
         <source>Folder</source>
         <translation>文件夹</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1045"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1043"/>
         <source>Export text</source>
         <translation>导出文本</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1046"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1044"/>
         <source>Raw text, line boxes and paragraphs, as .txt</source>
         <translation>原始文字、行框和段落,存为 .txt</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1081"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1079"/>
         <source>Fit width</source>
         <translation>适应宽度</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1093"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1091"/>
         <source>Hand tool</source>
         <translation>抓手</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1094"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1092"/>
         <source>Drag to move the page; off = select text</source>
         <translation>拖动页面;关闭后可选中文字</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1110"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1108"/>
         <source>Split into paragraphs</source>
         <translation>分段</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1111"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1109"/>
         <source>Split again</source>
         <translation>重新分段</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1112"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1110"/>
         <source>Needed for translation, outline and chat</source>
         <translation>翻译、目录和对话都要先分段</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1113"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1111"/>
         <source>Discards the current division</source>
         <translation>会丢弃当前的分段</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1125"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1123"/>
         <source>Translate</source>
         <translation>翻译</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="376"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="374"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
@@ -3087,23 +2778,23 @@ Click to open this passage.</source>
         <translation type="vanished">视觉读页</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="584"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="672"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="582"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="670"/>
         <source>Chat</source>
         <translation>对话</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="572"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="570"/>
         <source>TOC</source>
         <translation>目录</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1075"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1073"/>
         <source>Zoom in</source>
         <translation>放大</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1056"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1054"/>
         <source>Zoom out</source>
         <translation>缩小</translation>
     </message>
@@ -3118,27 +2809,27 @@ Click to open this passage.</source>
         <translation>%1——先登录</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="526"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="524"/>
         <source>6 · Sign in to sync</source>
         <translation>6 · 登录以同步</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="527"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="525"/>
         <source>Click &lt;b&gt;Sign in&lt;/b&gt; to log in through your organisation&apos;s CAS page in the browser — the app never stores your password. Signed in, your library lives in the cloud: papers, metadata and AI interpretations sync across devices and stay readable offline.</source>
         <translation>点击&lt;b&gt;登录&lt;/b&gt;，在浏览器中通过所在机构的 CAS 页面完成登录——应用不会保存你的密码。登录后，文库保存在云端：论文、元数据和 AI 解读跨设备同步，离线也可阅读。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="531"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="529"/>
         <source>7 · Share a project library</source>
         <translation>7 · 共享课题文库</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="532"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="530"/>
         <source>The &lt;b&gt;Lib&lt;/b&gt; pane organises papers by research project. Invite teammates by email as &lt;b&gt;owner / editor / viewer&lt;/b&gt; — everyone shares the same library, full-text search included, and shared AI interpretations appear under &lt;b&gt;Shared&lt;/b&gt;.</source>
         <translation>&lt;b&gt;文库&lt;/b&gt;面板按课题组织文献。用邮箱邀请同事加入，角色分&lt;b&gt;所有者 / 编辑者 / 查看者&lt;/b&gt;——大家共用同一个文库（含全文检索），共享的 AI 解读会出现在&lt;b&gt;共享&lt;/b&gt;标签下。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="536"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="534"/>
         <source>8 · Configure your LLM</source>
         <translation>8 · 配置你的大模型</translation>
     </message>
@@ -3159,12 +2850,12 @@ Click to open this passage.</source>
         <translation type="vanished">%1 页 · %2 段</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1485"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1468"/>
         <source>%1 · %2</source>
         <translation>%1 · %2</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1486"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1469"/>
         <source>LLM not configured</source>
         <translation>未配置 LLM</translation>
     </message>
@@ -3181,38 +2872,38 @@ Click to open this passage.</source>
         <translation type="vanished">显示新手向导</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2169"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2149"/>
         <source>Drag a PDF here, or click Open…</source>
         <translation>将 PDF 拖到此处,或点击「打开…」</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2175"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2155"/>
         <source>AI Reader — milestone 3.2 (TOC sidebar)</source>
         <translation>AI Reader — 里程碑 3.2(目录侧栏)</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2509"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2485"/>
         <source>Drop PDF to open</source>
         <translation>松开以打开 PDF</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1590"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1573"/>
         <source>Dropped file is not a PDF.</source>
         <translation>拖入的文件不是 PDF。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="545"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="543"/>
         <source>%1: %2</source>
         <translation>%1:%2</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="556"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="667"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="554"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="665"/>
         <source>PDF</source>
         <translation>PDF</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="566"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="564"/>
         <source>Translation</source>
         <translation>翻译</translation>
     </message>
@@ -3221,12 +2912,12 @@ Click to open this passage.</source>
         <translation type="vanished">解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="579"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="577"/>
         <source>Vision</source>
         <translation>视觉</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="496"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="494"/>
         <source>1 · Open a paper</source>
         <translation>1 · 打开论文</translation>
     </message>
@@ -3239,18 +2930,18 @@ Click to open this passage.</source>
         <translation type="vanished">请先登录——然后：%1</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="226"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="225"/>
         <source>PDF files (*.pdf)</source>
         <translation>PDF 文件 (*.pdf)</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="226"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="235"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="225"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="234"/>
         <source>All files (*)</source>
         <translation>所有文件 (*)</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="235"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="234"/>
         <source>Text files (*.txt)</source>
         <translation>文本文件 (*.txt)</translation>
     </message>
@@ -3267,218 +2958,218 @@ Click to open this passage.</source>
         <translation type="vanished">删除</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="325"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="323"/>
         <source>Segment this paper again?</source>
         <translation>重新对这篇分段?</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="350"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="348"/>
         <source>This paper is already split into %1 paragraphs, and %2 of them are translated.</source>
         <translation>这篇论文已经分成 %1 段,其中 %2 段已经翻译。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="354"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="352"/>
         <source>This paper is already split into %1 paragraphs.</source>
         <translation>这篇论文已经分成 %1 段。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="363"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="361"/>
         <source>Splitting it again replaces that division and any paragraph you merged or split by hand. The existing translations are tied to the old paragraphs, so most of them will no longer match and would have to be translated again.</source>
         <translation>重新分段会替换掉现在的划分,包括你手动合并或拆分过的段落。现有译文是跟旧段落绑定的,重分之后大多会对不上,需要重新翻译。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="368"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="366"/>
         <source>Splitting it again replaces that division, including any paragraph you merged or split by hand.</source>
         <translation>重新分段会替换掉现在的划分,包括你手动合并或拆分过的段落。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="380"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="378"/>
         <source>Segment again</source>
         <translation>重新分段</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="394"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1398"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="392"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1396"/>
         <source>New project</source>
         <translation>新建课题</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="409"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="407"/>
         <source>Project name</source>
         <translation>课题名称</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="414"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="412"/>
         <source>Description (optional)</source>
         <translation>描述(可选)</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="425"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="423"/>
         <source>Translate this paper</source>
         <translation>翻译这篇文章</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="449"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="447"/>
         <source>%1 of these paragraphs are already translated and %2 are not.</source>
         <translation>其中 %1 段已经翻译过,%2 段还没有。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="452"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="450"/>
         <source>All %1 paragraphs are already translated.</source>
         <translation>全部 %1 段都已经翻译过了。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="459"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="457"/>
         <source>Translate the remaining %1</source>
         <translation>只翻剩下的 %1 段</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="468"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="466"/>
         <source>Start over — re-translate all %1</source>
         <translation>从头再来——重新翻译全部 %1 段</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="481"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="479"/>
         <source>Starting over asks the model again for every paragraph, including the ones already done.</source>
         <translation>从头再来会把每一段都重新问一遍模型,包括已经翻好的那些。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="497"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="495"/>
         <source>Click &lt;b&gt;Open…&lt;/b&gt; to load a single PDF, or &lt;b&gt;Open folder…&lt;/b&gt; to browse a whole library. You can also drag a .pdf into the window. Each paper opens in its own tab.</source>
         <translation>点击 &lt;b&gt;打开…&lt;/b&gt; 加载单个 PDF,或 &lt;b&gt;打开文件夹…&lt;/b&gt; 浏览整个库。也可以将 .pdf 拖入窗口。每个论文会在单独的标签页中打开。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="501"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="499"/>
         <source>2 · Toggle panels</source>
         <translation>2 · 切换面板</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="502"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="500"/>
         <source>Use the toolbar&apos;s &lt;b&gt;Folder / TOC / Chat&lt;/b&gt; buttons to show or hide each pane.</source>
         <translation>使用工具栏的 &lt;b&gt;文件夹 / 目录 / 对话&lt;/b&gt; 按钮显示或隐藏对应面板。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="506"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="504"/>
         <source>3 · Move panels</source>
         <translation>3 · 移动面板</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="507"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="505"/>
         <source>Each pane has a small &lt;b&gt;⋮⋮ grip&lt;/b&gt; in its top-left corner. Press and drag a grip horizontally to slide that pane to a new slot in the layout — a vertical marker shows where it will land. The arrangement is remembered between launches.</source>
         <translation>每个面板左上角都有 &lt;b&gt;⋮⋮ 拖柄&lt;/b&gt;。按住并水平拖动拖柄,可以把该面板移到布局中的新位置——会出现一条竖线标记落点。下次启动时会保留你的布局。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="511"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="509"/>
         <source>4 · Translate paragraphs</source>
         <translation>4 · 段落翻译</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="512"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="510"/>
         <source>Click &lt;b&gt;Translate&lt;/b&gt; to translate every paragraph at once. Or right-click a single paragraph to translate, split, merge, delete, or quote it into the chat.</source>
         <translation>点击 &lt;b&gt;翻译&lt;/b&gt; 一键翻译所有段落。也可以右键单个段落,执行翻译、拆分、合并、删除,或将其引用到对话中。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="516"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="514"/>
         <source>5 · Chat with the paper</source>
         <translation>5 · 与论文对话</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="517"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="515"/>
         <source>Open the &lt;b&gt;Chat&lt;/b&gt; pane and ask questions. The model can read pages, search the text, and view rendered figures with vision. Each paper keeps its own list of &lt;b&gt;chat sessions&lt;/b&gt; in the tab strip on top — + to add, × to close, double-click to rename.</source>
         <translation>打开 &lt;b&gt;对话&lt;/b&gt; 面板向 AI 提问。模型可读取页面、搜索文本,并通过视觉模型查看渲染后的图表。每篇论文在面板顶部的标签栏中维护自己的 &lt;b&gt;对话会话&lt;/b&gt; 列表——+ 新建,× 关闭,双击重命名。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="537"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="535"/>
         <source>Open &lt;b&gt;Settings…&lt;/b&gt; to add a model and API key (Anthropic Claude or any OpenAI-compatible endpoint). Its &lt;b&gt;Prompts&lt;/b&gt; page holds the system prompts, if you want to change what the model is told. Re-open this tour any time from the &lt;b&gt;?&lt;/b&gt; button.</source>
         <translation>打开 &lt;b&gt;设置…&lt;/b&gt; 添加模型和 API 密钥(Anthropic Claude 或任意 OpenAI 兼容端点)。其中的&lt;b&gt;提示词&lt;/b&gt;页存放各条系统提示词，想改模型收到的指令就在那里改。随时可以通过 &lt;b&gt;?&lt;/b&gt; 按钮重新打开本导览。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1126"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1124"/>
         <source>Every paragraph</source>
         <translation>翻译每一段</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1142"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1140"/>
         <source>Retry translation</source>
         <translation>重试翻译</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1143"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1141"/>
         <source>Only the paragraphs that failed</source>
         <translation>只重试失败的段落</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1152"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1150"/>
         <source>Read with vision</source>
         <translation>视觉解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1153"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1151"/>
         <source>Figures, tables and equations on this page</source>
         <translation>本页的图、表和公式</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1162"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1160"/>
         <source>Quote to chat</source>
         <translation>引用到对话</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1163"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1161"/>
         <source>The highlighted text</source>
         <translation>把选中的文字发到对话</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1183"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1181"/>
         <source>PDFs on this machine</source>
         <translation>本机上的 PDF</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1207"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1205"/>
         <source>%1 — click to watch or stop</source>
         <translation>%1——点击查看或停止</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1208"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1206"/>
         <source>Close-reading</source>
         <translation>正在精读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1209"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1207"/>
         <source>Interpreting</source>
         <translation>正在解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1210"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1208"/>
         <source>This project&apos;s papers</source>
         <translation>本课题的论文</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1222"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1220"/>
         <source>Text and translation, paragraph by paragraph</source>
         <translation>逐段的原文与译文</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1234"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1232"/>
         <source>The paper&apos;s sections</source>
         <translation>论文的章节</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1245"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1243"/>
         <source>Quick read, close read and notes</source>
         <translation>快速解读、精读和笔记</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1257"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1255"/>
         <source>Ask about this paper</source>
         <translation>问这篇论文的问题</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1274"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1272"/>
         <source>What the whole project adds up to</source>
         <translation>整个课题合起来说明了什么</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1557"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1540"/>
         <source>Everything running, and how far along</source>
         <translation>正在跑的任务和进度</translation>
     </message>
@@ -3515,19 +3206,6 @@ Click to open this passage.</source>
         <translation type="vanished">整个课题汇总起来是什么:分类、研究图谱、共识与分歧、覆盖情况,以及下一步做什么</translation>
     </message>
     <message>
-        <source>Compare (%1)</source>
-        <translation type="vanished">对比 (%1)</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1448"/>
-        <source>Compare</source>
-        <translation>对比</translation>
-    </message>
-    <message>
-        <source>Put papers side by side, with a warning where they cannot honestly be compared</source>
-        <translation type="vanished">把论文并排比较,遇到不适合直接比较的地方会给出提醒</translation>
-    </message>
-    <message>
         <source>Interpreting %1/%2</source>
         <translation type="vanished">正在解读 %1/%2</translation>
     </message>
@@ -3548,7 +3226,7 @@ Click to open this passage.</source>
         <translation type="vanished">结构化解读:与本课题的相关度、先读哪部分,每条结论都能追溯到原文</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="668"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="666"/>
         <source>Paragraphs</source>
         <translation>段落</translation>
     </message>
@@ -3557,7 +3235,7 @@ Click to open this passage.</source>
         <translation type="vanished">段落面板:论文正文、译文,以及每一段上的操作</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1341"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1339"/>
         <source>page %1 / %2 · %3 paragraphs</source>
         <translation>第 %1 / %2 页 · %3 段</translation>
     </message>
@@ -3590,14 +3268,6 @@ Click to open this passage.</source>
         <translation type="vanished">写清这个课题想弄明白什么——所有解读都照着它来写</translation>
     </message>
     <message>
-        <source>Compare the %1 papers in the basket, with a warning where they cannot honestly be compared</source>
-        <translation type="vanished">对比已选的 %1 篇论文,遇到不能公平比较的地方会先说明</translation>
-    </message>
-    <message>
-        <source>Put papers side by side, with a warning where they cannot honestly be compared. Add papers from the library pane&apos;s right-click menu.</source>
-        <translation type="vanished">把论文并排比较,遇到不能公平比较的地方会先说明。在文献库面板里右键论文即可加入。</translation>
-    </message>
-    <message>
         <source>Signed in as %1 — click to sign out</source>
         <translation type="vanished">已登录：%1——点击可退出</translation>
     </message>
@@ -3606,22 +3276,22 @@ Click to open this passage.</source>
         <translation type="vanished">这个方向还有工具栏按钮</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2611"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2587"/>
         <source>Restarting…</source>
         <translation>即将重启…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2613"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2589"/>
         <source>Downloading… %1%</source>
         <translation>下载中… %1%</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2615"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2591"/>
         <source>Update now</source>
         <translation>立即更新</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2621"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2597"/>
         <source>Downloads and installs automatically, then restarts the app.</source>
         <translation>自动下载并安装，随后自动重启应用。</translation>
     </message>
@@ -3654,63 +3324,53 @@ Click to open this passage.</source>
         <translation type="vanished"> · GROBID…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1356"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1354"/>
         <source>Sign in</source>
         <translation>登录</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1404"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1402"/>
         <source>Project settings</source>
         <translation>课题设置</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1405"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1403"/>
         <source>Rename or delete this project</source>
         <translation>重命名或删除本课题</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1414"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1412"/>
         <source>Members</source>
         <translation>成员</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1430"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1428"/>
         <source>Research profile</source>
         <translation>研究档案</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1433"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1431"/>
         <source>Not written yet — what is this project trying to find out?</source>
         <translation>还没写——这个课题想弄清楚什么?</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1450"/>
-        <source>%1 papers picked</source>
-        <translation>已选 %1 篇</translation>
-    </message>
-    <message>
         <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1451"/>
-        <source>Papers side by side</source>
-        <translation>把论文并排比较</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1468"/>
         <source>Signed in as %1</source>
         <translation>已登录:%1</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1470"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1453"/>
         <source>Click to sign out</source>
         <translation>点击退出登录</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1474"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1457"/>
         <source>Sign out</source>
         <translation>退出登录</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1507"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1521"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1490"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1504"/>
         <source>More buttons</source>
         <translation>更多按钮</translation>
     </message>
@@ -3723,17 +3383,17 @@ Click to open this passage.</source>
         <translation type="vanished">编辑发给模型的提示词</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1568"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1551"/>
         <source>Tour</source>
         <translation>新手引导</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1569"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1552"/>
         <source>The getting-started walkthrough</source>
         <translation>重看入门引导</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2598"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2574"/>
         <source>Update available: v%1</source>
         <translation>有可用更新:v%1</translation>
     </message>
@@ -3742,12 +3402,12 @@ Click to open this passage.</source>
         <translation type="vanished">下载</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2648"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2624"/>
         <source>Dismiss</source>
         <translation>忽略</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2622"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="2598"/>
         <source>No download for this platform yet — check the website.</source>
         <translation>当前平台暂无下载——请到项目网站查看。</translation>
     </message>
@@ -3764,7 +3424,7 @@ Click to open this passage.</source>
         <translation type="vanished">导出文本:把 PDF 原始文字、每行的位置框和识别出的段落写成 .txt</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1069"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1067"/>
         <source>Back to 100%</source>
         <translation>恢复 100%</translation>
     </message>
@@ -3781,12 +3441,12 @@ Click to open this passage.</source>
         <translation type="vanished">重新分段,丢弃现在的段落划分</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1123"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1121"/>
         <source>Stop</source>
         <translation>停止</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1124"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1122"/>
         <source>Stop translating</source>
         <translation>停止翻译</translation>
     </message>
@@ -3839,27 +3499,27 @@ Click to open this passage.</source>
         <translation type="vanished">任务面板:应用正在做的全部工作——哪些在跑、进行到哪里、还要多久</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1288"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1286"/>
         <source>Saved layouts — showing “%1”</source>
         <translation>已保存的布局——当前显示“%1”</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1290"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1288"/>
         <source>Saved layouts: arrange the panes, save that arrangement under a name, and switch between them</source>
         <translation>已保存的布局:排布面板、将排布保存为一个名称,并在其间切换</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1333"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1331"/>
         <source>Segmenting…</source>
         <translation>正在分段…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1334"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1332"/>
         <source>GROBID…</source>
         <translation>GROBID…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1339"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1337"/>
         <source>%1 / %2</source>
         <translation>第 %1 / %2 页</translation>
     </message>
@@ -3880,7 +3540,7 @@ Click to open this passage.</source>
         <translation type="vanished">编辑发给模型的提示词</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1563"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1546"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
@@ -3889,42 +3549,42 @@ Click to open this passage.</source>
         <translation type="vanished">显示新手引导</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1760"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1740"/>
         <source>Close Tab</source>
         <translation>关闭此页</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1764"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1744"/>
         <source>Close Others</source>
         <translation>关闭其他页</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1769"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="1749"/>
         <source>Close All</source>
         <translation>全部关闭</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="665"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="663"/>
         <source>Library</source>
         <translation>文献库</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="666"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="664"/>
         <source>Outline</source>
         <translation>目录</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="669"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="667"/>
         <source>Interpretation</source>
         <translation>解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="670"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="668"/>
         <source>Project analyses</source>
         <translation>课题汇总</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="671"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/Main.qml" line="669"/>
         <source>Tasks</source>
         <translation>任务</translation>
     </message>
@@ -4872,10 +4532,6 @@ Click to open this passage.</source>
         <translation type="vanished">未分类</translation>
     </message>
     <message>
-        <source>The papers were doing comparable things and still disagree — one of them is wrong, or the effect does not hold as widely as claimed.</source>
-        <translation type="vanished">两篇做的事情本来可比,结论却相反——要么其中一篇错了,要么这个效果没有它们说的那么普遍。</translation>
-    </message>
-    <message>
         <source>Different task, data, or setup. The numbers look opposed but the papers are not actually answering the same question.</source>
         <translation type="vanished">任务、数据或实验设置不同。数字看着相反,其实两篇回答的不是同一个问题。</translation>
     </message>
@@ -5204,10 +4860,6 @@ Click to open this passage.</source>
         <translation type="vanished">说得笃定,支撑却很少。</translation>
     </message>
     <message>
-        <source>No fair comparison</source>
-        <translation type="vanished">缺少公平对比</translation>
-    </message>
-    <message>
         <source>Never tried in the real world</source>
         <translation type="vanished">没在真实场景里验证过</translation>
     </message>
@@ -5276,10 +4928,6 @@ Click to open this passage.</source>
         <translation type="vanished">来自</translation>
     </message>
     <message>
-        <source>The next moves this library suggests: what to read closely, what to go and search for, what is worth reproducing or comparing, what small experiment to run, and what to take to your advisor.</source>
-        <translation type="vanished">这个文献库给出的下一步:该精读哪些、该去检索什么、什么值得复现或对比、可以先做哪个小实验,以及哪些问题该去问导师。</translation>
-    </message>
-    <message>
         <source>Read these next</source>
         <translation type="vanished">接下来精读</translation>
     </message>
@@ -5290,10 +4938,6 @@ Click to open this passage.</source>
     <message>
         <source>Worth reproducing</source>
         <translation type="vanished">值得复现</translation>
-    </message>
-    <message>
-        <source>Worth comparing head to head</source>
-        <translation type="vanished">值得正面对比</translation>
     </message>
     <message>
         <source>Small experiments you could run now</source>
@@ -5355,7 +4999,7 @@ Click to open this passage.</source>
     </message>
     <message>
         <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="132"/>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="740"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="738"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
@@ -5520,467 +5164,467 @@ Click to open this passage.</source>
         <translation>打开「%1」</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="638"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="636"/>
         <source>One side</source>
         <translation>一方</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="649"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="647"/>
         <source>The other</source>
         <translation>另一方</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="741"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="739"/>
         <source>Regenerate</source>
         <translation>重新生成</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="742"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="740"/>
         <source>Generate</source>
         <translation>生成</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="754"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="752"/>
         <source>Earlier versions</source>
         <translation>历史版本</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="763"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="761"/>
         <source>Restore the version from %1 by %2</source>
         <translation>恢复 %2 在 %1 生成的版本</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="768"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="766"/>
         <source>someone</source>
         <translation>某人</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="793"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="791"/>
         <source>Papers have been interpreted since this was written — generate it again to take them in.</source>
         <translation>这份结果写好之后又有论文被解读过——重新生成才能把它们算进来。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="828"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="826"/>
         <source>It is written from the papers&apos; interpretations, never from the PDFs — %1 interpreted so far.</source>
         <translation>它只基于各篇论文的解读结果,不读 PDF 原文——目前已解读 %1 篇。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="918"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="916"/>
         <source>%1 papers</source>
         <translation>%1 篇</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="927"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="925"/>
         <source>Rename (or double-click the name)</source>
         <translation>重命名(或双击名称)</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="938"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="936"/>
         <source>Locked — this one is yours, and the next regeneration will leave it exactly as it is.</source>
         <translation>已锁定——这是你自己的分类,下次重新生成不会改动它。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="941"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="939"/>
         <source>Lock this category so regenerating cannot change it.</source>
         <translation>锁定该分类,重新生成时不会改动它。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="954"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="952"/>
         <source>You have confirmed this category.</source>
         <translation>你已确认该分类。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="955"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="953"/>
         <source>Confirm this category — new papers are placed against the confirmed ones.</source>
         <translation>确认该分类——新论文会按已确认的分类来归入。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="968"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="966"/>
         <source>Merge this category into another one</source>
         <translation>把该分类并入另一个分类</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="972"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="970"/>
         <source>Merge into…</source>
         <translation>并入…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="977"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="975"/>
         <source>Merge into “%1”</source>
         <translation>并入「%1」</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="996"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="994"/>
         <source>Split some of these papers into a category of their own</source>
         <translation>把其中一部分论文拆成单独的分类</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1007"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1005"/>
         <source>Delete this category (the papers stay)</source>
         <translation>删除该分类(论文保留)</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1026"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1024"/>
         <source>yours</source>
         <translation>你建的</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1055"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1053"/>
         <source>Take this paper out of the category</source>
         <translation>把该论文移出此分类</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1064"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1062"/>
         <source>Nothing in here yet.</source>
         <translation>这里还没有内容。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1097"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1095"/>
         <source>Research</source>
         <translation>研究</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1118"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1116"/>
         <source>Categories</source>
         <translation>分类</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1119"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1117"/>
         <source>Map</source>
         <translation>图谱</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1120"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1118"/>
         <source>Consensus</source>
         <translation>共识</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1121"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1119"/>
         <source>Timeline</source>
         <translation>时间线</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1122"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1120"/>
         <source>Coverage</source>
         <translation>覆盖</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1123"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1121"/>
         <source>Openings</source>
         <translation>切入点</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1124"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1122"/>
         <source>Next steps</source>
         <translation>下一步</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1147"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1145"/>
         <source>Which papers belong together — by problem, scenario, method route, data, metric, contribution and more, with one paper free to sit in several categories at once. The categories are yours to rename, merge, lock and confirm.</source>
         <translation>哪些论文该归到一起——按研究问题、应用场景、方法路线、数据、指标、贡献等维度划分,同一篇论文可以同时属于多个分类。这些分类你都可以重命名、合并、锁定和确认。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1174"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1172"/>
         <source>Place %1 new papers</source>
         <translation>归类 %1 篇新论文</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1183"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1181"/>
         <source>They are placed against the categories you already have — the system is not redrawn.</source>
         <translation>它们会按你现有的分类归入——分类体系不会重画。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1224"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1222"/>
         <source>a category of your own…</source>
         <translation>自己新建一个分类…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1237"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1235"/>
         <source>+ new category</source>
         <translation>+ 新建分类</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1258"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1256"/>
         <source>These need a human</source>
         <translation>这些得你自己判断</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1298"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1296"/>
         <source>The questions this library is asking, the different routes people take to each one, and what those routes were tried on and what they left unsolved.</source>
         <translation>这个文献库在问哪些问题,每个问题上有哪几条不同的技术路线,这些路线在什么上试过、又留下了什么没解决。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1352"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1350"/>
         <source>Tried on</source>
         <translation>试过的数据</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1357"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1355"/>
         <source>Measured by</source>
         <translation>评价指标</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1362"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1360"/>
         <source>What came out</source>
         <translation>得到的结果</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1367"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1365"/>
         <source>Still wrong with it</source>
         <translation>仍存在的问题</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1392"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1390"/>
         <source>What several papers agree on, what rests on a single paper, what gets repeated without anyone checking it, and where the papers actually contradict each other.</source>
         <translation>哪些结论多篇论文一致认可,哪些只靠一篇论文撑着,哪些被反复引用却没人核实过,以及论文之间在哪里真的互相矛盾。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1411"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1409"/>
         <source>Several papers agree</source>
         <translation>多篇一致</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1412"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1410"/>
         <source>Independently supported by more than one paper in this library.</source>
         <translation>文献库里有不止一篇论文独立支持。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1417"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1415"/>
         <source>Only one paper says this</source>
         <translation>只有一篇这么说</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1418"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1416"/>
         <source>True or not, it has not been reproduced by anything else here.</source>
         <translation>不管对不对,这里没有别的论文复现过。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1423"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1421"/>
         <source>Repeated, never checked</source>
         <translation>反复引用,无人核实</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1424"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1422"/>
         <source>Several papers assert it, but they cite each other rather than evidence.</source>
         <translation>好几篇都这么讲,但它们引用的是彼此,而不是证据。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1430"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1428"/>
         <source>They disagree</source>
         <translation>互相矛盾</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1450"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1448"/>
         <source>How the problems, the methods, the data and the way results are judged changed over time — with the turning points, and the questions that have been open the whole way through.</source>
         <translation>问题、方法、数据和评价方式是怎么随时间变化的——包括其中的转折点,以及一直悬而未决的问题。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1549"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1547"/>
         <source>Problems</source>
         <translation>问题</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1554"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1552"/>
         <source>Methods</source>
         <translation>方法</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1559"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1557"/>
         <source>Data</source>
         <translation>数据</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1563"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1561"/>
         <source>How it was judged</source>
         <translation>评价方式</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1574"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1572"/>
         <source>Representative papers</source>
         <translation>代表性论文</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1582"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1580"/>
         <source>Turning point</source>
         <translation>转折点</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1597"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1595"/>
         <source>Open the whole way through</source>
         <translation>一直没解决的问题</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1636"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1634"/>
         <source>This looks only at the papers in this project. Not covered here does not mean it does not exist in the field.</source>
         <translation>这里只看本课题内的论文。这里没覆盖到,不代表领域里没有。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1644"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1642"/>
         <source>Which topics this library covers properly, which rest on one thin paper, which conclusions have weak evidence behind them, and what kind of work is missing from the collection entirely.</source>
         <translation>这个文献库把哪些题目讲透了,哪些只靠一两篇撑着,哪些结论的证据其实很弱,还有哪类工作在这里完全缺席。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1664"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1662"/>
         <source>Well covered</source>
         <translation>覆盖充分</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1668"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1666"/>
         <source>Thin — only a paper or two</source>
         <translation>单薄——只有一两篇</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1672"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1670"/>
         <source>Weak evidence</source>
         <translation>证据薄弱</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1673"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1671"/>
         <source>Stated confidently, supported lightly.</source>
         <translation>说得笃定,支撑却很少。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1678"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1676"/>
         <source>No fair comparison</source>
         <translation>缺少公平对比</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1682"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1680"/>
         <source>Never tried in the real world</source>
         <translation>没在真实场景里验证过</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1686"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1684"/>
         <source>No shared metric</source>
         <translation>没有统一指标</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1687"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1685"/>
         <source>Everyone measures something different, so the numbers cannot be lined up.</source>
         <translation>各家测的东西不一样,数字没法放在一起比。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1693"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1691"/>
         <source>Kinds of work missing here</source>
         <translation>这里缺失的工作类型</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1730"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1728"/>
         <source>These are leads to check, not proven gaps. Nothing here replaces a literature search.</source>
         <translation>这些只是值得查证的线索,不是已经坐实的空白。它们都替代不了一次文献检索。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1738"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1736"/>
         <source>Questions worth taking further, built out of what the papers admit they did not solve, where they contradict each other, and what they assumed without testing — each with a smallest experiment that would settle it.</source>
         <translation>值得继续做下去的问题,来自论文自己承认没解决的地方、彼此矛盾的地方,以及没验证就默认成立的假设——每个都配了一个能验证它的最小实验。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1788"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1786"/>
         <source>difficulty: %1</source>
         <translation>难度:%1</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1799"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1797"/>
         <source>confidence: %1</source>
         <translation>置信度:%1</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1806"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1804"/>
         <source>How sure the model is that this opening is real.</source>
         <translation>模型对这个切入点是否成立的把握程度。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1826"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1824"/>
         <source>What is missing</source>
         <translation>缺什么</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1830"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1828"/>
         <source>How to attack it</source>
         <translation>怎么下手</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1834"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1832"/>
         <source>Smallest experiment</source>
         <translation>最小实验</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1839"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1837"/>
         <source>Baselines</source>
         <translation>基线</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1843"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1841"/>
         <source>Data and metrics</source>
         <translation>数据与指标</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1848"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1846"/>
         <source>What it would add</source>
         <translation>能带来什么</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1853"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1851"/>
         <source>Risks</source>
         <translation>风险</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1862"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1860"/>
         <source>Came from</source>
         <translation>来自</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1888"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1886"/>
         <source>The next moves this library suggests: what to read closely, what to go and search for, what is worth reproducing or comparing, what small experiment to run, and what to take to your advisor.</source>
         <translation>这个文献库给出的下一步:该精读哪些、该去检索什么、什么值得复现或对比、可以先做哪个小实验,以及哪些问题该去问导师。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1908"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1906"/>
         <source>Read these next</source>
         <translation>接下来读这些</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1914"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1912"/>
         <source>Go and search for</source>
         <translation>去检索这些</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1920"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1918"/>
         <source>Worth reproducing</source>
         <translation>值得复现</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1926"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1924"/>
         <source>Worth comparing head to head</source>
         <translation>值得正面对比</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1932"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1930"/>
         <source>Small experiments you could run now</source>
         <translation>现在就能做的小实验</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1938"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1936"/>
         <source>Ask your advisor</source>
         <translation>问问导师</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1965"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1963"/>
         <source>Every tab here is written from the papers&apos; interpretations, never from the PDFs, and is shared with everyone in the project.</source>
         <translation>这里每个标签页都基于各篇论文的解读结果,不读 PDF 原文,并且课题内所有成员共享。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1970"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1968"/>
         <source>Export report…</source>
         <translation>导出报告…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1981"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1979"/>
         <source>Generating %1…</source>
         <translation>正在生成 %1…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1982"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/ResearchPane.qml" line="1980"/>
         <source>Generate all</source>
         <translation>全部生成</translation>
     </message>
@@ -6833,12 +6477,12 @@ Click to open this passage.</source>
         <translation>模型客户端拒绝了该请求。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/StructuredLlm.cpp" line="150"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/StructuredLlm.cpp" line="145"/>
         <source>The model returned nothing.</source>
         <translation>模型没有返回任何内容。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/StructuredLlm.cpp" line="151"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/StructuredLlm.cpp" line="146"/>
         <source>The model did not return usable JSON.</source>
         <translation>模型没有返回可用的 JSON。</translation>
     </message>
@@ -6929,82 +6573,77 @@ Click to open this passage.</source>
 <context>
     <name>Tasks</name>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="46"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="44"/>
         <source>Translation</source>
         <translation>翻译</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="48"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="46"/>
         <source>Paragraph segmentation</source>
         <translation>段落切分</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="50"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="48"/>
         <source>Table of contents</source>
         <translation>目录</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="52"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="50"/>
         <source>Page reading</source>
         <translation>视觉读页</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="54"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="52"/>
         <source>Quick interpretation</source>
         <translation>快速解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="56"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="54"/>
         <source>Deep reading</source>
         <translation>精读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="58"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="56"/>
         <source>Batch interpretation</source>
         <translation>批量解读</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="60"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="58"/>
         <source>Library analysis</source>
         <translation>文库分析</translation>
     </message>
     <message>
         <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="62"/>
-        <source>Comparison</source>
-        <translation>论文对比</translation>
-    </message>
-    <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="66"/>
         <source>Task</source>
         <translation>任务</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="96"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="92"/>
         <source>Waiting</source>
         <translation>等待中</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="98"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="94"/>
         <source>Running</source>
         <translation>进行中</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="100"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="96"/>
         <source>Done</source>
         <translation>已完成</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="102"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="98"/>
         <source>Failed</source>
         <translation>失败</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="104"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="100"/>
         <source>Canceled</source>
         <translation>已取消</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="110"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/TaskTypes.cpp" line="106"/>
         <source>Interrupted</source>
         <translation>已中断</translation>
     </message>
@@ -7047,57 +6686,57 @@ Click to open this passage.</source>
         <translation>已结束</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="156"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="155"/>
         <source>Tasks</source>
         <translation>任务</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="169"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="168"/>
         <source>%1 running · %2 waiting</source>
         <translation>%1 个进行中 · %2 个等待中</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="171"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="170"/>
         <source>%1 running</source>
         <translation>%1 个进行中</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="199"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="198"/>
         <source>Cancel all</source>
         <translation>全部取消</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="206"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="205"/>
         <source>Clear finished</source>
         <translation>清除已完成</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="294"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="293"/>
         <source>✓ %1</source>
         <translation>✓ %1</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="387"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="386"/>
         <source>Stop this task</source>
         <translation>停止此任务</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="312"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="311"/>
         <source>Retry</source>
         <translation>重试</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="370"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="369"/>
         <source>Waiting</source>
         <translation>等待中</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="420"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="419"/>
         <source>Nothing is running.</source>
         <translation>没有正在运行的任务。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="428"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/TasksPane.qml" line="427"/>
         <source>Translating a paper, splitting it, interpreting it and analysing the whole project all appear here while they run.</source>
         <translation>翻译论文、给它分段、解读它,以及分析整个课题,运行时都会显示在这里。</translation>
     </message>

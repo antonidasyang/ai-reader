@@ -19,7 +19,6 @@ QString kindKey(Kind kind)
     case Kind::DeepInterpret:   return QStringLiteral("deep_interpret");
     case Kind::BatchInterpret:  return QStringLiteral("batch_interpret");
     case Kind::LibraryAnalysis: return QStringLiteral("library_analysis");
-    case Kind::Compare:         return QStringLiteral("compare");
     case Kind::Other:           break;
     }
     return QStringLiteral("other");
@@ -35,7 +34,6 @@ Kind kindFromKey(const QString &key)
     if (key == QLatin1String("deep_interpret"))   return Kind::DeepInterpret;
     if (key == QLatin1String("batch_interpret"))  return Kind::BatchInterpret;
     if (key == QLatin1String("library_analysis")) return Kind::LibraryAnalysis;
-    if (key == QLatin1String("compare"))          return Kind::Compare;
     return Kind::Other;
 }
 
@@ -58,8 +56,6 @@ QString kindLabel(Kind kind)
         return QCoreApplication::translate("Tasks", "Batch interpretation");
     case Kind::LibraryAnalysis:
         return QCoreApplication::translate("Tasks", "Library analysis");
-    case Kind::Compare:
-        return QCoreApplication::translate("Tasks", "Comparison");
     case Kind::Other:
         break;
     }

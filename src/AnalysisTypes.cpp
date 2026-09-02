@@ -33,14 +33,12 @@ const QString TypePaperAnalysis   = QStringLiteral("paper_analysis");
 const QString TypeLibraryAnalysis = QStringLiteral("library_analysis");
 const QString TypeProjectProfile  = QStringLiteral("project_profile");
 const QString TypeAnalysisNote    = QStringLiteral("analysis_note");
-const QString TypeCompareBasket   = QStringLiteral("compare_basket");
 
 const QString KindQuick = QStringLiteral("quick");
 const QString KindDeep  = QStringLiteral("deep");
 
 const QString KindTaxonomy      = QStringLiteral("taxonomy");
 const QString KindMap           = QStringLiteral("map");
-const QString KindCompare       = QStringLiteral("compare");
 const QString KindConsensus     = QStringLiteral("consensus");
 const QString KindEvolution     = QStringLiteral("evolution");
 const QString KindCoverage      = QStringLiteral("coverage");
@@ -139,8 +137,6 @@ QString libraryKindTitle(const QString &kind)
         return QCoreApplication::translate("Analysis", "Categories");
     if (kind == KindMap)
         return QCoreApplication::translate("Analysis", "Research map");
-    if (kind == KindCompare)
-        return QCoreApplication::translate("Analysis", "Comparison");
     if (kind == KindConsensus)
         return QCoreApplication::translate("Analysis", "Consensus & conflicts");
     if (kind == KindEvolution)
@@ -180,19 +176,6 @@ QString noteId(const QString &projectId, const QString &paperId,
 {
     return v5(projectId + QChar('|') + paperId + QStringLiteral("|note|")
               + author);
-}
-
-QString compareBasketId(const QString &projectId, const QString &author)
-{
-    return v5(projectId + QStringLiteral("|compare-basket|") + author);
-}
-
-QString scopeHash(QStringList paperIds)
-{
-    paperIds.removeAll(QString());
-    paperIds.sort();
-    paperIds.removeDuplicates();
-    return sha1(paperIds.join(QChar(','))).left(16);
 }
 
 QString inputHash(const QString &contentHash, const QString &promptVersion,

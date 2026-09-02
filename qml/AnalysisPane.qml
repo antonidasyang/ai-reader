@@ -22,7 +22,6 @@ Rectangle {
     // paragraph, which is what actually gets scrolled to.
     signal evidenceRequested(int page, int blockId)
     signal askAiRequested(string text)
-    signal compareRequested(string paperId, string title, string note)
 
     // 0 = the quick read, 1 = the close reading, 2 = the reader's own notes.
     property int mode: 0
@@ -484,10 +483,6 @@ Rectangle {
                                 onNoteRequested: function(text) {
                                     analysis.saveNote(text, "quick")
                                 }
-                                onCompareRequested: function(text) {
-                                    root.compareRequested(analysis.paperId,
-                                                          analysis.paperTitle, text)
-                                }
                             }
                         }
                     }
@@ -573,10 +568,6 @@ Rectangle {
                     root.evidenceRequested(page, blockId)
                 }
                 onAskAiRequested: function(text) { root.askAiRequested(text) }
-                onCompareRequested: function(text) {
-                    root.compareRequested(analysis.paperId, analysis.paperTitle,
-                                          text)
-                }
             }
         }
 

@@ -2,7 +2,6 @@
 
 #include "AnalysisStore.h"
 #include "AnalysisTypes.h"
-#include "CompareService.h"
 #include "LibraryAnalysisService.h"
 #include "ProjectController.h"
 #include "ProjectProfileController.h"
@@ -31,13 +30,12 @@ AnalysisExporter::AnalysisExporter(AnalysisStore *store,
                                    ProjectController *projects,
                                    ProjectProfileController *profile,
                                    LibraryAnalysisService *research,
-                                   CompareService *compare, QObject *parent)
+                                   QObject *parent)
     : QObject(parent)
     , m_store(store)
     , m_projects(projects)
     , m_profile(profile)
     , m_research(research)
-    , m_compare(compare)
 {
 }
 
@@ -300,80 +298,6 @@ QString AnalysisExporter::paperMarkdown(const QString &paperId) const
                                          .toString()));
         }
         out += QChar('\n');
-    }
-    return out;
-}
-
-QString AnalysisExporter::comparisonMarkdown() const
-{
-    const QVariantMap res = m_compare->result();
-    if (res.isEmpty())
-        return {};
-    const QJsonObject o = QJsonObject::fromVariantMap(res);
-    const QJsonArray papers = o.value(QStringLiteral("papers")).toArray();
-
-    QString out = QStringLiteral("# %1\n\n").arg(tr("Comparison"));
-    out += QStringLiteral("_%1_\n\n")
-               .arg(tr("Built from each paper's interpretation, not from the "
-                       "PDFs."));
-
-    const QJsonArray warnings = o.value(QStringLiteral("comparability")).toArray();
-    if (!warnings.isEmpty()) {
-        out += QStringLiteral("## %1\n\n").arg(tr("Read this table with these in mind"));
-        for (const QJsonValue &v : warnings) {
-            const QJsonObject w = v.toObject();
-            out += QStringLiteral("- **%1** %2\n")
-                       .arg(w.value(QStringLiteral("severity")).toString()
-                                    == QLatin1String("blocking")
-                                ? tr("Not directly comparable:")
-                                : tr("Careful:"),
-                            sanitize(w.value(QStringLiteral("issue")).toString()));
-        }
-        out += QChar('\n');
-    }
-
-    // A real Markdown table: this is the one export where a grid is what the
-    // reader wants to paste somewhere.
-    if (!papers.isEmpty()) {
-        QStringList header{tr("Dimension")};
-        QStringList sep{QStringLiteral("---")};
-        for (const QJsonValue &p : papers) {
-            header << sanitize(p.toObject().value(QStringLiteral("title")).toString());
-            sep << QStringLiteral("---");
-        }
-        out += QStringLiteral("| %1 |\n| %2 |\n")
-                   .arg(header.join(QStringLiteral(" | ")),
-                        sep.join(QStringLiteral(" | ")));
-        for (const QJsonValue &rv : o.value(QStringLiteral("rows")).toArray()) {
-            const QJsonObject row = rv.toObject();
-            QStringList cells{
-                sanitize(row.value(QStringLiteral("dimension")).toString())};
-            for (const QJsonValue &p : papers) {
-                const QString id =
-                    p.toObject().value(QStringLiteral("paperId")).toString();
-                QString text = QStringLiteral("—");
-                for (const QJsonValue &cv : row.value(QStringLiteral("cells")).toArray()) {
-                    const QJsonObject c = cv.toObject();
-                    if (c.value(QStringLiteral("paperId")).toString() == id) {
-                        text = sanitize(c.value(QStringLiteral("text")).toString());
-                        break;
-                    }
-                }
-                cells << text;
-            }
-            out += QStringLiteral("| %1 |\n").arg(cells.join(QStringLiteral(" | ")));
-        }
-        out += QChar('\n');
-    }
-
-    const QString ranking = sanitize(o.value(QStringLiteral("ranking")).toString());
-    if (!ranking.isEmpty())
-        out += ranking + QStringLiteral("\n\n");
-
-    const QJsonArray takeaways = o.value(QStringLiteral("takeaways")).toArray();
-    if (!takeaways.isEmpty()) {
-        out += QStringLiteral("## %1\n\n").arg(tr("What to take from this"));
-        out += claimList(takeaways) + QChar('\n');
     }
     return out;
 }

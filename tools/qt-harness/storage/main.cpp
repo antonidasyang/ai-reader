@@ -1,7 +1,7 @@
 // The app's storage identity, and the one settings file it now writes.
 //
 // Every service in the app -- Settings, Library, Tabs, PaperController,
-// ProjectController, AuthController, CompareService, LayoutSettings, main()
+// ProjectController, AuthController, LayoutSettings, main()
 // itself -- holds a default-constructed QSettings, and after
 // StorageIdentity::apply() that is one plain JSON file rather than the
 // Windows registry, a cfprefsd plist or a .conf. The point of the file is

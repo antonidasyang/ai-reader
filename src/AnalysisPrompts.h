@@ -45,14 +45,6 @@ QString deepSystem(const QString &lang, const QString &profileBlock,
 QString deepUser(const QString &title, const QString &paperText, bool truncated,
                  const QJsonObject &digest);
 
-// ── §10 comparing papers the reader picked ───────────────────────────
-// Reads the digests, not the papers: that is what makes twelve papers one
-// call. The schema forces the comparability warnings to be part of the
-// answer rather than an afterthought (§10.3).
-QJsonObject compareSchema();
-QString compareSystem(const QString &lang, const QString &profileBlock);
-QString compareUser(const QJsonArray &digests, const QStringList &notes);
-
 // A digest cut down to what a cross-paper analysis needs. Everything
 // library-level runs on these, never on paper text.
 QJsonObject digestBrief(const QString &paperId, const QString &title,

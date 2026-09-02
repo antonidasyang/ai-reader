@@ -364,19 +364,6 @@ QStringList AnalysisListModel::deepPendingAmong(const QStringList &itemIds) cons
     return out;
 }
 
-QVariantList AnalysisListModel::visiblePapers() const
-{
-    QVariantList out;
-    for (int i : m_visible) {
-        const Row &r = m_all.at(i);
-        if (r.paperId.isEmpty())
-            continue;
-        out.append(QVariantMap{{QStringLiteral("paperId"), r.paperId},
-                               {QStringLiteral("title"), r.title}});
-    }
-    return out;
-}
-
 void AnalysisListModel::setToRead(const QString &itemId, bool on)
 {
     applyToRead({itemId}, on);

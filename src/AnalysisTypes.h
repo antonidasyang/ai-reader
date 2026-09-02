@@ -17,7 +17,6 @@ extern const QString TypePaperAnalysis;    // one paper, one member
 extern const QString TypeLibraryAnalysis;  // whole project, shared
 extern const QString TypeProjectProfile;   // the research profile (§6)
 extern const QString TypeAnalysisNote;     // a member's own notes/edits
-extern const QString TypeCompareBasket;    // the papers a member lined up
 
 // ── per-paper analysis kinds ─────────────────────────────────────────
 extern const QString KindQuick;   // §2 quick interpretation → the digest
@@ -26,7 +25,6 @@ extern const QString KindDeep;    // §3 deep read, module by module
 // ── library-level analysis kinds ─────────────────────────────────────
 extern const QString KindTaxonomy;       // §8
 extern const QString KindMap;            // §9
-extern const QString KindCompare;        // §10 (keyed by scopeHash)
 extern const QString KindConsensus;      // §11
 extern const QString KindEvolution;      // §12
 extern const QString KindCoverage;       // §13
@@ -73,12 +71,6 @@ QString libraryAnalysisId(const QString &projectId, const QString &kind,
 QString projectProfileId(const QString &projectId);
 QString noteId(const QString &projectId, const QString &paperId,
                const QString &author);
-QString compareBasketId(const QString &projectId, const QString &author);
-
-// sha1 over the sorted paper ids — the key an ad-hoc comparison is filed
-// under, so re-comparing the same set updates one row instead of piling
-// up near-identical ones (§10.1).
-QString scopeHash(QStringList paperIds);
 
 // Hash of everything a stored result depends on. When the paragraphs, the
 // prompt, the research profile or the model move, the stored analysis is

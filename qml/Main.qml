@@ -51,8 +51,7 @@ ApplicationWindow {
     }
 
     // Everything project-wide -- members, the profile, batch interpretation,
-    // comparison, the project analyses -- needs both an account and a chosen
-    // project.
+    // the project analyses -- needs both an account and a chosen project.
     readonly property bool projectReady: auth.authenticated
                                          && projects.currentId.length > 0
 
@@ -315,7 +314,6 @@ ApplicationWindow {
     MembersDialog { id: membersDialog }
     ProjectSettingsDialog { id: projectSettingsDialog }
     ProjectProfileDialog { id: projectProfileDialog }
-    CompareDialog { id: compareDialog }
     // Re-segmenting is destructive in a way that is not obvious: the
     // paragraph ids change, so translations keyed to them stop matching and
     // any manual split/merge is gone. Asked once, with the numbers, rather
@@ -1440,21 +1438,6 @@ ApplicationWindow {
                 ToolSeparator { visible: auth.authenticated }
 
                 ToolIcon {
-                    icon.source: "qrc:/icons/compare.svg"
-                    needsProject: true
-                    display: compare.count > 0 ? AbstractButton.TextBesideIcon
-                                               : AbstractButton.IconOnly
-                    text: compare.count > 0 ? compare.count : ""
-                    name: qsTr("Compare")
-                    tip: compare.count > 0
-                         ? qsTr("%1 papers picked").arg(compare.count)
-                         : qsTr("Papers side by side")
-                    onClicked: {
-                        if (blocked) { window.resolveProjectBlock(); return }
-                        compareDialog.open()
-                    }
-                }
-                ToolIcon {
                     id: accountBtn
                     icon.source: "qrc:/icons/account.svg"
                     visible: auth.authenticated
@@ -1662,9 +1645,6 @@ ApplicationWindow {
                 SplitView.minimumWidth: 0
                 onWidthChanged: layoutSettings.setPaneWidth("library", width)
                 onOpenRequested: function(path) { tabs.openPaper(path) }
-                // "Compare everything shown" builds a basket and then wants
-                // to be looking at it.
-                onCompareRequested: compareDialog.open()
 
                 DockGrip {
                     anchors.left: parent.left
@@ -2300,10 +2280,6 @@ ApplicationWindow {
                 onAskAiRequested: function(text) {
                     chatPane.visible = true
                     chatPane.prefillInput(text, 0)
-                }
-                onCompareRequested: function(paperId, title, note) {
-                    compare.add(paperId, title, note)
-                    compareDialog.open()
                 }
 
                 DockGrip {

@@ -1,5 +1,17 @@
 # AI Reader changelog
 
+## v1.3.29 — 2026-09-02
+
+### The comparison is gone
+- Comparing papers side by side is removed outright: the Compare button,
+  the window, the basket, "Add to the comparison" in the library and
+  statement menus, the comparison export, the task kind and the stored
+  object type. None of it is left behind as an option or a stub. The
+  project-wide analyses still say which papers are worth comparing head to
+  head; that is a sentence in the actions report, not a feature.
+- The byte-progress plumbing added in 1.3.28 existed only to give the
+  comparison a sign of life, so it goes with it.
+
 ## v1.3.28 — 2026-09-02
 
 ### The comparison is a task, and says what it is doing

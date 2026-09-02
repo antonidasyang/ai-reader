@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.3.28 LANGUAGES CXX)
+project(ai-reader VERSION 1.3.29 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -332,8 +332,6 @@ qt_add_executable(ai-reader
     src/AnalysisListModel.cpp
     src/BatchAnalysisService.h
     src/BatchAnalysisService.cpp
-    src/CompareService.h
-    src/CompareService.cpp
     src/LibraryAnalysisService.h
     src/LibraryAnalysisService.cpp
     src/LayoutPresets.h
@@ -450,7 +448,6 @@ qt_add_qml_module(ai-reader
         qml/ProjectProfileDialog.qml
         qml/AnalysisPane.qml
         qml/ClaimBlock.qml
-        qml/CompareDialog.qml
         qml/DeepReadView.qml
         qml/ResearchPane.qml
         qml/LayoutMenu.qml
@@ -497,7 +494,6 @@ qt_add_resources(ai-reader "icons"
         resources/icons/project-edit.svg
         resources/icons/members.svg
         resources/icons/profile.svg
-        resources/icons/compare.svg
         resources/icons/pane-research.svg
         resources/icons/pane-tasks.svg
         resources/icons/settings.svg

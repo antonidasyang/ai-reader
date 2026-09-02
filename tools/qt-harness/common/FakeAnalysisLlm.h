@@ -197,7 +197,7 @@ private:
             .toString();
     }
 
-    // Ids the comparison prompt carried, in order.
+    // Ids a cross-paper prompt carried, in order.
     QStringList paperIdsInPrompt() const
     {
         QStringList out;
@@ -253,31 +253,6 @@ private:
             {"dimensions", QJsonArray{}},
             {"steps", QJsonArray{}}};
         return QJsonDocument(module).toJson(QJsonDocument::Compact);
-    }
-
-    QByteArray buildCompareAnswer()
-    {
-        const QStringList ids = paperIdsInPrompt();
-        QJsonArray cells;
-        for (const QString &id : ids)
-            cells.append(QJsonObject{{"paperId", id}, {"text", "not stated"}});
-        const QJsonObject answer{
-            {"rows",
-             QJsonArray{QJsonObject{{"dimension", "research_problem"},
-                                    {"cells", cells}},
-                        QJsonObject{{"dimension", "metrics"},
-                                    {"cells", cells}}}},
-            {"comparability",
-             QJsonArray{QJsonObject{
-                 {"papers", QJsonArray::fromStringList(ids)},
-                 {"issue", "Different datasets; the numbers do not line up."},
-                 {"severity", "blocking"}}}},
-            {"takeaways",
-             QJsonArray{QJsonObject{{"text", "They answer different questions."},
-                                    {"source", "ai_analysis"},
-                                    {"evidence", QJsonArray{}}}}},
-            {"ranking", "These cannot be ranked against each other."}};
-        return QJsonDocument(answer).toJson(QJsonDocument::Compact);
     }
 
     // The library-level calls all use one tool name, so which analysis is
@@ -352,8 +327,6 @@ private:
     {
         if (tool == QLatin1String("emit_section"))
             return buildModuleAnswer();
-        if (tool == QLatin1String("emit_comparison"))
-            return buildCompareAnswer();
         if (tool == QLatin1String("emit_analysis")) {
             const QStringList keys = schemaKeys();
             if (keys.contains(QStringLiteral("assignments")))
@@ -441,8 +414,6 @@ private:
         if (sys.contains(QStringLiteral("\"dimensions\""))
             && sys.contains(QStringLiteral("\"categories\"")))
             return buildTaxonomyAnswer();
-        if (sys.contains(QStringLiteral("\"comparability\"")))
-            return buildCompareAnswer();
         if (sys.contains(QStringLiteral("\"sections\"")))
             return buildModuleAnswer();
         return buildAnswer(QString());

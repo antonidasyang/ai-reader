@@ -21,7 +21,7 @@ class ProjectController;
 // This is the list §7 works on, and since 1.3.26 it is also the model behind
 // the library pane itself -- generate in bulk, watch the progress, see why one
 // failed, filter by relevance or by advice, then send a whole filtered set to
-// the deep read, to the comparison, or out of the project's way. Runtime state
+// the deep read, or out of the project's way. Runtime state
 // (queued / running / just failed) is pushed in by BatchAnalysisService rather
 // than stored, so a restart shows what is really on disk.
 //
@@ -131,9 +131,6 @@ public:
     // they have a file, they are not set aside, and they are missing at least
     // one of the nine parts.
     Q_INVOKABLE QStringList deepPendingAmong(const QStringList &itemIds) const;
-    // paperId + title for each visible row, which is what the comparison
-    // basket takes.
-    Q_INVOKABLE QVariantList visiblePapers() const;
 
     Q_INVOKABLE void setToRead(const QString &itemId, bool on);
     Q_INVOKABLE void setExcluded(const QString &itemId, bool on);

@@ -21,7 +21,6 @@ ColumnLayout {
     // paragraph, which is what actually gets scrolled to.
     signal evidenceRequested(int page, int blockId)
     signal askAiRequested(string text)
-    signal compareRequested(string text)
 
     property int fs: settings.summaryFontSize
 
@@ -193,7 +192,6 @@ ColumnLayout {
                 fs: root.fs
                 onEvidenceRequested: (page, blockId) => root.evidenceRequested(page, blockId)
                 onAskAiRequested: (text) => root.askAiRequested(text)
-                onCompareRequested: (text) => root.compareRequested(text)
                 onNoteRequested: (text) => analysis.saveNote(text, cl.moduleId)
             }
         }
@@ -355,7 +353,6 @@ ColumnLayout {
                                  "evidence": modelData.evidence ? modelData.evidence : []})
                         onEvidenceRequested: (page, blockId) => root.evidenceRequested(page, blockId)
                         onAskAiRequested: (text) => root.askAiRequested(text)
-                        onCompareRequested: (text) => root.compareRequested(text)
                         onNoteRequested: (text) => analysis.saveNote(text, mth.moduleId)
                     }
                     Chip {
@@ -563,7 +560,6 @@ ColumnLayout {
                                  "evidence": modelData.evidence ? modelData.evidence : []})
                         onEvidenceRequested: (page, blockId) => root.evidenceRequested(page, blockId)
                         onAskAiRequested: (text) => root.askAiRequested(text)
-                        onCompareRequested: (text) => root.compareRequested(text)
                         onNoteRequested: (text) => analysis.saveNote(text, rep.moduleId)
                     }
                 }

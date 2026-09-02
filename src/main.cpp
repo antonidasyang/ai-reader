@@ -20,7 +20,6 @@
 #include "AnalysisListModel.h"
 #include "AnalysisService.h"
 #include "BatchAnalysisService.h"
-#include "CompareService.h"
 #include "AnalysisExporter.h"
 #include "StorageIdentity.h"
 #include "LibraryAnalysisService.h"
@@ -640,8 +639,6 @@ int main(int argc, char *argv[])
     BatchAnalysisService batchAnalysis(&settings, &analysisStore,
                                        &projectProfile, &paperSource,
                                        &analysisList);
-    CompareService compareService(&settings, &analysisStore, &projectController,
-                                  &projectProfile);
     LibraryAnalysisService libraryAnalysis(&settings, &analysisStore,
                                            &projectController, &projectProfile);
 
@@ -682,8 +679,7 @@ int main(int argc, char *argv[])
         taskManager.saveInterrupted();
     });
     AnalysisExporter analysisExporter(&analysisStore, &projectController,
-                                      &projectProfile, &libraryAnalysis,
-                                      &compareService);
+                                      &projectProfile, &libraryAnalysis);
 
     // Auto-segmentation is a Settings switch, but PaperController must not
     // depend on Settings (it predates it and is constructed first), so the
@@ -769,7 +765,6 @@ int main(int argc, char *argv[])
     analysisService.setTasks(&taskManager);
     batchAnalysis.setTasks(&taskManager);
     libraryAnalysis.setTasks(&taskManager);
-    compareService.setTasks(&taskManager);
 
     engine.rootContext()->setContextProperty("paperController", &paperController);
     engine.rootContext()->setContextProperty("pdfSelection", &pdfSelection);
@@ -801,7 +796,6 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("analysis", &analysisService);
     engine.rootContext()->setContextProperty("analysisList", &analysisList);
     engine.rootContext()->setContextProperty("batchAnalysis", &batchAnalysis);
-    engine.rootContext()->setContextProperty("compare", &compareService);
     engine.rootContext()->setContextProperty("research", &libraryAnalysis);
     engine.rootContext()->setContextProperty("exporter", &analysisExporter);
     engine.rootContext()->setContextProperty("tasks", &taskManager);

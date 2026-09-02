@@ -99,7 +99,7 @@ class Settings : public QObject
     // Per-feature model. Translation is the one job with a different shape
     // from the rest: it runs on every paragraph of every paper, so it wants
     // something fast and cheap, while reading a paper closely, chatting about
-    // it and comparing papers all want the best model available. So the main
+    // it all want the best model available. So the main
     // configuration above drives interpretation, chat, summaries and vision,
     // and translation alone can be pointed somewhere else. Every field left
     // blank here falls back to the main configuration, which is what a user

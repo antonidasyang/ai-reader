@@ -16,7 +16,6 @@
 #include "AnalysisService.h"
 #include "BatchAnalysisService.h"
 #include "AnalysisExporter.h"
-#include "CompareService.h"
 #include "LibraryAnalysisService.h"
 #include "AnalysisStore.h"
 #include "AnalysisTypes.h"
@@ -34,7 +33,6 @@
 #include "ProjectProfileController.h"
 #include "Settings.h"
 #include "SyncEngine.h"
-#include "TaskManager.h"
 
 #include <QCoreApplication>
 #include <QDateTime>
@@ -502,89 +500,12 @@ int main(int argc, char **argv)
     check("...and regenerating an interpretation does not touch it",
           analysis.notes().size() == 1);
 
-    // ── §10: comparing papers the reader picked ─────────────────────
-    CompareService compare(&settings, &store, &projects, &profile);
-    // Through the one queue, like every other model call: the row is what
-    // the reader watches while the model writes.
-    TaskManager tasks(&settings);
-    compare.setTasks(&tasks);
-    compare.clearBasket();
-    check("an empty comparison cannot run", !compare.canRun());
+    // The digests every project-wide analysis reads. One per paper, ours
+    // winning over a collaborator's.
     const QList<AnalysisRecord> digests =
         store.paperAnalyses(Analysis::KindQuick);
-    check("there are digests to compare", digests.size() >= 2);
-    for (const AnalysisRecord &d : digests) {
-        if (d.paperId == otherPaper)
-            continue;              // the seeded one has no facets to compare
-        compare.add(d.paperId, d.title, QStringLiteral("worth a look"));
-    }
-    check("papers can be put in the comparison basket", compare.count() >= 2,
-          QStringLiteral("got %1").arg(compare.count()));
-    check("...and the basket knows what is in it",
-          compare.contains(digests.first().paperId)
-              || compare.contains(digests.last().paperId));
-    check("a comparison can run once every paper has been interpreted",
-          compare.canRun());
-
-    compare.compare();
-    check("a comparison is a task the moment it is asked for",
-          compare.busy() && tasks.activeCount() == 1,
-          QStringLiteral("busy=%1 active=%2")
-              .arg(compare.busy()).arg(tasks.activeCount()));
-    const bool compared = waitFor([&] { return compare.hasResult(); }, 60000);
-    check("the comparison came back", compared, compare.lastError());
-    check("...and its task ended with it",
-          !compare.busy() && tasks.activeCount() == 0
-              && tasks.finishedCount() == 1,
-          QStringLiteral("busy=%1 active=%2 finished=%3")
-              .arg(compare.busy()).arg(tasks.activeCount())
-              .arg(tasks.finishedCount()));
-    check("the answer reported its size as it streamed in",
-          compare.receivedBytes() > 0,
-          QStringLiteral("%1 bytes").arg(compare.receivedBytes()));
-    const QVariantMap cres = compare.result();
-    check("it has a row per dimension", cres.value("rows").toList().size() == 2);
-    check("it names what cannot be compared",
-          cres.value("comparability").toList().size() == 1);
-    check("...and says so instead of ranking them",
-          cres.value("ranking").toString().contains(QStringLiteral("cannot")));
-    check("the comparison was filed in the project under its own paper set",
-          store.libraryAnalysis(Analysis::KindCompare,
-                                Analysis::scopeHash(
-                                    [&] {
-                                        QStringList ids;
-                                        for (const QVariant &v : compare.basket())
-                                            ids.append(v.toMap()
-                                                           .value("paperId")
-                                                           .toString());
-                                        return ids;
-                                    }()))
-              .valid);
-
-    // Stopped from the tasks pane: the call ends, the row ends Canceled, and
-    // the answer already on file is left alone.
-    const QString kept = compare.resultUpdatedAt();
-    compare.compare();
-    check("a second run of the same set is one task, not two",
-          compare.busy() && tasks.activeCount() == 1);
-    tasks.cancelAll();
-    check("cancelling from the tasks pane stops the comparison",
-          !compare.busy() && tasks.activeCount() == 0
-              && tasks.finishedCount() == 2,
-          QStringLiteral("busy=%1 active=%2 finished=%3")
-              .arg(compare.busy()).arg(tasks.activeCount())
-              .arg(tasks.finishedCount()));
-    check("...and is not counted as a failure",
-          compare.lastError().isEmpty(), compare.lastError());
-    waitFor([&] { return false; }, 300);   // the aborted reply, if it lands
-    check("...nor does it disturb the comparison on file",
-          compare.hasResult() && compare.resultUpdatedAt() == kept);
-    compare.compare();
-    check("the comparison runs again afterwards",
-          waitFor([&] { return !compare.busy(); }, 60000)
-              && compare.lastError().isEmpty() && tasks.finishedCount() == 3,
-          QStringLiteral("err=%1 finished=%2")
-              .arg(compare.lastError()).arg(tasks.finishedCount()));
+    check("the project holds a digest per interpreted paper", digests.size() >= 2,
+          QStringLiteral("%1 digests").arg(digests.size()));
 
     // A gateway whose model has no tool parser answers 400 to anything
     // carrying `tools`. The interpretation must still land, via prose.
@@ -701,7 +622,7 @@ int main(int argc, char **argv)
           !research.isStale(QStringLiteral("taxonomy")));
 
     // §16: getting it back out.
-    AnalysisExporter exporter(&store, &projects, &profile, &research, &compare);
+    AnalysisExporter exporter(&store, &projects, &profile, &research);
     const QString md = exporter.paperMarkdown(paperA);
     check("a paper exports as Markdown", md.startsWith(QStringLiteral("# ")));
     check("...carrying where each statement came from",
@@ -711,10 +632,6 @@ int main(int argc, char **argv)
           md.contains(QStringLiteral("unverified")));
     check("...and the reader's own notes",
           md.contains(QStringLiteral("sampling rate")));
-    const QString cmd = exporter.comparisonMarkdown();
-    check("a comparison exports as a Markdown table",
-          cmd.contains(QStringLiteral("| ")) &&
-          cmd.contains(QStringLiteral("Not directly comparable")));
     const QString rmd = exporter.projectMarkdown();
     check("the project exports as a report", rmd.contains(QStringLiteral("# ")));
     check("...saying out loud that it describes this library, not the field",
@@ -728,14 +645,11 @@ int main(int argc, char **argv)
     // The point of the whole layer is that the work is done once and the
     // rest of the group has it. That means every object type has to be on
     // the server, not only in this machine's mirror.
-    compare.add(digests.first().paperId, digests.first().title,
-                QStringLiteral("for the record"));
     const bool synced = waitForSync(
         [&] {
             return backend.count(Analysis::TypeProjectProfile) == 1
                    && backend.count(Analysis::TypeLibraryAnalysis) >= 1
-                   && backend.count(Analysis::TypeAnalysisNote) == 1
-                   && backend.count(Analysis::TypeCompareBasket) == 1;
+                   && backend.count(Analysis::TypeAnalysisNote) == 1;
         },
         sync, 15000);
     check("the research profile reaches the project",
@@ -746,10 +660,8 @@ int main(int argc, char **argv)
               .arg(backend.count(Analysis::TypePaperAnalysis)));
     check("the project-wide analyses do",
           backend.count(Analysis::TypeLibraryAnalysis) >= 1);
-    check("a personal note does", backend.count(Analysis::TypeAnalysisNote) == 1);
-    check("and so does the comparison basket, which used to sit in this "
-          "machine's settings file",
-          backend.count(Analysis::TypeCompareBasket) == 1, synced ? "" : "timed out");
+    check("a personal note does", backend.count(Analysis::TypeAnalysisNote) == 1,
+          synced ? "" : "timed out");
     bool flagged = false;
     for (const QJsonObject &item : backend.objectsOfType(QStringLiteral("item")))
         flagged = flagged || item.value(QStringLiteral("toRead")).toBool();

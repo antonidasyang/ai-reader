@@ -90,13 +90,9 @@ void StructuredCall::attempt(int n)
     }
     connect(m_reply, &LlmReply::finished, this,
             &StructuredCall::handleFinished);
-    connect(m_reply, &LlmReply::progressed, this, [this](qint64 bytes) {
-        emit progress(m_bytesBefore + bytes);
-    });
     connect(m_reply, &LlmReply::errorOccurred, this,
             [this](const QString &message) {
                 if (m_reply) {
-                    m_bytesBefore += m_reply->bytesReceived();
                     m_reply->deleteLater();
                     m_reply.clear();
                 }
@@ -125,7 +121,6 @@ void StructuredCall::handleFinished()
         return;
     const QList<ToolCall> calls = reply->toolCalls();
     const QString text = reply->text();
-    m_bytesBefore += reply->bytesReceived();
     reply->deleteLater();
 
     for (const ToolCall &c : calls) {

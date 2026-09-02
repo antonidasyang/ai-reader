@@ -12,7 +12,7 @@ import AiReader
 // showing, so a filtered set could be marked but not read, and a starred
 // paper had nowhere to go. One list solves that by construction: what the
 // filters show is what the batch buttons act on, and every per-paper action
-// — open it, interpret it, close-read it, star it, compare it, set it aside
+// — open it, interpret it, close-read it, star it, set it aside
 // — is on the row itself.
 //
 // The model is AnalysisListModel, not LibraryModel: it carries the same
@@ -26,9 +26,6 @@ Rectangle {
 
     property var searchResults: []
     readonly property bool searching: searchField.text.trim().length > 0
-    // Bumped by every basket change, so a row's ✓ re-evaluates: contains()
-    // is an invokable and notifies nothing on its own.
-    property int compareRevision: 0
 
     function runSearch() {
         searchResults = searching ? search.search(searchField.text) : []
@@ -84,16 +81,6 @@ Rectangle {
         default:                        return ""
         }
     }
-
-    // Put every paper the filters are showing into the comparison basket.
-    function addShownToCompare() {
-        const papers = analysisList.visiblePapers()
-        for (let i = 0; i < papers.length; ++i)
-            compare.add(papers[i].paperId, papers[i].title)
-        root.compareRevision++
-        compareRequested()
-    }
-    signal compareRequested()
 
     ColumnLayout {
         anchors.fill: parent
@@ -321,9 +308,6 @@ Rectangle {
                          (row.paperId && row.paperId.length > 0
                           && paperController.paperId === row.paperId)
                          || paperController.isCurrentFile(row.localPath))
-                    readonly property bool _inCompare:
-                        (root.compareRevision, compare.count,
-                         row.paperId.length > 0 && compare.contains(row.paperId))
 
                     color: _isOpen   ? Theme.activeRow
                          : rowHover.hovered ? Theme.hover
@@ -378,15 +362,6 @@ Rectangle {
                                 font.strikeout: excluded
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
-                            }
-                            Label {
-                                // In the basket, so the reader can see what a
-                                // comparison would be built from without
-                                // opening it.
-                                visible: row._inCompare
-                                text: "⇄"
-                                color: Theme.accent
-                                font.pixelSize: 12
                             }
                             ToolButton {
                                 implicitWidth: 24
@@ -497,9 +472,6 @@ Rectangle {
                     property string deepState: "none"
                     property bool toRead: false
                     property bool excluded: false
-                    readonly property bool inCompare:
-                        (root.compareRevision, compare.count,
-                         paperId.length > 0 && compare.contains(paperId))
 
                     function openFor(id, pid, t, path, state, deep, star, aside) {
                         itemId = id; paperId = pid; rowTitle = t
@@ -540,21 +512,6 @@ Rectangle {
                                                : qsTr("Set aside")
                         onTriggered: analysisList.setExcluded(ctxMenu.itemId,
                                                               !ctxMenu.excluded)
-                    }
-                    MenuItem {
-                        // The comparison used to be reachable only from a ⋯
-                        // menu inside an open paper's interpretation, so
-                        // building a basket of three meant opening three PDFs.
-                        text: ctxMenu.inCompare ? qsTr("Remove from the comparison")
-                                                : qsTr("Add to the comparison")
-                        enabled: ctxMenu.paperId.length > 0
-                        onTriggered: {
-                            if (ctxMenu.inCompare)
-                                compare.removePaper(ctxMenu.paperId)
-                            else
-                                compare.add(ctxMenu.paperId, ctxMenu.rowTitle)
-                            root.compareRevision++
-                        }
                     }
                     MenuSeparator {}
                     MenuItem {
@@ -729,13 +686,6 @@ Rectangle {
                         enabled: analysisList.count > 0
                         onTriggered: analysisList.applyExcluded(
                                          analysisList.visibleItemIds(), true)
-                    }
-                    MenuSeparator {}
-                    MenuItem {
-                        text: qsTr("Compare everything shown (%1)")
-                              .arg(analysisList.count)
-                        enabled: analysisList.count > 1
-                        onTriggered: root.addShownToCompare()
                     }
                     MenuSeparator {}
                     MenuItem {

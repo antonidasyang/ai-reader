@@ -299,7 +299,7 @@ void apply(const Identity &id, const QString &configRoot)
 
     // From here on every default-constructed QSettings in the app -- one
     // each in Settings, Library, Tabs, PaperController, ProjectController,
-    // AuthController, CompareService, LayoutSettings, and a couple in main()
+    // AuthController, LayoutSettings, and a couple in main()
     // -- resolves to the same JSON file instead of the registry or a plist.
     //
     // setDefaultFormat reaches exactly the default-constructed ones, which is

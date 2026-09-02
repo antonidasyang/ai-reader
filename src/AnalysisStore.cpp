@@ -574,34 +574,3 @@ bool AnalysisStore::putNote(const QString &paperId, const QJsonObject &payload)
     emit changed();
     return true;
 }
-
-// ── the comparison basket ────────────────────────────────────────────
-
-QJsonArray AnalysisStore::compareBasket() const
-{
-    const QString project = projectId();
-    if (project.isEmpty())
-        return {};
-    SyncObjectRow row;
-    if (!m_db->getObject(project,
-                         Analysis::compareBasketId(project, userId()), row)
-        || row.deleted)
-        return {};
-    return row.data.value(QStringLiteral("papers")).toArray();
-}
-
-bool AnalysisStore::putCompareBasket(const QJsonArray &papers)
-{
-    if (!canWrite())
-        return false;
-    const QString project = projectId();
-    m_sync->putObject(
-        Analysis::TypeCompareBasket,
-        Analysis::compareBasketId(project, userId()),
-        QJsonObject{{QStringLiteral("author"), userId()},
-                    {QStringLiteral("authorEmail"), userEmail()},
-                    {QStringLiteral("papers"), papers},
-                    {QStringLiteral("updatedAt"), nowIso()}});
-    emit changed();
-    return true;
-}

@@ -16,7 +16,6 @@
 #include "BatchAnalysisService.h"
 #include "ChatContent.h"
 #include "ChatService.h"
-#include "CompareService.h"
 #include "CursorUtil.h"
 #include "FileSyncService.h"
 #include "ImportService.h"
@@ -298,13 +297,10 @@ int main(int argc, char **argv)
     BatchAnalysisService batchAnalysis(&settings, &analysisStore,
                                        &projectProfile, &paperSource,
                                        &analysisList);
-    CompareService compareService(&settings, &analysisStore, &projectController,
-                                  &projectProfile);
     LibraryAnalysisService libraryAnalysis(&settings, &analysisStore,
                                            &projectController, &projectProfile);
     AnalysisExporter analysisExporter(&analysisStore, &projectController,
-                                      &projectProfile, &libraryAnalysis,
-                                      &compareService);
+                                      &projectProfile, &libraryAnalysis);
 
     QQmlApplicationEngine engine;
     auto *ctx = engine.rootContext();
@@ -338,7 +334,6 @@ int main(int argc, char **argv)
     ctx->setContextProperty("analysis", &analysisService);
     ctx->setContextProperty("analysisList", &analysisList);
     ctx->setContextProperty("batchAnalysis", &batchAnalysis);
-    ctx->setContextProperty("compare", &compareService);
     ctx->setContextProperty("research", &libraryAnalysis);
     ctx->setContextProperty("exporter", &analysisExporter);
     TaskManager taskManager(&settings);
@@ -362,8 +357,7 @@ int main(int argc, char **argv)
     pump(300);
 
     // A library with no papers builds no row delegate, and the row is where
-    // nearly all of LibraryPane now lives -- and CompareDialog now picks its
-    // papers from the same library, so it is seeded before the dialogs too: the state dot, the star, the
+    // nearly all of LibraryPane now lives: the state dot, the star, the
     // relevance and advice chips, the close-reading chip, the one-liner and
     // the per-paper menu. Seeded for the same reason the layout presets and
     // the task rows above are -- an empty list would exercise none of it.
@@ -450,7 +444,6 @@ int main(int argc, char **argv)
         QStringLiteral("MembersDialog"),    QStringLiteral("ProjectSettingsDialog"),
         QStringLiteral("ProjectProfileDialog"),
         QStringLiteral("VisionDialog"),     QStringLiteral("ChangelogDialog"),
-        QStringLiteral("CompareDialog"),
         QStringLiteral("QuitTasksDialog"), QStringLiteral("ResumeTasksDialog"),
         QStringLiteral("SaveLayoutDialog"), QStringLiteral("ManageLayoutsDialog"),
     };
