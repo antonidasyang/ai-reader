@@ -1,5 +1,34 @@
 # AI Reader changelog
 
+## v1.3.28 — 2026-09-02
+
+### The comparison is a task, and says what it is doing
+- Comparing papers is one model call that can take a minute or two, and
+  the only sign of it was a spinner the size of a letter beside the button.
+  It is a task now, like every other model call: it queues in the one
+  manager, shows in the tasks pane as 论文对比 with how long it has been
+  running, and can be stopped from there. The line beside the Compare
+  button says the same thing while it runs — waiting for a slot, waiting
+  for the model's first words, or how much of the answer has arrived so
+  far — because the answer is a single structured call and nothing of it
+  is visible until it is complete.
+- A comparison started in one project is cancelled when the reader
+  switches to another, rather than filing its answer under the wrong one.
+- A dead Compare button now says why. It was disabled without a word when
+  one of the ticked papers had no interpretation, or the quick read of one
+  had given up for lack of text, or no model was configured; the line
+  beside it names the reason. And ticking papers in a project the reader
+  may only view no longer leaves the button dead: it used to learn that
+  the basket had changed only from a store write that never happened.
+
+### Tasks beside Settings; the prompts inside it
+- The tasks button moved from the pane group to the app's own group at
+  the right end of the toolbar, left of Settings, where the running count
+  cannot be scrolled out of sight while something is running.
+- The Prompts button and its dialog are gone. The four system prompts are
+  a page of the Settings dialog now, with the same editors, and a
+  "Restore built-in" button per prompt in place of the old dialog's Reset.
+
 ## v1.3.27 — 2026-09-01
 
 ### The comparison picks its papers where it compares them

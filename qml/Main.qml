@@ -264,11 +264,6 @@ ApplicationWindow {
         anchors.centerIn: Overlay.overlay
     }
 
-    PromptsDialog {
-        id: promptsDialog
-        anchors.centerIn: Overlay.overlay
-    }
-
     WelcomeWizard {
         id: welcomeWizard
     }
@@ -539,7 +534,7 @@ ApplicationWindow {
             {
                 target: settingsBtn,
                 title: qsTr("8 · Configure your LLM"),
-                body: qsTr("Open <b>Settings…</b> to add a model and API key (Anthropic Claude or any OpenAI-compatible endpoint). Use <b>Prompts…</b> to customise system prompts. Re-open this tour any time from the <b>?</b> button.")
+                body: qsTr("Open <b>Settings…</b> to add a model and API key (Anthropic Claude or any OpenAI-compatible endpoint). Its <b>Prompts</b> page holds the system prompts, if you want to change what the model is told. Re-open this tour any time from the <b>?</b> button.")
             }
         ]
     }
@@ -1282,22 +1277,6 @@ ApplicationWindow {
                         researchPane.visible = !researchPane.visible
                     }
                 }
-                ToolIcon {
-                    icon.source: "qrc:/icons/pane-tasks.svg"
-                    checkable: true
-                    // Bound, not assigned: a click writes `checked` itself, and a
-                    // plain binding would not survive that -- the button would stop
-                    // following the pane the moment anything else showed it.
-                    Binding on checked { value: tasksPane.visible; restoreMode: Binding.RestoreNone }
-                    // The count is the point when something is running: it is
-                    // the only place the toolbar admits the app is busy.
-                    display: tasks.activeCount > 0 ? AbstractButton.TextBesideIcon
-                                                   : AbstractButton.IconOnly
-                    text: tasks.activeCount > 0 ? tasks.activeCount : ""
-                    name: window.paneLabels.tasks
-                    tip: qsTr("Everything running, and how far along")
-                    onClicked: tasksPane.visible = !tasksPane.visible
-                }
                 ToolButton {
                     // The last entry in the pane group, because it is about all
                     // of them at once: the arrangement the other buttons make,
@@ -1558,10 +1537,25 @@ ApplicationWindow {
 
             ToolSeparator {}
             ToolIcon {
-                icon.source: "qrc:/icons/prompts.svg"
-                name: qsTr("Prompts")
-                tip: qsTr("What the model is told")
-                onClicked: promptsDialog.open()
+                // The tasks pane is about the app, not about any one paper,
+                // so its button lives with the app's own buttons -- and,
+                // outside the scrolling stretch, the running count is never
+                // scrolled out of sight while something is running.
+                id: tasksToggleBtn
+                icon.source: "qrc:/icons/pane-tasks.svg"
+                checkable: true
+                // Bound, not assigned: a click writes `checked` itself, and a
+                // plain binding would not survive that -- the button would stop
+                // following the pane the moment anything else showed it.
+                Binding on checked { value: tasksPane.visible; restoreMode: Binding.RestoreNone }
+                // The count is the point when something is running: it is
+                // the only place the toolbar admits the app is busy.
+                display: tasks.activeCount > 0 ? AbstractButton.TextBesideIcon
+                                               : AbstractButton.IconOnly
+                text: tasks.activeCount > 0 ? tasks.activeCount : ""
+                name: window.paneLabels.tasks
+                tip: qsTr("Everything running, and how far along")
+                onClicked: tasksPane.visible = !tasksPane.visible
             }
             ToolIcon {
                 id: settingsBtn

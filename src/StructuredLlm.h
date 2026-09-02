@@ -46,6 +46,10 @@ public:
 signals:
     void succeeded(const QJsonObject &result);
     void failed(const QString &error);
+    // Bytes of answer received so far, across attempts. The answer is a
+    // tool call, so until it is complete there is nothing else to show for
+    // a model that is taking its time.
+    void progress(qint64 bytes);
 
 private:
     StructuredCall(LlmClient *client, const Request &req, QObject *parent);
@@ -62,5 +66,6 @@ private:
     QPointer<LlmReply> m_reply;
     Request m_req;
     int m_attempt = 0;
+    qint64 m_bytesBefore = 0;   // what the earlier attempt(s) brought in
     bool m_done = false;
 };

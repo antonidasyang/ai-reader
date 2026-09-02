@@ -29,6 +29,21 @@ public:
         m_server.listen(QHostAddress::LocalHost, 0);
     }
 
+    // The sockets are the server's children and outlive m_buf, which is
+    // declared after it: their disconnected() slot then removed a key from
+    // a hash that was already gone, and every run ended in a segfault after
+    // its last check had passed. Taken down first, with their slots
+    // detached, while everything they reach is still alive.
+    ~FakeLlm() override
+    {
+        for (QTcpSocket *s : m_server.findChildren<QTcpSocket *>()) {
+            s->disconnect(this);
+            s->abort();
+            delete s;
+        }
+        m_server.close();
+    }
+
     QString baseUrl() const
     {
         return QStringLiteral("http://127.0.0.1:%1").arg(m_server.serverPort());

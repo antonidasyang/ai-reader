@@ -49,6 +49,12 @@ public:
     bool isFinished() const { return m_finished; }
     QString errorString() const { return m_error; }
     QList<ToolCall> toolCalls() const { return m_toolCalls; }
+    // Bytes of the response body received so far. A structured answer
+    // arrives as a tool call whose arguments are not text, so nothing
+    // reaches chunkReceived() until the call is complete; this is the only
+    // way to tell a model that is still writing from a gateway that has
+    // gone quiet.
+    qint64 bytesReceived() const { return m_bytesReceived; }
 
     // Used by client implementations.
     void appendChunk(const QString &chunk);
@@ -62,11 +68,14 @@ public slots:
 
 signals:
     void chunkReceived(const QString &chunk);
+    // More of the body has arrived (see bytesReceived()).
+    void progressed(qint64 bytes);
     void finished();
     void errorOccurred(const QString &message);
 
 private:
     QPointer<QNetworkReply> m_networkReply;
+    qint64 m_bytesReceived = 0;
     QString m_text;
     QString m_error;
     QList<ToolCall> m_toolCalls;

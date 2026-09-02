@@ -66,6 +66,17 @@ void LlmReply::setError(const QString &message)
 void LlmReply::attachNetworkReply(QNetworkReply *reply)
 {
     m_networkReply = reply;
+    if (!reply)
+        return;
+    // Reported as it streams, whatever the body is made of. The total is -1
+    // for a chunked response, which every streamed answer is.
+    connect(reply, &QNetworkReply::downloadProgress, this,
+            [this](qint64 received, qint64) {
+                if (received <= m_bytesReceived)
+                    return;
+                m_bytesReceived = received;
+                emit progressed(received);
+            });
 }
 
 LlmClient::LlmClient(QObject *parent)

@@ -41,6 +41,7 @@ enum class Kind {
     DeepInterpret,    // the nine close-reading modules
     BatchInterpret,   // a project's papers, one after another
     LibraryAnalysis,  // one project-wide question
+    Compare,          // the papers the reader picked, side by side
     Other,
 };
 Q_ENUM_NS(Kind)

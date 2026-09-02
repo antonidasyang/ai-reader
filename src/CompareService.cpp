@@ -9,9 +9,13 @@
 #include "ProjectProfileController.h"
 #include "Settings.h"
 #include "StructuredLlm.h"
+#include "TaskManager.h"
+#include "TaskTypes.h"
 
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QLocale>
+#include <QTimer>
 #include <QVariantMap>
 
 CompareService::CompareService(Settings *settings, AnalysisStore *store,
@@ -26,6 +30,10 @@ CompareService::CompareService(Settings *settings, AnalysisStore *store,
     , m_clients(settings, this)
 {
     connect(m_projects, &ProjectController::currentChanged, this, [this]() {
+        // A comparison in flight belongs to the project it was started in;
+        // its answer would otherwise be filed under whichever project the
+        // reader switched to.
+        cancel();
         m_basket.clear();
         m_result = QJsonObject();
         load();
@@ -41,7 +49,46 @@ CompareService::CompareService(Settings *settings, AnalysisStore *store,
             emit basketChanged();
         emit stateChanged();
     });
+    // Whether it can run depends on there being a model to run on, and the
+    // button that asks used to find out only on the next store change.
+    connect(m_settings, &Settings::configurationChanged, this,
+            &CompareService::stateChanged);
     load();
+}
+
+void CompareService::setTasks(TaskManager *tasks)
+{
+    m_tasks = tasks;
+    if (!m_tasks)
+        return;
+
+    // A task stopped while it was still queued never calls its stop callback
+    // -- there was nothing to stop -- so this is the only word the service
+    // gets that the id it is holding is dead.
+    connect(m_tasks, &TaskManager::taskFinished, this,
+            [this](const QString &id, bool, const QString &) {
+                if (id.isEmpty() || id != m_taskId)
+                    return;
+                m_taskId.clear();
+                abortCall();
+                emit stateChanged();
+            });
+
+    // The basket is stored with the project, so a comparison the last
+    // session was still waiting for only means anything if the reader is
+    // back in that project with the same papers picked.
+    m_tasks->registerResumer(
+        Tasks::Kind::Compare, [this](const QJsonObject &resume) {
+            if (resume.value(QStringLiteral("projectId")).toString()
+                != m_store->projectId())
+                return false;
+            if (resume.value(QStringLiteral("scope")).toString() != scopeKey())
+                return false;
+            if (busy() || !canRun())
+                return false;
+            compare();
+            return busy();
+        });
 }
 
 // ── the basket ───────────────────────────────────────────────────────
@@ -79,6 +126,11 @@ void CompareService::add(const QString &paperId, const QString &title,
     m_basket.append(e);
     save();
     emit basketChanged();
+    // canRun moved with the basket. The store's own change signal used to
+    // be relied on for this, and a store that cannot be written to -- a
+    // project the reader may only view -- never sent one, which left the
+    // Compare button dead with two papers ticked.
+    emit stateChanged();
 }
 
 void CompareService::removePaper(const QString &paperId)
@@ -88,6 +140,7 @@ void CompareService::removePaper(const QString &paperId)
             m_basket.removeAt(i);
             save();
             emit basketChanged();
+            emit stateChanged();
             return;
         }
     }
@@ -109,6 +162,7 @@ void CompareService::clearBasket()
     m_basket.clear();
     save();
     emit basketChanged();
+    emit stateChanged();
 }
 
 QString CompareService::scopeKey() const
@@ -168,19 +222,34 @@ void CompareService::save()
 
 // ── the comparison ───────────────────────────────────────────────────
 
-bool CompareService::canRun() const
+QString CompareService::blocker() const
 {
     if (!m_settings || !m_settings->isConfigured())
-        return false;
+        return tr("No model is configured — add one in Settings first.");
     if (m_basket.size() < 2)
-        return false;
+        return QString();   // the dialog counts these itself
     // Every paper in the basket needs an interpretation: the comparison is
-    // built out of those, not out of the PDFs.
+    // built out of those, not out of the PDFs. One that gave up -- too
+    // little text, or the model failed -- has nothing to put in a cell.
+    int missing = 0;
     for (const Entry &e : m_basket) {
-        if (!m_store->paperAnalysis(e.paperId, Analysis::KindQuick).valid)
-            return false;
+        const AnalysisRecord rec =
+            m_store->paperAnalysis(e.paperId, Analysis::KindQuick);
+        if (!rec.valid || rec.status == Analysis::StatusInsufficient
+            || rec.status == Analysis::StatusFailed || rec.payload.isEmpty())
+            ++missing;
     }
-    return true;
+    if (missing == 1)
+        return tr("One of the picked papers has no interpretation yet.");
+    if (missing > 1)
+        return tr("%1 of the picked papers have no interpretation yet.")
+            .arg(missing);
+    return QString();
+}
+
+bool CompareService::canRun() const
+{
+    return m_basket.size() >= 2 && blocker().isEmpty();
 }
 
 void CompareService::loadStored()
@@ -206,16 +275,77 @@ void CompareService::loadStored()
 
 void CompareService::compare()
 {
-    if (m_call)
+    if (busy())
         return;
     if (!canRun()) {
         setError(m_basket.size() < 2
                      ? tr("Put at least two papers in the comparison.")
-                     : tr("Every paper in the comparison needs an "
-                          "interpretation first."));
+                     : blocker());
         return;
     }
     setError(QString());
+    setReceived(0);
+
+    if (!m_tasks) {
+        startCall();
+        return;
+    }
+
+    Tasks::Request req;
+    req.kind = Tasks::Kind::Compare;
+    req.title = tr("Compare papers");
+    req.projectId = m_store->projectId();
+    const QString scope = scopeKey();
+    // Project work, not one paper's: the key names the project and the set
+    // of papers, so the same comparison is never asked for twice at once.
+    req.exclusiveKey = QStringLiteral("compare|") + req.projectId + QChar('|')
+                       + scope;
+    req.steps = 1;
+    req.resume = QJsonObject{{QStringLiteral("projectId"), req.projectId},
+                             {QStringLiteral("scope"), scope}};
+
+    const QString project = req.projectId;
+    const QString id = m_tasks->submit(
+        req,
+        // submit() may call this before it returns; the hop through the
+        // event loop keeps the id ahead of anything that reports against it,
+        // and is where a task that waited out a project switch is dropped.
+        [this, project, scope] {
+            QTimer::singleShot(0, this, [this, project, scope] {
+                if (m_taskId.isEmpty())
+                    return;   // cancelled while it waited
+                if (project != m_store->projectId() || scope != scopeKey()) {
+                    // The reader is somewhere else now, or changed the set
+                    // while it waited; nothing went wrong here.
+                    cancelTask();
+                    emit stateChanged();
+                    return;
+                }
+                startCall();
+            });
+        },
+        [this] {
+            // The pane's stop button. The row is already marked; only the
+            // call is ours to end.
+            m_taskId.clear();
+            abortCall();
+            emit stateChanged();
+        });
+    if (id.isEmpty()) {
+        // The manager already holds this exact comparison. It cannot be
+        // ours -- busy() would have said so -- so say what happened rather
+        // than answering the click with nothing.
+        setError(tr("A comparison of these papers is already running."));
+        return;
+    }
+    m_taskId = id;
+    emit stateChanged();
+}
+
+void CompareService::startCall()
+{
+    if (m_call)
+        return;
 
     QJsonArray digests;
     QStringList notes;
@@ -245,8 +375,18 @@ void CompareService::compare()
     req.temperature = 0.1;
 
     const QString scope = scopeKey();
+    const int count = m_basket.size();
     m_call = StructuredCall::start(m_client, req, this);
+    if (m_tasks && !m_taskId.isEmpty()) {
+        m_tasks->setProgress(m_taskId, 0, 1);
+        m_tasks->setNote(m_taskId,
+                         tr("%1 interpretations sent; waiting for the model")
+                             .arg(count));
+    }
     emit stateChanged();
+
+    connect(m_call, &StructuredCall::progress, this,
+            [this](qint64 bytes) { setReceived(bytes); });
     connect(m_call, &StructuredCall::succeeded, this,
             [this, scope](const QJsonObject &result) {
                 m_call.clear();
@@ -267,22 +407,66 @@ void CompareService::compare()
                 m_resultUpdatedAt =
                     m_store->libraryAnalysis(Analysis::KindCompare, scope)
                         .updatedAt;
+                finishTask(true);
                 emit resultChanged();
                 emit stateChanged();
             });
     connect(m_call, &StructuredCall::failed, this, [this](const QString &e) {
         m_call.clear();
         setError(e);
+        finishTask(false, e);
         emit stateChanged();
     });
 }
 
 void CompareService::cancel()
 {
-    if (m_call) {
-        m_call->abort();
-        m_call.clear();
-        emit stateChanged();
+    if (!busy())
+        return;
+    abortCall();
+    cancelTask();
+    emit stateChanged();
+}
+
+void CompareService::abortCall()
+{
+    if (!m_call)
+        return;
+    m_call->abort();
+    m_call.clear();
+}
+
+void CompareService::finishTask(bool ok, const QString &error)
+{
+    // Taken out first: a cancel and an answer can arrive together.
+    const QString id = m_taskId;
+    m_taskId.clear();
+    if (id.isEmpty() || !m_tasks)
+        return;
+    m_tasks->finish(id, ok, error);
+}
+
+void CompareService::cancelTask()
+{
+    const QString id = m_taskId;
+    m_taskId.clear();
+    if (id.isEmpty() || !m_tasks)
+        return;
+    m_tasks->markCanceled(id);
+}
+
+void CompareService::setReceived(qint64 bytes)
+{
+    if (bytes == m_receivedBytes)
+        return;
+    m_receivedBytes = bytes;
+    emit progressChanged();
+    if (m_tasks && !m_taskId.isEmpty() && bytes > 0) {
+        // Rounded to the kilobyte, so the row is not repainted on every
+        // packet. setNote() drops an unchanged line on its own.
+        m_tasks->setNote(m_taskId,
+                         tr("the model is writing — %1 received so far")
+                             .arg(QLocale().formattedDataSize(bytes, 0)));
     }
 }
 

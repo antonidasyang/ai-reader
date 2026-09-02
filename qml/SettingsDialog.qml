@@ -109,6 +109,19 @@ AppDialog {
                                        ? chatSendKeys.indexOf(settings.chatSendKey) : 0
         chatInputHeightField.value   = settings.chatInputHeight
         remoteModeBox.currentIndex   = Math.max(0, remoteModes.indexOf(settings.remoteMode))
+        // An empty stored prompt means "the built-in one", so the editor
+        // shows that text rather than a blank: what the model is told is
+        // there to be read and edited from, not guessed at.
+        translationPromptEditor.text = settings.translationPrompt.length > 0
+                                       ? settings.translationPrompt
+                                       : translation.defaultSystemPrompt
+        tocPromptEditor.text         = settings.tocPrompt.length > 0
+                                       ? settings.tocPrompt : toc.defaultSystemPrompt
+        visionPromptEditor.text      = settings.visionPrompt.length > 0
+                                       ? settings.visionPrompt : vision.defaultSystemPrompt
+        chatPromptEditor.text        = settings.chatPrompt.length > 0
+                                       ? settings.chatPrompt : chat.defaultSystemPrompt
+        chatIncludeCheck.checked     = settings.chatIncludePaperText
     }
 
     onAccepted: {
@@ -143,6 +156,18 @@ AppDialog {
         settings.chatSendKey        = chatSendKeys[chatSendKeyBox.currentIndex]
         settings.chatInputHeight    = chatInputHeightField.value
         settings.remoteMode         = remoteModes[remoteModeBox.currentIndex]
+        // Text still equal to the built-in default is stored as empty, so
+        // the prompt keeps following the default when a later build
+        // improves it.
+        settings.translationPrompt = translationPromptEditor.text === translation.defaultSystemPrompt
+                                     ? "" : translationPromptEditor.text
+        settings.tocPrompt         = tocPromptEditor.text === toc.defaultSystemPrompt
+                                     ? "" : tocPromptEditor.text
+        settings.visionPrompt      = visionPromptEditor.text === vision.defaultSystemPrompt
+                                     ? "" : visionPromptEditor.text
+        settings.chatPrompt        = chatPromptEditor.text === chat.defaultSystemPrompt
+                                     ? "" : chatPromptEditor.text
+        settings.chatIncludePaperText = chatIncludeCheck.checked
     }
 
     // ── Page scaffolding ────────────────────────────────────────────
@@ -173,17 +198,84 @@ AppDialog {
         }
     }
 
+    // One system prompt: what it is for, the text, and the way back to the
+    // built-in one. The editors used to be a dialog of their own behind a
+    // toolbar button of their own; what the model is told is a setting.
+    component PromptEditor: ColumnLayout {
+        id: editor
+        property string hint: ""
+        property string defaultText: ""
+        property alias text: area.text
+        spacing: Theme.spaceS
+        Label {
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+            font.pixelSize: 11
+            lineHeight: 1.25
+            color: Theme.dimText
+            text: editor.hint
+        }
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            radius: Theme.radiusM
+            color: Theme.fieldBg
+            border.width: 1
+            border.color: area.activeFocus ? Theme.accent : Theme.fieldBorder
+            clip: true
+            Behavior on border.color { ColorAnimation { duration: Theme.animMs } }
+            ScrollView {
+                anchors.fill: parent
+                anchors.margins: 1
+                clip: true
+                TextArea {
+                    id: area
+                    wrapMode: TextEdit.Wrap
+                    font.family: "monospace"
+                    font.pixelSize: 12
+                    color: Theme.text
+                    placeholderTextColor: Theme.dimText
+                    selectionColor: Theme.accent
+                    selectedTextColor: Theme.onAccent
+                    background: null
+                    padding: Theme.spaceM
+                    placeholderText: qsTr("(empty ⇒ built-in default applies on next request)")
+                }
+            }
+        }
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: Theme.spaceM
+            Label {
+                Layout.fillWidth: true
+                font.pixelSize: 11
+                color: Theme.dimText
+                text: area.text === editor.defaultText
+                      ? qsTr("This is the built-in prompt.")
+                      : qsTr("Edited — the built-in prompt is no longer used.")
+            }
+            AppButton {
+                text: qsTr("Restore built-in")
+                enabled: area.text !== editor.defaultText
+                onClicked: area.text = editor.defaultText
+            }
+        }
+    }
+
     // The subject pages all scroll; the keys belong to whichever one is
-    // showing, so they page that page rather than a fixed one.
+    // showing, so they page that page rather than a fixed one. The prompts
+    // page does not scroll -- its editors fill it -- and has no contentItem,
+    // which ScrollKeys treats as nothing to page.
     function currentFlickable() {
         const page = pageStack.children[pageStack.currentIndex]
-        return page ? page.contentItem : null
+        return page && page.contentItem ? page.contentItem : null
     }
 
     readonly property var pageTitles: [
         qsTr("Model"),
         qsTr("Translation"),
         qsTr("Interpretation & chat"),
+        qsTr("Prompts"),
         qsTr("Appearance"),
         qsTr("Documents"),
         qsTr("Updates & privacy")
@@ -643,7 +735,84 @@ AppDialog {
                 }
             }
 
-            // ── 4 · Appearance ──────────────────────────────────────
+            // ── 4 · Prompts ─────────────────────────────────────────
+            // Not a Page: four editors that each want the whole height,
+            // behind tabs, rather than four short boxes down a scroll.
+            Item {
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: Theme.spaceM
+
+                    AppTabBar {
+                        id: promptTabs
+                        Layout.fillWidth: true
+                        spacing: Theme.spaceXs
+                        background: Rectangle {
+                            color: "transparent"
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.bottom: parent.bottom
+                                height: 1
+                                color: Theme.divider
+                            }
+                        }
+                        AppTabButton { text: qsTr("Translation") }
+                        AppTabButton { text: qsTr("TOC") }
+                        AppTabButton { text: qsTr("Vision") }
+                        AppTabButton { text: qsTr("Chat") }
+                    }
+
+                    StackLayout {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        currentIndex: promptTabs.currentIndex
+
+                        PromptEditor {
+                            id: translationPromptEditor
+                            defaultText: translation.defaultSystemPrompt
+                            hint: qsTr("System prompt for per-paragraph translation. " +
+                                       "Variable: {{lang}} → target language. " +
+                                       "Leave empty to use the built-in default.")
+                        }
+                        PromptEditor {
+                            id: tocPromptEditor
+                            defaultText: toc.defaultSystemPrompt
+                            hint: qsTr("System prompt for TOC extraction. " +
+                                       "No variables. Output must be JSON only. " +
+                                       "Leave empty to use the built-in default.")
+                        }
+                        PromptEditor {
+                            id: visionPromptEditor
+                            defaultText: vision.defaultSystemPrompt
+                            hint: qsTr("System prompt for the Read-page-with-vision command. " +
+                                       "No variables. " +
+                                       "Leave empty to use the built-in default.")
+                        }
+                        ColumnLayout {
+                            spacing: Theme.spaceS
+                            PromptEditor {
+                                id: chatPromptEditor
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                defaultText: chat.defaultSystemPrompt
+                                hint: qsTr("System prompt for the Chat pane. The paper file " +
+                                           "name, page count, and (when generated) the TOC " +
+                                           "are appended automatically. No variables. " +
+                                           "Leave empty to use the built-in default.")
+                            }
+                            CheckBox {
+                                id: chatIncludeCheck
+                                Layout.fillWidth: true
+                                text: qsTr("Append full paper text to the chat system prompt " +
+                                           "(truncated to ≈70% of the configured context window)")
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── 5 · Appearance ──────────────────────────────────────
             Page {
                 AppSectionLabel { text: qsTr("Language") }
                 Card {
@@ -719,7 +888,7 @@ AppDialog {
                 }
             }
 
-            // ── 5 · Documents ───────────────────────────────────────
+            // ── 6 · Documents ───────────────────────────────────────
             Page {
                 AppSectionLabel { text: qsTr("Paragraph segmentation") }
                 Card {
@@ -775,7 +944,7 @@ AppDialog {
                 }
             }
 
-            // ── 6 · Updates & privacy ───────────────────────────────
+            // ── 7 · Updates & privacy ───────────────────────────────
             Page {
                 AppSectionLabel { text: qsTr("Updates") }
                 Card {

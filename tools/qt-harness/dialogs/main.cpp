@@ -445,8 +445,8 @@ int main(int argc, char **argv)
     }
 
     const QStringList dialogs = {
-        QStringLiteral("SettingsDialog"),   QStringLiteral("PromptsDialog"),
-        QStringLiteral("PasswordDialog"),   QStringLiteral("MetadataDialog"),
+        QStringLiteral("SettingsDialog"),   QStringLiteral("PasswordDialog"),
+        QStringLiteral("MetadataDialog"),
         QStringLiteral("MembersDialog"),    QStringLiteral("ProjectSettingsDialog"),
         QStringLiteral("ProjectProfileDialog"),
         QStringLiteral("VisionDialog"),     QStringLiteral("ChangelogDialog"),

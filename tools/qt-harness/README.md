@@ -8,7 +8,7 @@ model. One directory per driver.
 cmake --build build                     # the drivers link against these objects
 tools/qt-harness/papersync/run.sh       # ~1 min, 72 checks
 tools/qt-harness/translation/run.sh     # ~30 s, 12 checks
-tools/qt-harness/analysis/run.sh        # ~2 min, 108 checks
+tools/qt-harness/analysis/run.sh        # ~2 min, 124 checks
 tools/qt-harness/dialogs/run.sh         # ~20 s, opens every dialog + the panes
 tools/qt-harness/panes/run.sh           # ~30 s, times a splitter drag
 tools/qt-harness/storage/run.sh         # ~5 s, 50 checks

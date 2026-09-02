@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.3.27 LANGUAGES CXX)
+project(ai-reader VERSION 1.3.28 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -440,7 +440,6 @@ qt_add_qml_module(ai-reader
         qml/SettingsDialog.qml
         qml/TocSidebar.qml
         qml/VisionDialog.qml
-        qml/PromptsDialog.qml
         qml/ChatPane.qml
         qml/FolderPane.qml
         qml/DockGrip.qml
@@ -502,7 +501,6 @@ qt_add_resources(ai-reader "icons"
         resources/icons/pane-research.svg
         resources/icons/pane-tasks.svg
         resources/icons/settings.svg
-        resources/icons/prompts.svg
         resources/icons/help.svg
         resources/icons/changelog.svg
         resources/icons/account.svg

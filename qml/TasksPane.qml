@@ -109,6 +109,7 @@ Rectangle {
         case "deep_interpret":   return Theme.heading
         case "batch_interpret":  return Theme.heading
         case "library_analysis": return Theme.success
+        case "compare":          return Theme.success
         default:                 return Theme.dimText
         }
     }

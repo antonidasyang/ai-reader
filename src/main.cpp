@@ -769,6 +769,7 @@ int main(int argc, char *argv[])
     analysisService.setTasks(&taskManager);
     batchAnalysis.setTasks(&taskManager);
     libraryAnalysis.setTasks(&taskManager);
+    compareService.setTasks(&taskManager);
 
     engine.rootContext()->setContextProperty("paperController", &paperController);
     engine.rootContext()->setContextProperty("pdfSelection", &pdfSelection);

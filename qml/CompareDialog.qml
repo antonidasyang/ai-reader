@@ -44,6 +44,40 @@ AppDialog {
 
     onOpened: compare.loadStored()
 
+    // How long the comparison has been running, for the line beside the
+    // button. It is one model call that can take a couple of minutes, and a
+    // spinner alone reads as "nothing is happening".
+    property int elapsedS: 0
+    Timer {
+        running: compare.busy && root.visible
+        interval: 1000
+        repeat: true
+        onRunningChanged: if (running) root.elapsedS = 0
+        onTriggered: root.elapsedS++
+    }
+    function clock(s) {
+        const m = Math.floor(s / 60)
+        const r = s % 60
+        return m > 0 ? m + ":" + (r < 10 ? "0" : "") + r : r + " s"
+    }
+    function sizeText(bytes) {
+        return bytes < 1024 ? bytes + " B" : Math.round(bytes / 1024) + " KB"
+    }
+    // What the status line says while the comparison runs.
+    readonly property string progressText: {
+        if (!compare.busy)
+            return ""
+        if (compare.queued)
+            return qsTr("Waiting for a free slot behind the other model calls… %1")
+                       .arg(root.clock(root.elapsedS))
+        if (compare.receivedBytes > 0)
+            return qsTr("Comparing %1 papers — the model is writing, %2 so far · %3")
+                       .arg(compare.count).arg(root.sizeText(compare.receivedBytes))
+                       .arg(root.clock(root.elapsedS))
+        return qsTr("Comparing %1 papers — waiting for the model's first words · %2")
+                   .arg(compare.count).arg(root.clock(root.elapsedS))
+    }
+
     FileDialog {
         id: exportCompareDialog
         title: qsTr("Export comparison")
@@ -259,16 +293,24 @@ AppDialog {
             Label {
                 Layout.fillWidth: true
                 wrapMode: Text.Wrap
-                color: compare.lastError.length > 0 ? Theme.danger
-                                                    : Theme.dimText
+                color: compare.lastError.length > 0 && !compare.busy
+                       ? Theme.danger : Theme.dimText
                 font.pixelSize: 12
-                text: compare.lastError.length > 0
-                      ? compare.lastError
-                      : (compare.count === 0
-                         ? ""
-                         : compare.count === 1
-                           ? qsTr("1 paper picked — one more to compare")
-                           : qsTr("%1 papers picked").arg(compare.count))
+                // While it runs: what it is doing and for how long. Before:
+                // the error from last time, or the reason the button is
+                // dead, or how many are picked.
+                text: compare.busy
+                      ? root.progressText
+                      : compare.lastError.length > 0
+                        ? compare.lastError
+                        : (compare.count === 0
+                           ? ""
+                           : compare.count === 1
+                             ? qsTr("1 paper picked — one more to compare")
+                             : compare.blocker.length > 0
+                               ? qsTr("%1 papers picked — %2")
+                                     .arg(compare.count).arg(compare.blocker)
+                               : qsTr("%1 papers picked").arg(compare.count))
             }
         }
 

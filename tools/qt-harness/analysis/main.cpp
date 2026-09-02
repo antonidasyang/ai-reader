@@ -34,6 +34,7 @@
 #include "ProjectProfileController.h"
 #include "Settings.h"
 #include "SyncEngine.h"
+#include "TaskManager.h"
 
 #include <QCoreApplication>
 #include <QDateTime>
@@ -503,6 +504,10 @@ int main(int argc, char **argv)
 
     // ── §10: comparing papers the reader picked ─────────────────────
     CompareService compare(&settings, &store, &projects, &profile);
+    // Through the one queue, like every other model call: the row is what
+    // the reader watches while the model writes.
+    TaskManager tasks(&settings);
+    compare.setTasks(&tasks);
     compare.clearBasket();
     check("an empty comparison cannot run", !compare.canRun());
     const QList<AnalysisRecord> digests =
@@ -522,8 +527,21 @@ int main(int argc, char **argv)
           compare.canRun());
 
     compare.compare();
+    check("a comparison is a task the moment it is asked for",
+          compare.busy() && tasks.activeCount() == 1,
+          QStringLiteral("busy=%1 active=%2")
+              .arg(compare.busy()).arg(tasks.activeCount()));
     const bool compared = waitFor([&] { return compare.hasResult(); }, 60000);
     check("the comparison came back", compared, compare.lastError());
+    check("...and its task ended with it",
+          !compare.busy() && tasks.activeCount() == 0
+              && tasks.finishedCount() == 1,
+          QStringLiteral("busy=%1 active=%2 finished=%3")
+              .arg(compare.busy()).arg(tasks.activeCount())
+              .arg(tasks.finishedCount()));
+    check("the answer reported its size as it streamed in",
+          compare.receivedBytes() > 0,
+          QStringLiteral("%1 bytes").arg(compare.receivedBytes()));
     const QVariantMap cres = compare.result();
     check("it has a row per dimension", cres.value("rows").toList().size() == 2);
     check("it names what cannot be compared",
@@ -542,6 +560,31 @@ int main(int argc, char **argv)
                                         return ids;
                                     }()))
               .valid);
+
+    // Stopped from the tasks pane: the call ends, the row ends Canceled, and
+    // the answer already on file is left alone.
+    const QString kept = compare.resultUpdatedAt();
+    compare.compare();
+    check("a second run of the same set is one task, not two",
+          compare.busy() && tasks.activeCount() == 1);
+    tasks.cancelAll();
+    check("cancelling from the tasks pane stops the comparison",
+          !compare.busy() && tasks.activeCount() == 0
+              && tasks.finishedCount() == 2,
+          QStringLiteral("busy=%1 active=%2 finished=%3")
+              .arg(compare.busy()).arg(tasks.activeCount())
+              .arg(tasks.finishedCount()));
+    check("...and is not counted as a failure",
+          compare.lastError().isEmpty(), compare.lastError());
+    waitFor([&] { return false; }, 300);   // the aborted reply, if it lands
+    check("...nor does it disturb the comparison on file",
+          compare.hasResult() && compare.resultUpdatedAt() == kept);
+    compare.compare();
+    check("the comparison runs again afterwards",
+          waitFor([&] { return !compare.busy(); }, 60000)
+              && compare.lastError().isEmpty() && tasks.finishedCount() == 3,
+          QStringLiteral("err=%1 finished=%2")
+              .arg(compare.lastError()).arg(tasks.finishedCount()));
 
     // A gateway whose model has no tool parser answers 400 to anything
     // carrying `tools`. The interpretation must still land, via prose.
