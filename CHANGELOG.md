@@ -1,5 +1,24 @@
 # AI Reader changelog
 
+## v1.3.30 — 2026-11-06
+
+### Download a paper from its link
+- A new toolbar button, Download from a link, takes an arXiv link
+  (https://arxiv.org/abs/2609.02309, a /pdf/ or /html/ link, a versioned
+  one), a bare arXiv id, arXiv's DOI, a Hugging Face paper page, an
+  OpenReview page, or any direct PDF link. The PDF is saved to
+  Downloads/AiReader, opened in the reader, and — when you can write to the
+  current project — added to its library and uploaded, as if it had been
+  picked from the folder pane. A link already on the clipboard is filled
+  in for you.
+- For an arXiv paper the bibliographic details come from its arXiv id
+  rather than from whatever DOI the first page happens to cite. A paper
+  already downloaded is not fetched a second time.
+- A link to a publisher's or proceedings' landing page usually works too:
+  the page's citation_pdf_url tag is followed to the PDF.
+- Dragging a link from the browser onto the window downloads it the same
+  way.
+
 ## v1.3.29 — 2026-09-02
 
 ### The comparison is gone

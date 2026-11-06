@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.3.29 LANGUAGES CXX)
+project(ai-reader VERSION 1.3.30 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -309,6 +309,8 @@ qt_add_executable(ai-reader
     src/FileSyncService.cpp
     src/ImportService.h
     src/ImportService.cpp
+    src/UrlImportService.h
+    src/UrlImportService.cpp
     src/PayloadCodec.h
     src/AnalysisTypes.h
     src/AnalysisTypes.cpp
@@ -456,6 +458,7 @@ qt_add_qml_module(ai-reader
         qml/TasksPane.qml
         qml/QuitTasksDialog.qml
         qml/ResumeTasksDialog.qml
+        qml/UrlImportDialog.qml
 )
 
 # Compile .ts → .qm and embed under :/i18n so QTranslator::load() in
@@ -473,6 +476,7 @@ qt_add_resources(ai-reader "icons"
     FILES
         resources/icons/pan-hand.svg
         resources/icons/open.svg
+        resources/icons/link.svg
         resources/icons/open-folder.svg
         resources/icons/export.svg
         resources/icons/pan.svg

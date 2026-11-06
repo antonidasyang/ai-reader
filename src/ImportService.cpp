@@ -67,12 +67,32 @@ void ImportService::importFiles(const QStringList &paths)
     step();
 }
 
+void ImportService::importFile(const QString &path, const QString &identifier)
+{
+    const QString local = path.startsWith(QLatin1String("file:"))
+                        ? QUrl(path).toLocalFile() : path;
+    if (local.isEmpty())
+        return;
+    if (!identifier.isEmpty())
+        m_hints.insert(local, identifier);
+    if (!m_running) {
+        importFiles({local});
+        if (!m_running)                 // turned away: no project
+            m_hints.remove(local);
+        return;
+    }
+    m_queue.enqueue(local);
+    ++m_total;
+    emit progressChanged();
+}
+
 void ImportService::cancel()
 {
     if (!m_running)
         return;
     m_cancelled = true;
     m_queue.clear();
+    m_hints.clear();
     setStatus(tr("Import cancelled."));
     // The in-flight upload still reports back and closes out the run;
     // if there is none, close it out now.
@@ -98,6 +118,7 @@ void ImportService::step()
     }
 
     const QString path = m_queue.dequeue();
+    const QString hint = m_hints.take(path);
     const QFileInfo fi(path);
     setStatus(tr("Adding %1 (%2/%3)…")
                   .arg(fi.fileName())
@@ -136,9 +157,13 @@ void ImportService::step()
     // Bibliographic lookup is fire-and-forget: it's a small GET that
     // rewrites the title when it lands, and a paper without a DOI must
     // not hold up the rest of the queue.
-    const QString head = headTextOf(path);
-    if (!head.isEmpty())
-        m_metadata->autoFillFromText(itemId, head);
+    if (!hint.isEmpty()) {
+        m_metadata->resolveIdentifier(itemId, hint);
+    } else {
+        const QString head = headTextOf(path);
+        if (!head.isEmpty())
+            m_metadata->autoFillFromText(itemId, head);
+    }
 
     m_pendingItemId = itemId;
     m_files->uploadPaper(itemId, QUrl::fromLocalFile(fi.absoluteFilePath()).toString());
@@ -151,6 +176,7 @@ void ImportService::finish()
     m_running = false;
     m_pendingItemId.clear();
     m_queue.clear();
+    m_hints.clear();
     if (!m_cancelled) {
         setStatus(tr("Added %1, skipped %2, failed %3.")
                       .arg(m_added).arg(m_skipped).arg(m_failed));

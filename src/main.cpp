@@ -17,6 +17,7 @@
 #include "PaperSyncService.h"
 #include "FileSyncService.h"
 #include "ImportService.h"
+#include "UrlImportService.h"
 #include "AnalysisListModel.h"
 #include "AnalysisService.h"
 #include "BatchAnalysisService.h"
@@ -618,6 +619,9 @@ int main(int argc, char *argv[])
                              &syncEngine);
     ImportService importService(&libraryModel, &fileSync, &metadataService,
                                 &projectController);
+    // "Download from a link": an arXiv / OpenReview / PDF URL becomes a file
+    // on disk, then goes through importService like any other.
+    UrlImportService urlImport(&importService, &projectController);
     // The interpretation layer (§2–§15 of the paper-interpretation spec):
     // AnalysisStore persists every generated reading as an ordinary synced
     // object, and the research profile steers every prompt so the answers
@@ -792,6 +796,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("paperSync", &paperSync);
     engine.rootContext()->setContextProperty("fileSync", &fileSync);
     engine.rootContext()->setContextProperty("importer", &importService);
+    engine.rootContext()->setContextProperty("urlImport", &urlImport);
     engine.rootContext()->setContextProperty("profile", &projectProfile);
     engine.rootContext()->setContextProperty("analysis", &analysisService);
     engine.rootContext()->setContextProperty("analysisList", &analysisList);

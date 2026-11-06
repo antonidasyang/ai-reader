@@ -314,6 +314,10 @@ ApplicationWindow {
     MembersDialog { id: membersDialog }
     ProjectSettingsDialog { id: projectSettingsDialog }
     ProjectProfileDialog { id: projectProfileDialog }
+    UrlImportDialog {
+        id: urlImportDialog
+        onPaperReady: function(fileUrl) { tabs.openPaper(fileUrl) }
+    }
     // Re-segmenting is destructive in a way that is not obvious: the
     // paragraph ids change, so translations keyed to them stop matching and
     // any manual split/merge is gone. Asked once, with the numbers, rather
@@ -1032,6 +1036,13 @@ ApplicationWindow {
                     onClicked: fileDialog.open()
                 }
                 ToolIcon {
+                    id: openUrlBtn
+                    icon.source: "qrc:/icons/link.svg"
+                    name: qsTr("Download from a link")
+                    tip: qsTr("arXiv, OpenReview or any PDF link")
+                    onClicked: urlImportDialog.openWith("")
+                }
+                ToolIcon {
                     id: openFolderBtn
                     icon.source: "qrc:/icons/open-folder.svg"
                     name: qsTr("Open folder")
@@ -1564,8 +1575,18 @@ ApplicationWindow {
             if (drop.hasUrls && drop.urls.length > 0) {
                 for (let i = 0; i < drop.urls.length; ++i) {
                     const u = drop.urls[i].toString()
-                    if (u.toLowerCase().endsWith(".pdf")) {
+                    if (u.startsWith("file:") && u.toLowerCase().endsWith(".pdf")) {
                         tabs.openPaper(drop.urls[i])
+                        drop.accepted = true
+                        return
+                    }
+                }
+                // A link dragged from the browser: download it.
+                for (let j = 0; j < drop.urls.length; ++j) {
+                    const link = drop.urls[j].toString()
+                    if (!link.startsWith("file:") && urlImport.recognises(link)) {
+                        urlImportDialog.openWith(link)
+                        urlImport.fetch(link)
                         drop.accepted = true
                         return
                     }

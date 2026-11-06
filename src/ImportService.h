@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QHash>
 #include <QObject>
 #include <QQueue>
 #include <QString>
@@ -42,6 +43,12 @@ public:
     // `paths` may be filesystem paths or file:// URLs; non-PDFs and
     // unreadable entries are counted as failures, not silently dropped.
     Q_INVOKABLE void importFiles(const QStringList &paths);
+    // One file, e.g. a PDF just downloaded from a link. Joins the run in
+    // progress instead of being turned away. A non-empty `identifier`
+    // ("arXiv:2609.02309", a DOI) is used for the metadata lookup instead of
+    // whatever the first page's text turns up.
+    Q_INVOKABLE void importFile(const QString &path,
+                                const QString &identifier = QString());
     // Stop after the transfer already in flight.
     Q_INVOKABLE void cancel();
 
@@ -67,6 +74,8 @@ private:
     ProjectController *m_projects;
 
     QQueue<QString> m_queue;
+    // path -> identifier, for files that arrived with one.
+    QHash<QString, QString> m_hints;
     // Item whose upload we're waiting on; empty between files.
     QString m_pendingItemId;
     bool m_running = false;

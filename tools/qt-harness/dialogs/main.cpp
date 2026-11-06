@@ -19,6 +19,7 @@
 #include "CursorUtil.h"
 #include "FileSyncService.h"
 #include "ImportService.h"
+#include "UrlImportService.h"
 #include "LayoutPresets.h"
 #include "LayoutSettings.h"
 #include "Library.h"
@@ -285,6 +286,7 @@ int main(int argc, char **argv)
                              &syncEngine);
     ImportService importService(&libraryModel, &fileSync, &metadataService,
                                 &projectController);
+    UrlImportService urlImport(&importService, &projectController);
     AnalysisStore analysisStore(&libraryDb, &projectController, &syncEngine,
                                 &auth);
     ProjectProfileController projectProfile(&analysisStore);
@@ -330,6 +332,7 @@ int main(int argc, char **argv)
     ctx->setContextProperty("paperSync", &paperSync);
     ctx->setContextProperty("fileSync", &fileSync);
     ctx->setContextProperty("importer", &importService);
+    ctx->setContextProperty("urlImport", &urlImport);
     ctx->setContextProperty("profile", &projectProfile);
     ctx->setContextProperty("analysis", &analysisService);
     ctx->setContextProperty("analysisList", &analysisList);
@@ -446,6 +449,7 @@ int main(int argc, char **argv)
         QStringLiteral("VisionDialog"),     QStringLiteral("ChangelogDialog"),
         QStringLiteral("QuitTasksDialog"), QStringLiteral("ResumeTasksDialog"),
         QStringLiteral("SaveLayoutDialog"), QStringLiteral("ManageLayoutsDialog"),
+        QStringLiteral("UrlImportDialog"),
     };
 
     int opened = 0;
