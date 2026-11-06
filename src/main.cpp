@@ -621,7 +621,7 @@ int main(int argc, char *argv[])
                                 &projectController);
     // "Download from a link": an arXiv / OpenReview / PDF URL becomes a file
     // on disk, then goes through importService like any other.
-    UrlImportService urlImport(&importService, &projectController);
+    UrlImportService urlImport(&importService, &projectController, &library);
     // The interpretation layer (§2–§15 of the paper-interpretation spec):
     // AnalysisStore persists every generated reading as an ordinary synced
     // object, and the research profile steers every prompt so the answers

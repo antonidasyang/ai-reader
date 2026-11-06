@@ -1,6 +1,7 @@
 #include "UrlImportService.h"
 
 #include "ImportService.h"
+#include "Library.h"
 #include "ProjectController.h"
 #include "Stall.h"
 
@@ -193,12 +194,17 @@ QString pathFor(const QString &path, const QByteArray &bytes, bool *reused)
 } // namespace
 
 UrlImportService::UrlImportService(ImportService *importer,
-                                   ProjectController *projects, QObject *parent)
+                                   ProjectController *projects,
+                                   Library *library, QObject *parent)
     : QObject(parent)
     , m_importer(importer)
     , m_projects(projects)
-    , m_downloadDir(defaultDownloadDir())
+    , m_library(library)
+    , m_fallbackDir(defaultFallbackDir())
 {
+    if (m_library)
+        connect(m_library, &Library::currentFolderChanged,
+                this, &UrlImportService::downloadFolderChanged);
 }
 
 UrlImportService::Target UrlImportService::resolve(const QString &input)
@@ -264,13 +270,30 @@ UrlImportService::Target UrlImportService::resolve(const QString &input)
     return t;
 }
 
-QString UrlImportService::defaultDownloadDir()
+QString UrlImportService::defaultFallbackDir()
 {
-    QString base = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
-    if (base.isEmpty())
-        base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
-             + QStringLiteral("/downloads");
-    return base + QStringLiteral("/AiReader");
+    QString dir = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+    if (dir.isEmpty())
+        dir = QDir::homePath() + QStringLiteral("/Downloads");
+    return dir;
+}
+
+QString UrlImportService::downloadDir() const
+{
+    if (m_library) {
+        const QString open = m_library->currentFolder();
+        if (!open.isEmpty() && QFileInfo(open).isDir())
+            return QDir::cleanPath(open);
+    }
+    return m_fallbackDir;
+}
+
+void UrlImportService::setFallbackDir(const QString &dir)
+{
+    if (dir == m_fallbackDir)
+        return;
+    m_fallbackDir = dir;
+    emit downloadFolderChanged();
 }
 
 QString UrlImportService::downloadFolder() const

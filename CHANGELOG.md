@@ -1,5 +1,13 @@
 # AI Reader changelog
 
+## v1.3.31 — 2026-11-06
+
+### A downloaded paper goes where your papers are
+- Download from a link now saves into the folder open in the folder pane,
+  so the paper appears in the tree beside the others; with no folder open
+  it goes straight into Downloads (no longer a Downloads/AiReader
+  subfolder). The dialog says which folder it will be.
+
 ## v1.3.30 — 2026-11-06
 
 ### Download a paper from its link

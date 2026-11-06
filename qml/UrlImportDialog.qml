@@ -4,8 +4,9 @@ import QtQuick.Layouts
 import AiReader
 
 // "Download from a link": paste an arXiv / OpenReview / PDF link (or just an
-// arXiv id), and urlImport fetches the PDF into Downloads/AiReader, opens
-// it, and adds it to the current project when there is one to write to.
+// arXiv id), and urlImport fetches the PDF into the folder open in the
+// folder pane (or ~/Downloads when none is), opens it, and adds it to the
+// current project when there is one to write to.
 // The dialog closes itself once the paper is on disk; a failure stays on
 // screen with the reason, so the link can be fixed and tried again.
 AppDialog {
@@ -68,8 +69,9 @@ AppDialog {
         }
         AppHintLabel {
             text: qsTr("An arXiv link or id, a Hugging Face paper page, an OpenReview "
-                       + "link, or any link to a PDF. Saved to %1, and added to the "
-                       + "current project's library when you can write to it.")
+                       + "link, or any link to a PDF. Saved to %1 (the folder open in "
+                       + "the folder pane, or Downloads when none is open), and added "
+                       + "to the current project's library when you can write to it.")
                       .arg(urlImport.downloadFolder)
         }
 

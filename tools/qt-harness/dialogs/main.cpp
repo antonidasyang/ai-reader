@@ -286,7 +286,7 @@ int main(int argc, char **argv)
                              &syncEngine);
     ImportService importService(&libraryModel, &fileSync, &metadataService,
                                 &projectController);
-    UrlImportService urlImport(&importService, &projectController);
+    UrlImportService urlImport(&importService, &projectController, &library);
     AnalysisStore analysisStore(&libraryDb, &projectController, &syncEngine,
                                 &auth);
     ProjectProfileController projectProfile(&analysisStore);

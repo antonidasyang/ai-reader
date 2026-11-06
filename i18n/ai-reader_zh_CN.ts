@@ -7017,27 +7017,27 @@ Click to open this passage.</source>
 <context>
     <name>UrlImportDialog</name>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/UrlImportDialog.qml" line="13"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/UrlImportDialog.qml" line="14"/>
         <source>Download from a link</source>
         <translation>从链接下载</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/UrlImportDialog.qml" line="70"/>
-        <source>An arXiv link or id, a Hugging Face paper page, an OpenReview link, or any link to a PDF. Saved to %1, and added to the current project&apos;s library when you can write to it.</source>
-        <translation>支持 arXiv 链接或编号、Hugging Face 论文页、OpenReview 链接，以及任意 PDF 直链。文件保存到 %1；若你对当前项目有写权限，还会自动加入项目文献库。</translation>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/UrlImportDialog.qml" line="71"/>
+        <source>An arXiv link or id, a Hugging Face paper page, an OpenReview link, or any link to a PDF. Saved to %1 (the folder open in the folder pane, or Downloads when none is open), and added to the current project&apos;s library when you can write to it.</source>
+        <translation>支持 arXiv 链接或编号、Hugging Face 论文页、OpenReview 链接，以及任意 PDF 直链。文件保存到 %1（文件夹面板中当前打开的文件夹；没有打开文件夹时保存到「下载」），若你对当前项目有写权限，还会自动加入项目文献库。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/UrlImportDialog.qml" line="114"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/UrlImportDialog.qml" line="116"/>
         <source>Stop</source>
         <translation>停止</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/UrlImportDialog.qml" line="114"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/UrlImportDialog.qml" line="116"/>
         <source>Close</source>
         <translation>关闭</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/UrlImportDialog.qml" line="119"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/UrlImportDialog.qml" line="121"/>
         <source>Download</source>
         <translation>下载</translation>
     </message>
@@ -7045,62 +7045,62 @@ Click to open this passage.</source>
 <context>
     <name>UrlImportService</name>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="303"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="326"/>
         <source>Not a link I can download from. Paste an arXiv, OpenReview or PDF link, or an arXiv id.</source>
         <translation>无法从这个链接下载。请粘贴 arXiv、OpenReview 或 PDF 链接，或 arXiv 编号。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="334"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="357"/>
         <source>Downloading from %1…</source>
         <translation>正在从 %1 下载…</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="343"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="366"/>
         <source>The file is too large to be a paper (over %1 MB).</source>
         <translation>文件过大，不像是一篇论文（超过 %1 MB）。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="365"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="388"/>
         <source>Nothing at that address (HTTP 404). Check the id or link.</source>
         <translation>该地址不存在（HTTP 404），请检查编号或链接。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="367"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="390"/>
         <source>Download failed (HTTP %1).</source>
         <translation>下载失败（HTTP %1）。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="369"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="392"/>
         <source>Download failed: %1</source>
         <translation>下载失败：%1</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="385"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="408"/>
         <source>That link leads to a web page, not a PDF, and the page doesn&apos;t say where its PDF is.</source>
         <translation>该链接指向的是网页而不是 PDF，且网页中没有标明 PDF 地址。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="393"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="416"/>
         <source>Couldn&apos;t create the folder %1.</source>
         <translation>无法创建文件夹 %1。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="407"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="430"/>
         <source>Couldn&apos;t save the PDF to %1.</source>
         <translation>无法将 PDF 保存到 %1。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="424"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="447"/>
         <source>Saved to %1 and adding it to the library.</source>
         <translation>已保存到 %1，正在加入文献库。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="425"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="448"/>
         <source>Saved to %1.</source>
         <translation>已保存到 %1。</translation>
     </message>
     <message>
-        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="440"/>
+        <location filename="../../../../../../Users/yangxc/codes/ai-reader/src/UrlImportService.cpp" line="463"/>
         <source>Download cancelled.</source>
         <translation>下载已取消。</translation>
     </message>

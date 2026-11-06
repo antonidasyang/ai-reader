@@ -7,6 +7,7 @@
 #include <QUrl>
 
 class ImportService;
+class Library;
 class ProjectController;
 class QNetworkReply;
 
@@ -26,8 +27,9 @@ class QNetworkReply;
 //             tag (which most publishers and proceedings sites carry) is
 //             followed once.
 //
-// Files land in <Downloads>/AiReader. An arXiv paper already downloaded is
-// not fetched again. The arXiv id travels with the file so the metadata
+// Files land in the folder open in the folder pane, so a downloaded paper
+// shows up beside the ones it was found with; with no folder open, in
+// ~/Downloads. An arXiv paper already in that folder is not fetched again. The arXiv id travels with the file so the metadata
 // lookup uses it instead of guessing from the first page's text, where a
 // cited DOI could win.
 class UrlImportService : public QObject
@@ -38,12 +40,14 @@ class UrlImportService : public QObject
     Q_PROPERTY(QString status READ status NOTIFY statusChanged)
     // 0..1 while the size is known, -1 while it isn't.
     Q_PROPERTY(double progress READ progress NOTIFY progressChanged)
-    // Where downloads go, for the dialog to say so.
-    Q_PROPERTY(QString downloadFolder READ downloadFolder CONSTANT)
+    // Where the next download will go, for the dialog to say so.
+    Q_PROPERTY(QString downloadFolder READ downloadFolder NOTIFY downloadFolderChanged)
 
 public:
+    // `library` (the folder pane's) may be null: then it is always the
+    // fallback folder.
     UrlImportService(ImportService *importer, ProjectController *projects,
-                     QObject *parent = nullptr);
+                     Library *library, QObject *parent = nullptr);
 
     bool busy() const { return m_reply != nullptr; }
     QString status() const { return m_status; }
@@ -65,16 +69,18 @@ public:
         QString identifier;  // "arXiv:<id>" for the metadata lookup, or ""
     };
     static Target resolve(const QString &input);
-    // <Downloads>/AiReader unless pointed elsewhere (the harness does, so a
-    // test run never writes into the user's Downloads).
-    QString downloadDir() const { return m_downloadDir; }
-    void setDownloadDir(const QString &dir) { m_downloadDir = dir; }
-    static QString defaultDownloadDir();
+    // The folder pane's open folder, else the fallback.
+    QString downloadDir() const;
+    // ~/Downloads unless pointed elsewhere (the harness does, so a test run
+    // never writes into the user's Downloads).
+    void setFallbackDir(const QString &dir);
+    static QString defaultFallbackDir();
 
 signals:
     void busyChanged();
     void statusChanged();
     void progressChanged();
+    void downloadFolderChanged();
     // `fileUrl` is a file:// URL, ready for tabs.openPaper().
     void downloaded(const QString &fileUrl, bool addedToLibrary);
     void failed(const QString &message);
@@ -89,10 +95,11 @@ private:
 
     ImportService *m_importer;
     ProjectController *m_projects;
+    Library *m_library;
     QNetworkAccessManager m_nam;
     QPointer<QNetworkReply> m_reply;
     Target m_target;
-    QString m_downloadDir;
+    QString m_fallbackDir;
     bool m_mayFollowPage = false;
     QString m_status;
     double m_progress = -1;

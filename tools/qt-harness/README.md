@@ -15,7 +15,7 @@ tools/qt-harness/storage/run.sh         # ~5 s, 50 checks
 tools/qt-harness/tasks/run.sh           # ~20 s, 38 checks
 tools/qt-harness/layout/run.sh          # ~5 s, 62 checks
 tools/qt-harness/login/run.sh           # ~5 s, 14 checks
-tools/qt-harness/urlimport/run.sh       # ~5 s, 44 checks (URLIMPORT_LIVE=1: + one real arXiv download)
+tools/qt-harness/urlimport/run.sh       # ~5 s, 51 checks (URLIMPORT_LIVE=1: + one real arXiv download)
 ```
 
 Exit status is non-zero if anything failed.
@@ -29,7 +29,7 @@ Exit status is non-zero if anything failed.
 | `storage` | where the app keeps things: the D2S/AIReader directories, and the one JSON settings file every QSettings in the app writes to — the '/'-keys nesting and flattening back, types surviving a cold re-read (an int staying an int), an atomic write that a failure leaves untouched, and a damaged file being copied aside rather than silently replaced | a throwaway identity and a scratch root: Qt test mode for the directories, and a registered JSON format under a temp path (the platform-native backend is cfprefsd on macOS and the registry on Windows, neither of which test mode redirects) |
 | `layout` | saved pane arrangements — the JSON they are stored as, widths kept as a share of the window so a layout saved on a 4K screen still fits a laptop, and the account payload they ride in | none: plain settings and arithmetic |
 | `login` | the page the browser is left on after signing in — the one screen of this app that is HTML built by string substitution, where a stray placeholder or an unescaped percent would ship unnoticed | a real request to the app's own loopback server |
-| `urlimport` | "Download from a link" — what a pasted arXiv / Hugging Face / OpenReview / DOI / PDF link resolves to, text that is not a link being refused, a landing page's `citation_pdf_url` followed exactly once, the file name taken from Content-Disposition or the URL, the same bytes reused rather than copied, an arXiv paper already on disk not fetched again, and cancelling mid-transfer | a `QTcpServer` standing in for the web, and a temporary download folder instead of the user's Downloads |
+| `urlimport` | "Download from a link" — what a pasted arXiv / Hugging Face / OpenReview / DOI / PDF link resolves to, text that is not a link being refused, a landing page's `citation_pdf_url` followed exactly once, the file name taken from Content-Disposition or the URL, the same bytes reused rather than copied, an arXiv paper already on disk not fetched again, the file going to the folder pane's open folder or else Downloads, and cancelling mid-transfer | a `QTcpServer` standing in for the web, temporary folders instead of the user's Downloads, and a scratch settings file for the real Library |
 | `tasks` | the one queue every model call now goes through — two runs never on one paper, the concurrency budget, progress and time-left, cancelling, and work interrupted by a close being offered back on the next launch | nothing external: the task callbacks are the test's own lambdas |
 | `analysis` | the interpretation layer — citations checked against the paper, unsupported claims demoted, the research profile reaching the prompt, staleness, storage and attribution, the batch that interprets papers nobody has opened, the nine-module close reading, the category system surviving the reader's edits, and the Markdown export | `common/FakeAnalysisLlm.h` (builds its answer out of the very paragraph markers it was sent) + `common/FakeSync.h` |
 

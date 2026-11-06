@@ -3,12 +3,20 @@
 // a PDF, a landing page that names its PDF in citation_pdf_url, a page that
 // doesn't, a 404, and a server that hands back the same PDF twice.
 //
-// Downloads go to a temporary directory, never the user's Downloads.
+// Where the file goes: the folder open in the folder pane, else Downloads —
+// both temporary directories here, never the user's own. The real Library
+// remembers its folder in the settings file, so that is pointed at a scratch
+// directory before anything is constructed.
 // URLIMPORT_LIVE=1 additionally fetches one real arXiv paper.
 
+#include "Library.h"
+#include "StorageIdentity.h"
 #include "UrlImportService.h"
 
-#include <QCoreApplication>
+#include <QDir>
+#include <QGuiApplication>
+#include <QSettings>
+#include <QStandardPaths>
 #include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
@@ -126,7 +134,27 @@ static void expectArxiv(const QString &input, const QString &pdf,
 
 int main(int argc, char **argv)
 {
-    QCoreApplication app(argc, argv);
+    qputenv("QT_QPA_PLATFORM", "offscreen");
+    QGuiApplication app(argc, argv);
+
+    // ── ISOLATION (see dialogs/main.cpp) ─────────────────────────────
+    QStandardPaths::setTestModeEnabled(true);
+    const QString scratch =
+        QDir::tempPath() + QStringLiteral("/ai-reader-urlimport-harness");
+    QDir(scratch).removeRecursively();
+    StorageIdentity::apply({QStringLiteral("ai-reader-urlimport-test"),
+                            QStringLiteral("ai-reader-urlimport-test.invalid"),
+                            QStringLiteral("UrlImportHarness")},
+                           scratch);
+    {
+        const QSettings probe;
+        const bool safe = probe.fileName().startsWith(scratch)
+                       && probe.format() != QSettings::NativeFormat;
+        check("the harness writes a settings file of its own, not a real one",
+              safe, probe.fileName());
+        if (!safe)
+            return 2;
+    }
 
     // ── What a pasted string means ───────────────────────────────────
     const QString A = QStringLiteral("https://arxiv.org/pdf/2609.02309");
@@ -184,10 +212,18 @@ int main(int argc, char **argv)
         return 2;
     }
     QTemporaryDir tmp;
-    UrlImportService svc(nullptr, nullptr);
-    svc.setDownloadDir(tmp.path() + "/AiReader");
-    check("downloads never default into the test's own Downloads by accident",
-          svc.downloadDir().startsWith(tmp.path()));
+    const QString downloads = tmp.path() + "/Downloads";
+    const QString papers = tmp.path() + "/papers";
+    QDir().mkpath(papers);
+    Library library;
+    UrlImportService svc(nullptr, nullptr, &library);
+    check("the default fallback is the system's Downloads folder",
+          svc.downloadDir() == UrlImportService::defaultFallbackDir(),
+          svc.downloadDir());
+    svc.setFallbackDir(downloads);
+    check("with no folder open, downloads go to Downloads",
+          library.currentFolder().isEmpty() && svc.downloadDir() == downloads,
+          svc.downloadDir());
 
     auto readAll = [](const QString &p) {
         QFile f(p);
@@ -204,7 +240,7 @@ int main(int argc, char **argv)
     o = run(svc, web.base() + "/files/attention.pdf");
     check("the same PDF again reuses the file instead of making a copy",
           o.ok && QFileInfo(o.path).fileName() == "attention.pdf"
-              && !QFile::exists(tmp.path() + "/AiReader/attention (2).pdf"),
+              && !QFile::exists(downloads + "/attention (2).pdf"),
           o.path);
     check("(it was still asked for — a generic link can change)", web.hits == before + 1);
 
@@ -232,7 +268,7 @@ int main(int argc, char **argv)
           !o.ok && !svc.busy() && !o.message.isEmpty(), o.message);
 
     // An arXiv file already on disk is the same paper: no request at all.
-    QFile seeded(tmp.path() + "/AiReader/arXiv-2609.02309.pdf");
+    QFile seeded(downloads + "/arXiv-2609.02309.pdf");
     check("seed an earlier download", seeded.open(QIODevice::WriteOnly));
     seeded.write(kPdf);
     seeded.close();
@@ -256,6 +292,31 @@ int main(int argc, char **argv)
               !svc.busy() && failed == 0 && done == 0, svc.status());
         QObject::disconnect(c1);
         QObject::disconnect(c2);
+    }
+
+    // ── With a folder open in the folder pane ────────────────────────
+    {
+        int changed = 0;
+        auto c = QObject::connect(&svc, &UrlImportService::downloadFolderChanged,
+                                  [&] { ++changed; });
+        library.openFolder(QUrl::fromLocalFile(papers));
+        check("opening a folder moves the download target there, and says so",
+              svc.downloadDir() == QDir::cleanPath(papers) && changed == 1,
+              svc.downloadDir());
+        o = run(svc, web.base() + "/download?id=7");
+        check("...and the PDF lands in that folder",
+              o.ok && QFileInfo(o.path).absolutePath() == QFileInfo(papers).absoluteFilePath(),
+              o.path + o.message);
+        // The copy seeded in Downloads above is not in this folder, so this
+        // has to start a real download (cancelled at once: no network here).
+        svc.fetch(QStringLiteral("https://arxiv.org/abs/2609.02309"));
+        check("an arXiv paper only in Downloads is not 'already downloaded' here",
+              svc.busy());
+        svc.cancel();
+        library.close();
+        check("closing the folder sends downloads back to Downloads",
+              svc.downloadDir() == downloads && changed == 2, svc.downloadDir());
+        QObject::disconnect(c);
     }
 
     if (qEnvironmentVariableIntValue("URLIMPORT_LIVE")) {
