@@ -16,3 +16,6 @@ CMakeUserPresets.json
 
 # Internal deployment notes: server IPs and credentials, never published.
 docs/软件发布上传指南.md
+
+# Local Claude Code settings and notes.
+.claude/
