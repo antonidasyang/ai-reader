@@ -1,5 +1,11 @@
 # AI Reader changelog
 
+## v1.3.32 — 2026-11-06
+
+### One word for a project
+- The Chinese hint in Download from a link called a project 项目; everywhere
+  else in the app it is 课题, and now so is this.
+
 ## v1.3.31 — 2026-11-06
 
 ### A downloaded paper goes where your papers are

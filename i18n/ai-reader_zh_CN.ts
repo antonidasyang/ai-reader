@@ -7024,7 +7024,7 @@ Click to open this passage.</source>
     <message>
         <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/UrlImportDialog.qml" line="71"/>
         <source>An arXiv link or id, a Hugging Face paper page, an OpenReview link, or any link to a PDF. Saved to %1 (the folder open in the folder pane, or Downloads when none is open), and added to the current project&apos;s library when you can write to it.</source>
-        <translation>支持 arXiv 链接或编号、Hugging Face 论文页、OpenReview 链接，以及任意 PDF 直链。文件保存到 %1（文件夹面板中当前打开的文件夹；没有打开文件夹时保存到「下载」），若你对当前项目有写权限，还会自动加入项目文献库。</translation>
+        <translation>支持 arXiv 链接或编号、Hugging Face 论文页、OpenReview 链接，以及任意 PDF 直链。文件保存到 %1（文件夹面板中当前打开的文件夹；没有打开文件夹时保存到「下载」），若你对当前课题有写权限，还会自动加入课题文献库。</translation>
     </message>
     <message>
         <location filename="../../../../../../Users/yangxc/codes/ai-reader/qml/UrlImportDialog.qml" line="116"/>
