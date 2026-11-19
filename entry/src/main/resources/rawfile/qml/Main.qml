@@ -16,16 +16,40 @@ ApplicationWindow {
     // after, so the first frame is already the right shape.
     visible: false
 
-    // HarmonyOS's platform theme gives tool buttons a palette of their own
-    // with a nearly transparent button colour (#05182431) and a translucent
-    // accent for text, matching its flat ArkUI toolbars. Fusion can't draw a
-    // checked or pressed button from a translucent colour: every toggled
-    // pane button came out as an opaque dark slab. Setting the two roles on
-    // the window makes every control inherit them instead of the theme's
-    // per-type values. Desktop platforms keep their palettes untouched.
+    // HarmonyOS's platform theme hands each control type a palette of its
+    // own, tuned for translucent ArkUI surfaces: tool buttons get a button
+    // colour at 2% alpha, menus a 20%-white base and 40% text, tab bars and
+    // check boxes translucent window/text, group boxes a transparent window
+    // -- and the window palette itself has alternateBase and midlight set to
+    // the text colour. Fusion draws from those roles as if they were opaque,
+    // so checked tool buttons came out as dark slabs and menus as see-through
+    // panes. Setting every role Fusion paints with on the window makes all
+    // controls and popups inherit these instead of the per-type values.
+    // Desktop platforms keep their palettes untouched.
     readonly property bool onHarmony: Qt.platform.os === "harmonyos"
+    Binding { when: window.onHarmony; target: window.palette; property: "window"; value: Theme.dialogBg }
+    Binding { when: window.onHarmony; target: window.palette.active; property: "windowText"; value: Theme.text }
+    Binding { when: window.onHarmony; target: window.palette.inactive; property: "windowText"; value: Theme.text }
+    Binding { when: window.onHarmony; target: window.palette; property: "base"; value: Theme.dialogBg }
+    Binding { when: window.onHarmony; target: window.palette; property: "alternateBase"; value: Theme.cardBg }
+    Binding { when: window.onHarmony; target: window.palette.active; property: "text"; value: Theme.text }
+    Binding { when: window.onHarmony; target: window.palette.inactive; property: "text"; value: Theme.text }
     Binding { when: window.onHarmony; target: window.palette; property: "button"; value: Theme.buttonBg }
-    Binding { when: window.onHarmony; target: window.palette; property: "buttonText"; value: Theme.text }
+    Binding { when: window.onHarmony; target: window.palette.active; property: "buttonText"; value: Theme.text }
+    Binding { when: window.onHarmony; target: window.palette.inactive; property: "buttonText"; value: Theme.text }
+    Binding { when: window.onHarmony; target: window.palette; property: "highlight"; value: Theme.accent }
+    Binding { when: window.onHarmony; target: window.palette; property: "highlightedText"; value: Theme.onAccent }
+    // light..dark: QPalette's own derivation from the button colour.
+    Binding { when: window.onHarmony; target: window.palette; property: "light"; value: Qt.lighter(Theme.buttonBg, 1.5) }
+    Binding { when: window.onHarmony; target: window.palette; property: "midlight"; value: Qt.lighter(Theme.buttonBg, 1.25) }
+    Binding { when: window.onHarmony; target: window.palette; property: "mid"; value: Qt.darker(Theme.buttonBg, 1.5) }
+    Binding { when: window.onHarmony; target: window.palette; property: "dark"; value: Qt.darker(Theme.buttonBg, 2.0) }
+    // Text roles are set per colour group: a role set on the palette itself
+    // covers all three, disabled included, and disabled menu items and
+    // buttons would read as enabled.
+    Binding { when: window.onHarmony; target: window.palette.disabled; property: "windowText"; value: Theme.dimText }
+    Binding { when: window.onHarmony; target: window.palette.disabled; property: "text"; value: Theme.dimText }
+    Binding { when: window.onHarmony; target: window.palette.disabled; property: "buttonText"; value: Theme.dimText }
 
     // Every toolbar button: the icon carries the meaning, the tooltip
     // carries the name. `name` is the button's name -- one or two words,
