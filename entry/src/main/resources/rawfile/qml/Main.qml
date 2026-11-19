@@ -51,6 +51,16 @@ ApplicationWindow {
     Binding { when: window.onHarmony; target: window.palette.disabled; property: "text"; value: Theme.dimText }
     Binding { when: window.onHarmony; target: window.palette.disabled; property: "buttonText"; value: Theme.dimText }
 
+    // HarmonyOS: when the pointer leaves an item with a cursorShape -- a
+    // split handle, a pane grip, a text field -- Qt Quick resets it by
+    // *unsetting* the window's cursor, and Qt's HarmonyOS plugin doesn't act
+    // on an unset: the pointer kept the split-handle shape for good. An
+    // explicit arrow under everything turns that reset into a real arrow.
+    HoverHandler {
+        enabled: window.onHarmony
+        cursorShape: Qt.ArrowCursor
+    }
+
     // Every toolbar button: the icon carries the meaning, the tooltip
     // carries the name. `name` is the button's name -- one or two words,
     // the first line of the tooltip -- and `tip`, when there is one, a
@@ -913,6 +923,13 @@ ApplicationWindow {
         // at each end pointing at the part that is off. And the app's own
         // group never scrolls at all: settings and the tour sit against the
         // right edge at every window size, one click away.
+
+        // The header sits outside contentItem, so it needs its own explicit
+        // arrow (see the HarmonyOS HoverHandler above).
+        HoverHandler {
+            enabled: window.onHarmony
+            cursorShape: Qt.ArrowCursor
+        }
 
         // How much room the row has, counting the arrows' lanes as spent
         // whether or not they are showing: it keeps this number a plain
