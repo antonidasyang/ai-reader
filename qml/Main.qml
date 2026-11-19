@@ -15,6 +15,18 @@ ApplicationWindow {
     // flashes and jumps. main.cpp restores the geometry first and shows it
     // after, so the first frame is already the right shape.
     visible: false
+
+    // HarmonyOS's platform theme gives tool buttons a palette of their own
+    // with a nearly transparent button colour (#05182431) and a translucent
+    // accent for text, matching its flat ArkUI toolbars. Fusion can't draw a
+    // checked or pressed button from a translucent colour: every toggled
+    // pane button came out as an opaque dark slab. Setting the two roles on
+    // the window makes every control inherit them instead of the theme's
+    // per-type values. Desktop platforms keep their palettes untouched.
+    readonly property bool onHarmony: Qt.platform.os === "harmonyos"
+    Binding { when: window.onHarmony; target: window.palette; property: "button"; value: Theme.buttonBg }
+    Binding { when: window.onHarmony; target: window.palette; property: "buttonText"; value: Theme.text }
+
     // Every toolbar button: the icon carries the meaning, the tooltip
     // carries the name. `name` is the button's name -- one or two words,
     // the first line of the tooltip -- and `tip`, when there is one, a

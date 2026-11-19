@@ -50,7 +50,9 @@
 #include <QDirIterator>
 #include <QFile>
 #include <QGuiApplication>
+#include <QPalette>
 #include <QScreen>
+#include <QStyleHints>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -453,6 +455,32 @@ int main(int argc, char *argv[])
 #ifdef Q_OS_HARMONY
     // Pasting needs a runtime permission there; ask on the first paste.
     PasteboardAccess::install();
+
+    // Qt's HarmonyOS theme fills Mid and Midlight with the *text* colour
+    // (#182431 in light mode), and Fusion paints pressed and checked buttons
+    // from exactly those, so every toggled toolbar button came out as a dark
+    // slab. Re-derive the in-between shades from the button colour the way
+    // QPalette does for any other palette -- whenever the theme hands us a
+    // new one, e.g. on a light/dark switch.
+    const auto repairPalette = []() {
+        QPalette pal = QGuiApplication::palette();
+        if (pal.color(QPalette::Mid) != pal.color(QPalette::Text))
+            return;                         // fixed upstream, or already done
+        for (auto group : {QPalette::Active, QPalette::Inactive, QPalette::Disabled}) {
+            const QPalette ref(pal.color(group, QPalette::Button),
+                               pal.color(group, QPalette::Window));
+            for (auto role : {QPalette::Light, QPalette::Midlight, QPalette::Mid,
+                              QPalette::Dark, QPalette::Shadow})
+                pal.setColor(group, role, ref.color(group, role));
+        }
+        QGuiApplication::setPalette(pal);
+    };
+    repairPalette();
+    QObject::connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged,
+                     &app, [repairPalette]() {
+                         // The theme's own palette update lands after this.
+                         QTimer::singleShot(0, repairPalette);
+                     });
 #endif
 
     qmlRegisterUncreatableType<PaperController>(
@@ -938,6 +966,20 @@ int main(int argc, char *argv[])
                 const QRect avail = screen->availableGeometry();
                 if (avail.contains(frame))
                     return;
+                if (!inPlace) {
+                    // Before show() the desktop window manager still gets its
+                    // say and nudges a window that merely overlaps the menu
+                    // bar or an edge back on screen itself -- e.g. a macOS
+                    // window saved at y=2. Step in only when it can't: the
+                    // window is bigger than the screen, or mostly off it.
+                    const QRect seen = avail.intersected(frame);
+                    const bool tooBig = frame.width() > avail.width()
+                                     || frame.height() > avail.height();
+                    const bool mostlyOff = seen.width() < frame.width() / 2
+                                        || seen.height() < frame.height() / 2;
+                    if (!tooBig && !mostlyOff)
+                        return;
+                }
                 const QMargins deco(client.left() - frame.left(),
                                     client.top() - frame.top(),
                                     frame.right() - client.right(),

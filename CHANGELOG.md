@@ -1,5 +1,18 @@
 # AI Reader changelog
 
+## v1.3.36 — 2026-11-19
+
+### HarmonyOS: toolbar buttons that are switched on look switched on
+- On HarmonyOS a toolbar button that was switched on, such as the pane
+  toggles, was drawn as a solid dark square that hid its icon. It is now a
+  light grey square, as on the desktop.
+
+### The window keeps the place you left it
+- A window that only slightly overlapped the menu bar or a screen edge was
+  moved to the middle of the screen at launch since v1.3.33. The system's
+  own nudge handles that case again; only a window larger than the screen,
+  or mostly off it, is resized and centred.
+
 ## v1.3.35 — 2026-11-19
 
 ### HarmonyOS project on its own branch
