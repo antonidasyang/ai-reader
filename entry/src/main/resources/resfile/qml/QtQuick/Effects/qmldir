@@ -1,0 +1,10 @@
+module QtQuick.Effects
+export 6.12
+linktarget Qt6::effectsplugin
+optional plugin effectsplugin
+classname QtQuickEffectsPlugin
+typeinfo plugins.qmltypes
+depends QtQuick auto
+prefer :/qt-project.org/imports/QtQuick/Effects/
+internal BlurItem BlurItem.qml
+

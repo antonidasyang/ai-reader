@@ -1,0 +1,8 @@
+module QML
+export 1.0
+designersupported
+static
+system
+typeinfo plugins.qmltypes
+prefer :/qt-project.org/imports/QML/
+

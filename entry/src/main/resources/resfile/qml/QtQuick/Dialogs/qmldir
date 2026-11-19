@@ -1,0 +1,10 @@
+module QtQuick.Dialogs
+export 6.12
+linktarget Qt6::qtquickdialogsplugin
+optional plugin qtquickdialogsplugin
+classname QtQuickDialogsPlugin
+typeinfo plugins.qmltypes
+depends QtQuick auto
+depends QtQuick.Dialogs.quickimpl auto
+prefer :/qt-project.org/imports/QtQuick/Dialogs/
+

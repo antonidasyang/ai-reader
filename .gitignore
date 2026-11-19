@@ -1,0 +1,7 @@
+# Written by DevEco / hvigor on the machine that opens the project.
+.hvigor/
+.idea/
+oh_modules/
+local.properties
+entry/build/
+entry/.cxx/

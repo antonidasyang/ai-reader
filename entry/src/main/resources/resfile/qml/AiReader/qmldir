@@ -1,0 +1,50 @@
+module AiReader
+export 1.0
+typeinfo ai-reader.qmltypes
+prefer :/qt/qml/AiReader/
+singleton Theme 1.0 qml/Theme.qml
+singleton ScrollKeys 1.0 qml/ScrollKeys.qml
+AppDialog 1.0 qml/AppDialog.qml
+AppTabBar 1.0 qml/AppTabBar.qml
+AppTabButton 1.0 qml/AppTabButton.qml
+AppButton 1.0 qml/AppButton.qml
+AppTextField 1.0 qml/AppTextField.qml
+AppComboBox 1.0 qml/AppComboBox.qml
+AppSpinBox 1.0 qml/AppSpinBox.qml
+AppFormLabel 1.0 qml/AppFormLabel.qml
+AppSectionLabel 1.0 qml/AppSectionLabel.qml
+AppSectionCard 1.0 qml/AppSectionCard.qml
+AppHintLabel 1.0 qml/AppHintLabel.qml
+Main 1.0 qml/Main.qml
+AiPdfView 1.0 qml/AiPdfView.qml
+MembersDialog 1.0 qml/MembersDialog.qml
+ProjectSettingsDialog 1.0 qml/ProjectSettingsDialog.qml
+LibraryPane 1.0 qml/LibraryPane.qml
+MetadataDialog 1.0 qml/MetadataDialog.qml
+PasswordDialog 1.0 qml/PasswordDialog.qml
+BlockList 1.0 qml/BlockList.qml
+SelectionTranslateCard 1.0 qml/SelectionTranslateCard.qml
+SettingsDialog 1.0 qml/SettingsDialog.qml
+TocSidebar 1.0 qml/TocSidebar.qml
+VisionDialog 1.0 qml/VisionDialog.qml
+ChatPane 1.0 qml/ChatPane.qml
+FolderPane 1.0 qml/FolderPane.qml
+DockGrip 1.0 qml/DockGrip.qml
+MathBlock 1.0 qml/MathBlock.qml
+CodeBlock 1.0 qml/CodeBlock.qml
+WelcomeWizard 1.0 qml/WelcomeWizard.qml
+ChangelogDialog 1.0 qml/ChangelogDialog.qml
+ProjectProfileDialog 1.0 qml/ProjectProfileDialog.qml
+AnalysisPane 1.0 qml/AnalysisPane.qml
+ClaimBlock 1.0 qml/ClaimBlock.qml
+DeepReadView 1.0 qml/DeepReadView.qml
+ResearchPane 1.0 qml/ResearchPane.qml
+LayoutMenu 1.0 qml/LayoutMenu.qml
+ManageLayoutsDialog 1.0 qml/ManageLayoutsDialog.qml
+SaveLayoutDialog 1.0 qml/SaveLayoutDialog.qml
+TasksPane 1.0 qml/TasksPane.qml
+QuitTasksDialog 1.0 qml/QuitTasksDialog.qml
+ResumeTasksDialog 1.0 qml/ResumeTasksDialog.qml
+UrlImportDialog 1.0 qml/UrlImportDialog.qml
+depends QtQuick
+
