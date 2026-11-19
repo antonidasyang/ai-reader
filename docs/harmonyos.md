@@ -33,6 +33,24 @@ tools/ohos/build.sh --release   # 发布包；设置了签名环境变量时会�
 tools/ohos/run.sh [--fresh]     # 安装到 hdc 连接的设备或模拟器、启动并跟踪日志
 ```
 
+### 给鸿蒙 PC 用：`harmonyos-project` 分支
+
+```sh
+tools/ohos/build.sh && tools/ohos/publish-project.sh
+```
+
+`publish-project.sh` 把生成的 DevEco 工程（含编译好的 `.so`）提交并推送到单独的
+`harmonyos-project` 分支。这个分支有自己的历史，和 `main` 无关，所以 `main` 里不会
+混进二进制文件。鸿蒙 PC 上的用法：
+
+```sh
+git clone -b harmonyos-project --single-branch https://github.com/antonidasyang/ai-reader.git ai-reader-ohos
+```
+
+用 DevEco 打开这个目录，勾选自动签名后运行即可。以后更新只要 `git pull`。第一次签名后，
+建议执行 `git update-index --skip-worktree build-profile.json5`，这样拉取更新时不会覆盖
+本机的签名配置。脚本要求源码已提交，并且已经按当前版本构建过。
+
 模拟器在 DevEco Studio 的 Device Manager 里建，类型选 **2in1**（例如 MateBook Pro）。
 它可以直接安装未签名的 HAP。`run.sh --fresh` 会先卸载再装，相当于全新首启。
 

@@ -1,5 +1,12 @@
 # AI Reader changelog
 
+## v1.3.35 — 2026-11-19
+
+### HarmonyOS project on its own branch
+- No change to the app itself. The ready-to-open DevEco Studio project for
+  HarmonyOS PCs is now published to the harmonyos-project branch, so a
+  HarmonyOS PC can fetch and update it with git instead of a zip.
+
 ## v1.3.34 — 2026-11-19
 
 ### Pasting works on HarmonyOS
