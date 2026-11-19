@@ -55,6 +55,9 @@
 #ifdef Q_OS_WIN
 #include <windows.h>
 #endif
+#ifdef Q_OS_HARMONY
+#include "platform/ohos/pasteboardaccess.h"
+#endif
 #include <QIcon>
 #include <QLibraryInfo>
 #include <QLocale>
@@ -446,6 +449,11 @@ int main(int argc, char *argv[])
     }
 
     QQuickStyle::setStyle(QStringLiteral("Fusion"));
+
+#ifdef Q_OS_HARMONY
+    // Pasting needs a runtime permission there; ask on the first paste.
+    PasteboardAccess::install();
+#endif
 
     qmlRegisterUncreatableType<PaperController>(
         "AiReader", 1, 0, "PaperController",

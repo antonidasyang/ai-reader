@@ -1,5 +1,15 @@
 # AI Reader changelog
 
+## v1.3.34 — 2026-11-19
+
+### Pasting works on HarmonyOS
+- On HarmonyOS an app needs your permission to read the clipboard, and
+  without it pasting into any text field silently did nothing. The first
+  paste now brings up the system's permission prompt; allow it and that
+  same paste goes through. If you declined earlier, pasting again opens the
+  permission page so you can change your mind. Download from a link asks
+  too, so it can fill in the link you copied.
+
 ## v1.3.33 — 2026-11-19
 
 ### AI Reader for HarmonyOS PC (preview)

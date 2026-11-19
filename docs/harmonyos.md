@@ -70,6 +70,7 @@ tools/ohos/run.sh [--fresh]     # 安装到 hdc 连接的设备或模拟器、�
 | Qt 自带的中文翻译 | 从 Qt 安装目录读取 | 只把 `qtbase_zh_CN.qm` 编进 `:/qt_translations` |
 | SVG 图标插件 | 运行时在 Qt 安装目录里找到 | 显式链接 Qt6::Svg，并通过 `QT_HARMONYOS_EXTRA_PLUGINS` 打进 HAP |
 | 更新 | 应用内下载安装（Windows） | 平台标识为 `harmonyos-arm64`。应用不能自行安装包，清单里对应的条目应指向应用市场页面 |
+| 剪贴板读取 | 直接读 | 需要用户授予 `READ_PASTEBOARD`，Qt 插件只检查不申请。`src/platform/ohos/pasteboardaccess.*` 会在第一次粘贴时弹出系统授权框，授权后重放这次 Ctrl+V。右键文本框、打开「从链接下载」也会申请；用户拒绝过的话，再次粘贴会改走设置页授权 |
 | 窗口位置 | 按上次保存的位置恢复 | 系统决定窗口落在哪里（位置请求和移动都会被忽略，只接受改尺寸）。窗口显示出来之后，如果超出屏幕，就原地缩小到能放下 |
 
 文件访问不需要做特殊处理：「打开…」和「打开文件夹…」会调起系统的文件选择器，
@@ -93,8 +94,8 @@ tools/ohos/run.sh [--fresh]     # 安装到 hdc 连接的设备或模拟器、�
   应用也要处理传进来的文件 Want。
 - **HAP 体积**（约 127 MB）：可以去掉用不到的 Quick Controls 样式（应用只用 Fusion），
   也可以考虑 `compressNativeLibs`。
-- **权限**：`READ_PASTEBOARD` 属于受限权限，上架时需要申请或说明理由；从链接下载时
-  读剪贴板会用到它。
+- **权限**：`READ_PASTEBOARD` 属于受限权限（ACL），上架时要在 AGC 申请，并说明使用场景：
+  用户在输入框里粘贴 API Key、论文链接等。调试阶段的自动签名已经包含它。
 - **授权**：需要确认 Qt for HarmonyOS 在开源（LGPL）和商业授权下各自的条款。
 - **上架资质**：企业开发者账号、软著、APP 备案、隐私政策；国内上架生成式 AI 应用，
   默认模型可能要换成已备案的国产模型。

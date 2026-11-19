@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.3.33 LANGUAGES CXX)
+project(ai-reader VERSION 1.3.34 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -371,6 +371,8 @@ if(OHOS)
     target_sources(ai-reader PRIVATE
         src/platform/ohos/keychain.h
         src/platform/ohos/keychain_ohos.cpp
+        src/platform/ohos/pasteboardaccess.h
+        src/platform/ohos/pasteboardaccess.cpp
     )
     # MicroTeX reads res/ with plain file I/O, and a HAP has no install dir
     # to stage it beside the binary (the Windows/macOS POST_BUILD steps
@@ -632,6 +634,8 @@ if(OHOS)
     target_link_libraries(ai-reader PRIVATE
         Qt6::Svg
         asset_ndk.z                      # Asset Store Kit (keychain shim)
+        ability_access_control           # permission check (pasteboard)
+        ace_napi.z                       # permission request (pasteboard)
     )
     set_property(TARGET ai-reader APPEND PROPERTY QT_HARMONYOS_EXTRA_PLUGINS
         Qt6::QSvgPlugin Qt6::QSvgIconPlugin)

@@ -6,6 +6,9 @@
 #include "Stall.h"
 
 #include <QClipboard>
+#ifdef Q_OS_HARMONY
+#include "platform/ohos/pasteboardaccess.h"
+#endif
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
@@ -308,6 +311,16 @@ bool UrlImportService::recognises(const QString &input) const
 
 QString UrlImportService::clipboardLink() const
 {
+#ifdef Q_OS_HARMONY
+    // Reading the clipboard needs a runtime permission there. The dialog
+    // opening is the moment the user means to paste a link, so ask now;
+    // until it's granted the clipboard reads as empty.
+    if (!PasteboardAccess::granted()) {
+        if (auto *access = PasteboardAccess::instance())
+            access->ensureReadable(false);
+        return {};
+    }
+#endif
     const QClipboard *cb = QGuiApplication::clipboard();
     if (!cb)
         return {};
