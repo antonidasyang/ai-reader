@@ -50,6 +50,7 @@
 #include <QDirIterator>
 #include <QFile>
 #include <QGuiApplication>
+#include <QScreen>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -547,6 +548,8 @@ int main(int argc, char *argv[])
                 + QStringLiteral("/translations"),
             QCoreApplication::applicationDirPath()
                 + QStringLiteral("/../Resources/translations"),
+            // HarmonyOS: embedded by CMake, there's no dir beside the binary.
+            QStringLiteral(":/qt_translations"),
         };
         bool qtLoaded = false;
         for (const QString &dir : qtTrDirs) {
@@ -900,6 +903,55 @@ int main(int argc, char *argv[])
                 win->setX(ws.value(QStringLiteral("x")).toInt());
             if (ws.contains(QStringLiteral("y")))
                 win->setY(ws.value(QStringLiteral("y")).toInt());
+            // Keep the window on screen. Main.qml's 1400x900 default is
+            // wider than e.g. a HarmonyOS 2-in-1 (1642x1094 logical) once the
+            // system cascades it, and a saved geometry can outlive the monitor
+            // it was saved on. Shrink to fit the available area, then centre;
+            // a window that already fits stays exactly where the user put it.
+            //
+            // Desktops honour the position we ask for, so one pass before
+            // show() does it. The HarmonyOS window manager does not: it puts
+            // a new window at its own cascade origin and ignores later moves
+            // too (only resizes go through), so there we wait for the real
+            // position to arrive after show and shrink the window in place.
+            const auto fitToScreen = [](QWindow *w, bool inPlace) {
+                if (w->isVisible() && w->visibility() != QWindow::Windowed)
+                    return;                 // maximized etc. fit by definition
+                const QRect client = w->geometry();
+                const QRect frame = w->isVisible() ? w->frameGeometry() : client;
+                // The screen under the window's centre, not w->screen():
+                // before show() that is still the primary, and a window saved
+                // on a second monitor must stay there.
+                QScreen *screen = QGuiApplication::screenAt(frame.center());
+                if (!screen)
+                    screen = w->screen();
+                if (!screen)
+                    return;
+                const QRect avail = screen->availableGeometry();
+                if (avail.contains(frame))
+                    return;
+                const QMargins deco(client.left() - frame.left(),
+                                    client.top() - frame.top(),
+                                    frame.right() - client.right(),
+                                    frame.bottom() - client.bottom());
+                QRect f = frame;
+                if (inPlace) {
+                    // Keep the system's origin; leave a margin before the
+                    // right and bottom edges like the centred case does.
+                    const QPoint br = avail.bottomRight()
+                        - QPoint(avail.width(), avail.height()) * 0.04;
+                    f.setRight(qMin(f.right(), br.x()));
+                    f.setBottom(qMin(f.bottom(), br.y()));
+                } else {
+                    f.setSize(f.size().boundedTo(avail.size() * 0.92));
+                    f.moveCenter(avail.center());
+                }
+                const QRect target = f.marginsRemoved(deco);
+                qInfo() << "window:" << frame << "does not fit" << screen->name()
+                        << avail << "- now" << target;
+                w->setGeometry(target);
+            };
+            fitToScreen(win, false);
             // Main.qml leaves the window hidden so everything above lands
             // before anyone sees it; this is where it is finally shown, and
             // it is shown straight into the state it was left in. Restoring
@@ -914,6 +966,26 @@ int main(int argc, char *argv[])
                     vis = v;
             }
             ws.endGroup();
+#ifdef Q_OS_HARMONY
+            // The real origin arrives as position changes around show() --
+            // sometimes during setVisibility() itself, so listen first. Watch
+            // for a short while, then check once more regardless; each check
+            // is a no-op once the window fits, so our own resize can't loop.
+            auto *settle = new QTimer(win);
+            settle->setSingleShot(true);
+            settle->setInterval(50);
+            QObject::connect(settle, &QTimer::timeout, win,
+                             [win, fitToScreen]() { fitToScreen(win, true); });
+            const QList<QMetaObject::Connection> watching = {
+                QObject::connect(win, &QWindow::xChanged, settle, qOverload<>(&QTimer::start)),
+                QObject::connect(win, &QWindow::yChanged, settle, qOverload<>(&QTimer::start)),
+            };
+            QTimer::singleShot(2000, win, [watching, settle]() {
+                for (const auto &c : watching)
+                    QObject::disconnect(c);
+                settle->start();
+            });
+#endif
             win->setVisibility(vis);
 
             auto *saveTimer = new QTimer(win);

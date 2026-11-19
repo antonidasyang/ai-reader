@@ -534,7 +534,8 @@ AppDialog {
                     text: qsTr("Settings are stored per-user in the OS-native QSettings " +
                                "location. The API key lives in the OS keychain " +
                                "(Keychain on macOS, Credential Manager on Windows, " +
-                               "libsecret on Linux); when no keychain backend is " +
+                               "libsecret on Linux, Asset Store on HarmonyOS); when " +
+                               "no keychain backend is " +
                                "available it falls back to plaintext QSettings.")
                 }
             }

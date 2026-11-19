@@ -5,8 +5,11 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
+#include <QDirIterator>
+#include <QFile>
 #include <QFileInfo>
 #include <QPainter>
+#include <QStandardPaths>
 #include <QString>
 #include <QStringList>
 
@@ -27,6 +30,44 @@ QString cacheKey(const QString &latex, LatexRenderer::Mode mode, int sizePx,
          + QChar('\t') + QString::number(ink, 16)
          + QChar('\t') + latex;
 }
+
+#ifdef Q_OS_HARMONY
+// A HAP has no install directory we can stage files beside the binary in,
+// so CMake embeds MicroTeX's res/ under :/microtex_res. MicroTeX reads it
+// with plain stdio, so copy it out into the app sandbox once per version.
+// Returns the extracted root, or an empty string if extraction failed.
+QString extractEmbeddedMicroTexRes()
+{
+    const QString root = QStringLiteral(":/microtex_res");
+    if (!QFileInfo::exists(root + QStringLiteral("/.clatexmath-res_root")))
+        return {};
+    const QString dest =
+        QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+        + QStringLiteral("/microtex_res-") + QStringLiteral(AIREADER_VERSION);
+    const QString marker = dest + QStringLiteral("/.clatexmath-res_root");
+    if (QFileInfo::exists(marker))
+        return dest;
+
+    QDirIterator it(root, QDir::Files | QDir::Hidden, QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+        const QString src = it.next();
+        const QString out = dest + src.mid(root.size());
+        if (out == marker)
+            continue;               // written last: it marks a complete copy
+        QDir().mkpath(QFileInfo(out).absolutePath());
+        QFile::remove(out);
+        if (!QFile::copy(src, out)) {
+            qWarning("LatexRenderer: cannot extract %s", qUtf8Printable(out));
+            return {};
+        }
+        QFile::setPermissions(out, QFileDevice::ReadOwner | QFileDevice::WriteOwner);
+    }
+    QFile m(marker);
+    if (!m.open(QIODevice::WriteOnly))
+        return {};
+    return dest;
+}
+#endif
 
 } // namespace
 
@@ -65,6 +106,9 @@ LatexRenderer::LatexRenderer()
 #ifdef Q_OS_MACOS
     candidates << QDir::cleanPath(exeDir
                    + QStringLiteral("/../Resources/microtex_res"));
+#endif
+#ifdef Q_OS_HARMONY
+    candidates << extractEmbeddedMicroTexRes();
 #endif
     candidates << exeDir + QStringLiteral("/microtex_res");
     candidates << QString::fromUtf8(AIREADER_MICROTEX_RES_DIR);

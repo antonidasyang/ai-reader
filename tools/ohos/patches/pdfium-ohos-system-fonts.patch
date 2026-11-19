@@ -1,0 +1,15 @@
+diff --git a/chromium/third_party/pdfium/core/fxge/linux/fx_linux_impl.cpp b/chromium/third_party/pdfium/core/fxge/linux/fx_linux_impl.cpp
+index 68871273e0..bb4331a899 100644
+--- a/chromium/third_party/pdfium/core/fxge/linux/fx_linux_impl.cpp
++++ b/chromium/third_party/pdfium/core/fxge/linux/fx_linux_impl.cpp
+@@ -183,6 +183,10 @@ class CLinuxPlatform : public CFX_GEModule::PlatformIface {
+       pInfo->AddPath("/usr/share/X11/fonts/Type1");
+       pInfo->AddPath("/usr/share/X11/fonts/TTF");
+       pInfo->AddPath("/usr/local/share/fonts");
++#if defined(__OHOS__)
++      // HarmonyOS keeps its system fonts here (HarmonyOS_Sans_SC etc.).
++      pInfo->AddPath("/system/fonts");
++#endif
+     }
+     return pInfo;
+   }

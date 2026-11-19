@@ -1,5 +1,21 @@
 # AI Reader changelog
 
+## v1.3.33 — 2026-11-19
+
+### AI Reader for HarmonyOS PC (preview)
+- AI Reader now builds for HarmonyOS 2-in-1 PCs from the same code as the
+  desktop versions: reading, the folder pane, paragraphs, translation,
+  chat, sign-in and cloud sync all come along. Papers are opened through
+  the system file picker, and API keys are kept in HarmonyOS's Asset Store
+  the way the desktop keeps them in the OS keychain. Not yet published to
+  AppGallery.
+
+### The window always opens on screen
+- On a screen too small for the window's last size (or for its default
+  size on first launch), AI Reader now shrinks the window to fit and
+  centres it, instead of opening with its edge cut off. A window that
+  already fits still opens exactly where you left it.
+
 ## v1.3.32 — 2026-11-06
 
 ### One word for a project

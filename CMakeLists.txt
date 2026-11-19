@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(ai-reader VERSION 1.3.32 LANGUAGES CXX)
+project(ai-reader VERSION 1.3.33 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,15 +21,19 @@ set(_aireader_qt_components
     PrintSupport
     LinguistTools # qt_add_translations / lupdate / lrelease for i18n.
 )
-if(UNIX AND NOT APPLE)
+if(UNIX AND NOT APPLE AND NOT OHOS)
     # qtkeychain's Linux backend (libsecret IPC) uses QtDBus; on Windows
     # it uses Credential Manager and on macOS Security.framework, neither
-    # of which need DBus.
+    # of which need DBus. HarmonyOS (OHOS, set by its toolchain file) has
+    # no DBus and doesn't use qtkeychain at all — see below.
     list(APPEND _aireader_qt_components DBus)
 endif()
 find_package(Qt6 6.4 REQUIRED COMPONENTS ${_aireader_qt_components})
 
 include(FetchContent)
+
+# HarmonyOS build: see docs/harmonyos.md and tools/ohos/. The toolchain
+# file sets OHOS; everything platform-specific below keys off it.
 
 # ── cmark-gfm (CommonMark + GFM extensions) ────────────────────────────
 # FetchContent for the same uniformity reasons as qtkeychain: Windows
@@ -51,17 +55,23 @@ FetchContent_MakeAvailable(cmark)
 # FetchContent so we don't require a system install — Linux distros
 # usually ship it via libqt6keychain-dev but Windows/macOS rarely do.
 # Built static so no extra DLL has to ship with the executable.
-set(BUILD_WITH_QT6         ON  CACHE BOOL "" FORCE)
-set(BUILD_TEST_APPLICATION OFF CACHE BOOL "" FORCE)
-set(BUILD_TRANSLATIONS     OFF CACHE BOOL "" FORCE)
+#
+# Not on HarmonyOS: qtkeychain has no backend there. src/platform/ohos
+# provides a drop-in <keychain.h> with the same QKeychain job API, backed
+# by the system Asset Store, so Settings/AuthController compile unchanged.
 set(BUILD_SHARED_LIBS      OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(
-    qtkeychain
-    GIT_REPOSITORY https://github.com/frankosterfeld/qtkeychain.git
-    GIT_TAG        0.14.3
-    GIT_SHALLOW    TRUE
-)
-FetchContent_MakeAvailable(qtkeychain)
+if(NOT OHOS)
+    set(BUILD_WITH_QT6         ON  CACHE BOOL "" FORCE)
+    set(BUILD_TEST_APPLICATION OFF CACHE BOOL "" FORCE)
+    set(BUILD_TRANSLATIONS     OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(
+        qtkeychain
+        GIT_REPOSITORY https://github.com/frankosterfeld/qtkeychain.git
+        GIT_TAG        0.14.3
+        GIT_SHALLOW    TRUE
+    )
+    FetchContent_MakeAvailable(qtkeychain)
+endif()
 
 # ── tinyxml2 ───────────────────────────────────────────────────────────
 # MicroTeX's only external dep. Upstream CMake calls find_package on it,
@@ -357,6 +367,26 @@ target_compile_definitions(ai-reader PRIVATE
     AIREADER_VERSION="${PROJECT_VERSION}"
 )
 
+if(OHOS)
+    target_sources(ai-reader PRIVATE
+        src/platform/ohos/keychain.h
+        src/platform/ohos/keychain_ohos.cpp
+    )
+    # MicroTeX reads res/ with plain file I/O, and a HAP has no install dir
+    # to stage it beside the binary (the Windows/macOS POST_BUILD steps
+    # below). Embed it instead; LatexRenderer extracts it into the app
+    # sandbox on first launch (see its Q_OS_HARMONY branch).
+    file(GLOB_RECURSE _aireader_mt_res LIST_DIRECTORIES false
+        "${microtex_SOURCE_DIR}/res/*")
+    list(APPEND _aireader_mt_res "${microtex_SOURCE_DIR}/res/.clatexmath-res_root")
+    list(REMOVE_DUPLICATES _aireader_mt_res)
+    qt_add_resources(ai-reader "microtex_res"
+        PREFIX "/microtex_res"
+        BASE "${microtex_SOURCE_DIR}/res"
+        FILES ${_aireader_mt_res}
+    )
+endif()
+
 if(AIREADER_ENABLE_SENTRY)
     if(NOT AIREADER_SENTRY_DSN)
         message(WARNING
@@ -397,9 +427,16 @@ set(AIREADER_SENTRY_DSN "" CACHE STRING "Sentry DSN URL embedded into the build 
 # uses bare include_directories() that don't propagate as target
 # properties). Wire them up explicitly. Binary dirs are needed for the
 # generated qkeychain_export.h / cmark-gfm_export.h / cmark-gfm_version.h.
+if(OHOS)
+    # <keychain.h> resolves to the Asset Store-backed shim instead.
+    target_include_directories(ai-reader PRIVATE src/platform/ohos)
+else()
+    target_include_directories(ai-reader PRIVATE
+        ${qtkeychain_SOURCE_DIR}
+        ${qtkeychain_BINARY_DIR}
+    )
+endif()
 target_include_directories(ai-reader PRIVATE
-    ${qtkeychain_SOURCE_DIR}
-    ${qtkeychain_BINARY_DIR}
     ${cmark_SOURCE_DIR}/src
     ${cmark_SOURCE_DIR}/extensions
     ${cmark_BINARY_DIR}/src
@@ -583,13 +620,61 @@ target_link_libraries(ai-reader PRIVATE
     Qt6::PrintSupport
     Qt6::Sql
     Qt6::WebSockets
-    qt6keychain                          # qtkeychain static    (FetchContent)
     libcmark-gfm_static                  # cmark-gfm core       (FetchContent)
     libcmark-gfm-extensions_static       # cmark-gfm GFM exts   (FetchContent)
     LaTeX                                # MicroTeX static      (FetchContent)
 )
-if(UNIX AND NOT APPLE)
+if(OHOS)
+    # The HAP only carries plugins that something links to, unlike the
+    # desktop builds where the SVG image/icon plugins are simply found in
+    # the Qt install at runtime. Every toolbar icon is an SVG.
+    find_package(Qt6 REQUIRED COMPONENTS Svg)
+    target_link_libraries(ai-reader PRIVATE
+        Qt6::Svg
+        asset_ndk.z                      # Asset Store Kit (keychain shim)
+    )
+    set_property(TARGET ai-reader APPEND PROPERTY QT_HARMONYOS_EXTRA_PLUGINS
+        Qt6::QSvgPlugin Qt6::QSvgIconPlugin)
+    # Likewise there is no translations/ dir beside the binary for main.cpp
+    # to find Qt's own catalog in; embed it under :/qt_translations.
+    qt_add_resources(ai-reader "qt_translations"
+        PREFIX "/qt_translations"
+        BASE "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_TRANSLATIONS}"
+        FILES "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_TRANSLATIONS}/qtbase_zh_CN.qm"
+    )
+else()
+    target_link_libraries(ai-reader PRIVATE
+        qt6keychain                      # qtkeychain static    (FetchContent)
+    )
+endif()
+if(UNIX AND NOT APPLE AND NOT OHOS)
     target_link_libraries(ai-reader PRIVATE Qt6::DBus)
+endif()
+
+# ── HarmonyOS packaging (HAP) ───────────────────────────────────────
+# qt_add_executable() gives us an `ai-reader_make_hap` target on OHOS;
+# these properties fill in the app manifest it generates. The bundle name
+# is the app's permanent identity on AppGallery — never change it after
+# the first upload. versionCode must grow with every release, so derive it
+# from the project version: 1.3.32 -> 1003032.
+if(OHOS)
+    set(AIREADER_OHOS_BUNDLE_NAME "com.d2ssoft.aireader" CACHE STRING
+        "HarmonyOS bundle name (permanent once published)")
+    math(EXPR _aireader_version_code
+        "${PROJECT_VERSION_MAJOR} * 1000000 + ${PROJECT_VERSION_MINOR} * 1000 + ${PROJECT_VERSION_PATCH}")
+    set_target_properties(ai-reader PROPERTIES
+        QT_HARMONYOS_APP_BUNDLE_NAME   "${AIREADER_OHOS_BUNDLE_NAME}"
+        QT_HARMONYOS_APP_NAME          "AiReader"
+        QT_HARMONYOS_APP_LABEL         "AI Reader"
+        QT_HARMONYOS_APP_VENDOR        "d2ssoft"
+        QT_HARMONYOS_APP_VERSION_NAME  "${PROJECT_VERSION}"
+        QT_HARMONYOS_APP_VERSION_CODE  "${_aireader_version_code}"
+        QT_HARMONYOS_APP_ICON          "${CMAKE_SOURCE_DIR}/resources/harmonyos/app_icon.png"
+        QT_HARMONYOS_MODULE_DEVICE_TYPES "2in1"
+        # Only qml/ holds QML; without this the deploy step may scan (and
+        # copy into the HAP) whatever directory the .qml files resolve to.
+        QT_QML_ROOT_PATH               "${CMAKE_SOURCE_DIR}/qml"
+    )
 endif()
 
 # ── Windows packaging: stage build output into dist\ ───────────────

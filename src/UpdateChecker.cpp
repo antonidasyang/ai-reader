@@ -62,6 +62,11 @@ QString UpdateChecker::platformKey()
 #  else
     return QStringLiteral("macos-x64");
 #  endif
+#elif defined(Q_OS_HARMONY)
+    // Must precede Q_OS_LINUX, which Qt also defines on HarmonyOS. Apps
+    // there can't install packages themselves: the manifest entry for this
+    // key points at the AppGallery page, which openDownload() opens.
+    return QStringLiteral("harmonyos-arm64");
 #elif defined(Q_OS_LINUX)
     return QStringLiteral("linux-x64");
 #else
