@@ -1,5 +1,17 @@
 # AI Reader changelog
 
+## v1.3.38 — 2026-11-19
+
+### Pane titles clear the drag grip
+- Every pane's title started right under the ⋮⋮ grip in its top-left
+  corner, so the dots ran into the first character. Titles now start past
+  the grip.
+
+### HarmonyOS: the pointer goes back to an arrow
+- On HarmonyOS, once the pointer had passed over a divider between panes
+  it kept the resize shape everywhere. It now turns back into an arrow
+  when it leaves the divider.
+
 ## v1.3.37 — 2026-11-19
 
 ### HarmonyOS: menus are no longer see-through

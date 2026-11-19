@@ -148,7 +148,7 @@ Rectangle {
             clip: true
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 12
+                anchors.leftMargin: Theme.gripInset   // clear the pane's DockGrip
                 anchors.rightMargin: 8
                 spacing: 6
                 Label {

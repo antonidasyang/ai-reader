@@ -10,6 +10,11 @@ QtObject {
     readonly property bool dark: Qt.styleHints.colorScheme === Qt.Dark
 
     // ── Surfaces ──────────────────────────────────────────────────────
+    // Where a pane header's title starts: past the DockGrip that sits in
+    // every pane's top-left corner (x 4..22), plus a gap. With the old
+    // 12 px the grip's dots ran into the title's first character.
+    readonly property int gripInset: 28
+
     readonly property color paneBg:   dark ? "#1e1f22" : "#fafafa"
     readonly property color headerBg: dark ? "#2b2d30" : "#ececec"
     readonly property color inputBg:  dark ? "#262729" : "#f0f0f0"
