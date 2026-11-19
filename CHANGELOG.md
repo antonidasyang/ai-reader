@@ -1,5 +1,13 @@
 # AI Reader changelog
 
+## v1.3.37 — 2026-11-19
+
+### HarmonyOS: menus are no longer see-through
+- Drop-down menus on HarmonyOS, such as the layouts menu, had a nearly
+  transparent background with the window showing through. Menus, tabs,
+  check boxes and text fields now draw with solid colours, and a disabled
+  item is greyed out again.
+
 ## v1.3.36 — 2026-11-19
 
 ### HarmonyOS: toolbar buttons that are switched on look switched on
