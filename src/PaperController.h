@@ -134,7 +134,12 @@ signals:
     void autoExtracted();
 
 private:
-    void reload();
+    // Loading a paper, in two halves. The first opens m_doc and is the only
+    // part that takes the PDFium lock; the second is everything that follows
+    // from its answer. They are split so a switch can open m_doc *before*
+    // handing the file to the viewer (see openPdf).
+    QPdfDocument::Error loadDocument();
+    void applyLoad(QPdfDocument::Error err);
     void setStatus(Status s, const QString &err = {});
     // Paragraph extraction runs on a worker thread with its OWN
     // QPdfDocument: extraction and page rendering both funnel through

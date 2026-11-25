@@ -123,6 +123,17 @@ void PaperController::openPdf(const QUrl &url)
         m_qs.remove(kKeyLastUrl);
         m_qs.sync();
     }
+    // Open our own copy of the document first, and only then hand the file
+    // to the viewer. The order matters because of QtPdf's one global PDFium
+    // lock. The moment the viewer's document is ready, every page image
+    // already on screen queues a render of the new paper on Qt's image
+    // thread, and each render holds the lock for the whole page. Opening
+    // m_doc takes that lock half a dozen times, and the image thread wins
+    // it back between pages, so loading second meant queueing behind the
+    // renders: 15-18 s of frozen window on a paper with heavy figures. At
+    // this point nothing of the new paper is queued there; at most one page
+    // of the old one is still being drawn.
+    const QPdfDocument::Error err = loadDocument();
     {
         // The viewer reloads the document and re-lays out its page table
         // inside this, which is the one part of a switch that was still
@@ -133,7 +144,7 @@ void PaperController::openPdf(const QUrl &url)
     }
     m_model.clear();
     emit blocksChanged();
-    reload();
+    applyLoad(err);
 }
 
 void PaperController::setPassword(const QString &password)
@@ -141,8 +152,10 @@ void PaperController::setPassword(const QString &password)
     if (password == m_password)
         return;
     m_password = password;
+    // Same order as openPdf, for the same reason.
+    const QPdfDocument::Error err = loadDocument();
     emit pdfPasswordChanged();
-    reload();
+    applyLoad(err);
 }
 
 void PaperController::clear()
@@ -189,22 +202,27 @@ void PaperController::setCurrentSelection(const QString &text, int page)
     emit currentSelectionChanged();
 }
 
-void PaperController::reload()
+QPdfDocument::Error PaperController::loadDocument()
+{
+    if (m_source.isEmpty())
+        return QPdfDocument::Error::None;   // applyLoad reports Empty
+    // Its own mark, so a log can tell "waited on PDFium" apart from what
+    // happens with the paragraphs afterwards.
+    Stall::Mark mark("opening the PDF (PDFium)");
+    setStatus(Loading);
+    m_doc.setPassword(m_password);
+    if (m_source.isLocalFile())
+        return m_doc.load(m_source.toLocalFile());
+    return m_doc.load(m_source.toString());
+}
+
+void PaperController::applyLoad(QPdfDocument::Error err)
 {
     Stall::Mark mark("loading the PDF and its paragraphs");
     if (m_source.isEmpty()) {
         setStatus(Empty);
         return;
     }
-    setStatus(Loading);
-
-    m_doc.setPassword(m_password);
-
-    QPdfDocument::Error err;
-    if (m_source.isLocalFile())
-        err = m_doc.load(m_source.toLocalFile());
-    else
-        err = m_doc.load(m_source.toString());
 
     switch (err) {
     case QPdfDocument::Error::None: {

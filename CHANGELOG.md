@@ -1,5 +1,14 @@
 # AI Reader changelog
 
+## v1.3.39 — 2026-11-25
+
+### Switching papers no longer freezes the window
+- Switching to a paper with heavy figures could freeze the window for 15
+  seconds or more: opening the new paper queued behind the drawing of its
+  pages, and a page full of plots can take seconds to draw. The paper is
+  now opened before the viewer starts drawing, so the switch is immediate
+  and the pages fill in afterwards.
+
 ## v1.3.38 — 2026-11-19
 
 ### Pane titles clear the drag grip

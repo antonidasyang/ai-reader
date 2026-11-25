@@ -145,8 +145,7 @@ Item {
     // extent, same rotation swap — so the fit is exact rather than
     // approximately right.
     function fitWidthScale() {
-        const pageW = ((tableView.rot90 ? root.document?.maxPageHeight
-                                        : root.document?.maxPageWidth) ?? 0)
+        const pageW = tableView.rot90 ? root._maxPageHeight : root._maxPageWidth
         return pageW > 0 ? root.viewportWidth / pageW : 0
     }
 
@@ -162,7 +161,16 @@ Item {
     // scrolling, and every QPdfDocument.pagePointSize() call takes
     // QtPdf's global PDFium lock — stalling the GUI thread behind the
     // render/build workers. Query once per document instead.
+    //
+    // The widest and tallest page come out of the same pass. PdfDocument's
+    // own maxPageWidth/maxPageHeight are computed lazily, on the first read
+    // after a load, by asking every page again under that lock -- and the
+    // first read lands after the page images have queued the new paper's
+    // renders on Qt's image thread, so a paper switch waited for a whole
+    // page render to get the answer this loop already has.
     property var _pageSizes: []
+    property real _maxPageWidth: 0
+    property real _maxPageHeight: 0
     function pageSizeAt(i) {
         const a = root._pageSizes
         return i >= 0 && i < a.length ? a[i] : Qt.size(1, 1)
@@ -172,9 +180,15 @@ Item {
                       && root.document.status === PdfDocument.Ready
         const n = ready ? root.document.pageCount : 0
         const a = new Array(n)
-        for (let i = 0; i < n; ++i)
+        let w = 0, h = 0
+        for (let i = 0; i < n; ++i) {
             a[i] = root.document.pagePointSize(i)
+            w = Math.max(w, a[i].width)
+            h = Math.max(h, a[i].height)
+        }
         root._pageSizes = a
+        root._maxPageWidth = w
+        root._maxPageHeight = h
         tableView.forceLayout()
     }
     Connections {
@@ -186,7 +200,7 @@ Item {
     // Rendered width of the widest page at the current zoom — the app
     // uses it to clamp horizontal panning to the page edges.
     readonly property real pageDisplayWidth:
-        (root.document ? root.document.maxPageWidth : 0) * root.renderScale
+        root._maxPageWidth * root.renderScale
 
     // Space the scrollbars occupy, so overlays the app stacks on top
     // of this view (the hand-tool layer) can leave them grabbable.
@@ -262,8 +276,7 @@ Item {
         // layout (width → layout → contentHeight → bar → width).
         property real pageHolderWidth:
             Math.max(width,
-                     ((rot90 ? root.document?.maxPageHeight
-                             : root.document?.maxPageWidth) ?? 0) * root.renderScale)
+                     (rot90 ? root._maxPageHeight : root._maxPageWidth) * root.renderScale)
         columnWidthProvider: function(col) { return root.document ? pageHolderWidth : 0 }
         // Re-run the layout from the width itself, not from the zoom
         // change: onRenderScaleChanged fires before this binding has been

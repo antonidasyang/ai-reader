@@ -211,6 +211,12 @@ void PdfSelectionModel::setSource(const QString &localPath,
                               Q_ARG(QString, m_srcPath),
                               Q_ARG(QString, m_srcPassword),
                               Q_ARG(int, m_buildGen));
+    // PaperController opens its document before it announces the new
+    // source, so the document-ready prefetch has already fired, and the
+    // stop() above just threw it away. Cover the opening screen again,
+    // this time for a builder that knows which file to open.
+    if (docReady() && !m_srcPath.isEmpty())
+        prefetchAround(0);
 }
 
 void PdfSelectionModel::prefetchAround(int page, int radius)

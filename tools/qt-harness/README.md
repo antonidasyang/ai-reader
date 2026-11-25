@@ -16,6 +16,7 @@ tools/qt-harness/tasks/run.sh           # ~20 s, 38 checks
 tools/qt-harness/layout/run.sh          # ~5 s, 62 checks
 tools/qt-harness/login/run.sh           # ~5 s, 14 checks
 tools/qt-harness/urlimport/run.sh       # ~5 s, 51 checks (URLIMPORT_LIVE=1: + one real arXiv download)
+tools/qt-harness/switch/run.sh          # ~40 s, times a paper switch
 ```
 
 Exit status is non-zero if anything failed.
@@ -25,6 +26,7 @@ Exit status is non-zero if anything failed.
 | `papersync` | segmentation and translations syncing into the project — who wins, what gets published, what gets attributed — and who may read the local mirror at all: the store belongs to one account, signing out empties it, a second user sees their own library and never the first's, and nobody's un-pushed work is lost in the process | `common/FakeSync.h`, a `QTcpServer` speaking the sync API |
 | `translation` | cancelling a translation run mid-stream | `common/FakeLlm.h`, a `QTcpServer` streaming OpenAI SSE that never finishes on its own |
 | `panes` | what a splitter drag costs (sweeping a real pane's width with and without the `resizing` flag), and that Home / End / PageUp / PageDown really scroll — real key events into a real pane | a fixture PDF and the real panes in a `QQuickView` |
+| `switch` | what a paper switch blocks the GUI thread for, and the longest event-loop turn while it settles, with the Stall breakdown the app's launch.log would print. QtPdf serialises PDFium behind one lock that the viewer's page renders hold a whole page at a time, so anything the GUI thread asks PDFium during a switch can queue behind them | two generated PDFs (`switch/heavy-pdf.py`) whose every page is a dense translucent scatter plot, the real viewer in an offscreen `QQuickView` |
 | `dialogs` | every dialog actually opening — loading Main.qml only proves the window's own tree is sound, and a dialog's delegates and bindings are not exercised until it is shown | the real services, wired the way `main.cpp` wires them, in an offscreen window |
 | `storage` | where the app keeps things: the D2S/AIReader directories, and the one JSON settings file every QSettings in the app writes to — the '/'-keys nesting and flattening back, types surviving a cold re-read (an int staying an int), an atomic write that a failure leaves untouched, and a damaged file being copied aside rather than silently replaced | a throwaway identity and a scratch root: Qt test mode for the directories, and a registered JSON format under a temp path (the platform-native backend is cfprefsd on macOS and the registry on Windows, neither of which test mode redirects) |
 | `layout` | saved pane arrangements — the JSON they are stored as, widths kept as a share of the window so a layout saved on a 4K screen still fits a laptop, and the account payload they ride in | none: plain settings and arithmetic |
