@@ -149,13 +149,6 @@ Item {
         return pageW > 0 ? root.viewportWidth / pageW : 0
     }
 
-    // -------------------------------- text search
-
-    property alias searchModel: searchModel
-    property alias searchString: searchModel.searchString
-    function searchBack() { --searchModel.currentResult }
-    function searchForward() { ++searchModel.currentResult }
-
     // ── Page-size cache ─────────────────────────────────────────────
     // Layout (rowHeightProvider) reads page sizes constantly while
     // scrolling, and every QPdfDocument.pagePointSize() call takes
@@ -315,6 +308,7 @@ Item {
                 anchors.centerIn: pinch.active ? undefined : parent
                 property size pagePointSize: root.pageSizeAt(pageHolder.index)
                 property real pageScale: image.paintedWidth / pagePointSize.width
+                onPagePointSizeChanged: if (image.sourceSize.width > 0) image.fitSource()
                 PdfPageImage {
                     id: image
                     document: root.document
@@ -325,11 +319,21 @@ Item {
                     height: paper.pagePointSize.height * root.renderScale
                     property real renderScale: root.renderScale
                     property real oldRenderScale: 1
-                    onRenderScaleChanged: {
+                    // pageSizeAt() answers 1x1 while a new paper's page sizes
+                    // are not in yet, and a render asked for in that moment
+                    // was a whole page parsed and drawn into a single pixel,
+                    // under the PDFium lock the rest of the switch then
+                    // waited behind. A placeholder size keeps the last real
+                    // one instead; the real size re-asks when it arrives.
+                    function fitSource() {
+                        if (paper.pagePointSize.width <= 1)
+                            return
                         image.sourceSize.width = paper.pagePointSize.width * renderScale * Screen.devicePixelRatio
                         image.sourceSize.height = 0
+                    }
+                    onRenderScaleChanged: {
+                        image.fitSource()
                         paper.scale = 1
-                        searchHighlights.update()
                     }
                     onStatusChanged: {
                         if (pageHolder.index === pageNavigator.currentPage)
@@ -339,25 +343,6 @@ Item {
                 Shape {
                     anchors.fill: parent
                     visible: image.status === Image.Ready
-                    onVisibleChanged: searchHighlights.update()
-                    ShapePath {
-                        strokeWidth: -1
-                        fillColor: style.pageSearchResultsColor
-                        scale: Qt.size(paper.pageScale, paper.pageScale)
-                        PathMultiline {
-                            id: searchHighlights
-                            function update() {
-                                // paths could be a binding, but we need to be able to "kick" it sometimes
-                                paths = searchModel.boundingPolygonsOnPage(pageHolder.index)
-                            }
-                        }
-                    }
-                    Connections {
-                        target: searchModel
-                        // whenever the highlights on the _current_ page change, they actually need to change on _all_ pages
-                        // (usually because the search string has changed)
-                        function onCurrentPageBoundingPolygonsChanged() { searchHighlights.update() }
-                    }
                     ShapePath {
                         strokeWidth: -1
                         fillColor: style.selectionColor
@@ -378,19 +363,6 @@ Item {
                     // Pages instantiated mid-drag (edge auto-scroll across
                     // pages) must show the already-active selection.
                     Component.onCompleted: selectionHighlight.update()
-                }
-                Shape {
-                    anchors.fill: parent
-                    visible: image.status === Image.Ready && searchModel.currentPage === pageHolder.index
-                    ShapePath {
-                        strokeWidth: style.currentSearchResultStrokeWidth
-                        strokeColor: style.currentSearchResultStrokeColor
-                        fillColor: "transparent"
-                        scale: Qt.size(paper.pageScale, paper.pageScale)
-                        PathMultiline {
-                            paths: searchModel.currentResultBoundingPolygons
-                        }
-                    }
                 }
                 PinchHandler {
                     id: pinch
@@ -755,9 +727,8 @@ Item {
             tableView.contentY = 0
         }
     }
-    PdfSearchModel {
-        id: searchModel
-        document: root.document === undefined ? null : root.document
-        onCurrentResultChanged: pageNavigator.jump(currentResultLink)
-    }
+    // No PdfSearchModel: nothing in the app searches the PDF, and QtPdf's
+    // (6.12) starts a fresh 100 ms timer every time the document's page count
+    // changes without stopping the last one. Two per paper switch, firing
+    // forever -- a long session was carrying hundreds of them.
 }

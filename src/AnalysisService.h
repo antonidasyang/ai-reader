@@ -124,6 +124,12 @@ public:
     Q_INVOKABLE bool restoreDeep(int index);
 
     Q_INVOKABLE QVariantMap module(const QString &id) const;
+    // A fingerprint of one module's content: the same string for as long as
+    // that module is unchanged. deepChanged fires for every part that starts,
+    // lands or fails, and the view rebuilds a part only when its own stamp
+    // moved -- rebuilding all nine for every one of those was seconds of
+    // frozen window per part on a long close reading.
+    Q_INVOKABLE QString moduleStamp(const QString &id) const;
     Q_INVOKABLE QString moduleTitle(const QString &id) const;
     Q_INVOKABLE QString moduleError(const QString &id) const;
     Q_INVOKABLE bool moduleBusy(const QString &id) const;

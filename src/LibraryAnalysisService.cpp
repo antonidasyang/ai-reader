@@ -60,10 +60,14 @@ LibraryAnalysisService::LibraryAnalysisService(
     , m_profile(profile)
     , m_clients(settings, this)
 {
-    connect(m_store, &AnalysisStore::changed, this,
-            &LibraryAnalysisService::stateChanged);
-    connect(m_projects, &ProjectController::currentChanged, this,
-            &LibraryAnalysisService::stateChanged);
+    connect(m_store, &AnalysisStore::changed, this, [this] {
+        m_titlesValid = false;
+        emit stateChanged();
+    });
+    connect(m_projects, &ProjectController::currentChanged, this, [this] {
+        m_titlesValid = false;
+        emit stateChanged();
+    });
 }
 
 void LibraryAnalysisService::setTasks(TaskManager *tasks)
@@ -179,6 +183,16 @@ QVariantMap LibraryAnalysisService::result(const QString &kind) const
     return m_store->libraryAnalysis(kind).payload.toVariantMap();
 }
 
+QString LibraryAnalysisService::stampOf(const QString &kind) const
+{
+    const QJsonObject p = m_store->libraryAnalysis(kind).payload;
+    if (p.isEmpty())
+        return QString();
+    const QByteArray json = QJsonDocument(p).toJson(QJsonDocument::Compact);
+    return QString::number(json.size()) + QLatin1Char(':')
+        + QString::number(qHash(json), 16);
+}
+
 bool LibraryAnalysisService::has(const QString &kind) const
 {
     return !m_store->libraryAnalysis(kind).payload.isEmpty();
@@ -222,11 +236,16 @@ bool LibraryAnalysisService::restoreVersion(const QString &kind, int index)
 
 QString LibraryAnalysisService::paperTitle(const QString &paperId) const
 {
-    for (const AnalysisRecord &r : m_store->paperAnalyses(Analysis::KindQuick)) {
-        if (r.paperId == paperId)
-            return r.title.isEmpty() ? paperId : r.title;
+    if (!m_titlesValid) {
+        m_titles.clear();
+        for (const AnalysisRecord &r : m_store->paperAnalyses(Analysis::KindQuick)) {
+            if (!m_titles.contains(r.paperId))
+                m_titles.insert(r.paperId, r.title);
+        }
+        m_titlesValid = true;
     }
-    return paperId;
+    const QString t = m_titles.value(paperId);
+    return t.isEmpty() ? paperId : t;
 }
 
 // ── running one ──────────────────────────────────────────────────────

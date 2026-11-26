@@ -42,6 +42,8 @@
 #include "VisionService.h"
 
 #include <QDateTime>
+#include <algorithm>
+#include <QHash>
 #include <QElapsedTimer>
 #include <QLoggingCategory>
 #include <QMetaEnum>
@@ -164,6 +166,22 @@ constexpr int kSlowEventMs = 150;
 // apart.
 quint64 g_events = 0;
 
+// The last few thousand top-level events, one small record each, written
+// after the call and never read unless a freeze needs explaining. A freeze
+// that spans thousands of events is a storm of small work, and none of those
+// events is slow enough for the line above to name -- so the watchdog sums
+// these up instead: which kind of event, delivered to what, how many, and
+// how long they took between them. Pointers into static data, a few stores
+// per event, no clock read beyond the two notify() already takes.
+struct EventRecord {
+    const char *cls;
+    const char *parentCls;
+    int type;
+    quint32 us;
+};
+constexpr int kEventRing = 8192;
+EventRecord g_eventRing[kEventRing];
+
 class TimedApplication : public QGuiApplication
 {
 public:
@@ -196,8 +214,13 @@ public:
         QElapsedTimer t;
         t.start();
         const bool handled = QGuiApplication::notify(receiver, event);
-        const qint64 ms = t.elapsed();
+        const qint64 ns = t.nsecsElapsed();
+        const qint64 ms = ns / 1000000;
         --m_depth;
+        // Event number n (g_events after its increment) goes in slot n-1.
+        g_eventRing[(g_events - 1) % kEventRing] =
+            EventRecord{cls, parentCls, type,
+                        quint32(qMin<qint64>(ns / 1000, 0xffffffff))};
 
         if (ms >= kSlowEventMs) {
             const char *evName =
@@ -267,6 +290,70 @@ int countItems(QQuickItem *item)
     return n;
 }
 
+// What the events numbered [from, to) were, biggest share of the time first.
+// Only as far back as the ring reaches.
+QByteArray summariseEvents(quint64 from, quint64 to)
+{
+    if (to - from > quint64(kEventRing))
+        from = to - kEventRing;
+    struct Sum { quint64 n = 0; quint64 us = 0; };
+    QHash<QByteArray, Sum> sums;
+    for (quint64 i = from; i < to; ++i) {
+        const EventRecord &r = g_eventRing[i % kEventRing];
+        const char *ev = QMetaEnum::fromType<QEvent::Type>().valueToKey(r.type);
+        QByteArray key = QByteArray(ev ? ev : "event") + " to " + r.cls
+                         + " (a child of " + r.parentCls + ")";
+        Sum &x = sums[key];
+        ++x.n;
+        x.us += r.us;
+    }
+    QList<QPair<QByteArray, Sum>> v;
+    for (auto it = sums.cbegin(); it != sums.cend(); ++it)
+        v.append({it.key(), it.value()});
+    std::sort(v.begin(), v.end(), [](const auto &a, const auto &b) {
+        return a.second.us != b.second.us ? a.second.us > b.second.us
+                                          : a.second.n > b.second.n;
+    });
+    QByteArray out;
+    for (int i = 0; i < qMin(6, int(v.size())); ++i)
+        out += "\n      " + QByteArray::number(v.at(i).second.n) + " x, "
+               + QByteArray::number(v.at(i).second.us / 1000) + " ms  "
+               + v.at(i).first;
+    return out;
+}
+
+// Where the items are: every subtree holding at least a tenth of them, with
+// its QML id, a few levels down. "147377 items" says the scene is too big;
+// this says whose it is.
+void heavySubtrees(QQuickItem *item, int total, int depth, QByteArray &out)
+{
+    if (!item || depth > 9)
+        return;
+    QList<QPair<int, QQuickItem *>> kids;
+    for (QQuickItem *c : item->childItems())
+        kids.append({countItems(c), c});
+    std::sort(kids.begin(), kids.end(),
+              [](const auto &a, const auto &b) { return a.first > b.first; });
+    for (int i = 0; i < qMin(3, int(kids.size())); ++i) {
+        const auto &k = kids.at(i);
+        if (k.first < total / 10)
+            break;
+        QByteArray name = k.second->metaObject()->className();
+        if (const QQmlContext *ctx = qmlContext(k.second)) {
+            const QString id = ctx->nameForObject(k.second);
+            if (!id.isEmpty())
+                name += " id=" + id.toUtf8();
+        }
+        if (!k.second->objectName().isEmpty())
+            name += " \"" + k.second->objectName().toUtf8() + "\"";
+        if (!k.second->isVisible())
+            name += " (hidden)";
+        out += "\n      " + QByteArray(depth * 2, ' ')
+               + QByteArray::number(k.first) + "  " + name;
+        heavySubtrees(k.second, total, depth + 1, out);
+    }
+}
+
 void installStallWatchdog(QQuickWindow *win, QObject *owner)
 {
     auto *timer = new QTimer(owner);
@@ -292,6 +379,11 @@ void installStallWatchdog(QQuickWindow *win, QObject *owner)
         qWarning("[t+%lld ms] the window was frozen for %lld ms (it started at "
                  "t+%lld ms, and delivered %llu events while it was) during: %s",
                  now, gap, now - gap, events, Stall::phase());
+        // The events of the freeze occupy slots [g_events - events, g_events),
+        // the last of them being this timer's own, not yet recorded.
+        if (events >= 1000)
+            qWarning("[t+%lld ms] ...those %llu events were mostly:%s", now, events,
+                     summariseEvents(g_events - events, g_events - 1).constData());
         if (*armed || gap < kFrameTimingTriggerMs)
             return;
         // An explicit QT_LOGGING_RULES belongs to whoever set it; do not
@@ -299,10 +391,16 @@ void installStallWatchdog(QQuickWindow *win, QObject *owner)
         if (qEnvironmentVariableIsSet("QT_LOGGING_RULES"))
             return;
         *armed = true;
-        if (win)
-            qWarning("[t+%lld ms] the window is %dx%d and is carrying %d items.",
-                     now, int(win->width()), int(win->height()),
-                     countItems(win->contentItem()));
+        if (win) {
+            const int items = countItems(win->contentItem());
+            QByteArray where;
+            if (items >= 20000)
+                heavySubtrees(win->contentItem(), items, 0, where);
+            qWarning("[t+%lld ms] the window is %dx%d and is carrying %d items.%s",
+                     now, int(win->width()), int(win->height()), items,
+                     where.isEmpty() ? "" : (QByteArray(" Most of them are in:")
+                                             + where).constData());
+        }
         qWarning("[t+%lld ms] ...that was a long one. Per-frame timing is on "
                  "for the next %d s: `polish` is this thread laying the scene "
                  "out, `blockedForSync` is it waiting on the renderer.",

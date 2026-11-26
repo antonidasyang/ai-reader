@@ -57,6 +57,8 @@ Rectangle {
     TapHandler { onTapped: root.forceActiveFocus() }
 
     readonly property var d: analysis.quick
+    // Which parts of the close reading are open (see DeepReadView.openById).
+    property var deepOpenById: ({})
     readonly property int fs: settings.summaryFontSize
     readonly property var meta: d && d.meta ? d.meta : null
 
@@ -359,8 +361,13 @@ Rectangle {
             clip: true
             contentWidth: availableWidth
 
-            ColumnLayout {
+            // Built only while it is showing. A hidden tab -- or the whole
+            // pane put away -- used to be rebuilt on every paper switch all
+            // the same, for nobody to see.
+            Loader {
                 width: root.layoutWidth
+                active: quickScroll.visible
+                sourceComponent: ColumnLayout {
                 spacing: 10
 
                 Label {
@@ -550,6 +557,7 @@ Rectangle {
                     }
                 }
             }
+            }
         }
 
         // ── the close reading ───────────────────────────────────────
@@ -561,13 +569,22 @@ Rectangle {
             clip: true
             contentWidth: availableWidth
 
-            DeepReadView {
+            // As above: only while it is showing. Which parts are open lives
+            // here rather than in the view, so it survives the view going.
+            Loader {
                 width: root.layoutWidth
-                fs: root.fs
-                onEvidenceRequested: function(page, blockId) {
-                    root.evidenceRequested(page, blockId)
+                active: deepScroll.visible
+                sourceComponent: DeepReadView {
+                    fs: root.fs
+                    // Handed over once rather than bound: the view writes
+                    // it back, and a binding would loop.
+                    Component.onCompleted: openById = root.deepOpenById
+                    onOpenByIdChanged: root.deepOpenById = openById
+                    onEvidenceRequested: function(page, blockId) {
+                        root.evidenceRequested(page, blockId)
+                    }
+                    onAskAiRequested: function(text) { root.askAiRequested(text) }
                 }
-                onAskAiRequested: function(text) { root.askAiRequested(text) }
             }
         }
 

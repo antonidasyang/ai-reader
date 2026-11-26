@@ -68,6 +68,9 @@ ColumnLayout {
         const m = analysis.module(id)
         return m ? m : ({})
     }
+    function stampOf(id, rev) {
+        return analysis.moduleStamp(id)
+    }
     function isWritten(id, rev) {
         const m = analysis.module(id)
         return !!(m && Object.keys(m).length > 0)
@@ -746,8 +749,15 @@ ColumnLayout {
             required property int index
 
             readonly property string moduleId: sec.modelData
-            readonly property var mod: root.moduleOf(sec.moduleId, root.rev)
-            readonly property bool written: root.isWritten(sec.moduleId, root.rev)
+            // Everything below the header is built from `mod`, so `mod` must
+            // only change when this part's content does. deepChanged (and so
+            // `rev`) fires for every part that starts, lands or fails; read
+            // straight off `rev`, each of those handed every open part a
+            // fresh object and rebuilt all of them. The stamp re-reads on
+            // `rev` but, being a string, only notifies when it differs.
+            readonly property string stamp: root.stampOf(sec.moduleId, root.rev)
+            readonly property var mod: root.moduleOf(sec.moduleId, sec.stamp)
+            readonly property bool written: sec.stamp.length > 0
             readonly property bool busy: root.isBusy(sec.moduleId, root.rev)
             readonly property string err: root.errorOf(sec.moduleId, root.rev)
             readonly property bool open: root.isOpen(sec.moduleId, sec.index, root.rev)

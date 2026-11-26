@@ -68,6 +68,11 @@ public:
     Q_INVOKABLE void cancel();
 
     Q_INVOKABLE QVariantMap result(const QString &kind) const;
+    // A fingerprint of one result's content: the same string for as long as
+    // it is unchanged. stateChanged fires on every interpretation stored
+    // anywhere in the project, and the pane re-reads a result -- and rebuilds
+    // the tab drawn from it -- only when this moves.
+    Q_INVOKABLE QString stampOf(const QString &kind) const;
     Q_INVOKABLE bool has(const QString &kind) const;
     Q_INVOKABLE QString authorOf(const QString &kind) const;
     Q_INVOKABLE QString updatedAtOf(const QString &kind) const;
@@ -111,6 +116,12 @@ signals:
     void resultChanged(const QString &kind);
 
 private:
+    // paperId -> title of every interpreted paper, for paperTitle(). Asked
+    // once per paper chip each time the pane re-reads, which on a large
+    // project was a full list of every interpretation, a thousand times
+    // over. Rebuilt on the next ask after the store changes.
+    mutable QHash<QString, QString> m_titles;
+    mutable bool m_titlesValid = false;
     using PostProcess = std::function<QJsonObject(const QJsonObject &)>;
 
     // A run that is ready to go and is waiting for the model call in front

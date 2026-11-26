@@ -1,5 +1,39 @@
 # AI Reader changelog
 
+## v1.3.40 — 2026-11-26
+
+### An interpretation landing no longer freezes the window
+- When an interpretation or a part of a close reading finished, the window
+  could freeze for 15–20 seconds, and it stalled for seconds after every
+  paper switch. The panes built from interpretations were rebuilding far
+  more than anyone was looking at: every tab of the Research pane was built,
+  six of them hidden, and all seven were rebuilt whenever any paper in the
+  project was interpreted; each part of a close reading that landed rebuilt
+  every open part; and the close reading was rebuilt on every switch even
+  with its tab not showing. Now only the tab on screen is built, a result
+  is redrawn only when it actually changed, and a part that lands redraws
+  only itself. On a 40-paper project this took a switch from about half a
+  second to under a tenth, and a landing part from up to 2.7 seconds to
+  about a tenth (measured on a Mac; the Windows machine in the report was
+  several times slower).
+- Every statement in an interpretation carried its own "⋯" menu, built
+  whether or not it was ever opened. The menu is now made when clicked,
+  which makes a statement four times cheaper to show.
+
+### Pages are no longer drawn twice when switching
+- For a moment after a switch the viewer did not know the new pages' sizes
+  yet, and asked for each visible page to be drawn into a single pixel. That
+  was a full page drawn for nothing, holding up the real drawing. It now
+  waits for the real size.
+- Removed an unused PDF search that left two timers running after every
+  switch, forever. A long session carried hundreds of them.
+
+### The log says more about a freeze
+- When the window freezes under a storm of small events, the log now lists
+  which kinds of events they were and what they were delivered to.
+- When the window holds an unusually large number of items, the log now
+  names the panes and parts that hold them.
+
 ## v1.3.39 — 2026-11-25
 
 ### Switching papers no longer freezes the window

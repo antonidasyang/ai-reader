@@ -174,14 +174,25 @@ ColumnLayout {
 
         // §5: the follow-up moves on one statement.
         ToolButton {
+            id: claimMenuButton
             implicitHeight: root.fs + 8
             implicitWidth: root.fs + 12
             padding: 2
             font.pixelSize: root.fs - 2
             text: "⋯"
-            onClicked: claimMenu.popup()
+            // Made when asked for. A Menu is a popup, a list view and six
+            // items with their labels and backgrounds -- more than the
+            // statement it hangs off -- and every claim in every
+            // interpretation on screen was carrying one nobody had opened.
+            onClicked: {
+                const menu = claimMenuComponent.createObject(claimMenuButton,
+                                                            { parent: claimMenuButton })
+                menu.closed.connect(menu.destroy)
+                menu.popup()
+            }
+            Component {
+                id: claimMenuComponent
             Menu {
-                id: claimMenu
                 MenuItem {
                     text: qsTr("Explain this more simply")
                     onTriggered: root.askAiRequested(
@@ -222,6 +233,7 @@ ColumnLayout {
                     height: visible ? implicitHeight : 0
                     onTriggered: root.noteRequested(root.claimText)
                 }
+            }
             }
         }
     }

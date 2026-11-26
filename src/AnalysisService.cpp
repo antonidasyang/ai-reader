@@ -15,6 +15,7 @@
 #include "TaskTypes.h"
 
 #include <QDateTime>
+#include <QJsonDocument>
 #include <QTimer>
 
 AnalysisService::AnalysisService(Settings *settings, PaperController *paper,
@@ -563,6 +564,17 @@ QVariantMap AnalysisService::module(const QString &id) const
         .value(id)
         .toObject()
         .toVariantMap();
+}
+
+QString AnalysisService::moduleStamp(const QString &id) const
+{
+    const QJsonObject m =
+        m_deep.value(QStringLiteral("modules")).toObject().value(id).toObject();
+    if (m.isEmpty())
+        return QString();
+    const QByteArray json = QJsonDocument(m).toJson(QJsonDocument::Compact);
+    return QString::number(json.size()) + QLatin1Char(':')
+        + QString::number(qHash(json), 16);
 }
 
 QString AnalysisService::moduleError(const QString &id) const

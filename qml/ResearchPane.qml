@@ -168,6 +168,9 @@ Rectangle {
 
     // ── reading the service ─────────────────────────────────────────
     // `rev` is unused in the bodies on purpose; see the note above.
+    function stampOf(kind, rev) {
+        return research.stampOf(kind)
+    }
     function resultOf(kind, rev) {
         const r = research.result(kind)
         return r ? r : ({})
@@ -361,13 +364,25 @@ Rectangle {
     TapHandler { onTapped: root.forceActiveFocus() }
 
     // ── the seven results ───────────────────────────────────────────
-    readonly property var taxRes:  root.resultOf("taxonomy", root.rev)
-    readonly property var mapRes:  root.resultOf("map", root.rev)
-    readonly property var conRes:  root.resultOf("consensus", root.rev)
-    readonly property var evoRes:  root.resultOf("evolution", root.rev)
-    readonly property var covRes:  root.resultOf("coverage", root.rev)
-    readonly property var oppRes:  root.resultOf("opportunities", root.rev)
-    readonly property var actRes:  root.resultOf("actions", root.rev)
+    // Each tab is drawn from one of these, so each must only change when its
+    // own result does. `rev` moves on every interpretation stored anywhere in
+    // the project; read straight off it, every one of those handed all seven
+    // a fresh object and rebuilt every tab. The stamps re-read on `rev` but,
+    // being strings, only notify when they differ.
+    readonly property string taxStamp: root.stampOf("taxonomy", root.rev)
+    readonly property string mapStamp: root.stampOf("map", root.rev)
+    readonly property string conStamp: root.stampOf("consensus", root.rev)
+    readonly property string evoStamp: root.stampOf("evolution", root.rev)
+    readonly property string covStamp: root.stampOf("coverage", root.rev)
+    readonly property string oppStamp: root.stampOf("opportunities", root.rev)
+    readonly property string actStamp: root.stampOf("actions", root.rev)
+    readonly property var taxRes:  root.resultOf("taxonomy", root.taxStamp)
+    readonly property var mapRes:  root.resultOf("map", root.mapStamp)
+    readonly property var conRes:  root.resultOf("consensus", root.conStamp)
+    readonly property var evoRes:  root.resultOf("evolution", root.evoStamp)
+    readonly property var covRes:  root.resultOf("coverage", root.covStamp)
+    readonly property var oppRes:  root.resultOf("opportunities", root.oppStamp)
+    readonly property var actRes:  root.resultOf("actions", root.actStamp)
 
     // ── small shared pieces ─────────────────────────────────────────
     component Chip: Rectangle {
@@ -1158,7 +1173,12 @@ Rectangle {
                         clip: true
                         contentWidth: availableWidth
 
-                        ColumnLayout {
+                        Loader {
+                            // Only the tab on screen is built: all seven used to
+                            // be, six of them hidden, and rebuilt together.
+                            width: parent.width
+                            active: taxScroll.visible
+                            sourceComponent: ColumnLayout {
                             width: parent.width
                             spacing: 10
 
@@ -1279,6 +1299,7 @@ Rectangle {
                                 }
                             }
                         }
+                        }
                     }
                 }
             }
@@ -1307,7 +1328,12 @@ Rectangle {
                         clip: true
                         contentWidth: availableWidth
 
-                        ColumnLayout {
+                        Loader {
+                            // Only the tab on screen is built: all seven used to
+                            // be, six of them hidden, and rebuilt together.
+                            width: parent.width
+                            active: mapScroll.visible
+                            sourceComponent: ColumnLayout {
                             width: parent.width
                             spacing: 10
 
@@ -1373,6 +1399,7 @@ Rectangle {
 
                             Item { Layout.preferredHeight: 4 }
                         }
+                        }
                     }
                 }
             }
@@ -1401,7 +1428,12 @@ Rectangle {
                         clip: true
                         contentWidth: availableWidth
 
-                        ColumnLayout {
+                        Loader {
+                            // Only the tab on screen is built: all seven used to
+                            // be, six of them hidden, and rebuilt together.
+                            width: parent.width
+                            active: conScroll.visible
+                            sourceComponent: ColumnLayout {
                             width: parent.width
                             spacing: 10
 
@@ -1430,6 +1462,7 @@ Rectangle {
                             }
 
                             Item { Layout.preferredHeight: 4 }
+                        }
                         }
                     }
                 }
@@ -1484,7 +1517,12 @@ Rectangle {
                         clip: true
                         contentWidth: availableWidth
 
-                        ColumnLayout {
+                        Loader {
+                            // Only the tab on screen is built: all seven used to
+                            // be, six of them hidden, and rebuilt together.
+                            width: parent.width
+                            active: evoScroll.visible
+                            sourceComponent: ColumnLayout {
                             width: parent.width
                             spacing: 8
 
@@ -1599,6 +1637,7 @@ Rectangle {
                                 }
                             }
                         }
+                        }
                     }
                 }
             }
@@ -1654,7 +1693,12 @@ Rectangle {
                         clip: true
                         contentWidth: availableWidth
 
-                        ColumnLayout {
+                        Loader {
+                            // Only the tab on screen is built: all seven used to
+                            // be, six of them hidden, and rebuilt together.
+                            width: parent.width
+                            active: covScroll.visible
+                            sourceComponent: ColumnLayout {
                             width: parent.width
                             spacing: 10
 
@@ -1693,6 +1737,7 @@ Rectangle {
                             }
 
                             Item { Layout.preferredHeight: 4 }
+                        }
                         }
                     }
                 }
@@ -1749,7 +1794,12 @@ Rectangle {
                         clip: true
                         contentWidth: availableWidth
 
-                        ColumnLayout {
+                        Loader {
+                            // Only the tab on screen is built: all seven used to
+                            // be, six of them hidden, and rebuilt together.
+                            width: parent.width
+                            active: oppScroll.visible
+                            sourceComponent: ColumnLayout {
                             width: parent.width
                             spacing: 8
 
@@ -1869,6 +1919,7 @@ Rectangle {
 
                             Item { Layout.preferredHeight: 4 }
                         }
+                        }
                     }
                 }
             }
@@ -1898,7 +1949,12 @@ Rectangle {
                         clip: true
                         contentWidth: availableWidth
 
-                        ColumnLayout {
+                        Loader {
+                            // Only the tab on screen is built: all seven used to
+                            // be, six of them hidden, and rebuilt together.
+                            width: parent.width
+                            active: actScroll.visible
+                            sourceComponent: ColumnLayout {
                             width: parent.width
                             spacing: 10
 
@@ -1940,6 +1996,7 @@ Rectangle {
                             }
 
                             Item { Layout.preferredHeight: 4 }
+                        }
                         }
                     }
                 }
